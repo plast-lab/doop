@@ -1089,7 +1089,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 		} catch (e) {
 			println "ERROR: Souffle logic path not found, set DOOP_HOME."
 		}
-		analysesFor(new File(Doop.souffleAnalysesPath), "analysis.dl")
+		return Doop.souffleAnalysesPath ? analysesFor(new File(Doop.souffleAnalysesPath), "analysis.dl") : []
 	}
 
 	private static List<String> analysesLB() {
@@ -1105,10 +1105,13 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			println "WARNING: LB legacy logic path not found, set DOOP_HOME."
 			return []
 		}
-		File legacyPath = new File(Doop.analysesPath)
-		if (legacyPath.exists()) {
-			analysesFor(legacyPath, "analysis.logic")
+		if (Doop.analysesPath) {
+			File legacyPath = new File(Doop.analysesPath)
+			if (legacyPath.exists()) {
+				return analysesFor(legacyPath, "analysis.logic")
+			}
 		}
+		return []
 	}
 
 	private static SortedSet<String> informationFlowPlatforms(String lbDir, String souffleDir) {

@@ -31,10 +31,11 @@ class MiscLambdaTests extends ServerAnalysisTests {
 	@Unroll
 	def "Server analysis test FutureExample"(String analysisName) {
 		when:
-		Analysis analysis = analyzeTest("invokedynamic-FutureExample", ["--platform", "java_8"], analysisName)
+		List<String> opts = ['--platform', 'java_8', '--generate-jimple'] + testExports
+		Analysis analysis = analyzeTest("invokedynamic-FutureExample", opts, analysisName)
 
 		then:
-		varPointsTo(analysis, '<java.util.concurrent.FutureTask: void run()>/l1#_261', '<example_foreach.FutureExample: void useFuture()>/invokedynamic_metafactory::call/0::: java.util.concurrent.Callable::: (Mock)::: reference example_foreach.FutureExample::lambda$useFuture$0 from <example_foreach.FutureExample: java.lang.Integer lambda$useFuture$0()> wrapped as java.util.concurrent.Callable.call')
+		varPointsToQ(analysis, '<java.util.concurrent.FutureTask: void run()>/l1#_261', '<example_foreach.FutureExample: void useFuture()>/invokedynamic_metafactory::call/0::: java.util.concurrent.Callable::: (Mock)::: reference example_foreach.FutureExample::lambda$useFuture$0 from <example_foreach.FutureExample: java.lang.Integer lambda$useFuture$0()> wrapped as java.util.concurrent.Callable.call')
 		methodIsReachable(analysis, '<example_foreach.FutureExample: java.lang.Integer doComputation()>')
 
 		where:

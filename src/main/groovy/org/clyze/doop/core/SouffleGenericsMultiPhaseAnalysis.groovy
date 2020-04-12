@@ -50,9 +50,7 @@ class SouffleGenericsMultiPhaseAnalysis extends SouffleAnalysis {
 			produceStats(preAnalysis)
 		}
 
-		def cacheDir = new File(Doop.souffleAnalysesCache, name)
-		cacheDir.mkdirs()
-		def script = SouffleScript.newScript(executor, options.VIA_DDLOG.value as Boolean)
+		def script = newScriptForAnalysis(executor)
 
 		Future<File> compilationFuture = null
 		def executorService = Executors.newSingleThreadExecutor()
@@ -69,7 +67,7 @@ class SouffleGenericsMultiPhaseAnalysis extends SouffleAnalysis {
 				@Override
 				File call() {
 					log.info "[Task COMPILE...]"
-					def generatedFile0 = script.compile(preAnalysis, outDir, cacheDir,
+					def generatedFile0 = script.compile(preAnalysis, outDir,
 							profiling,
 							options.SOUFFLE_DEBUG.value as boolean,
 							provenance,
@@ -176,7 +174,7 @@ class SouffleGenericsMultiPhaseAnalysis extends SouffleAnalysis {
 				@Override
 				File call() {
 					log.info "[Task COMPILE...]"
-					def generatedFile = script.compile(analysis, outDir, cacheDir,
+					def generatedFile = script.compile(analysis, outDir,
 							profiling,
 							options.SOUFFLE_DEBUG.value as boolean,
 							provenance,

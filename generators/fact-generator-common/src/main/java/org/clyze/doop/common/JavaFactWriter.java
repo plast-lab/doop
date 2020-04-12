@@ -1,6 +1,6 @@
 package org.clyze.doop.common;
 
-import org.antlr.v4.runtime.ANTLRInputStream;
+import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.clyze.doop.common.scanner.antlr.GenericTypeLexer;
@@ -167,11 +167,15 @@ public abstract class JavaFactWriter {
     protected void writeGenericFields(Set<GenericFieldInfo> genericFields) {
         for (GenericFieldInfo fi : genericFields) {
             if (!fi.type.contains("extends") && !fi.type.contains("super")) {
-                GenericTypeLexer lexer = new GenericTypeLexer(new ANTLRInputStream(fi.type));
-                GenericTypeParser parser = new GenericTypeParser(new CommonTokenStream(lexer));
-                ParseTree parseTree = parser.type();
-                PrintVisitor printVisitor = new PrintVisitor(_db);
-                printVisitor.visit(parseTree);
+                try {
+                    GenericTypeLexer lexer = new GenericTypeLexer(CharStreams.fromFileName(fi.type));
+                    GenericTypeParser parser = new GenericTypeParser(new CommonTokenStream(lexer));
+                    ParseTree parseTree = parser.type();
+                    PrintVisitor printVisitor = new PrintVisitor(_db);
+                    printVisitor.visit(parseTree);
+                } catch (java.io.IOException e) {
+                    System.out.println(e);
+                }
             }
             if (fi.type.contains("<")){
                 _db.add(GENERIC_FIELD, "<" + fi.definingClass + ": " + fi.type + " " + fi.name + ">", fi.definingClass, fi.name, fi.type);
@@ -179,7 +183,6 @@ public abstract class JavaFactWriter {
             else {
                 _db.add(GENERIC_FIELD, "<" + fi.definingClass + ": " + fi.type + " " + fi.name + ">", fi.definingClass, fi.name, fi.type);
             }
-
         }
     }
     //_db.add(GENERIC_FIELD_TYPE, fieldInfo.definingClass, fieldInfo.name,

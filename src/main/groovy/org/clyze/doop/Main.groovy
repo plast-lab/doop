@@ -8,6 +8,7 @@ import org.clyze.doop.common.DoopErrorCodeException
 import org.clyze.doop.core.Doop
 import org.clyze.doop.core.DoopAnalysis
 import org.clyze.utils.FileOps
+import org.clyze.utils.VersionInfo
 import org.codehaus.groovy.runtime.StackTraceUtils
 
 import java.util.concurrent.Executors
@@ -77,7 +78,7 @@ class Main {
 				clidBuilder.usage()
 				return
 			} else if (cli['v']) {
-				println versionInfo
+				println VersionInfo.getVersionInfo(Main.class)
 				return
 			}
 
@@ -168,33 +169,6 @@ class Main {
 		} catch (all) {
 			log.info "Invalid user supplied timeout: `${userTimeout}` - fallback to default (${defaultTimeout})."
 			return defaultTimeout
-		}
-	}
-
-	/**
-	 * Returns the version of Doop.
-	 *
-	 * @return A version string that may contain a release tag or a git hash (or both).
-	 */
-	private static String getVersionInfo() {
-		// Read "version" (may be empty if run via './gradlew run' or './doop').
-		String version = Main.class.getPackage().getImplementationVersion()
-
-		// Read Git commit hash.
-		String hash = null
-		InputStream gitHashIS = Main.class.classLoader.getResourceAsStream("git-hash.txt")
-		if (gitHashIS) {
-			gitHashIS.eachLine { if (!hash) { hash = it } }
-		}
-
-		if (!hash && !version) {
-			return "No version information available."
-		} else if (hash && version) {
-			return "Version: ${version} (Git hash: ${hash})"
-		} else if (version) {
-			return "Version: ${version}"
-		} else if (hash) {
-			return "Git hash: ${hash}"
 		}
 	}
 }

@@ -123,7 +123,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		if (options.LB3.value)
 			return new LB3Analysis(options, context, commandsEnv)
 		else {
-			if(options.PYTHON.value) {
+			if (options.PYTHON.value) {
 				return new SoufflePythonAnalysis(options, context, commandsEnv)
 			}
 			else {
@@ -589,12 +589,12 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
 		options.values().each {
 			if (it.argName && it.value && it.validValues && !(it.value in it.validValues))
-				throw new RuntimeException("Invalid value `$it.value` for option: $it.name")
+				throw new DoopErrorCodeException(33, "Invalid value `$it.value` for option: $it.name")
 		}
 
 		options.values().findAll { it.isMandatory }.each {
 			if (!it.value)
-				throw new RuntimeException("Missing mandatory argument: $it.name")
+				throw new DoopErrorCodeException(32, "Missing mandatory argument: $it.name")
 		}
 	}
 

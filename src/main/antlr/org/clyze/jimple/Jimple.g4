@@ -197,7 +197,7 @@ IDENTIFIER_BASE
 
 fragment
 IDENTIFIER_SUF
-	: ['#''_'0-9]+
+	: [#_0-9]+
 	| '_$$A_'
 	;
 

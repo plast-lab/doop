@@ -8,6 +8,7 @@ buildscript {
 
     dependencies {
         classpath 'commons-io:commons-io:2.4'
+        classpath 'org.apache.ant:ant:1.10.7'
     }
 }
 
@@ -38,7 +39,7 @@ group = "org.clyze"
 // Doop entry point.
 mainClassName = "org.clyze.doop.Main"
 
-def heapDLVersion = "1.1.8"
+def heapDLVersion = "1.1.9"
 if (project.hasProperty('heapDLVersion'))
     heapDLVersion = project.property('heapDLVersion')
 
@@ -60,6 +61,7 @@ allGeneratorProjects.each {
             mavenLocal()
             mavenCentral()
             maven { url "http://centauri.di.uoa.gr:8081/artifactory/plast-public" }
+            maven { url 'https://dl.bintray.com/gfour/plast-lab' }
         }
     }
 }
@@ -108,7 +110,7 @@ compileGroovy {
 // Set dependency version so that they are available to subprojects.
 gradle.rootProject.ext.antlrVersion='4.7.2'
 gradle.rootProject.ext.groovyVersion="2.5.7"
-gradle.rootProject.ext.clueCommonVersion='3.20.0'
+gradle.rootProject.ext.clueCommonVersion='3.20.2'
 gradle.rootProject.ext.spockVersion='1.3-groovy-2.5'
 // Set other variables for subprojects.
 gradle.rootProject.ext.resourcesDir='resources'
@@ -201,7 +203,8 @@ run {
     // We set the DOOP_HOME environment variable (see org.clyze.doop.Main)
     environment.DOOP_HOME = projectDir
     if (project.hasProperty('args')) {
-        args project.property('args').split()
+        def splitArgs = org.apache.tools.ant.types.Commandline.translateCommandline(project.property('args'))
+        args splitArgs
     }
 }
 
@@ -215,7 +218,7 @@ task printExtClasspath {
 
 task jimple2json(type: JavaExec) {
     description 'Generate JSON files from Jimple'
-    group = 'Other'
+    group = 'Doop'
     main = 'org.clyze.jimple.Main'
     classpath = sourceSets.main.runtimeClasspath
     if (project.hasProperty("args"))
@@ -224,7 +227,7 @@ task jimple2json(type: JavaExec) {
 
 task scaler(type: JavaExec) {
     description 'Run Scaler'
-    group = 'Other'
+    group = 'Doop'
     main = 'ptatoolkit.scaler.doop.Main'
     classpath = sourceSets.main.runtimeClasspath.filter {
         !it.name.startsWith("zipper")
@@ -236,7 +239,7 @@ task scaler(type: JavaExec) {
 
 task zipper(type: JavaExec) {
     description 'Run Zipper'
-    group = 'Other'
+    group = 'Doop'
     main = 'ptatoolkit.zipper.doop.Main'
     classpath = sourceSets.main.runtimeClasspath.filter {
         !it.name.startsWith("scaler")
@@ -248,7 +251,7 @@ task zipper(type: JavaExec) {
 
 task soot(type: JavaExec) {
     description 'Run Soot front-end'
-    group = 'Other'
+    group = 'Doop'
     main = 'org.clyze.doop.soot.Main$Standalone'
     classpath = sourceSets.main.runtimeClasspath
     if (project.hasProperty("args"))
@@ -258,8 +261,8 @@ task soot(type: JavaExec) {
 
 
 task souffleScript(type: JavaExec) {
-    description 'Run a custom Souffle Script'
-    group = 'Other'
+    description 'Run a custom Souffle script'
+    group = 'Doop'
     main = 'org.clyze.doop.utils.SouffleScriptMain'
     classpath = sourceSets.main.runtimeClasspath
     if (project.hasProperty("args"))

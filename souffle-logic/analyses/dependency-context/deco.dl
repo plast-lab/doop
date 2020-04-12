@@ -1,0 +1,1357 @@
+// Main schema
+.type Modifier
+.type Type
+.type PrimitiveType = Type
+.type ReferenceType = Type
+.type ArrayType = ReferenceType
+.type ClassType = ReferenceType
+.type InterfaceType = ReferenceType
+.decl isType(?t:Type)
+.decl isReferenceType(?t:ReferenceType)
+.decl isArrayType(?t:ArrayType)
+.decl isClassType(?t:ClassType)
+.decl isInterfaceType(?t:InterfaceType)
+.decl DirectSuperclass(?class:ClassType, ?superclass:ClassType)
+.input DirectSuperclass(IO="file", filename="DirectSuperclass.facts", delimiter="\t")
+.decl DirectSuperinterface(?ref:ReferenceType, ?interface:InterfaceType)
+.input DirectSuperinterface(IO="file", filename="DirectSuperinterface.facts", delimiter="\t")
+.decl ApplicationClass(?ref:ReferenceType)
+.decl MainClass(?class:ClassType)
+.input MainClass(IO="file", filename="MainClass.facts", delimiter="\t")
+.type Field
+.decl Field_DeclaringType(?field:Field, ?declaringClass:ReferenceType)
+.type MethodDescriptor
+.type Method
+.decl Method_DeclaringType(?method:Method, ?declaringType:ReferenceType)
+.decl Method_ReturnType(?method:Method, ?returnType:Type)
+.decl Method_SimpleName(?method:Method, ?simpleName:symbol)
+.decl Method_ParamTypes(?method:Method, ?params:symbol)
+.decl Method_Descriptor(?method:Method, ?descriptor:MethodDescriptor)
+.decl Method_Modifier(?mod:Modifier, ?method:Method)
+.input Method_Modifier(IO="file", filename="Method-Modifier.facts", delimiter="\t")
+.decl FormalParam(?index:number, ?method:Method, ?var:Var)
+.input FormalParam(IO="file", filename="FormalParam.facts", delimiter="\t")
+.decl ThisVar(?method:Method, ?var:Var)
+.type Var
+.decl Var_Type(?var:Var, ?type:Type)
+.input Var_Type(IO="file", filename="Var-Type.facts", delimiter="\t")
+.decl Var_DeclaringMethod(?var:Var, ?method:Method)
+.type HeapAllocation
+.decl HeapAllocation_Type(?heap:HeapAllocation, ?type:Type)
+.decl MainMethodArgArray(?heap:HeapAllocation)
+.decl MainMethodArgArrayContent(?heap:HeapAllocation)
+.type Instruction
+.decl Instruction_Method(?insn:Instruction, ?inMethod:Method)
+.type FieldInstruction = Instruction
+.type LoadInstanceField_Insn = FieldInstruction
+.type StoreInstanceField_Insn = FieldInstruction
+.type LoadStaticField_Insn = FieldInstruction
+.type StoreStaticField_Insn = FieldInstruction
+.type ArrayInstruction = Instruction
+.type LoadArrayIndex_Insn = ArrayInstruction
+.type StoreArrayIndex_Insn = ArrayInstruction
+.type AssignInstruction = Instruction
+.type AssignLocal_Insn = AssignInstruction
+.type AssignCast_Insn = AssignInstruction
+.type AssignHeapAllocation_Insn = AssignInstruction
+.type ReturnInstruction = Instruction
+.type ReturnNonvoid_Insn = ReturnInstruction
+.type MethodInvocation = Instruction
+.type VirtualMethodInvocation_Insn = MethodInvocation
+.type StaticMethodInvocation_Insn = MethodInvocation
+.decl isVirtualMethodInvocation_Insn(?insn:VirtualMethodInvocation_Insn)
+.decl isStaticMethodInvocation_Insn(?insn:StaticMethodInvocation_Insn)
+.decl FieldInstruction_Signature(?insn:FieldInstruction, ?sign:Field)
+.decl LoadInstanceField_Base(?insn:LoadInstanceField_Insn, ?var:Var)
+.decl LoadInstanceField_To(?insn:LoadInstanceField_Insn, ?var:Var)
+.decl StoreInstanceField_From(?insn:StoreInstanceField_Insn, ?var:Var)
+.decl StoreInstanceField_Base(?insn:StoreInstanceField_Insn, ?var:Var)
+.decl LoadStaticField_To(?insn:LoadStaticField_Insn, ?var:Var)
+.decl StoreStaticField_From(?insn:StoreStaticField_Insn, ?var:Var)
+.decl ComponentType(?arrayType:ArrayType, ?componentType:Type)
+.input ComponentType(IO="file", filename="ComponentType.facts", delimiter="\t")
+.decl LoadArrayIndex_Base(?insn:LoadArrayIndex_Insn, ?var:Var)
+.decl LoadArrayIndex_To(?insn:LoadArrayIndex_Insn, var:Var)
+.decl StoreArrayIndex_From(?insn:StoreArrayIndex_Insn, ?var:Var)
+.decl StoreArrayIndex_Base(?insn:StoreArrayIndex_Insn, ?var:Var)
+.decl AssignInstruction_To(?insn:AssignInstruction, ?to:Var)
+.decl AssignCast_From(?insn:AssignCast_Insn, ?from:Var)
+.decl AssignCast_Type(?insn:AssignCast_Insn, ?type:Type)
+.decl AssignLocal_From(?insn:AssignLocal_Insn, ?from:Var)
+.decl AssignHeapAllocation_Heap(?insn:AssignHeapAllocation_Insn, ?heap:HeapAllocation)
+.decl ReturnNonvoid_Var(?return:ReturnNonvoid_Insn, ?var:Var)
+.decl MethodInvocation_Method(?invocation:MethodInvocation, ?signature:Method)
+.decl AssignReturnValue(?invocation:MethodInvocation, ?to:Var)
+.input AssignReturnValue(IO="file", filename="AssignReturnValue.facts", delimiter="\t")
+.decl ActualParam(?index:number, ?invocation:MethodInvocation, ?var:Var)
+.input ActualParam(IO="file", filename="ActualParam.facts", delimiter="\t")
+.decl VirtualMethodInvocation_Base(?invocation:VirtualMethodInvocation_Insn, ?base:Var)
+.decl VirtualMethodInvocation_SimpleName(?invocation:MethodInvocation, ?simplename:symbol)
+.decl VirtualMethodInvocation_Descriptor(?invocation:MethodInvocation, ?descriptor:MethodDescriptor)
+.decl SpecialMethodInvocation_Base(?invocation:MethodInvocation, ?base:Var)
+.decl MethodInvocation_Base(?invocation:MethodInvocation, ?base:Var)
+
+// Fat schema
+.decl LoadInstanceField(?base:Var, ?sig:Field, ?to:Var, ?inmethod:Method) 
+.decl StoreInstanceField(?from:Var, ?base:Var, ?signature:Field, ?inmethod:Method) 
+.decl LoadStaticField(?sig:Field, ?to:Var, ?inmethod:Method) 
+.decl StoreStaticField(?from:Var, ?signature:Field, ?inmethod:Method) 
+// .decl LoadArrayIndex(?base:Var, ?to:Var, ?inmethod:Method) 
+// .decl StoreArrayIndex(?from:Var, ?base:Var, ?inmethod:Method) 
+.decl AssignCast(?type:Type, ?from:Var, ?to:Var, ?inmethod:Method) 
+.decl AssignLocal(?from:Var, ?to:Var, ?inmethod:Method) 
+.decl AssignHeapAllocation(?heap:HeapAllocation, ?to:Var, ?inmethod:Method) 
+.decl ReturnVar(?var:Var, ?method:Method) 
+.decl StaticMethodInvocation(?invocation:MethodInvocation, ?signature:Method, ?inmethod:Method) 
+
+// imports
+.decl _ClassType(?class:symbol)
+.input _ClassType(IO="file", filename="ClassType.facts", delimiter="\t")
+isType(?class),
+isReferenceType(?class),
+isClassType(?class) :-
+  _ClassType(?class).
+.decl _ArrayType(?arrayType:symbol)
+.input _ArrayType(IO="file", filename="ArrayType.facts", delimiter="\t")
+isType(?arrayType),
+isReferenceType(?arrayType),
+isArrayType(?arrayType) :-
+  _ArrayType(?arrayType).
+.decl _InterfaceType(?interface:symbol)
+.input _InterfaceType(IO="file", filename="InterfaceType.facts", delimiter="\t")
+isType(?interface),
+isReferenceType(?interface),
+isInterfaceType(?interface) :-
+  _InterfaceType(?interface).
+.decl _Var_DeclaringMethod(?var:symbol, ?method:symbol)
+.input _Var_DeclaringMethod(IO="file", filename="Var-DeclaringMethod.facts", delimiter="\t")
+Var_DeclaringMethod(?var, ?method) :-
+  _Var_DeclaringMethod(?var, ?method).
+.decl _ApplicationClass(?type:symbol)
+.input _ApplicationClass(IO="file", filename="ApplicationClass.facts", delimiter="\t")
+isType(?type),
+isReferenceType(?type),
+ApplicationClass(?type) :-
+  _ApplicationClass(?type).
+.decl _ThisVar(?method:symbol, ?var:symbol)
+.input _ThisVar(IO="file", filename="ThisVar.facts", delimiter="\t")
+ThisVar(?method, ?var) :-
+  _ThisVar(?method, ?var).
+.decl _NormalHeap(?id:symbol, ?type:symbol)
+.input _NormalHeap(IO="file", filename="NormalHeap.facts", delimiter="\t")
+isType(?type),
+HeapAllocation_Type(?id, ?type) :-
+  _NormalHeap(?id, ?type).
+.decl _StringConstant(?id:symbol)
+.input _StringConstant(IO="file", filename="StringConstant.facts", delimiter="\t")
+HeapAllocation_Type(?id, "java.lang.String") :-
+  _StringConstant(?id).
+.decl _AssignHeapAllocation(?instruction:symbol, ?index:number, ?heap:symbol, ?to:symbol, ?inmethod:symbol, ?linenumber:number)
+.input _AssignHeapAllocation(IO="file", filename="AssignHeapAllocation.facts", delimiter="\t")
+Instruction_Method(?instruction, ?method),
+AssignInstruction_To(?instruction, ?to),
+AssignHeapAllocation_Heap(?instruction, ?heap) :-
+  _AssignHeapAllocation(?instruction, ?index, ?heap, ?to, ?method, ?linenumber).
+.decl _AssignLocal(?instruction:symbol, ?index:number, ?from:symbol, ?to:symbol, ?inmethod:symbol)
+.input _AssignLocal(IO="file", filename="AssignLocal.facts", delimiter="\t")
+Instruction_Method(?instruction, ?method),
+AssignLocal_From(?instruction, ?from),
+AssignInstruction_To(?instruction, ?to) :-
+  _AssignLocal(?instruction, ?index, ?from, ?to, ?method).
+.decl _AssignCast(?instruction:symbol, ?index:number, ?from:symbol, ?to:symbol, ?type:symbol, ?inmethod:symbol)
+.input _AssignCast(IO="file", filename="AssignCast.facts", delimiter="\t")
+Instruction_Method(?instruction, ?method),
+AssignCast_Type(?instruction, ?type),
+AssignCast_From(?instruction, ?from),
+AssignInstruction_To(?instruction, ?to) :-
+  _AssignCast(?instruction, ?index, ?from, ?to, ?type, ?method).
+.decl _Field(?signature:symbol, ?declaringClass:symbol, ?simplename:symbol, ?type:symbol)
+.input _Field(IO="file", filename="Field.facts", delimiter="\t")
+Field_DeclaringType(?signature, ?declaringType) :-
+  _Field(?signature, ?declaringType, _, _).
+MethodInvocation_Base(?invocation, ?base) :-
+  VirtualMethodInvocation_Base(?invocation, ?base) ;
+  SpecialMethodInvocation_Base(?invocation, ?base).
+.decl _StaticMethodInvocation(?instruction:symbol, ?index:number, ?signature:symbol, ?method:symbol)
+.input _StaticMethodInvocation(IO="file", filename="StaticMethodInvocation.facts", delimiter="\t")
+Instruction_Method(?instruction, ?method),
+isStaticMethodInvocation_Insn(?instruction),
+MethodInvocation_Method(?instruction, ?signature) :-
+  _StaticMethodInvocation(?instruction, ?index, ?signature, ?method).
+.decl _SpecialMethodInvocation(?instruction:symbol, ?index:number, ?signature:symbol, ?base:symbol, ?method:symbol)
+.input _SpecialMethodInvocation(IO="file", filename="SpecialMethodInvocation.facts", delimiter="\t")
+Instruction_Method(?instruction, ?method),
+SpecialMethodInvocation_Base(?instruction, ?base),
+MethodInvocation_Method(?instruction, ?signature) :-
+  _SpecialMethodInvocation(?instruction, ?index, ?signature, ?base, ?method).
+.decl _VirtualMethodInvocation(?instruction:symbol, ?index:number, ?signature:symbol, ?base:symbol, ?method:symbol)
+.input _VirtualMethodInvocation(IO="file", filename="VirtualMethodInvocation.facts", delimiter="\t")
+Instruction_Method(?instruction, ?method),
+isVirtualMethodInvocation_Insn(?instruction),
+VirtualMethodInvocation_Base(?instruction, ?base),
+MethodInvocation_Method(?instruction, ?signature) :-
+  _VirtualMethodInvocation(?instruction, ?index, ?signature, ?base, ?method).
+.decl _Method(?method:symbol, ?simplename:symbol, ?descriptor:symbol, ?declaringType:symbol, ?returnType:symbol, ?jvmDescriptor:symbol, ?arity:number)
+.input _Method(IO="file", filename="Method.facts", delimiter="\t")
+Method_SimpleName(?method, ?simplename),
+Method_ParamTypes(?method, ?params),
+Method_DeclaringType(?method, ?declaringType),
+Method_ReturnType(?method, ?returnType) :-
+  _Method(?method, ?simplename, ?params, ?declaringType, ?returnType, ?jvmDescriptor, ?arity).
+Method_Descriptor(?method, ?descriptor) :-
+  Method_ReturnType(?method, ?returnType),
+  Method_ParamTypes(?method, ?params),
+  ?descriptor = cat(?returnType, cat("(", cat(?params, ")"))).
+.decl _StoreInstanceField(?instruction:symbol, ?index:number, ?from:symbol, ?base:symbol, ?signature:symbol, ?method:symbol)
+.input _StoreInstanceField(IO="file", filename="StoreInstanceField.facts", delimiter="\t")
+Instruction_Method(?instruction, ?method),
+FieldInstruction_Signature(?instruction, ?signature),
+StoreInstanceField_Base(?instruction, ?base),
+StoreInstanceField_From(?instruction, ?from) :-
+  _StoreInstanceField(?instruction, ?index, ?from, ?base, ?signature, ?method).
+.decl _LoadInstanceField(?instruction:symbol, ?index:number, ?to:symbol, ?base:symbol, ?signature:symbol, ?method:symbol)
+.input _LoadInstanceField(IO="file", filename="LoadInstanceField.facts", delimiter="\t")
+Instruction_Method(?instruction, ?method),
+FieldInstruction_Signature(?instruction, ?signature),
+LoadInstanceField_Base(?instruction, ?base),
+LoadInstanceField_To(?instruction, ?to) :-
+  _LoadInstanceField(?instruction, ?index, ?to, ?base, ?signature, ?method).
+.decl _StoreStaticField(?instruction:symbol, ?index:number, ?from:symbol, ?signature:symbol, ?method:symbol)
+.input _StoreStaticField(IO="file", filename="StoreStaticField.facts", delimiter="\t")
+Instruction_Method(?instruction, ?method),
+FieldInstruction_Signature(?instruction, ?signature),
+StoreStaticField_From(?instruction, ?from) :-
+  _StoreStaticField(?instruction, ?index, ?from, ?signature, ?method).
+.decl _LoadStaticField(?instruction:symbol, ?index:number, ?to:symbol, ?signature:symbol, ?method:symbol)
+.input _LoadStaticField(IO="file", filename="LoadStaticField.facts", delimiter="\t")
+Instruction_Method(?instruction, ?method),
+FieldInstruction_Signature(?instruction, ?signature),
+LoadStaticField_To(?instruction, ?to) :-
+  _LoadStaticField(?instruction, ?index, ?to, ?signature, ?method).
+.decl _StoreArrayIndex(?instruction:symbol, ?index:number, ?from:symbol, ?base:symbol, ?method:symbol)
+.input _StoreArrayIndex(IO="file", filename="StoreArrayIndex.facts", delimiter="\t")
+Instruction_Method(?instruction, ?method),
+StoreArrayIndex_Base(?instruction, ?base),
+StoreArrayIndex_From(?instruction, ?from) :-
+  _StoreArrayIndex(?instruction, ?index, ?from, ?base, ?method).
+.decl _LoadArrayIndex(?instruction:symbol, ?index:number, ?to:symbol, ?base:symbol, ?method:symbol)
+.input _LoadArrayIndex(IO="file", filename="LoadArrayIndex.facts", delimiter="\t")
+Instruction_Method(?instruction, ?method),
+LoadArrayIndex_Base(?instruction, ?base),
+LoadArrayIndex_To(?instruction, ?to) :-
+  _LoadArrayIndex(?instruction, ?index, ?to, ?base, ?method).
+.decl _Return(?instruction:symbol, ?index:number, ?var:symbol, ?method:symbol)
+.input _Return(IO="file", filename="Return.facts", delimiter="\t")
+Instruction_Method(?instruction, ?method),
+ReturnNonvoid_Var(?instruction, ?var) :-
+  _Return(?instruction, ?index, ?var, ?method).
+
+// fat schema population
+LoadInstanceField(?base, ?sig, ?to, ?inmethod) :-
+  Instruction_Method(?insn, ?inmethod),
+  LoadInstanceField_Base(?insn, ?base),
+  FieldInstruction_Signature(?insn, ?sig),
+  LoadInstanceField_To(?insn, ?to).
+StoreInstanceField(?from, ?base, ?sig, ?inmethod) :-
+  Instruction_Method(?insn, ?inmethod),
+  StoreInstanceField_From(?insn, ?from),
+  StoreInstanceField_Base(?insn, ?base),
+  FieldInstruction_Signature(?insn, ?sig).
+LoadStaticField(?sig, ?to, ?inmethod) :-
+  Instruction_Method(?insn, ?inmethod),
+  FieldInstruction_Signature(?insn, ?sig),
+  LoadStaticField_To(?insn, ?to).
+StoreStaticField(?from, ?sig, ?inmethod) :-
+  Instruction_Method(?insn, ?inmethod),
+  StoreStaticField_From(?insn, ?from),
+  FieldInstruction_Signature(?insn, ?sig).
+AssignCast(?type, ?from, ?to, ?inmethod) :-
+  Instruction_Method(?insn, ?inmethod),
+  AssignCast_From(?insn, ?from),
+  AssignInstruction_To(?insn, ?to),
+  AssignCast_Type(?insn, ?type).
+AssignLocal(?from, ?to, ?inmethod) :-
+  AssignInstruction_To(?insn, ?to),
+  Instruction_Method(?insn, ?inmethod),
+  AssignLocal_From(?insn, ?from).
+AssignHeapAllocation(?heap, ?to, ?inmethod) :-
+  Instruction_Method(?insn, ?inmethod),
+  AssignHeapAllocation_Heap(?insn, ?heap),
+  AssignInstruction_To(?insn, ?to).
+ReturnVar(?var, ?method) :-
+  Instruction_Method(?insn, ?method),
+  ReturnNonvoid_Var(?insn, ?var).
+StaticMethodInvocation(?invocation, ?signature, ?inmethod) :-
+  isStaticMethodInvocation_Insn(?invocation),
+  Instruction_Method(?invocation, ?inmethod),
+  MethodInvocation_Method(?invocation, ?signature).
+HeapAllocation_Type(?heap, ?type),
+MainMethodArgArray(?heap) :-
+  ?heap = "<<main method array>>",
+  ?type = "java.lang.String[]".
+HeapAllocation_Type(?heap, ?type),
+MainMethodArgArrayContent(?heap) :-
+  ?heap = "<<main method array content>>",
+  ?type = "java.lang.String".
+VirtualMethodInvocation_SimpleName(?invocation, ?simplename),
+VirtualMethodInvocation_Descriptor(?invocation, ?descriptor) :-
+  isVirtualMethodInvocation_Insn(?invocation),
+  MethodInvocation_Method(?invocation, ?signature),
+  Method_SimpleName(?signature, ?simplename),
+  Method_Descriptor(?signature, ?descriptor).
+
+// Basic (type-based) analysis
+.comp Basic {
+.decl MethodLookup(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:Type, ?method:Method)
+.decl MethodImplemented(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:Type, ?method:Method)
+.decl DirectSubclass(?a:Type, ?c:Type)
+.decl Subclass(?c:Type, ?a:Type)
+.decl Superclass(?c:Type, ?a:Type)
+.decl Superinterface(?k:Type, ?c:Type)
+.decl SubtypeOf(?subtype:Type, ?type:Type)
+.decl SupertypeOf(?supertype:Type, ?type:Type)
+.decl SubtypeOfDifferent(?subtype:Type, ?type:Type)
+.decl MainMethodDeclaration(?method:Method)
+MethodLookup(?simplename, ?descriptor, ?type, ?method) :-
+  MethodImplemented(?simplename, ?descriptor, ?type, ?method).
+MethodLookup(?simplename, ?descriptor, ?type, ?method) :-
+  (DirectSuperclass(?type, ?supertype) ;
+   DirectSuperinterface(?type, ?supertype)),
+  MethodLookup(?simplename, ?descriptor, ?supertype, ?method),
+  ! MethodImplemented(?simplename, ?descriptor, ?type, _).
+MethodImplemented(?simplename, ?descriptor, ?type, ?method) :-
+  Method_SimpleName(?method, ?simplename),
+  Method_Descriptor(?method, ?descriptor),
+  Method_DeclaringType(?method, ?type),
+  ! Method_Modifier("abstract", ?method).
+DirectSubclass(?a, ?c) :-
+  DirectSuperclass(?a, ?c).
+Subclass(?c, ?a) :-
+  DirectSubclass(?a, ?c).
+Subclass(?c, ?a) :-
+  Subclass(?b, ?a),
+  DirectSubclass(?b, ?c).
+Superclass(?c, ?a) :-
+  Subclass(?a, ?c).
+Superinterface(?k, ?c) :-
+  DirectSuperinterface(?c, ?k).
+Superinterface(?k, ?c) :-
+  DirectSuperinterface(?c, ?j),
+  Superinterface(?k, ?j).
+Superinterface(?k, ?c) :-
+  DirectSuperclass(?c, ?super),
+  Superinterface(?k, ?super).
+SupertypeOf(?s, ?t) :-
+  SubtypeOf(?t, ?s).
+SubtypeOf(?s, ?s) :-
+  isClassType(?s).
+SubtypeOf(?s, ?t) :-
+  Subclass(?t, ?s).
+SubtypeOf(?s, ?t) :-
+  isClassType(?s),
+  Superinterface(?t, ?s).
+SubtypeOf(?s, ?t) :-
+  isInterfaceType(?s),
+  isType(?t),
+  ?t = "java.lang.Object".
+SubtypeOf(?s, ?s) :-
+  isInterfaceType(?s).
+SubtypeOf(?s, ?t) :-
+  isInterfaceType(?s),
+  Superinterface(?t, ?s).
+SubtypeOf(?s, ?t) :-
+  isArrayType(?s),
+  isType(?t),
+  ?t = "java.lang.Object".
+SubtypeOf(?s, ?t) :-
+  ComponentType(?s, ?sc),
+  ComponentType(?t, ?tc),
+  isReferenceType(?sc),
+  isReferenceType(?tc),
+  SubtypeOf(?sc, ?tc).
+SubtypeOf(?s, ?t) :-
+  isArrayType(?s),
+  isInterfaceType(?t),
+  isType(?t),
+  ?t = "java.lang.Cloneable".
+SubtypeOf(?s, ?t) :-
+  isArrayType(?s),
+  isInterfaceType(?t),
+  isType(?t),
+  ?t = "java.io.Serializable".
+SubtypeOf(?t, ?t) :-
+  isType(?t).
+SubtypeOfDifferent(?s, ?t) :-
+  SubtypeOf(?s, ?t),
+  ?s != ?t.
+MainMethodDeclaration(?method) :-
+  MainClass(?type),
+  Method_DeclaringType(?method, ?type),
+  ?method != "<java.util.prefs.Base64: void main(java.lang.String[])>",
+  ?method != "<sun.java2d.loops.GraphicsPrimitiveMgr: void main(java.lang.String[])>",
+  ?method != "<sun.security.provider.PolicyParser: void main(java.lang.String[])>",
+  Method_SimpleName(?method, "main"),
+  Method_Descriptor(?method, "void(java.lang.String[])"),
+  Method_Modifier("public", ?method),
+  Method_Modifier("static", ?method).
+}
+.init basic = Basic
+
+.decl VarOfReferenceType(var:Var)
+VarOfReferenceType(var) :-
+  Var_Type(var, type),
+  isReferenceType(type).
+
+// DESIGN1: (+scalability, -precision) ignore all global deps when crossing method boundaries
+// DESIGN2: (+scalability, -precision) eliminate global dependencies from Instance/StaticFieldPointsTo (always null)
+// DESIGN3: (+scalability, -precision) no check for compatible global dependencies on a call
+// DESIGN4: (+scalability, -precision) no context-sensitive heap
+// DESIGN5: (+scalability, -precision) no global constraints
+// DESIGN6: (+scalability, -precision) identification of equivalence classes of independent arguments
+
+#define DESIGN1
+#define DESIGN2
+#define DESIGN3
+#define DESIGN4
+#define DESIGN5
+#define DESIGN6
+
+.decl VarDependsOnMethodArgument(var:Var, arg:Var)
+
+VarDependsOnMethodArgument(arg, arg) :-
+  FormalParam(_, _, arg),
+  VarOfReferenceType(arg).
+  
+VarDependsOnMethodArgument(arg, arg) :-
+  ThisVar(_, arg).
+
+VarDependsOnMethodArgument(to, arg) :-
+  VarDependsOnMethodArgument(from, arg),
+  (AssignLocal(from, to, _);
+   AssignCast(_, from, to, _)).
+
+VarDependsOnMethodArgument(to, arg) :-
+  VarDependsOnMethodArgument(base, arg),
+  LoadInstanceField(base, _, to, _).
+
+// Dependencies defined strictly on formal args of the function.
+// There are only two operations that combine values! Calls and stores!!!
+.decl InitDependentVars(arg1:Var, arg2:Var)
+
+InitDependentVars(arg1, arg2) :-
+  MethodInvocation_Method(caller, meth),
+  ActualParam(_, caller, var1),
+  (ActualParam(_, caller, var2);
+   VirtualMethodInvocation_Base(caller, var2);
+   SpecialMethodInvocation_Base(caller, var2)),
+  VarDependsOnMethodArgument(var1, arg1),
+  VarDependsOnMethodArgument(var2, arg2).
+  
+InitDependentVars(arg1, arg2) :-
+  StoreInstanceField(from, base, _, _),
+  VarDependsOnMethodArgument(from, arg1),
+  VarDependsOnMethodArgument(base, arg2).
+
+InitDependentVars(var1, var2) :-
+  InitDependentVars(var2, var1).
+
+#ifndef DESIGN6
+// Short-circuit version, to get a single equivalence class
+InitDependentVars(arg1, arg2) :-
+  FormalParam(_, method, arg1),
+  VarOfReferenceType(arg1),
+  ((FormalParam(_, method, arg2),
+    VarOfReferenceType(arg2));
+   ThisVar(method, arg2)).
+#endif
+
+.decl DependentVars(var1:Var, var2:Var)  
+DependentVars(arg, arg) :-
+  VarDependsOnMethodArgument(_, arg).
+
+DependentVars(var1, var2) :-
+  DependentVars(var1, var3),
+  InitDependentVars(var3, var2).
+
+// Unify receiver and args in a single numbering. Receiver is -1. 
+.decl IndexToActual(method:MethodInvocation, i:number, actual:Var)
+IndexToActual(caller, -1, var) :-
+  VirtualMethodInvocation_Base(caller, var);
+  SpecialMethodInvocation_Base(caller, var).
+IndexToActual(caller, i, var) :-
+  ActualParam(i, caller, var),
+  VarOfReferenceType(var).
+
+// Actual arguments are not uniquely identified by var name, sadly! A weekend wasted
+// so I could be reminded of this.
+.type IndexedArg = [ var:Var, i:number ]
+
+.decl DecomposeIndexedArg(caller:MethodInvocation, arg:IndexedArg, var:Var, i:number) 
+DecomposeIndexedArg(caller, [var, i], var, i) :-
+  IndexToActual(caller, i, var).  
+
+
+// Equivalence classes of formal arguments (including "this") for a single method.
+.decl VarsInSameArgEquivalenceClass(var1:Var, var2:Var)
+VarsInSameArgEquivalenceClass(var1, var2) :-
+  DependentVars(var1, var2).
+
+.decl LaterArgInSameMethod(arg:Var, argLater:Var)
+LaterArgInSameMethod(arg, argLater) :-
+  FormalParam(i, method, arg),
+  FormalParam(j, method, argLater),
+  j > i.
+LaterArgInSameMethod(arg, argLater) :-
+  ThisVar(method, arg),
+  FormalParam(_, method, argLater).
+
+.decl LaterArgInArgEquivalenceClass(arg:Var, argLater:Var)
+LaterArgInArgEquivalenceClass(arg, argLater) :-
+  LaterArgInSameMethod(arg, argLater),
+  VarsInSameArgEquivalenceClass(arg, argLater).
+
+.decl NotNextArgInArgEquivalenceClass(arg:Var, argLater:Var)
+NotNextArgInArgEquivalenceClass(arg, argLater) :-
+  LaterArgInArgEquivalenceClass(arg, argLater),
+  LaterArgInArgEquivalenceClass(arg, argOther),
+  LaterArgInArgEquivalenceClass(argOther, argLater).
+
+.decl NextArgInArgEquivalenceClass(arg:Var, argNext:Var)
+NextArgInArgEquivalenceClass(arg, argNext) :-
+  LaterArgInArgEquivalenceClass(arg, argNext),
+  !NotNextArgInArgEquivalenceClass(arg, argNext).
+
+.decl PrevArgInArgEquivalenceClass(arg:Var, argPrev:Var)
+PrevArgInArgEquivalenceClass(arg, argPrev) :-
+  NextArgInArgEquivalenceClass(argPrev, arg).
+
+.decl FirstArgInArgEquivalenceClass(arg:Var)
+FirstArgInArgEquivalenceClass(arg) :-
+  VarsInSameArgEquivalenceClass(arg, arg),
+  !NextArgInArgEquivalenceClass(_, arg).
+
+.decl LastArgInArgEquivalenceClass(arg:Var)
+LastArgInArgEquivalenceClass(arg) :-
+  VarsInSameArgEquivalenceClass(arg, arg),
+  !NextArgInArgEquivalenceClass(arg, _).
+
+.decl RepresentativeOfArgInArgEquivalenceClass(arg:Var, argRepr:Var)
+RepresentativeOfArgInArgEquivalenceClass(argRepr, argRepr) :-
+  FirstArgInArgEquivalenceClass(argRepr).
+
+RepresentativeOfArgInArgEquivalenceClass(arg, argRepr) :-
+  FirstArgInArgEquivalenceClass(argRepr),
+  LaterArgInArgEquivalenceClass(argRepr, arg).
+
+// Equivalence classes represented by their first arg (in receiver, arg0, arg1, ... order)
+.decl LaterArgEquivalenceClass(argRepr:Var, argReprLater:Var)
+LaterArgEquivalenceClass(argRepr, argReprLater) :-
+  LaterArgInSameMethod(argRepr, argReprLater),
+  FirstArgInArgEquivalenceClass(argRepr),
+  FirstArgInArgEquivalenceClass(argReprLater).
+
+.decl NotNextArgEquivalenceClass(argRepr:Var, argReprLater:Var)
+NotNextArgEquivalenceClass(argRepr, argReprLater) :-
+  LaterArgEquivalenceClass(argRepr, argReprLater),
+  LaterArgEquivalenceClass(argRepr, argReprOther),
+  LaterArgEquivalenceClass(argReprOther, argReprLater).
+
+.decl NextArgEquivalenceClass(argRepr:Var, argReprLater:Var)
+NextArgEquivalenceClass(argRepr, argReprNext) :-
+  LaterArgEquivalenceClass(argRepr, argReprNext),
+  !NotNextArgEquivalenceClass(argRepr, argReprNext).
+
+.decl FirstArgEquivalenceClass(argRepr:Var)
+FirstArgEquivalenceClass(argRepr) :-
+  FirstArgInArgEquivalenceClass(argRepr),
+  !NextArgEquivalenceClass(_, argRepr).
+
+.decl LastArgEquivalenceClass(argRepr:Var)
+LastArgEquivalenceClass(argRepr) :-
+  FirstArgInArgEquivalenceClass(argRepr),
+  !NextArgEquivalenceClass(argRepr, _).
+
+
+// OUTDATED, need updating
+
+// /// For diagnostics
+
+// .decl Problem1(caller:MethodInvocation, arg:IndexedArg, arg1:IndexedArg, arg2:IndexedArg)
+// Problem1(caller, arg, arg1, arg2) :-
+//   NextActualArgInArgEquivalenceClass(caller, arg, arg1),
+//   NextActualArgInArgEquivalenceClass(caller, arg, arg2),
+//   arg1 != arg2.
+// .output Problem1
+
+// .decl Problem2(caller:MethodInvocation, arg:IndexedArg, arg1:IndexedArg, arg2:IndexedArg)
+// Problem2(caller, arg, arg1, arg2) :-
+//   NextActualArgEquivalenceClass(caller, arg, arg1),
+//   NextActualArgEquivalenceClass(caller, arg, arg2),
+//   arg1 != arg2.
+// .output Problem2
+
+// .decl Problem3(caller:MethodInvocation)
+// Problem3(caller) :-
+//   RepresentativeOfActualArgInArgEquivalenceClass(caller, argOther, arg),
+//   RepresentativeOfActualArgInArgEquivalenceClass(caller, argOther, arg1),
+//   arg != arg1.
+
+// Problem3(caller) :-
+//   FirstActualArgInArgEquivalenceClass(caller, arg),
+//   RepresentativeOfActualArgInArgEquivalenceClass(caller, arg, arg1),
+//   arg != arg1.
+
+// Problem3(caller) :-
+//   FirstActualArgEquivalenceClass(caller, arg1),
+//   FirstActualArgEquivalenceClass(caller, arg2),
+//   arg1 != arg2.
+
+// Problem3(caller) :-
+//   LaterActualArgInArgEquivalenceClass(caller, arg, argLater),
+//   LaterActualArgInArgEquivalenceClass(caller, argLater, arg).
+  
+// Problem3(caller) :-
+//   LaterActualArgEquivalenceClass(caller, arg, argLater),
+//   LaterActualArgEquivalenceClass(caller, argLater, arg).
+  
+// Problem3(caller) :-
+//   NextActualArgInArgEquivalenceClass(caller, arg, arg1),
+//   NextActualArgInArgEquivalenceClass(caller, arg, arg2),
+//   arg1 != arg2.
+// .output Problem3
+
+
+//// For statistics
+
+// .decl LessThanDependentVars(varSmall:Var, varLarge:Var)
+// LessThanDependentVars(varSmall, varLarge) :-
+//   DependentVars(varSmall, varLarge),
+//   ord(varSmall) < ord(varLarge).
+
+// // This representative is not necessarily an argument of the call. Elsewhere we compute representatives per call.
+// .decl RepresentativeDependentVar(var:Var, varRep:Var)
+// RepresentativeDependentVar(var, varRep) :-
+//   DependentVars(var, varRep),
+//   !LessThanDependentVars(_, varRep).
+
+// .decl ArgEquivalenceClassesForInvocation(caller:MethodInvocation, varRep:Var)
+// ArgEquivalenceClassesForInvocation(caller, varRep) :-
+//   RepresentativeDependentVar(var, varRep),
+//   VarForInvocation(caller, var).
+
+// .decl CountArgEquivalenceClassesForInvocation(caller:MethodInvocation, num:number)
+// CountArgEquivalenceClassesForInvocation(caller, num) :-
+//   MethodInvocation_Method(caller, _),
+//   num = count: ArgEquivalenceClassesForInvocation(caller, _).
+
+// .decl CountVarsForInvocation(caller:MethodInvocation, num:number)
+// CountVarsForInvocation(caller, num) :-
+//   MethodInvocation_Method(caller, _),
+//   num = count: VarForInvocation(caller, _).
+
+// .decl VarsAndArgEquivalenceClassesForInvocation(caller:MethodInvocation, numVars:number, numClasses:number)
+// VarsAndArgEquivalenceClassesForInvocation(caller, numVars, numClasses) :-
+//   CountArgEquivalenceClassesForInvocation(caller, numClasses),
+//   CountVarsForInvocation(caller, numVars).
+  
+.output DependentVars
+.output RepresentativeOfArgInArgEquivalenceClass
+
+// .output RepresentativeDependentVar
+// .output VarsAndArgEquivalenceClassesForInvocation
+
+.output FirstArgInArgEquivalenceClass
+
+.output NextArgInArgEquivalenceClass
+.output NextArgEquivalenceClass
+.output LaterArgInArgEquivalenceClass
+.output VarsInSameArgEquivalenceClass
+.output FirstArgEquivalenceClass
+
+
+// Main (value-based) analysis
+.functor singleton_mapping(symbol,symbol,symbol):number
+.functor empty_mapping():number
+.functor combine_strict(number,number):number
+.functor combine_loose(number,number):number
+.functor mapcol_to_string(number):symbol
+.functor lookup(number,symbol):symbol
+
+// low-level lexical macros
+#define COMBINE_STRICT(e1, e2) temp##e1##e2, temp##e1##e2 = @combine_strict(e1, e2), temp##e1##e2 != 0
+#define COMBINE_STRICT3(e1, e2, e3) temp##e1##e2##e3, temp##e1##e2##e3 = @combine_strict(e3, @combine_strict(e1, e2)), \
+   temp##e1##e2##e3 != 0
+
+.type Dependencies = number
+
+.decl VarPointsTo(var:Var, heap:HeapAllocation, localDeps:Dependencies, globalDeps:Dependencies)
+.decl InstanceFieldPointsTo(baseObj:HeapAllocation, fld:Field, obj:HeapAllocation, globalDeps:Dependencies)
+.decl StaticFieldPointsTo(fld:Field, heap:HeapAllocation, globalDeps:Dependencies)
+
+.decl EmptyDependencies(dep: number)
+EmptyDependencies(dep) :-
+  dep = @empty_mapping().
+
+.decl Reachable(meth:Method)
+
+// TriviallyReachable: with empty context
+.decl TriviallyReachable(meth:Method)
+
+Reachable(meth) :-
+  CallGraphEdge(_, meth).
+
+Reachable(meth) :-
+  TriviallyReachable(meth).
+
+TriviallyReachable(method) :-
+  basic.MainMethodDeclaration(method).
+
+TriviallyReachable(clinit) :-
+  InitializedClass(class),
+  ClassInitializer(class, clinit).
+
+// Reachable(meth) :-
+//   MethodDependencies(meth, _, _).
+
+// .decl MethodDependencies(meth:Method, localDeps:Dependencies, globalDeps:Dependencies)
+// MethodDependencies(method, deps, deps) :-
+//   basic.MainMethodDeclaration(method),
+//   EmptyDependencies(deps).
+
+// // REVIEW: maybe global deps should be stronger
+// MethodDependencies(clinit, deps, deps) :-
+//   InitializedClass(class),
+//   ClassInitializer(class, clinit),
+//   EmptyDependencies(deps).
+  
+.decl TentativeCallGraphEdge(invocation:MethodInvocation, meth:Method)
+.decl CallGraphEdge(invocation:MethodInvocation, meth:Method)
+
+TentativeCallGraphEdge(invocation, toMethod) :-
+  VarPointsTo(base, heap, _, _),
+  VirtualMethodInvocation_Base(invocation, base),
+  HeapAllocation_Type(heap, heaptype),
+  VirtualMethodInvocation_SimpleName(invocation, simplename),
+  VirtualMethodInvocation_Descriptor(invocation, descriptor),
+  basic.MethodLookup(simplename, descriptor, heaptype, toMethod).
+
+TentativeCallGraphEdge(invocation, toMethod) :-
+  Reachable(inmethod),
+  Instruction_Method(invocation, inmethod),
+  SpecialMethodInvocation_Base(invocation, _),
+  MethodInvocation_Method(invocation, toMethod).
+
+TentativeCallGraphEdge(invocation, tomethod) :-
+  Reachable(inmethod),
+  StaticMethodInvocation(invocation, tomethod, inmethod).
+
+
+/*
+ * Formal and actual mappings, lift equivalence classes to actuals, per invocation
+ */
+ 
+.decl MapActualToFormal(caller:MethodInvocation, actual:IndexedArg, method:Method, formal:Var)
+MapActualToFormal(caller, arg, method, formal) :-
+  TentativeCallGraphEdge(caller, method),
+  DecomposeIndexedArg(caller, arg, _, -1),
+  ThisVar(method, formal).
+
+MapActualToFormal(caller, arg, method, formal) :-
+  TentativeCallGraphEdge(caller, method),
+  DecomposeIndexedArg(caller, arg, _, i),
+  FormalParam(i, method, formal).
+
+.decl NextActualArgInArgEquivalenceClass(caller:MethodInvocation, method:Method, arg:IndexedArg, argNext:IndexedArg)
+NextActualArgInArgEquivalenceClass(caller, method, arg, argNext) :-
+  MapActualToFormal(caller, arg, method, formal),
+  NextArgInArgEquivalenceClass(formal, formalNext),
+  MapActualToFormal(caller, argNext, method, formalNext).
+ .plan 1:(3,2,1)
+
+.decl FirstActualArgInArgEquivalenceClass(caller:MethodInvocation, method:Method, arg:IndexedArg)
+FirstActualArgInArgEquivalenceClass(caller, method, arg) :-
+  MapActualToFormal(caller, arg, method, formal),
+  FirstArgInArgEquivalenceClass(formal).
+
+.decl LastActualArgInArgEquivalenceClass(caller:MethodInvocation, method:Method, arg:IndexedArg)
+LastActualArgInArgEquivalenceClass(caller, method, arg) :-
+  MapActualToFormal(caller, arg, method, formal),
+  LastArgInArgEquivalenceClass(formal).
+
+.decl RepresentativeOfActualArgInArgEquivalenceClass(caller:MethodInvocation, method:Method, arg:IndexedArg, argRepr:IndexedArg)
+RepresentativeOfActualArgInArgEquivalenceClass(caller, method, arg, argRepr) :-
+  MapActualToFormal(caller, arg, method, formal),
+  RepresentativeOfArgInArgEquivalenceClass(formal, formalRepr),
+  MapActualToFormal(caller, argRepr, method, formalRepr).
+ .plan 1:(3,2,1)
+
+.decl NextActualArgEquivalenceClass(caller:MethodInvocation, method:Method, argRepr:IndexedArg, argReprLater:IndexedArg)
+NextActualArgEquivalenceClass(caller, method, argRepr, argReprNext) :-
+  MapActualToFormal(caller, argRepr, method, formalRepr),
+  NextArgEquivalenceClass(formalRepr, formalReprNext),
+  MapActualToFormal(caller, argReprNext, method, formalReprNext).
+ .plan 1:(3,2,1)
+
+.decl LaterActualArgEquivalenceClass(caller:MethodInvocation, method:Method, argRepr:IndexedArg, argReprLater:IndexedArg)
+LaterActualArgEquivalenceClass(caller, method , argRepr, argReprLater) :-
+  MapActualToFormal(caller, argRepr, method, formalRepr),
+  LaterArgEquivalenceClass(formalRepr, formalReprLater),
+  MapActualToFormal(caller, argReprLater, method, formalReprLater).
+ .plan 1:(3,2,1)
+
+.decl FirstActualArgEquivalenceClass(caller:MethodInvocation, method:Method, argRepr:IndexedArg)
+FirstActualArgEquivalenceClass(caller, method, argRepr) :-
+  MapActualToFormal(caller, argRepr, method, formalRepr),
+  FirstArgEquivalenceClass(formalRepr).
+
+.decl LastActualArgEquivalenceClass(caller:MethodInvocation, method:Method, argRepr:IndexedArg)
+LastActualArgEquivalenceClass(caller, method, argRepr) :-
+  MapActualToFormal(caller, argRepr, method, formalRepr),
+  LastArgEquivalenceClass(formalRepr).
+
+
+// Most of the complexity has to do with calls. Dependencies exist between variables in the same
+// "dependence" equivalence class. Arguments in different equivalence classes are uncorrelated.
+.decl DependenciesForArgEquivalenceClassUpToArg(caller:MethodInvocation, tomethod:Method, arg:IndexedArg,
+   callerLDeps:Dependencies, calleeLDeps:Dependencies, globalDeps:Dependencies)
+DependenciesForArgEquivalenceClassUpToArg(caller, method, argRepr, callerLDeps, calleeLDeps, globalDeps) :-
+  TentativeCallGraphEdge(caller, method),
+  FirstActualArgInArgEquivalenceClass(caller, method, argRepr),
+  DecomposeIndexedArg(caller, argRepr, varRepr, _),
+  VarPointsTo(varRepr, obj, callerLDeps, globalDeps),
+  MapActualToFormal(caller, argRepr, method, formal),
+  calleeLDeps = @singleton_mapping(formal, obj, obj).  // localDeps get reset at a call
+ .plan 1:(2,1,3,4,5), 2:(4,3,2,1,5), 3:(5,2,1,3,4)
+
+.decl AuxDependenciesUpToArgWithNext(caller:MethodInvocation, tomethod:Method, argNext:IndexedArg,
+   callerLDeps:Dependencies, calleeLDeps:Dependencies, globalDeps:Dependencies)
+AuxDependenciesUpToArgWithNext(caller, method, argNext, callerLDeps, calleeLDeps, globalDeps) :-
+  DependenciesForArgEquivalenceClassUpToArg(caller, method, arg, callerLDeps, calleeLDeps, globalDeps),
+  NextActualArgInArgEquivalenceClass(caller, method, arg, argNext).
+ .plan 1:(2,1)
+
+.decl AuxPointsToOfActualWithFormal(caller:MethodInvocation, method:Method, arg:IndexedArg, obj:HeapAllocation,
+   deltaCallerLDeps:Dependencies, deltaGlobalDeps:Dependencies, formal:Var)
+AuxPointsToOfActualWithFormal(caller, method, arg, obj, deltaCallerLDeps, deltaGlobalDeps, formal) :-
+  MapActualToFormal(caller, arg, method, formal),
+  DecomposeIndexedArg(caller, arg, varNext, _),
+  VarPointsTo(varNext, obj, deltaCallerLDeps, deltaGlobalDeps).
+ .plan 1:(3,2,1)
+
+// LocalDependenciesCheckRequest(preCallerLDeps, deltaCallerLDeps),
+// GlobalDependenciesCheckRequest(preGlobalDeps, deltaGlobalDeps) :-
+//   AuxDependenciesUpToArgWithNext(caller, method, argNext, preCallerLDeps, _, preGlobalDeps),
+//   AuxPointsToOfActualWithFormal(caller, method, argNext, _, deltaCallerLDeps, deltaGlobalDeps, _).
+//  .plan 1:(2,1)
+
+DependenciesForArgEquivalenceClassUpToArg(caller, method, argNext, callerLDeps, calleeLDeps, globalDeps) :-
+  AuxDependenciesUpToArgWithNext(caller, method, argNext, preCallerLDeps, preCalleeLDeps, preGlobalDeps),
+  TriviallyCompatibleDependencies(preCallerLDeps, deltaCallerLDeps, callerLDeps),
+  AuxPointsToOfActualWithFormal(caller, method, argNext, obj, deltaCallerLDeps, deltaGlobalDeps, formal),
+  addOnDeps = @singleton_mapping(formal, obj, obj),
+  calleeLDeps = @combine_loose(preCalleeLDeps, addOnDeps),  // cannot conflict
+#ifndef DESIGN3  
+  globalDeps = COMBINE_STRICT(preGlobalDeps, deltaGlobalDeps).
+#else
+  globalDeps = @empty_mapping(), preGlobalDeps = preGlobalDeps, deltaGlobalDeps = deltaGlobalDeps.
+#endif
+ .plan 1:(2,1,3), 2:(3,2,1)
+
+// DependenciesForArgEquivalenceClassUpToArg(caller, method, argNext, callerLDeps, calleeLDeps, globalDeps) :-
+//   AuxDependenciesUpToArgWithNext(caller, method, argNext, preCallerLDeps, preCalleeLDeps, preGlobalDeps),
+//   DecomposeIndexedArg(caller, argNext, varNext, _),
+//   VarPointsTo(varNext, obj, deltaCallerLDeps, deltaGlobalDeps), 
+//   callerLDeps = COMBINE_STRICT(preCallerLDeps, deltaCallerLDeps),
+//   globalDeps = COMBINE_STRICT(preGlobalDeps, deltaGlobalDeps),
+//   MapActualToFormal(caller, argNext, method, formal),
+//   addOnDeps = @singleton_mapping(formal, obj, obj),
+//   calleeLDeps = @combine_loose(preCalleeLDeps, addOnDeps).  // cannot conflict
+//  .plan 1:(3,2,1,4), 2:(4,1,2,3)
+
+
+// Call them "tentative" just as a warning that the call-graph edge may not be realized in the end,
+// since some other arg equivalence class may not get values.
+.decl TentativeDependenciesForArgEquivalenceClass(caller:MethodInvocation, tomethod:Method, argRepr:IndexedArg,
+   callerLDeps:Dependencies, calleeLDeps:Dependencies, globalDeps:Dependencies)
+TentativeDependenciesForArgEquivalenceClass(caller, method, argRepr, callerLDeps, calleeLDeps, globalDeps) :-
+#ifndef DESIGN1
+  DependenciesForArgEquivalenceClassUpToArg(caller, method, arg, callerLDeps, calleeLDeps, globalDeps),
+#else
+  DependenciesForArgEquivalenceClassUpToArg(caller, method, arg, callerLDeps, calleeLDeps, _),
+  globalDeps = @empty_mapping(),
+#endif
+  RepresentativeOfActualArgInArgEquivalenceClass(caller, method, arg, argRepr),
+  LastActualArgInArgEquivalenceClass(caller, method, arg).
+ .plan 1:(2,3,1), 2:(3,1,2)
+
+// Dependencies should never be compared between equivalence classes. However we choose to finalize a call-graph
+// edge only when dependencies exist for all arguments.
+.decl DependenciesExistUpToArgEquivalenceClass(caller:MethodInvocation, tomethod:Method, argRepr:IndexedArg)
+
+DependenciesExistUpToArgEquivalenceClass(caller, tomethod, argRepr) :-
+  TentativeDependenciesForArgEquivalenceClass(caller, tomethod, argRepr, _, _, _),
+  FirstActualArgEquivalenceClass(caller, tomethod, argRepr).
+ .plan 1:(2,1)
+ 
+DependenciesExistUpToArgEquivalenceClass(caller, tomethod, argRepr) :-
+  DependenciesExistUpToArgEquivalenceClass(caller, tomethod, argPrev),
+  NextActualArgEquivalenceClass(caller, tomethod, argPrev, argRepr),
+  TentativeDependenciesForArgEquivalenceClass(caller, tomethod, argRepr, _, _, _).
+ .plan 1:(2,1,3), 2:(3,2,1)
+
+.decl DependenciesForAllArgEquivalenceClasses(caller:MethodInvocation, tomethod:Method)
+DependenciesForAllArgEquivalenceClasses(caller, tomethod) :-
+  DependenciesExistUpToArgEquivalenceClass(caller, tomethod, argReprLast),
+  LastActualArgEquivalenceClass(caller, tomethod, argReprLast).
+ .plan 1:(2,1)
+
+// One way to satisfy "for all" is if no reference args (or receiver) exist, i.e., not a single
+// arg equivalence class is formed.
+DependenciesForAllArgEquivalenceClasses(caller, tomethod) :-
+  TentativeCallGraphEdge(caller, tomethod),
+  NoReferencesPassedToCall(caller).
+
+// The call is real!
+CallGraphEdge(caller, method) :-
+  TentativeCallGraphEdge(caller, method),
+  DependenciesForAllArgEquivalenceClasses(caller, method).
+
+.decl DependenciesForArgEquivalenceClass(caller:MethodInvocation, tomethod:Method, argRepr:IndexedArg,
+   callerLDeps:Dependencies, calleeLDeps:Dependencies, globalDeps:Dependencies)
+DependenciesForArgEquivalenceClass(caller, method, argRepr, callerLDeps, calleeLDeps, globalDeps) :-
+  CallGraphEdge(caller, method),
+  TentativeDependenciesForArgEquivalenceClass(caller, method, argRepr, callerLDeps, calleeLDeps, globalDeps).
+ .plan 1:(2,1)
+
+// Here's the cool trick: we collected all consistent dependency mappings in tuples,
+// right? But we never said that the formals or "this" of a callee have these
+// values. Now we let them have whatever values they want, as long as they
+// are consistent with these deps! I.e., they get the right values by selecting
+// from a larger set.
+
+// .decl AuxPointsToRelationshipToTest(caller:MethodInvocation, method:Method, argRepr:IndexedArg,
+//   formal:Var, obj:HeapAllocation)
+// AuxPointsToRelationshipToTest(caller, method, argRepr, formal, obj) :-
+//   VarPointsTo(actual, obj, _, _),
+//   DecomposeIndexedArg(caller, arg, actual, _),
+//   RepresentativeOfActualArgInArgEquivalenceClass(caller, method, arg, argRepr),
+//   MapActualToFormal(caller, arg, method, formal).
+//  .plan 1:(4,2,1,3)
+
+// VarPointsTo(formal, obj, calleeLDeps, globalDeps) :-
+//   DependenciesForArgEquivalenceClass(caller, method, argRepr, _, calleeLDeps, globalDeps),
+//   AuxPointsToRelationshipToTest(caller, method, argRepr, formal, obj),
+//   deltaLDeps = @singleton_mapping(formal, obj, obj),
+//   dummy = COMBINE_STRICT(calleeLDeps, deltaLDeps), dummy = dummy.
+//  .plan 1:(2,1)
+
+.decl AuxPointsToRelationshipToTest(caller:MethodInvocation, method:Method, argRepr:IndexedArg, formal:Var)
+AuxPointsToRelationshipToTest(caller, method, argRepr, formal) :-
+  MapActualToFormal(caller, arg, method, formal),
+  RepresentativeOfActualArgInArgEquivalenceClass(caller, method, arg, argRepr).
+
+VarPointsTo(formal, obj, calleeLDeps, globalDeps) :-
+  DependenciesForArgEquivalenceClass(caller, method, argRepr, _, calleeLDeps, globalDeps),
+  AuxPointsToRelationshipToTest(caller, method, argRepr, formal),
+  obj = @lookup(calleeLDeps, formal).  // will always succeed
+ .plan 1:(2,1)
+
+
+.decl FormalReturnVPT(method:Method, obj:HeapAllocation, lDeps:Dependencies, gDeps:Dependencies)
+FormalReturnVPT(method, obj, lDeps, gDeps) :-
+  VarPointsTo(var, obj, lDeps, gDeps),
+  ReturnVar(var, method).
+
+ValidReturnValue(caller, method, callerLDeps, globalDeps, obj) :-
+  FormalReturnVPT(method, obj, rLDeps, rGDeps),
+  TriviallyCompatibleDependencies(rLDeps, calleeLDeps, _),
+  DependenciesForArgEquivalenceClass(caller, method, _, callerLDeps, calleeLDeps, preGlobalDeps),
+#ifndef DESIGN1
+  globalDeps = COMBINE_STRICT(preGlobalDeps, rGDeps).
+#else
+  globalDeps = @empty_mapping(), preGlobalDeps = preGlobalDeps, rGDeps = rGDeps.
+#endif
+ .plan 1:(2,1,3), 2:(3,2,1)
+
+
+// // For the return value of a call, we need to check that it is compatible with
+// // some dependency from *each* equivalence class! Only then we accept it as a valid
+// // return for the current call-site.
+
+// .decl ReturnCompatibleUpToEquivalenceClass(caller:MethodInvocation, method:Method, argRepr:IndexedArg,
+//    callerLDeps:Dependencies, globalDeps:Dependencies, obj:HeapAllocation, calleeLDeps:Dependencies)
+
+// ReturnCompatibleUpToEquivalenceClass(caller, method, argRepr, callerLDeps, globalDeps, obj, rLDeps) :-
+//   DependenciesForArgEquivalenceClass(caller, method, argRepr, callerLDeps, calleeLDeps, preGlobalDeps),
+//   FirstActualArgEquivalenceClass(caller, method, argRepr),
+//   FormalReturnVPT(method, obj, rLDeps, rGDeps),
+//   dummy = COMBINE_STRICT(calleeLDeps, rLDeps), dummy = dummy,
+// #ifndef DESIGN1
+//   globalDeps = COMBINE_STRICT(preGlobalDeps, rGDeps).
+//  .plan 1:(2,1,3), 2:(3,1,2)
+// #else
+//   EmptyDependencies(globalDeps), preGlobalDeps = preGlobalDeps, rGDeps = rGDeps.
+//  .plan 1:(2,1,3,4), 2:(3,1,2,4)
+// #endif
+
+// ReturnCompatibleUpToEquivalenceClass(caller, method, argRepr, callerLDeps, globalDeps, obj, calleeLDeps) :-
+//   ReturnCompatibleUpToEquivalenceClass(caller, method, preArgRepr, callerLDeps, preGlobalDeps, obj, calleeLDeps),
+//   NextActualArgEquivalenceClass(caller, method, preArgRepr, argRepr),
+//   DependenciesForArgEquivalenceClass(caller, method, argRepr, _, deltaCalleeLDeps, deltaGlobalDeps),
+//   dummy = COMBINE_STRICT(calleeLDeps, deltaCalleeLDeps), dummy = dummy,
+//   // REVIEW: to avoid explosion, we don't combine caller local dependencies between different equivalence
+//   // classes. These would combine successfully, due to independence. The result, however, is that we keep
+//   // the caller dependencies of the very first arg equivalence class only. With the current logic
+//   // for equivalence classes, this is fully general: there can be at most one when there is a return value.
+// #ifndef DESIGN1
+//   globalDeps = COMBINE_STRICT(preGlobalDeps, deltaGlobalDeps).
+//  .plan 1:(2,1,3), 2:(3,2,1)
+// #else
+//   EmptyDependencies(globalDeps), preGlobalDeps = preGlobalDeps, deltaGlobalDeps = deltaGlobalDeps.
+//  .plan 1:(2,1,3,4), 2:(3,2,1,4)
+// #endif
+
+// ValidReturnValue(caller, method, callerLDeps, globalDeps, obj) :-
+//   ReturnCompatibleUpToEquivalenceClass(caller, method, argRepr, callerLDeps, globalDeps, obj, _),
+//   LastActualArgEquivalenceClass(caller, method, argRepr).
+//  .plan 1:(2,1)
+
+
+// Also cover the case where there were no arguments, and, hence, no dependencies
+.decl MethodHasReferenceParameters(method:Method)
+MethodHasReferenceParameters(method) :-
+  ThisVar(method, _);
+  (FormalParam(_, method, arg),
+   VarOfReferenceType(arg)).
+
+.decl NoReferencesPassedToCall(caller:MethodInvocation)
+NoReferencesPassedToCall(caller) :-
+  MethodInvocation_Method(caller, tomethod),
+  !MethodHasReferenceParameters(tomethod).
+
+.decl ValidReturnValue(caller:MethodInvocation, method:Method, 
+   callerLDeps:Dependencies, globalDeps:Dependencies, obj:HeapAllocation)
+ValidReturnValue(caller, method, callerLDeps, globalDeps, obj) :-
+  CallGraphEdge(caller, method),
+  NoReferencesPassedToCall(caller),
+  FormalReturnVPT(method, obj, _, globalDeps),
+  EmptyDependencies(callerLDeps).
+ .plan 1:(3,1,2,4)
+
+VarPointsTo(local, obj, callerLDeps, globalDeps) :-
+  ValidReturnValue(caller, _, callerLDeps, globalDeps, obj),
+  AssignReturnValue(caller, local).
+  
+
+/*
+ * Optimize composability of dependencies
+ */
+ 
+// For analyses where all dependencies are cartesian products of arguments, the optimized
+// version of "combine_strict" is just equality, independence, or combination with empty.
+.decl TriviallyCompatibleDependencies(deps1:Dependencies, deps2:Dependencies, resultDeps:Dependencies)
+TriviallyCompatibleDependencies(lDeps, lDeps, lDeps) :-
+  VarPointsTo(_, _, lDeps, _);
+  EmptyDependencies(lDeps).
+
+TriviallyCompatibleDependencies(lDeps, otherDeps, lDeps) :-
+  VarPointsTo(_, _, lDeps, _),
+  EmptyDependencies(otherDeps).
+
+TriviallyCompatibleDependencies(otherDeps, lDeps, resDeps) :-
+  TriviallyCompatibleDependencies(lDeps, otherDeps, resDeps).
+
+.decl AuxLocalDependenciesForArgEquivalenceClass(caller:MethodInvocation, method:Method, argRepr:IndexedArg,
+   calleeLDeps:Dependencies)
+AuxLocalDependenciesForArgEquivalenceClass(caller, method, argRepr, calleeLDeps) :-
+  TentativeDependenciesForArgEquivalenceClass(caller, method, argRepr, _, calleeLDeps, _).
+
+// It's necessary to state that (asserted to be) independent dependencies are combinable,
+// otherwise the equivalence classes of args impact soundness, not just precision.
+// We arbitrarily pick one of the dependencies to act as combination. This impacts precision,
+// (and scalability) but not soundness/correctness.
+TriviallyCompatibleDependencies(calleeLDeps1, calleeLDeps2, calleeLDeps1) :-
+  AuxLocalDependenciesForArgEquivalenceClass(caller, method, argRepr1, calleeLDeps1),
+  LaterActualArgEquivalenceClass(caller, method, argRepr1, argRepr2),
+  AuxLocalDependenciesForArgEquivalenceClass(caller, method, argRepr2, calleeLDeps2).
+ .plan 1:(2,1,3), 2:(3,2,1)
+
+
+/* 
+ * intra-procedural rules
+ */
+
+.decl Object_Allocation(obj:symbol, heap:HeapAllocation)
+
+#ifndef DESIGN4
+// // Enable same context sensitivity for heap. Infinite loop! The dependencies
+// // contain full object ids in them.
+// VarPointsTo(var, obj, calleeLDeps, emptyDeps) :-
+//   FirstActualArgEquivalenceClass(caller, inmethod, argRepr),
+//   DependenciesForArgEquivalenceClass(caller, inmethod, argRepr, _, calleeLDeps, _),
+//   AssignHeapAllocation(heap, var, inmethod),
+//   obj = cat(to_string(ord(calleeLDeps)), heap),
+//   EmptyDependencies(emptyDeps).
+
+// object sensitivity for heap
+Object_Allocation(obj, heap),
+VarPointsTo(var, obj, localDeps, globalDeps) :-
+  VarPointsTo(formal, receiverObj, localDeps, globalDeps),
+  FirstArgEquivalenceClass(formal),
+  Var_DeclaringMethod(formal, inmethod),
+  AssignHeapAllocation(heap, var, inmethod),
+  Object_Allocation(receiverObj, receiverHeap), // to only keep the allocation site, not the full object identity
+  obj = cat(cat(receiverHeap, "::"), heap).
+ .plan 1:(5,1,2,3,4)
+  
+Object_Allocation(heap, heap),
+VarPointsTo(var, heap, emptyDeps, emptyDeps) :-
+  Reachable(inmethod),
+  !MethodHasReferenceParameters(inmethod),
+  AssignHeapAllocation(heap, var, inmethod),
+  EmptyDependencies(emptyDeps).
+
+Object_Allocation(heap, heap),
+VarPointsTo(var, heap, emptyDeps, emptyDeps) :-
+  TriviallyReachable(inmethod),
+  AssignHeapAllocation(heap, var, inmethod),
+  EmptyDependencies(emptyDeps).
+#else 
+Object_Allocation(heap, heap),
+VarPointsTo(var, heap, emptyDeps, emptyDeps) :-
+  Reachable(inmethod),
+  AssignHeapAllocation(heap, var, inmethod),
+  EmptyDependencies(emptyDeps).
+#endif
+
+//// Not compatible with current setup!
+// VarPointsTo(var, heap, localDeps, emptyDeps) :-
+//   AssignHeapAllocation(heap, var, inmethod),
+//   Reachable(inmethod),
+//   EmptyDependencies(emptyDeps),
+//   localDeps = @singleton_mapping(var, heap, heap).  // introduce a new mapping on allocation!
+
+// VarPointsTo(to, obj, localDeps, globalDeps) :-
+//   VarPointsTo(from, obj, preLocalDeps, globalDeps),
+//   AssignLocal(from, to, _),
+//   addOnDeps = @singleton_mapping(from, obj, obj),
+//   localDeps = COMBINE_STRICT(preLocalDeps, addOnDeps).
+
+// VarPointsTo(to, obj, localDeps, globalDeps) :-
+//   VarPointsTo(from, obj, preLocalDeps, globalDeps),
+//   AssignCast(type, from, to, _),
+//   basic.SupertypeOf(type, heaptype),
+//   HeapAllocation_Type(obj, heaptype),
+//   addOnDeps = @singleton_mapping(from, obj, obj),
+//   localDeps = COMBINE_STRICT(preLocalDeps, addOnDeps).
+
+// No need to introduce mapping when the value remains unchanged!
+VarPointsTo(to, obj, localDeps, globalDeps) :-
+  VarPointsTo(from, obj, localDeps, globalDeps),
+  AssignLocal(from, to, _).
+  
+VarPointsTo(to, obj, localDeps, globalDeps) :-
+  VarPointsTo(from, obj, localDeps, globalDeps),
+  AssignCast(type, from, to, _),
+  basic.SupertypeOf(type, heaptype),
+  HeapAllocation_Type(obj, heaptype).
+
+.decl AuxStoredObjectIntoField(heap:HeapAllocation, fld:Field, base:Var, fLDeps:Dependencies, fGDeps:Dependencies)
+AuxStoredObjectIntoField(heap, fld, base, fLDeps, fGDeps) :-
+  VarPointsTo(from, heap, fLDeps, fGDeps),
+  StoreInstanceField(from, base, fld, _).
+
+InstanceFieldPointsTo(baseheap, fld, heap, globalDeps) :-
+  AuxStoredObjectIntoField(heap, fld, base, fLDeps, fGDeps),
+  TriviallyCompatibleDependencies(fLDeps, bLDeps, _),
+  VarPointsTo(base, baseheap, bLDeps, bGDeps),
+//  dummy1 = COMBINE_STRICT(fLDeps, bLDeps), dummy1 = dummy1,
+#ifndef DESIGN2
+  globalDeps = COMBINE_STRICT(fGDeps, bGDeps).
+#else
+  dummy2 = COMBINE_STRICT(fGDeps, bGDeps), dummy2 = dummy2,
+  globalDeps = @empty_mapping().
+#endif
+ .plan 1:(2,1,3), 2:(3,2,1)
+/// Basically disable all global dependencies for InstanceFieldPointsTo
+
+StaticFieldPointsTo(fld, heap, globalDeps) :-
+  VarPointsTo(from, heap, _, fGDeps),
+  StoreStaticField(from, fld, _),
+#ifndef DESIGN2
+  globalDeps = fGDeps.
+#else
+  EmptyDependencies(globalDeps), fGDeps = fGDeps.
+#endif
+
+.decl AuxLoadPointsTo(baseheap:HeapAllocation, fld:Field, to:Var, apText:symbol, lDeps:Dependencies, gDeps:Dependencies) 
+AuxLoadPointsTo(baseheap, fld, to, apText, localDeps, gDeps) :-
+  VarPointsTo(base, baseheap, localDeps, gDeps),
+  LoadInstanceField(base, fld, to, _),
+  apText = cat(baseheap, cat("___.___", fld)).
+
+VarPointsTo(to, heap, localDeps, globalDeps) :-
+  AuxLoadPointsTo(baseheap, fld, to, apText, localDeps, bGDeps),
+  InstanceFieldPointsTo(baseheap, fld, heap, hGDeps),
+#ifndef DESIGN5
+  newGlobalDeps = @singleton_mapping(apText, heap, heap),
+#else  // DESIGN5
+  newGlobalDeps = @empty_mapping(), apText = apText,
+#endif
+//  oldGlobalDeps = COMBINE_STRICT(bGDeps, hGDeps),  /// leads to intractability, due to sequences of any length
+//  globalDeps = @combine_loose(newGlobalDeps, oldGlobalDeps).
+  globalDeps = newGlobalDeps,  // keeping one element only
+  dummy = COMBINE_STRICT(bGDeps, hGDeps), dummy = dummy.
+ .plan 1:(2,1)
+
+VarPointsTo(to, heap, emptyDeps, globalDeps) :-
+  StaticFieldPointsTo(fld, heap, hGDeps),
+  LoadStaticField(fld, to, inmethod),
+  Reachable(inmethod), 
+#ifndef DESIGN5
+  newGlobalDeps = @singleton_mapping(fld, heap, heap),
+#else  // DESIGN5
+  newGlobalDeps = @empty_mapping(),
+#endif  
+//  globalDeps = @combine_loose(newGlobalDeps, hGDeps),
+  globalDeps = newGlobalDeps, hGDeps = hGDeps,
+  EmptyDependencies(emptyDeps).
+ .plan 1:(3,2,1,4)
+
+
+.decl FieldsOfSameClass(field1:Field, field2:Field)
+FieldsOfSameClass(field1, field2) :-
+  Field_DeclaringType(field1, type1),
+  basic.SupertypeOf(type1, type2),
+  Field_DeclaringType(field2, type2),
+  field1 != field2.
+
+.decl OneOfMultipleRelatedLoads(to:Var)
+OneOfMultipleRelatedLoads(to) :-
+  LoadInstanceField(base, fld, to, method),
+  LoadInstanceField(base, fld2, to2, method),
+  FieldsOfSameClass(fld, fld2),
+  to != to2.
+  
+
+
+// class initialization
+.decl ClassInitializer(type:Type, method:Method)
+.decl InitializedClass(classOrInterface:Type)
+ClassInitializer(type, method) :-
+  basic.MethodImplemented("<clinit>", "void()", type, method).
+InitializedClass(superclass) :-
+  InitializedClass(class),
+  DirectSuperclass(class, superclass).
+InitializedClass(superinterface) :-
+  InitializedClass(classOrInterface),
+  DirectSuperinterface(classOrInterface, superinterface).
+InitializedClass(class) :-
+  basic.MainMethodDeclaration(method),
+  Method_DeclaringType(method, class).
+InitializedClass(class) :-
+  Reachable(inmethod),
+  AssignHeapAllocation(heap, _, inmethod),
+  HeapAllocation_Type(heap, class).
+InitializedClass(class) :-
+  Reachable(inmethod),
+  Instruction_Method(invocation, inmethod),
+  isStaticMethodInvocation_Insn(invocation),
+  MethodInvocation_Method(invocation, signature),
+  Method_DeclaringType(signature, class).
+InitializedClass(classOrInterface) :-
+  Reachable(inmethod),
+  StoreStaticField(_, signature, inmethod),
+  Field_DeclaringType(signature, classOrInterface).
+InitializedClass(classOrInterface) :-
+  Reachable(inmethod),
+  LoadStaticField(signature, _, inmethod),
+  Field_DeclaringType(signature, classOrInterface).
+
+
+// /*
+//  *  Optimization predicates. Mostly request-response patterns.
+//  */
+ 
+// // Last-level optimization. Just a Datalog cache for the C++ results.
+// .decl LocalDependenciesCheckRequest(deps1: Dependencies, deps2: Dependencies)
+// .decl __LocalDependenciesCheckResponse(deps1: Dependencies, deps2: Dependencies, resDeps: Dependencies)
+// .decl ValidLocalDependenciesCheckResponse(deps1: Dependencies, deps2: Dependencies, resDeps: Dependencies)
+// .decl IsValidLocalDependenciesCheckResponse(deps1: Dependencies, deps2: Dependencies)
+// .decl GlobalDependenciesCheckRequest(deps1: Dependencies, deps2: Dependencies)
+// .decl __GlobalDependenciesCheckResponse(deps1: Dependencies, deps2: Dependencies, resDeps: Dependencies)
+// .decl ValidGlobalDependenciesCheckResponse(deps1: Dependencies, deps2: Dependencies, resDeps: Dependencies)
+
+// __LocalDependenciesCheckResponse(deps1, deps2, resDeps) :-
+//   LocalDependenciesCheckRequest(deps1, deps2),
+//   resDeps = @combine_strict(deps1, deps2).
+
+// ValidLocalDependenciesCheckResponse(deps1, deps2, resDeps) :-
+//   __LocalDependenciesCheckResponse(deps1, deps2, resDeps),
+//   resDeps != 0.
+
+// IsValidLocalDependenciesCheckResponse(deps1, deps2) :-
+//   ValidLocalDependenciesCheckResponse(deps1, deps2, _).
+
+// __GlobalDependenciesCheckResponse(deps1, deps2, resDeps) :-
+//   GlobalDependenciesCheckRequest(deps1, deps2),
+//   resDeps = @combine_strict(deps1, deps2).
+
+// ValidGlobalDependenciesCheckResponse(deps1, deps2, resDeps) :-
+//   __GlobalDependenciesCheckResponse(deps1, deps2, resDeps),
+//   resDeps != 0.
+
+
+/*
+ * output
+ */
+.decl TextVarPointsTo(var:Var, heap:HeapAllocation, textLocalDeps:symbol, textGlobalDeps:symbol)
+TextVarPointsTo(var, heap, lDepsOut, gDepsOut) :-
+  VarPointsTo(var, heap, lDeps, gDeps),
+  lDepsOut = @mapcol_to_string(lDeps),
+  gDepsOut = @mapcol_to_string(gDeps).
+
+.decl TextInstanceFieldPointsTo(baseObj:HeapAllocation, fld:Field, obj:HeapAllocation, textGlobalDeps:symbol)
+TextInstanceFieldPointsTo(baseObj, fld, obj, textGlobalDeps) :-
+  InstanceFieldPointsTo(baseObj, fld, obj, globalDeps),
+  textGlobalDeps = @mapcol_to_string(globalDeps).
+
+.decl InsensVarPointsTo(var:Var, heap:HeapAllocation)
+InsensVarPointsTo(var, heap) :-
+  VarPointsTo(var, obj, _, _),
+  Object_Allocation(obj, heap).
+ .plan 1:(2,1)
+
+.decl TextDependenciesForArgEquivalenceClassUpToArg(caller:MethodInvocation, tomethod:Method, arg:symbol,
+   callerLDeps:symbol, calleeLDeps:symbol, globalDeps:symbol)
+TextDependenciesForArgEquivalenceClassUpToArg(caller, tomethod, tArg, tCallerLDeps, tCalleeLDeps, tGlobalDeps) :-
+  DependenciesForArgEquivalenceClassUpToArg(caller, tomethod, arg, callerLDeps, calleeLDeps, globalDeps),
+  tCallerLDeps = @mapcol_to_string(callerLDeps),
+  tCalleeLDeps = @mapcol_to_string(calleeLDeps),
+  tGlobalDeps = @mapcol_to_string(globalDeps),
+  DecomposeIndexedArg(caller, arg, var, i),
+  tArg = cat(to_string(i), cat(":", var)).
+  
+  
+
+
+// .decl CallGraphEdgeWithSomeDependencies(invo:MethodInvocation, callee:Method)
+// CallGraphEdgeWithSomeDependencies(invo, callee) :-
+//   CallGraphEdgeWithDependencies(invo, callee, _, _, _).
+
+/// WARN: heavy
+// .output TextDependenciesForArgEquivalenceClassUpToArg
+
+.output CallGraphEdge
+.output TextVarPointsTo
+.output InsensVarPointsTo
+.output TextInstanceFieldPointsTo
+.output StaticFieldPointsTo
+
+/*
+.output MethodDependencies
+.output CallGraphEdgeWithDependencies
+.output CallGraphEdgeWithSomeDependencies
+.output DependenciesUpToActual
+.output DependenciesForThis
+*/

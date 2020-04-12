@@ -11,23 +11,19 @@ import org.apache.log4j.Logger;
 import org.clyze.doop.common.ArtifactEntry;
 import org.clyze.doop.common.ArtifactScanner;
 import org.clyze.doop.common.Database;
+import org.clyze.doop.common.DatabaseConnector;
 import org.clyze.doop.common.DoopErrorCodeException;
-import org.clyze.doop.common.scanner.NativeScanner;
 import org.clyze.doop.soot.android.AndroidSupport_Soot;
+import org.clyze.scanner.BinaryAnalysis;
+import org.clyze.scanner.NativeScanner;
 import org.clyze.utils.AARUtils;
 import org.clyze.utils.JHelper;
 import org.xmlpull.v1.XmlPullParserException;
 import soot.Scene;
 import soot.SootClass;
 import soot.SootMethod;
-import soot.jimple.infoflow.InfoflowConfiguration.ImplicitFlowMode;
-import soot.jimple.infoflow.android.InfoflowAndroidConfiguration;
-import soot.jimple.infoflow.android.SetupApplication;
-import soot.jimple.infoflow.android.InfoflowAndroidConfiguration.LayoutMatchingMode;
-import soot.jimple.infoflow.taintWrappers.EasyTaintWrapper;
 import soot.options.Options;
 
-import static soot.jimple.infoflow.android.InfoflowAndroidConfiguration.CallbackAnalyzer.Fast;
 import static org.clyze.doop.common.FrontEndLogger.*;
 
 public class Main {
@@ -141,8 +137,8 @@ public class Main {
                 throw new DoopErrorCodeException(35, "Fact generation failed with " + numErrors + " errors.");
 
             if (writeFacts && sootParameters._scanNativeCode) {
-                NativeScanner scanner = new NativeScanner(db, sootParameters, sootData.writer.getMethodStrings());
-                scanner.scanInputs(sootParameters.getInputs());
+                DatabaseConnector dbc = new DatabaseConnector(db);
+                scanNativeInputs(dbc, sootParameters._radare, sootParameters._preciseNativeStrings, sootData.writer.getMethodStrings(), sootParameters.getInputs());
             }
 
             if (sootParameters._generateJimple)
@@ -268,14 +264,6 @@ public class Main {
 
             scene.getOrMakeFastHierarchy();
 
-            if (sootParameters._android && sootParameters.getRunFlowdroid()) {
-                SootMethod dummyMain = getDummyMain(sootParameters.getInputs().get(0), sootParameters._androidJars);
-                if (dummyMain == null)
-                    throw new RuntimeException("Internal error: could not compute dummy main() with FlowDroid");
-                System.out.println("Generated dummy main method " + dummyMain.getName() + "()");
-                driver.generateMethod(dummyMain, writer, sootParameters);
-            }
-
             // avoids a concurrent modification exception, since we may
             // later be asking soot to add phantom classes to the scene's hierarchy
             driver.generateInParallel(classes);
@@ -327,36 +315,6 @@ public class Main {
             SootClass c = scene.loadClass(className, SootClass.BODIES);
             resolvedClasses.add(c);
         }
-    }
-
-    /**
-     * Call FlowDroid to calculate a dummy main method.
-     */
-    private static SootMethod getDummyMain(String appInput, String androidJars) {
-        if (!DoopAddons.usingUpstream())
-            logWarn(logger, "WARNING: FlowDroid is only supported when using upstream Soot (see build.gradle).");
-
-        Options.v().set_wrong_staticness(Options.wrong_staticness_ignore);
-
-        SetupApplication app = new SetupApplication(androidJars, appInput);
-        InfoflowAndroidConfiguration config = app.getConfig();
-        config.setMergeDexFiles(true);
-        config.getCallbackConfig().setCallbackAnalyzer(Fast);
-        // config.setImplicitFlowMode(ImplicitFlowMode.AllImplicitFlows);
-        config.setImplicitFlowMode(ImplicitFlowMode.NoImplicitFlows);
-        config.getSourceSinkConfig().setLayoutMatchingMode(LayoutMatchingMode.MatchAll);
-
-        String sourcesAndSinks = Objects.requireNonNull(Main.class.getClassLoader().getResource("SourcesAndSinks.txt")).getFile();
-        String taintWrapper = Objects.requireNonNull(Main.class.getClassLoader().getResource("EasyTaintWrapperSource.txt")).getFile();
-        try {
-            app.setTaintWrapper(new EasyTaintWrapper(new File(taintWrapper)));
-            app.runInfoflow(sourcesAndSinks);
-            return app.getDummyMainMethod();
-        } catch (IOException | XmlPullParserException ex) {
-            System.err.println("FlowDroid failed:");
-            ex.printStackTrace();
-        }
-        return null;
     }
 
     public static class Standalone {
@@ -426,6 +384,48 @@ public class Main {
             DoopAddons.structureJimpleFiles(outDir);
         // Revert to standard output dir for the rest of the code.
         Options.v().set_output_dir(outDir);
+    }
+
+    public static void scanNativeInputs(DatabaseConnector dbc,
+                                        boolean useRadare,
+                                        boolean preciseNativeStrings,
+                                        Set<String> methodStrings,
+                                        Iterable<String> inputs) {
+        final boolean demangle = false;
+        final boolean truncateAddresses = true;
+        final NativeScanner scanner = new NativeScanner(methodStrings);
+
+        ArtifactScanner.EntryProcessor gProc = (file, entry, entryName) -> {
+            boolean isSO = entryName.endsWith(".so");
+            boolean isDylib = entryName.endsWith(".dylib");
+            boolean isDLL = entryName.toLowerCase().endsWith(".dll");
+            boolean isLibsXZS = entryName.endsWith("libs.xzs");
+            boolean isLibsZSTD = entryName.endsWith("libs.zstd");
+
+            if (isSO || isDylib || isDLL || isLibsXZS || isLibsZSTD) {
+                File libTmpFile = ArtifactScanner.extractZipEntryAsFile("native-lib", file, entry, entryName);
+                String libPath = libTmpFile.getCanonicalPath();
+                // Handle some special formats.
+                if (isLibsXZS)
+                    libPath = NativeScanner.getXZSLib(libPath);
+                else if (isLibsZSTD)
+                    libPath = NativeScanner.getZSTDLib(libPath);
+                BinaryAnalysis analysis = NativeScanner.create(dbc, useRadare, libPath, preciseNativeStrings, truncateAddresses, demangle);
+                // Check that the current mode supports .dll inputs.
+                if (isDLL && !useRadare)
+                    System.err.println("WARNING: Radare mode should be activated to scan library " + entryName);
+
+                scanner.scanBinaryCode(analysis);
+            }
+        };
+        for (String input : inputs) {
+            System.out.println("Processing native code in input: " + input);
+            try {
+                (new ArtifactScanner()).processArchive(input, null, gProc);
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        }
     }
 }
 

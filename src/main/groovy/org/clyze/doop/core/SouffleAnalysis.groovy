@@ -6,6 +6,7 @@ import groovy.transform.TypeChecked
 import groovy.util.logging.Log4j
 import org.clyze.doop.utils.DDlog
 import org.clyze.doop.utils.SouffleScript
+import org.clyze.utils.Executor
 
 import java.util.concurrent.Callable
 import java.util.concurrent.Executors
@@ -34,9 +35,7 @@ class SouffleAnalysis extends DoopAnalysis {
 			produceStats(analysis)
 		}
 
-		def cacheDir = new File(Doop.souffleAnalysesCache, name)
-		cacheDir.mkdirs()
-		def script = SouffleScript.newScript(executor, options.VIA_DDLOG.value as Boolean)
+		def script = newScriptForAnalysis(executor)
 
 		Future<File> compilationFuture = null
 		def executorService = Executors.newSingleThreadExecutor()
@@ -53,7 +52,7 @@ class SouffleAnalysis extends DoopAnalysis {
 				@Override
 				File call() {
 					log.info "[Task COMPILE...]"
-					def generatedFile = script.compile(analysis, outDir, cacheDir,
+					def generatedFile = script.compile(analysis, outDir,
 							profiling,
 							options.SOUFFLE_DEBUG.value as boolean,
 							provenance,
@@ -89,7 +88,7 @@ class SouffleAnalysis extends DoopAnalysis {
 			if (options.X_SERVER_CHA.value) {
 				log.info "[CHA...]"
 				def methodLookupFile = new File("${Doop.doopHome}/souffle-scripts/method-lookup-script.dl")
-				def generatedFile0 = script.compile(methodLookupFile, outDir, cacheDir,
+				def generatedFile0 = script.compile(methodLookupFile, outDir,
 						profiling,
 						options.SOUFFLE_DEBUG.value as boolean,
 						provenance,
@@ -292,5 +291,11 @@ class SouffleAnalysis extends DoopAnalysis {
 		def file = new File(this.outDir, "database/${query}.csv")
 		if (!file.exists()) throw new FileNotFoundException(file.canonicalPath)
 		file.eachLine { outputLineProcessor.call(it.replaceAll("\t", ", ")) }
+	}
+
+	protected SouffleScript newScriptForAnalysis(Executor executor) {
+		boolean viaDDlog = options.VIA_DDLOG.value as Boolean
+		File cacheDir = new File(Doop.souffleAnalysesCache, name)
+		return SouffleScript.newScript(executor, cacheDir, viaDDlog)
 	}
 }

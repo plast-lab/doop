@@ -22,8 +22,8 @@ class DDlog extends SouffleScript {
 	static final String convertedLogicName = "converted_logic" as String
     static final String SOUFFLE_CONVERTER = "souffle_converter.py" as String
 
-    DDlog(Executor executor) {
-        super(executor)
+    DDlog(Executor executor, File cacheDir) {
+        super(executor, cacheDir)
     }
 
     /**
@@ -83,7 +83,7 @@ class DDlog extends SouffleScript {
     }
 
     @Override
-	File compile(File origScriptFile, File outDir, File cacheDir,
+	File compile(File origScriptFile, File outDir,
                  boolean profile = false, boolean debug = false,
                  boolean provenance = false, boolean liveProf = false,
                  boolean forceRecompile = true, boolean removeContext = false, boolean useFunctors = false) {
@@ -99,7 +99,7 @@ class DDlog extends SouffleScript {
             def jobs = ((Runtime.runtime.availableProcessors() / 2) + 1) as Integer
             log.info "Compiling Datalog to Rust program and executable using ${jobs} jobs"
             def executable = compileWithDDlog(jobs, outDir)
-            cacheCompiledBinary(executable, cacheFile, checksum, cacheDir)
+            cacheCompiledBinary(executable, cacheFile, checksum)
 		} else {
 			logCachedExecutable(cacheFile)
 		}
@@ -127,7 +127,7 @@ class DDlog extends SouffleScript {
 		def genTime = Helper.timing {
 			log.info "Compiling the analysis: code generation..."
 			String convertedLogic = "${convertedLogicPrefix}.dl" as String
-			def cmdGenRust = "stack run -- -i ${convertedLogic} --action=compile -L lib".split().toList()
+			def cmdGenRust = "ddlog -i ${convertedLogic} --action=compile -L lib".split().toList()
 			executeCmd(cmdGenRust, getDDlogDir(log))
 		}
 		log.info "Code generation time: ${genTime}"
@@ -226,7 +226,8 @@ class DDlog extends SouffleScript {
 	 * @param workingDir  the working directory to use
 	 */
 	void executeCmd(List<String> command, File workingDir) {
-		log.debug command
+		String cmd = String.join(" ", command)
+		log.debug "[Working directory: ${workingDir}] ${cmd}"
 		Path tmpFile = Files.createTempFile("", "")
 		if (workingDir) {
 			executor.currWorkingDir = workingDir

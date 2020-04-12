@@ -69,11 +69,11 @@ root@af6ca7193b3d:/doop/doop-4.20.43# ls /data/out/context-insensitive/test/data
 ## Notes ##
 
 * This container does not contain the old Datalog engine used for
-  legacy logic (pa-datalog) or Differential Datalog.
+  legacy logic (pa-datalog).
 
 * The development environment inside the container is minimal: only
   busybox/nano are installed by default.
 
 * For old builds of Doop (with dynamic "+" dependencies in Gradle),
-  the Gradle build scripts may have to edited prior to "distZip" for
-  reproducibility.
+  the Gradle build scripts may have to be edited prior to "distZip"
+  for reproducibility.

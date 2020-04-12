@@ -11,13 +11,13 @@ class TestDifferentialDatalog extends DoopSpec {
 
 	// @spock.lang.Ignore
 	@Unroll
-	def "Server analysis test 006 (hello world) / test additional command line options"() {
+	def "Differential Datalog test"() {
 		when:
-		Analysis analysis = analyzeTest("006-hello-world", Artifacts.HELLO_JAR,
-										["--via-ddlog", "--Xstats-none"],
+		Analysis analysis = analyzeTest("006-hello-world--via-ddlog", Artifacts.HELLO_JAR,
+										["--via-ddlog", "--Xstats-none", "--souffle-force-recompile"],
                                         "micro", "hello-world--via-ddlog")
 
 		then:
-        fileExists(analysis, 'database/Stats_Runtime.csv')
+        fileExists(analysis, 'database/dump')
 	}
 }
