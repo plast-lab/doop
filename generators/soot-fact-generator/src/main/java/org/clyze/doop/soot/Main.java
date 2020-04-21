@@ -144,6 +144,8 @@ public class Main {
             if (sootParameters._generateJimple)
                 generateIR(java, scene, sootData.classes, sootData.driver, outDir);
 
+            System.err.println("Methods without active bodies encountered (and reset): " + FactGenerator.methodsWithoutActiveBodies.get());
+
             if (sootParameters._lowMem) {
                 System.out.println("Releasing Soot structures...");
                 for (SootClass cl : scene.getClasses())

@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.clyze.doop.common.Driver;
 import soot.*;
 import soot.jimple.*;
@@ -17,6 +19,8 @@ import soot.shimple.Shimple;
  */
 
 class FactGenerator implements Runnable {
+
+    public static final AtomicInteger methodsWithoutActiveBodies = new AtomicInteger(0);
 
     private final FactWriter _writer;
     private final boolean _ssa;
@@ -210,7 +214,9 @@ class FactGenerator implements Runnable {
                 // synchronized(Scene.v()) {
                 m.retrieveActiveBody();
                 // } // synchronizing so broadly = giving up on Soot's races
-                System.err.println("Found method without active body: " + m.getSignature());
+
+                // System.err.println("Found method without active body: " + m.getSignature());
+                methodsWithoutActiveBodies.incrementAndGet();
             }
 
             Body b0 = m.getActiveBody();
