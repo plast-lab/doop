@@ -11,9 +11,6 @@ if [ "${DOOP_BENCHMARKS}" == "" ]; then
     echo "ERROR: Please set DOOP_BENCHMARKS."
     exit
 fi
-if [ "${SERVER_ANALYSIS_TESTS}" == "" ]; then
-    echo "WARNING: Please set SERVER_ANALYSIS_TESTS."
-fi
 if [ "${XCORPUS_DIR}" == "" ]; then
     echo "ERROR: Please set XCORPUS_DIR."
     exit
@@ -284,6 +281,10 @@ if [ "${RUN_ANALYSIS}" == "1" ]; then
 
     # Control benchmark, used for debugging.
     # # Generate java.hprof with "make capture_hprof".
+    # if [ "${SERVER_ANALYSIS_TESTS}" == "" ]; then
+    # 	echo "ERROR: Please set SERVER_ANALYSIS_TESTS."
+    #   exit
+    # fi
     # runDoop ${SERVER_ANALYSIS_TESTS}/009-native/build/libs/009-native.jar 009-native java_8 ${SERVER_ANALYSIS_TESTS}/009-native/java.hprof
 
     # Chrome.
