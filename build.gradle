@@ -182,13 +182,17 @@ String doopCP() {
 }
 
 task writeGitCommitHash() {
-    def stdout = new ByteArrayOutputStream()
-    exec {
-        commandLine 'git', 'rev-parse', 'HEAD'
-        standardOutput = stdout
-        ignoreExitValue = true
-    }
-    String hash = stdout.toString().trim()
+    String hash
+    if (file('.git').exists()) {
+	def stdout = new ByteArrayOutputStream()
+	exec {
+            commandLine 'git', 'rev-parse', 'HEAD'
+            standardOutput = stdout
+            ignoreExitValue = true
+	}
+	hash = stdout.toString().trim()
+    } else
+	hash = ''
     new File('src/main/resources/git-hash.txt').withWriter { w -> w.writeLine(hash) }
 }
 [jar, run].each { it.dependsOn writeGitCommitHash }
