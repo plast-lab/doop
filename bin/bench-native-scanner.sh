@@ -4,19 +4,22 @@ CURRENT_DIR="$(pwd)"
 # echo "CURRENT_DIR=${CURRENT_DIR}"
 
 if [ "${DOOP_HOME}" == "" ]; then
-    echo "Please set DOOP_HOME."
+    echo "ERROR: Please set DOOP_HOME."
     exit
 fi
 if [ "${DOOP_BENCHMARKS}" == "" ]; then
-    echo "Please set DOOP_BENCHMARKS."
+    echo "ERROR: Please set DOOP_BENCHMARKS."
     exit
 fi
 if [ "${SERVER_ANALYSIS_TESTS}" == "" ]; then
-    echo "Please set SERVER_ANALYSIS_TESTS."
-    exit
+    echo "WARNING: Please set SERVER_ANALYSIS_TESTS."
 fi
 if [ "${XCORPUS_DIR}" == "" ]; then
-    echo "Please set XCORPUS_DIR."
+    echo "ERROR: Please set XCORPUS_DIR."
+    exit
+fi
+if [ "${XCORPUS_EXT_DIR}" == "" ]; then
+    echo "ERROR: Please set XCORPUS_EXT_DIR."
     exit
 fi
 
@@ -24,6 +27,7 @@ ANALYSIS=context-insensitive
 TIMEOUT=600
 STRING_DISTANCE1=40
 STRING_DISTANCE2=2000
+BASE_GLOBAL_OPTS="--timeout ${TIMEOUT} --no-standard-exports --Xlow-mem -Ldebug --Xstats-none --Xextra-logic ${DOOP_HOME}/souffle-logic/addons/testing/native-tests.dl --Xdont-cache-facts"
 
 if [ "$1" == "report" ]; then
     RUN_ANALYSIS=0
@@ -65,7 +69,7 @@ function printStatsRow() {
     # local DYNAMIC_METHODS=${DOOP_HOME}/out/${ANALYSIS}/${ID_DYNAMIC}/database/mainAnalysis.DynamicAppCallGraphEdgeFromNative.csv
     local DYNAMIC_METHODS=${DOOP_HOME}/out/${ANALYSIS}/${ID_DYNAMIC}/database/DynamicAppNativeCodeTarget.csv
     # local SCANNER_METHODS=${DOOP_HOME}/out/${ANALYSIS}/${ID_SCANNER}/database/basic.AppCallGraphEdgeFromNativeMethod.csv
-    local SCANNER_METHODS=${DOOP_HOME}/out/${ANALYSIS}/${ID_SCANNER}/database/Stats_Simple_Application_ReachableMethod.csv
+    local SCANNER_METHODS=${DOOP_HOME}/out/${ANALYSIS}/${ID_SCANNER}/database/AppReachable.csv
     local MISSED_FILE="${CURRENT_DIR}/missed-methods-${ID_SCANNER}.log"
 
     if [ ! -f "${SCANNER_METHODS}" ]; then
@@ -80,7 +84,7 @@ function printStatsRow() {
     # echo "Missed methods: ${MISSED_FILE}"
 
     local BASE_INTERSECTION_FILE="${CURRENT_DIR}/dynamic-scanner-intersection-${ID_BASE}.log"
-    local BASE_APP_REACHABLE_FILE=${DOOP_HOME}/out/${ANALYSIS}/${ID_BASE}/database/Stats_Simple_Application_ReachableMethod.csv
+    local BASE_APP_REACHABLE_FILE=${DOOP_HOME}/out/${ANALYSIS}/${ID_BASE}/database/AppReachable.csv
     local BASE_APP_REACHABLE=$(cat ${BASE_APP_REACHABLE_FILE} | wc -l)
     local SCANNER_APP_REACHABLE=$(cat ${SCANNER_METHODS} | wc -l)
 
@@ -149,7 +153,7 @@ function runDoop() {
     setIDs "${BENCHMARK}"
     pushd ${DOOP_HOME} &> /dev/null
     date
-    BASE_OPTS="--platform ${PLATFORM} --timeout ${TIMEOUT}" #  --no-standard-exports"
+    BASE_OPTS="--platform ${PLATFORM} ${BASE_GLOBAL_OPTS}"
     # 1. Base analysis.
     ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_BASE} ${BASE_OPTS} |& tee ${CURRENT_DIR}/${ID_BASE}.log
     if [ "${HPROF}" != "" ]; then
@@ -162,7 +166,7 @@ function runDoop() {
     # ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER_LOCAL_OBJ} ${BASE_OPTS} --scan-native-code --only-precise-native-strings |& tee ${CURRENT_DIR}/${ID_SCANNER_LOCAL_OBJ}.log
     # ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER_LOCAL_RAD} ${BASE_OPTS} --scan-native-code --only-precise-native-strings --use-radare |& tee ${CURRENT_DIR}/${ID_SCANNER_LOCAL_RAD}.log
     # 5. Native scanner, "smart native targets" mode.
-    ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER_SMART} ${BASE_OPTS} --scan-native-code --smart-native-targets |& tee ${CURRENT_DIR}/${ID_SCANNER_SMART}.log
+    # ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER_SMART} ${BASE_OPTS} --scan-native-code --smart-native-targets |& tee ${CURRENT_DIR}/${ID_SCANNER_SMART}.log
     # 6. Native scanner, "use string locality" mode.
     # ./doop -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER_OFFSETS1} ${BASE_OPTS} --scan-native-code --use-string-locality --native-strings-distance ${STRING_DISTANCE1} |& tee ${CURRENT_DIR}/${ID_SCANNER_OFFSETS1}.log
     # if [ "${BENCHMARK}" == "chrome" ]; then
@@ -194,7 +198,8 @@ function printStatsTable() {
     echo -e "| Benchmark\t| Mode\t| App    \t| Base  \t| Recall\t| +App-reachable    \t| +Analysis time    \t| +Factgen time\t| +Entry\t|"
     echo -e "|          \t|     \t| methods\t| recall\t|       \t|  (incr. over base)\t|  (incr. over base)\t|              \t|  points\t|"
     printLine ${LAST_COL}
-    for BENCHMARK in "chrome" "instagram" "009-native" "aspectj-1.6.9" "log4j-1.2.16" "lucene-4.3.0" "tomcat-7.0.2" "vlc"
+    # for BENCHMARK in "chrome" "instagram" "009-native" "aspectj-1.6.9" "log4j-1.2.16" "lucene-4.3.0" "tomcat-7.0.2"
+    for BENCHMARK in "chrome" "instagram" "aspectj-1.6.9" "log4j-1.2.16" "lucene-4.3.0" "tomcat-7.0.2"
     do
         setIDs "${BENCHMARK}"
         # MODES=( "" "-loc-obj" "-loc-rad" "-smart" "-dist-${STRING_DISTANCE1}" )
@@ -242,7 +247,7 @@ function analyzeTomcat() {
 
 function analyzeXCorpusBenchmark() {
     local BENCHMARK="$1"
-    local BASE_OPTS="-i ${APP_INPUTS} -a ${ANALYSIS} --discover-main-methods --discover-tests --timeout ${TIMEOUT} --main DUMMY"
+    local BASE_OPTS="-i ${APP_INPUTS} -a ${ANALYSIS} --discover-main-methods --discover-tests --main DUMMY ${BASE_GLOBAL_OPTS}"
 
     if [ "${XCORPUS_DIR}" == "" ]; then
         echo "ERROR: cannot analyze benchmark '${BENCHMARK}', please set environment variable XCORPUS_DIR to point to the XCorpus directory."
@@ -263,7 +268,7 @@ function analyzeXCorpusBenchmark() {
     ./doop ${BASE_OPTS} --id ${ID_BASE} |& tee ${CURRENT_DIR}/${ID_BASE}.log
     # 2. Native scanner, default mode.
     # ./doop ${BASE_OPTS} --id ${ID_SCANNER} --scan-native-code |& tee ${CURRENT_DIR}/${ID_SCANNER}.log
-    ./doop ${BASE_OPTS} --id ${ID_SCANNER} --scan-native-code --use-radare -Ldebug |& tee ${CURRENT_DIR}/${ID_SCANNER}.log
+    ./doop ${BASE_OPTS} --id ${ID_SCANNER} --scan-native-code --use-radare |& tee ${CURRENT_DIR}/${ID_SCANNER}.log
     # # 3. Native scanner, use only localized strings (binutils/Radare2 modes).
     # # ./doop ${BASE_OPTS} --id ${ID_SCANNER_LOCAL_OBJ} --scan-native-code --only-precise-native-strings |& tee ${CURRENT_DIR}/${ID_SCANNER_LOCAL_OBJ}.log
     # ./doop ${BASE_OPTS} --id ${ID_SCANNER_LOCAL_RAD} --scan-native-code --only-precise-native-strings --use-radare |& tee ${CURRENT_DIR}/${ID_SCANNER_LOCAL_RAD}.log
@@ -276,20 +281,16 @@ function analyzeXCorpusBenchmark() {
 trap "exit" INT
 
 if [ "${RUN_ANALYSIS}" == "1" ]; then
-    # Generate java.hprof with "make capture_hprof".
-    runDoop ${SERVER_ANALYSIS_TESTS}/009-native/build/libs/009-native.jar 009-native java_8 ${SERVER_ANALYSIS_TESTS}/009-native/java.hprof
+
+    # Control benchmark, used for debugging.
+    # # Generate java.hprof with "make capture_hprof".
+    # runDoop ${SERVER_ANALYSIS_TESTS}/009-native/build/libs/009-native.jar 009-native java_8 ${SERVER_ANALYSIS_TESTS}/009-native/java.hprof
 
     # Chrome.
     runDoop ${DOOP_BENCHMARKS}/android-benchmarks/com.android.chrome_57.0.2987.132-298713212_minAPI24_x86_nodpi_apkmirror.com.apk chrome ${ANDROID_PLATFORM} ${DOOP_BENCHMARKS}/android-benchmarks/com.android.chrome.hprof.gz
 
     # Instagram.
     runDoop ${DOOP_BENCHMARKS}/android-benchmarks/com.instagram.android_10.5.1-48243323_minAPI16_x86_nodpi_apkmirror.com.apk instagram ${ANDROID_PLATFORM} ${DOOP_BENCHMARKS}/android-benchmarks/com.instagram.android.hprof.gz
-
-    # Androidterm.
-    runDoop ${DOOP_BENCHMARKS}/android-benchmarks/jackpal.androidterm-1.0.70-71-minAPI4.apk androidterm ${ANDROID_PLATFORM} ${DOOP_BENCHMARKS}/android-benchmarks/jackpal.androidterm.hprof.gz
-
-    # VLC.
-    runDoop ${DOOP_BENCHMARKS}/android-benchmarks/org.videolan.vlc_13010707.apk vlc ${ANDROID_PLATFORM} ""
 
     # AspectJ.
     analyzeAspectJ
