@@ -186,6 +186,7 @@ task writeGitCommitHash() {
     exec {
         commandLine 'git', 'rev-parse', 'HEAD'
         standardOutput = stdout
+        ignoreExitValue = true
     }
     String hash = stdout.toString().trim()
     new File('src/main/resources/git-hash.txt').withWriter { w -> w.writeLine(hash) }
