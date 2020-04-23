@@ -153,6 +153,12 @@ if (linkFactGenerators) {
         jvmArgs jvmMemArgs
     }
 }
+// Otherwise, pass the memory options for Doop to use when invoking fact generators.
+else {
+    application {
+        applicationDefaultJvmArgs = defaultFactGenJvmArgs
+    }
+}
 
 applicationDistribution.from(file("$projectDir/logic")) {
     into 'logic'
