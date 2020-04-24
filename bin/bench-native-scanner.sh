@@ -62,11 +62,8 @@ function printStatsRow() {
     local ID_BASE="$2"
     local ID_SCANNER="$3"
     local ID_DYNAMIC="$4"
-    local MODE="$5"
 
-    # local DYNAMIC_METHODS=${DOOP_HOME}/out/${ANALYSIS}/${ID_DYNAMIC}/database/mainAnalysis.DynamicAppCallGraphEdgeFromNative.csv
     local DYNAMIC_METHODS=${DOOP_HOME}/out/${ANALYSIS}/${ID_DYNAMIC}/database/DynamicAppNativeCodeTarget.csv
-    # local SCANNER_METHODS=${DOOP_HOME}/out/${ANALYSIS}/${ID_SCANNER}/database/basic.AppCallGraphEdgeFromNativeMethod.csv
     local SCANNER_METHODS=${DOOP_HOME}/out/${ANALYSIS}/${ID_SCANNER}/database/AppReachable.csv
     local MISSED_FILE="${CURRENT_DIR}/missed-methods-${ID_SCANNER}.log"
 
@@ -74,12 +71,6 @@ function printStatsRow() {
         echo -e "| ${BENCHMARK}\t| Missing file ${SCANNER_METHODS}"
         return
     fi
-
-    # echo "== Benchmark: ${BENCHMARK} (static scanner mode: ${ID_SCANNER}) =="
-    # echo "Intersection file: ${INTERSECTION_FILE}"
-    # echo "Dynamic methods: ${DYNAMIC_METHODS}"
-    # echo "Scanner methods: ${SCANNER_METHODS}"
-    # echo "Missed methods: ${MISSED_FILE}"
 
     local BASE_INTERSECTION_FILE="${CURRENT_DIR}/dynamic-scanner-intersection-${ID_BASE}.log"
     local BASE_APP_REACHABLE_FILE=${DOOP_HOME}/out/${ANALYSIS}/${ID_BASE}/database/AppReachable.csv
@@ -123,7 +114,6 @@ function printStatsRow() {
     setDifference ${SCANNER_ENTRY_POINTS} ${BASE_APP_REACHABLE_FILE} > ${ADDED_ENTRY_POINTS_FILE}
     local ADDED_ENTRY_POINTS=$(cat ${ADDED_ENTRY_POINTS_FILE} | wc -l)
 
-    # echo -e "| ${BENCHMARK}\t| ${MODE}\t| ${APP_METHOD_COUNT}\t| ${BASE_RECALL}\t| ${RECALL}\t| ${APP_REACHABLE_DELTA}\t| ${ANALYSIS_TIME_DELTA}\t| ${FACTS_TIME_DELTA}\t| ${ADDED_ENTRY_POINTS}\t|"
     echo -e "| ${BENCHMARK}\t| ${APP_METHOD_COUNT}\t| ${BASE_RECALL}\t| ${RECALL}\t| ${APP_REACHABLE_DELTA}\t| ${ANALYSIS_TIME_DELTA}\t| ${FACTS_TIME_DELTA}\t| ${ADDED_ENTRY_POINTS}\t|"
 }
 
@@ -160,26 +150,16 @@ function runDoop() {
     date
     BASE_OPTS="--platform ${PLATFORM} ${BASE_GLOBAL_OPTS}"
     # 1. Base analysis.
-    ${DOOP} -i ${INPUT} -a ${ANALYSIS} --id ${ID_BASE} ${BASE_OPTS} |& tee ${CURRENT_DIR}/${ID_BASE}.log
+    # ${DOOP} -i ${INPUT} -a ${ANALYSIS} --id ${ID_BASE} ${BASE_OPTS} |& tee ${CURRENT_DIR}/${ID_BASE}.log
     deleteFacts ${ID_BASE}
     if [ "${HPROF}" != "" ]; then
         # 2. HeapDL analysis, for comparison.
-        ${DOOP} -i ${INPUT} -a ${ANALYSIS} --id ${ID_HEAPDL} ${BASE_OPTS} --heapdl-file ${HPROF} --featherweight-analysis |& tee ${CURRENT_DIR}/${ID_HEAPDL}.log
+        # ${DOOP} -i ${INPUT} -a ${ANALYSIS} --id ${ID_HEAPDL} ${BASE_OPTS} --heapdl-file ${HPROF} --featherweight-analysis |& tee ${CURRENT_DIR}/${ID_HEAPDL}.log
 	deleteFacts ${ID_HEAPDL}
     fi
     # 3. Native scanner, default mode.
     ${DOOP} -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER} ${BASE_OPTS} --scan-native-code |& tee ${CURRENT_DIR}/${ID_SCANNER}.log
     deleteFacts ${ID_SCANNER}
-    # 4. Native scanner, use only localized strings (binutils/Radare2 modes).
-    # ${DOOP} -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER_LOCAL_OBJ} ${BASE_OPTS} --scan-native-code --only-precise-native-strings |& tee ${CURRENT_DIR}/${ID_SCANNER_LOCAL_OBJ}.log
-    # ${DOOP} -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER_LOCAL_RAD} ${BASE_OPTS} --scan-native-code --only-precise-native-strings --use-radare |& tee ${CURRENT_DIR}/${ID_SCANNER_LOCAL_RAD}.log
-    # 5. Native scanner, "smart native targets" mode.
-    # ${DOOP} -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER_SMART} ${BASE_OPTS} --scan-native-code --smart-native-targets |& tee ${CURRENT_DIR}/${ID_SCANNER_SMART}.log
-    # 6. Native scanner, "use string locality" mode.
-    # ${DOOP} -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER_OFFSETS1} ${BASE_OPTS} --scan-native-code --use-string-locality --native-strings-distance ${STRING_DISTANCE1} |& tee ${CURRENT_DIR}/${ID_SCANNER_OFFSETS1}.log
-    # if [ "${BENCHMARK}" == "chrome" ]; then
-    #     ${DOOP} -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER_OFFSETS2} ${BASE_OPTS} --scan-native-code --use-string-locality --native-strings-distance ${STRING_DISTANCE2} |& tee ${CURRENT_DIR}/${ID_SCANNER_OFFSETS2}.log
-    # fi
     popd &> /dev/null
 }
 
@@ -202,8 +182,6 @@ function printStatsTable() {
     local LAST_COL=${COL8_END}
     tabs ${COL1_END},${COL2_END},${COL3_END},${COL4_END},${COL5_END},${COL6_END},${COL7_END},${COL8_END}
     printLine ${LAST_COL}
-    # echo -e "| Benchmark\t| Mode\t| App    \t| Base  \t| Recall\t| +App-reachable    \t| +Analysis time    \t| +Factgen time\t| +Entry\t|"
-    # echo -e "|          \t|     \t| methods\t| recall\t|       \t|  (incr. over base)\t|  (incr. over base)\t|              \t|  points\t|"
     echo -e "| Benchmark\t| App    \t| Base  \t| Recall\t| +App-reachable    \t| +Analysis time    \t| +Factgen time\t| +Entry\t|"
     echo -e "|          \t| methods\t| recall\t|       \t|  (incr. over base)\t|  (incr. over base)\t|              \t|  points\t|"
     printLine ${LAST_COL}
@@ -211,20 +189,8 @@ function printStatsTable() {
     for BENCHMARK in "chrome" "instagram" "aspectj-1.6.9" "log4j-1.2.16" "lucene-4.3.0" "tomcat-7.0.2"
     do
         setIDs "${BENCHMARK}"
-        # MODES=( "" "-loc-obj" "-loc-rad" "-smart" "-dist-${STRING_DISTANCE1}" )
-        MODES=( "" )
-        # if [ "${BENCHMARK}" == "chrome" ]; then
-        #     MODES=( "" "-loc-obj" "-loc-rad" "-smart" "-dist-${STRING_DISTANCE1}" "-dist-${STRING_DISTANCE2}" )
-        #     # MODES=( "" "-loc-rad" "-dist-${STRING_DISTANCE1}" "-dist-${STRING_DISTANCE2}" )
-        # else
-        #     MODES=( "" "-loc-obj" "-loc-rad" "-smart" "-dist-${STRING_DISTANCE1}" )
-        #     # MODES=( "" "-loc-rad" "-dist-${STRING_DISTANCE1}" )
-        # fi
-        for MODE in "${MODES[@]}"
-        do
-            local ID_STATIC="${ID_SCANNER}${MODE}"
-            printStatsRow "${BENCHMARK}" "${ID_BASE}" "${ID_STATIC}" "${ID_HEAPDL}" "${MODE}"
-        done
+        local ID_STATIC="${ID_SCANNER}"
+        printStatsRow "${BENCHMARK}" "${ID_BASE}" "${ID_STATIC}" "${ID_HEAPDL}"
         printLine ${LAST_COL}
     done
 }
@@ -280,11 +246,6 @@ function analyzeXCorpusBenchmark() {
     # ${DOOP} ${BASE_OPTS} --id ${ID_SCANNER} --scan-native-code |& tee ${CURRENT_DIR}/${ID_SCANNER}.log
     ${DOOP} ${BASE_OPTS} --id ${ID_SCANNER} --scan-native-code --use-radare |& tee ${CURRENT_DIR}/${ID_SCANNER}.log
     deleteFacts ${ID_SCANNER}
-    # # 3. Native scanner, use only localized strings (binutils/Radare2 modes).
-    # # ${DOOP} ${BASE_OPTS} --id ${ID_SCANNER_LOCAL_OBJ} --scan-native-code --only-precise-native-strings |& tee ${CURRENT_DIR}/${ID_SCANNER_LOCAL_OBJ}.log
-    # ${DOOP} ${BASE_OPTS} --id ${ID_SCANNER_LOCAL_RAD} --scan-native-code --only-precise-native-strings --use-radare |& tee ${CURRENT_DIR}/${ID_SCANNER_LOCAL_RAD}.log
-    # # 4. Native scanner, "smart native targets" mode.
-    # ${DOOP} ${BASE_OPTS} --id ${ID_SCANNER_SMART} --scan-native-code --smart-native-targets |& tee ${CURRENT_DIR}/${ID_SCANNER_SMART}.log
     set +x
     popd &> /dev/null
 }
