@@ -150,11 +150,11 @@ function runDoop() {
     date
     BASE_OPTS="--platform ${PLATFORM} ${BASE_GLOBAL_OPTS}"
     # 1. Base analysis.
-    # ${DOOP} -i ${INPUT} -a ${ANALYSIS} --id ${ID_BASE} ${BASE_OPTS} |& tee ${CURRENT_DIR}/${ID_BASE}.log
+    ${DOOP} -i ${INPUT} -a ${ANALYSIS} --id ${ID_BASE} ${BASE_OPTS} |& tee ${CURRENT_DIR}/${ID_BASE}.log
     deleteFacts ${ID_BASE}
     if [ "${HPROF}" != "" ]; then
         # 2. HeapDL analysis, for comparison.
-        # ${DOOP} -i ${INPUT} -a ${ANALYSIS} --id ${ID_HEAPDL} ${BASE_OPTS} --heapdl-file ${HPROF} --featherweight-analysis |& tee ${CURRENT_DIR}/${ID_HEAPDL}.log
+        ${DOOP} -i ${INPUT} -a ${ANALYSIS} --id ${ID_HEAPDL} ${BASE_OPTS} --heapdl-file ${HPROF} --featherweight-analysis |& tee ${CURRENT_DIR}/${ID_HEAPDL}.log
 	deleteFacts ${ID_HEAPDL}
     fi
     # 3. Native scanner, default mode.
