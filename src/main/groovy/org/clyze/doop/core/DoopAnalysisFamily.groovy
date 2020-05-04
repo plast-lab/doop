@@ -882,6 +882,12 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					argName: "PARTITIONING_STRATEGY"
 			),
 			new BooleanAnalysisOption(
+					id: "X_DONT_CACHE_FACTS",
+					name: "Xdont-cache-facts",
+					group: GROUP_FACTS,
+					description: "Don't cache generated facts."
+			),
+			new BooleanAnalysisOption(
 					id: "X_DRY_RUN",
 					name: "Xdry-run",
 					description: "Do a dry run of the analysis."
