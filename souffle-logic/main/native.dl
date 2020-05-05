@@ -46,7 +46,8 @@ ArrayIndexPointsTo(?hctx, ?argArrayContent, ?hctx, ?argArray) :-
       isMethod(strConstructor), \
       ?index = 1. \
   \
-  Value_DeclaringType(strHeap, strMethod)
+  Value_DeclaringType(strHeap, strType) :- \
+      Method_DeclaringType(strMethod, strType)
 
 #define SimulateNativeStringArrayAllocation(strMethod, strArray, strElement, strElementType) \
   AssignHeapAllocation(strArray, ?return, strMethod) \
