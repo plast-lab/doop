@@ -28,26 +28,29 @@ ArrayIndexPointsTo(?hctx, ?argArrayContent, ?hctx, ?argArray) :-
     isVar(local), \
     isField(field)
 
-#define SimulateNativeAllocation(strMethod, strHeap, strConstructor) \
-  AssignHeapAllocation(strHeap, ?return, strMethod) \
-    :- \
-      isMethod(strMethod), \
-      NativeReturnVar(?return, strMethod), \
-      isHeapAllocation(strHeap). \
-  \
-  SpecialMethodInvocation_Base(cat(strMethod, cat("/native ", strConstructor)), ?return), \
-  Instruction_Method(cat(strMethod, cat("/native ", strConstructor)), strMethod), \
-  MethodInvocation_Method(cat(strMethod, cat("/native ", strConstructor)), strConstructor), \
-  PlusSpecialMethodInvocation(cat(strMethod, cat("/native ", strConstructor))), \
-  Instruction_Index(cat(strMethod, cat("/native ", strConstructor)), ?index) \
-    :- \
-      isMethod(strMethod), \
-      NativeReturnVar(?return, strMethod), \
-      isMethod(strConstructor), \
-      ?index = 1. \
-  \
-  Value_DeclaringType(strHeap, strType) :- \
-      Method_DeclaringType(strMethod, strType)
+// Populating this relation generates simulated native values.
+.decl SimulateNativeAllocation(?strMethod: Method, ?strHeap: Value, ?strConstructor: Method)
+
+// Generate value.
+AssignHeapAllocation(?strHeap, ?return, ?strMethod),
+Value_DeclaringType(?strHeap, ?strType) :-
+  SimulateNativeAllocation(?strMethod, ?strHeap, _),
+  Method_DeclaringType(?strMethod, ?strType),
+  NativeReturnVar(?return, ?strMethod),
+  isHeapAllocation(?strHeap).
+
+// Generate construction site.
+SpecialMethodInvocation_Base(?newInstrId, ?return),
+Instruction_Method(?newInstrId, ?strMethod),
+MethodInvocation_Method(?newInstrId, strConstructor),
+PlusSpecialMethodInvocation(?newInstrId),
+Instruction_Index(?newInstrId, ?index) :-
+  SimulateNativeAllocation(?strMethod, _, strConstructor),
+  isMethod(?strMethod),
+  NativeReturnVar(?return, ?strMethod),
+  isMethod(strConstructor),
+  ?index = 1,
+  ?newInstrId = cat(?strMethod, cat("/native ", strConstructor)).
 
 #define SimulateNativeStringArrayAllocation(strMethod, strArray, strElement, strElementType) \
   AssignHeapAllocation(strArray, ?return, strMethod) \
