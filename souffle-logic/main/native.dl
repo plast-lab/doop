@@ -213,10 +213,12 @@ LoadArrayIndex(?base, ?to, ?inmethod) :-
  *
  **********************************************************************************/
 
+#if defined(JRE3) || defined (JRE4) || defined(JRE5) || defined(JRE6)
 SimulateNativeAllocation(
   "<java.io.FileSystem: java.io.FileSystem getFileSystem()>",
   "java.io.FileSystem.getFileSystem/new java.io.UnixFileSystem",
   "<java.io.UnixFileSystem: void <init>()>").
+#endif // JRE < 1.7
 
 #ifdef ANDROID
 // Native Android method.
