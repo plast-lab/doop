@@ -27,9 +27,11 @@ MockHeapConsMacro(?heap, ?type) :-
 
 #endif // ANDROID
 
+#ifndef ANDROID
 MockHeapConsMacro(?heap, ?type) :-
    ?heap = "<sun.misc.Perf: java.nio.ByteBuffer createLong(java.lang.String,int,int,long)>/new java.nio.DirectByteBuffer/0",
    ?type = "java.nio.DirectByteBuffer".
+#endif // ANDROID
 
 MockHeapConsMacro(?heap, ?type) :-
    ?heap = "<<string-constant>>",
