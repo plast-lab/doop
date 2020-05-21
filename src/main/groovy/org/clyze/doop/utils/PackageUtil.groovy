@@ -1,16 +1,20 @@
 package org.clyze.doop.utils
 
+import groovy.transform.CompileStatic
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import org.apache.commons.io.FilenameUtils
 import org.clyze.doop.common.BytecodeUtil
 import org.clyze.utils.AARUtils
-import org.clyze.utils.Helper
+import org.clyze.utils.JHelper
 import org.jf.dexlib2.dexbacked.DexBackedClassDef
+import org.jf.dexlib2.dexbacked.DexBackedDexFile
 import org.jf.dexlib2.iface.MultiDexContainer
+
 import static org.jf.dexlib2.DexFileFactory.loadDexContainer
 
 /** Computes the app-regex for JAR/APK/AAR inputs. */
+@CompileStatic
 class PackageUtil {
 
 	/**
@@ -40,8 +44,8 @@ class PackageUtil {
 		Set<String> pkgs = []
 		MultiDexContainer multiDex = loadDexContainer(apk, null)
 		for (String dex : (multiDex.dexEntryNames)) {
-			def dexFile = multiDex.getEntry(dex)
-			for (DexBackedClassDef dexClass : (dexFile.classes)) {
+			DexBackedDexFile dexFile = multiDex.getEntry(dex)
+			for (DexBackedClassDef dexClass : (dexFile.classes as Set<? extends DexBackedClassDef>)) {
 				String className = dexClass.toString()
 				if (!className.startsWith("L") || !className.endsWith(";")) {
 					System.err.println("getPackagesForAPK: bad class " + className)
@@ -69,7 +73,7 @@ class PackageUtil {
 		Set<String> tmpDirs = [] as Set
 		List<String> jars = AARUtils.toJars([aar.canonicalPath], true, tmpDirs)
 		jars.each { jar -> ret.addAll(getPackagesForJAR(new File(jar))) }
-		Helper.cleanUp(tmpDirs)
+		JHelper.cleanUp(tmpDirs)
 		return ret
 	}
 
@@ -83,7 +87,7 @@ class PackageUtil {
 	static Set<String> getPackagesForJAR(File jar) {
 		def zip = new ZipFile(jar)
 		Enumeration<? extends ZipEntry> entries = zip.entries()
-		List<ZipEntry> classes = entries?.findAll { it.name.endsWith(".class") }
+		Collection<ZipEntry> classes = entries?.findAll { ZipEntry ze -> ze.name.endsWith(".class") }
 		List<String> packages = classes.collect { ZipEntry entry ->
 			getPackageFromClassName(entry.name)
 		}

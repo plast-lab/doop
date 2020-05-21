@@ -1,6 +1,8 @@
+#if defined(JRE3) || defined (JRE4) || defined(JRE5) || defined(JRE6)
 MockHeapConsMacro(?heap, ?type) :-
    ?heap = "java.io.FileSystem.getFileSystem/new java.io.UnixFileSystem",
    ?type = "java.io.UnixFileSystem".
+#endif // JRE < 1.7
 
 // Native UnixFileSystem objects, different in Android and OpenJDK.
 #ifdef ANDROID
@@ -25,9 +27,11 @@ MockHeapConsMacro(?heap, ?type) :-
 
 #endif // ANDROID
 
+#ifndef ANDROID
 MockHeapConsMacro(?heap, ?type) :-
    ?heap = "<sun.misc.Perf: java.nio.ByteBuffer createLong(java.lang.String,int,int,long)>/new java.nio.DirectByteBuffer/0",
    ?type = "java.nio.DirectByteBuffer".
+#endif // ANDROID
 
 MockHeapConsMacro(?heap, ?type) :-
    ?heap = "<<string-constant>>",

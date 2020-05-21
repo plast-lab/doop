@@ -313,7 +313,9 @@ test {
         exceptionFormat = 'full'
     }
     environment.DOOP_HOME = projectDir
-    environment.HOME = Files.createTempDirectory("lb-test-home-dir", asFileAttribute(fromString("rwxrwxrwx"))).toString()
+    java.nio.file.Path lbTestHomeDir = Files.createTempDirectory("lb-test-home-dir", asFileAttribute(fromString("rwxrwxrwx")))
+    lbTestHomeDir.toFile().deleteOnExit()
+    environment.HOME = lbTestHomeDir.toString()
 }
 
 task buildTests {
