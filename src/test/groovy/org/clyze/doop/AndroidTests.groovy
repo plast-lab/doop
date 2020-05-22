@@ -49,6 +49,7 @@ class AndroidTests extends DoopSpec {
 					 "--sanity",
 					 "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/AndroidTests_TypesOnly_androidterm.dl",
 					 "--scan-native-code", "--simulate-native-returns",
+					 "--no-standard-exports",
 					 "--Xstats-full", "--Xlow-mem", "-Ldebug"] + defaultArgs
 		Main.main((String[])args)
 		Analysis analysis = Main.analysis
