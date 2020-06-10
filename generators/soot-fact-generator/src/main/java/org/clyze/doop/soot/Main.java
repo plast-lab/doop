@@ -395,7 +395,7 @@ public class Main {
                                         Iterable<String> inputs) {
         final boolean demangle = false;
         final boolean truncateAddresses = true;
-        final NativeScanner scanner = new NativeScanner(methodStrings);
+        final NativeScanner scanner = new NativeScanner(true, methodStrings);
 
         ArtifactScanner.EntryProcessor gProc = (file, entry, entryName) -> {
             scanner.scanArchiveEntry(dbc, useRadare, preciseNativeStrings, truncateAddresses, demangle, file, entry, entryName);
