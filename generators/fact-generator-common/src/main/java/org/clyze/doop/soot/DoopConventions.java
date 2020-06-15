@@ -3,6 +3,7 @@ package org.clyze.doop.soot;
 import java.io.File;
 import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
+import org.apache.log4j.Logger;
 
 /*
  * This class provides the conventions that are followed by the Soot
@@ -11,6 +12,8 @@ import java.lang.reflect.InvocationTargetException;
  * Doop as a library.
  */
 public class DoopConventions {
+
+    private static final Logger logger = Logger.getLogger(DoopConventions.class);
 
     public static String jimpleDir(String outDir) {
         return outDir + File.separatorChar + "jimple";
@@ -29,10 +32,10 @@ public class DoopConventions {
             Method setter = Class.forName("soot.shimple.internal.ShimpleBodyBuilder").getDeclaredMethod("setSeparator", String.class);
             setter.setAccessible(true);
             setter.invoke(null, LOCAL_SEPARATOR);
-            System.err.println("Using separator for fresh variables in Soot: " + LOCAL_SEPARATOR);
+            logger.debug("Using separator for fresh variables in Soot: " + LOCAL_SEPARATOR);
         } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InvocationTargetException ex) {
             // ex.printStackTrace();
-            System.err.println("Using default fresh variable separator in Soot.");
+            logger.debug("Using default fresh variable separator in Soot.");
             setSeparatorFailed = true;
         }
     }

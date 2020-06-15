@@ -104,6 +104,7 @@ public class SootParameters extends Parameters {
             System.err.println("  --lowMem                              Consume less memory.");
             System.err.println("  --failOnMissingClasses <file>         Terminate if classes are missing (and record them to file)");
             System.err.println("  --also-resolve <class>                Force resolution of class that may not be found automatically.");
+            System.err.println("  --debug                               Enable debug mode (verbose output).");
             System.err.println("  --log-dir <dir>                       Write logs in directory <dir>.");
             System.err.println("  --args-file <file>                    Read command-line arguments from file (one per line).");
             System.err.println("  --write-artifacts-map                 Write artifacts map.");

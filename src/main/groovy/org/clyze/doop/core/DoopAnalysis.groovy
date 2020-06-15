@@ -5,6 +5,7 @@ import groovy.transform.TypeChecked
 import groovy.util.logging.Log4j
 import heapdl.core.MemoryAnalyser
 import org.apache.commons.io.FilenameUtils
+import org.apache.log4j.Logger
 import org.clyze.analysis.Analysis
 import org.clyze.analysis.AnalysisOption
 import org.clyze.doop.common.CHA
@@ -355,6 +356,10 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         }
 
         Collection<String> params = ["--application-regex", options.APP_REGEX.value.toString()]
+
+        if (Logger.rootLogger.debugEnabled) {
+            params.add("--debug")
+        }
 
         if (platform == "android") {
             params.add("--android")

@@ -52,9 +52,9 @@ public abstract class AndroidSupport {
         for (String i : allInputs) {
             boolean isApk = i.endsWith(".apk");
             if (isApk || i.endsWith(".aar")) {
-                System.out.println("Processing application resources in " + i);
+                logger.info("Processing application resources in " + i);
                 if (isApk && parameters.getDecodeApk()) {
-                    System.out.println("Decoding...");
+                    logger.debug("Decoding...");
                     decodeDirs.add(decodeDir);
                     decodeApk(new File(i), decodeDir);
                 }
@@ -77,7 +77,7 @@ public abstract class AndroidSupport {
         // Produce a JAR of the missing R classes.
         String generatedR = rLinker.linkRs(parameters._rOutDir, tmpDirs);
         if (generatedR != null) {
-            System.out.println("Adding " + generatedR + "...");
+            logger.info("Adding " + generatedR + "...");
             parameters.getDependencies().add(generatedR);
         }
 
@@ -88,7 +88,7 @@ public abstract class AndroidSupport {
         List<String> inputs = parameters.getInputs();
         int inputsSize = inputs.size();
         if (inputsSize > 0) {
-            System.err.println("WARNING: only the first input will be analyzed.");
+            logger.warn("WARNING: only the first input will be analyzed.");
             inputs.subList(1, inputsSize).clear();
         }
     }
@@ -104,7 +104,7 @@ public abstract class AndroidSupport {
         try {
             appCallbackMethods.addAll(manifest.getCallbackMethods());
         } catch (IOException ex) {
-            System.err.println("Error while reading callbacks:");
+            logger.error("Error while reading callbacks:");
             ex.printStackTrace();
         }
 
@@ -121,13 +121,13 @@ public abstract class AndroidSupport {
     }
 
     public void printCollectedComponents() {
-        System.out.println("Collected components:");
-        System.out.println("activities: " + appActivities);
-        System.out.println("content providers: " + appContentProviders);
-        System.out.println("broadcast receivers: " + appBroadcastReceivers);
-        System.out.println("services: " + appServices);
-        System.out.println("callbacks: " + appCallbackMethods);
-        System.out.println("possible layout controls: " + appUserControls.size());
+        logger.info("Collected components:");
+        logger.info("activities: " + appActivities);
+        logger.info("content providers: " + appContentProviders);
+        logger.info("broadcast receivers: " + appBroadcastReceivers);
+        logger.info("services: " + appServices);
+        logger.info("callbacks: " + appCallbackMethods);
+        logger.info("possible layout controls: " + appUserControls.size());
     }
 
     public void writeComponents(JavaFactWriter writer) {
@@ -182,7 +182,7 @@ public abstract class AndroidSupport {
         // The output directory (the parent of the decode directories)
         String outDir = db.getDirectory();
         for (String decodeDir : decodeDirs) {
-            System.out.println("Processing XML files in directory: " + decodeDir);
+            logger.info("Processing XML files in directory: " + decodeDir);
             XMLFactGenerator.processDir(new File(decodeDir), db, outDir);
         }
 
@@ -210,7 +210,7 @@ public abstract class AndroidSupport {
      */
     private void decodeApk(File apk, String decodeDir) {
         if (new File(decodeDir).mkdirs())
-            System.out.println("Created " + decodeDir);
+            logger.debug("Created " + decodeDir);
 
         String apkPath;
         String[] cmdArgs;
@@ -221,11 +221,11 @@ public abstract class AndroidSupport {
             FileUtils.deleteDirectory(new File(outDir));
             cmdArgs = new String[] { "d", apkPath, "-o", outDir };
         } catch (IOException ex) {
-            System.err.println("Error: could not initialize inputs for apktool: " + ex.getMessage());
+            logger.error("Error: could not initialize inputs for apktool: " + ex.getMessage());
             return;
         }
 
-        System.out.println("Decoding " + apkPath + " using apktool...");
+        logger.debug("Decoding " + apkPath + " using apktool...");
         // First, check if the environment overrides the bundled apktool.
         final String APKTOOL_HOME_ENV_VAR = "APKTOOL_HOME";
         // Prefix for output lines of apktool.
@@ -233,17 +233,18 @@ public abstract class AndroidSupport {
         String apktoolHome = System.getenv(APKTOOL_HOME_ENV_VAR);
         try {
             if (apktoolHome != null) {
-                System.err.println("Trying to use apktool in: " + apktoolHome);
+                logger.debug("Trying to use apktool in: " + apktoolHome);
                 String[] cmd = new String[cmdArgs.length + 1];
                 cmd[0] = apktoolHome + File.separator + "apktool";
                 System.arraycopy(cmdArgs, 0, cmd, 1, cmdArgs.length);
-                JHelper.runWithOutput(cmd, TAG);
+                // Only show output in debug mode.
+                JHelper.runWithOutput(cmd, parameters._debug ? TAG : null);
             } else {
                 String doopHome = Resources.findDoopHome(logger);
                 Resources.invokeResourceJar(doopHome, logger, "APKTOOL", null, "apktool", cmdArgs);
             }
         } catch (IOException ex) {
-            System.err.println("Error: could not run apktool.");
+            logger.error("Error: could not run apktool.");
             ex.printStackTrace();
         }
     }

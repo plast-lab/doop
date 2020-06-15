@@ -121,7 +121,7 @@ dependencies {
     compile "org.codehaus.groovy:groovy-all:${groovyVersion}",  // Groovy
             "org.codehaus.groovy:groovy-cli-commons:${groovyVersion}", // Command line processor (Groovy wrapper)
             "commons-logging:commons-logging:1.1",              // Logging wrapper
-            "log4j:log4j:1.2.14",                               // Logging implementation
+            "log4j:log4j:1.2.17",                               // Logging implementation
             "commons-cli:commons-cli:1.2",                      // Command line processor
             "commons-io:commons-io:2.4",                        // File Utils
             "org.clyze:HeapDL:$heapDLVersion",
