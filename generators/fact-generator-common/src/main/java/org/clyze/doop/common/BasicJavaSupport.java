@@ -77,8 +77,9 @@ public class BasicJavaSupport {
                 // We only handle .xml entries inside JAR archives here.
                 // APK archives may contain binary XML and need decoding.
                 File xmlTmpFile = ArtifactScanner.extractZipEntryAsFile("xml-file", jarFile, entry, entryName);
-                System.out.println("Processing XML entry (in " + filename + "): " + entryName);
-                XMLFactGenerator.processFile(xmlTmpFile, db, "");
+                if (parameters._debug)
+                    System.out.println("Processing XML entry (in " + filename + "): " + entryName);
+                XMLFactGenerator.processFile(xmlTmpFile, db, "", parameters._debug);
             }
         };
         if (isJar || isApk || isZip)

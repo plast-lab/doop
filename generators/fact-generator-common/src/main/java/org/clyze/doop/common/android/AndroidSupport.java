@@ -183,7 +183,7 @@ public abstract class AndroidSupport {
         String outDir = db.getDirectory();
         for (String decodeDir : decodeDirs) {
             logger.info("Processing XML files in directory: " + decodeDir);
-            XMLFactGenerator.processDir(new File(decodeDir), db, outDir);
+            XMLFactGenerator.processDir(new File(decodeDir), db, outDir, parameters._debug);
         }
 
     }
