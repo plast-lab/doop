@@ -144,21 +144,27 @@ class Main {
 	}
 
 	private static void changeLogLevel(def logLevel) {
+		Level lvl = null
 		if (logLevel) {
 			switch (logLevel) {
 				case "debug":
-					Logger.rootLogger.level = Level.DEBUG
+					lvl = Level.DEBUG
 					break
 				case "info":
-					Logger.rootLogger.level = Level.INFO
+					lvl = Level.INFO
 					break
 				case "error":
-					Logger.rootLogger.level = Level.ERROR
+					lvl = Level.ERROR
 					break
 				default:
-					log.info "Invalid log level: $logLevel - using default (info)"
+					lvl = Level.INFO
+					log.info "Invalid log level: $logLevel - using default (${lvl})"
 			}
+		} else {
+			lvl = Level.INFO
+			log.debug "Using default log level: ${lvl}"
 		}
+		Logger.rootLogger.level = lvl
 	}
 
 	private static int parseTimeoutOrDefault(String userTimeout, int defaultTimeout) {
