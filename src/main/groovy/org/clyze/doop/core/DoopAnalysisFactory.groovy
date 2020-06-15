@@ -70,12 +70,20 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 	DoopAnalysis newAnalysis(AnalysisFamily family, Map<String, AnalysisOption> options) {
 		def context
 		def platformName = options.PLATFORM.value as String
+		List<String> inputs = options.INPUTS.value as List<String>
 		if (platformName.contains("python")) {
 			context = new DefaultInputResolutionContext(DefaultInputResolutionContext.pythonResolver(new File(Doop.doopTmp)))
 		} else {
+			// Check that an Android platform is used for .apk inputs.
+			String ANDROID_PLATFORM_PREFIX = "android_"
+			if (inputs.any {it.endsWith(".apk")} && !platformName.startsWith(ANDROID_PLATFORM_PREFIX)) {
+				Collection<String> androidPlatforms = options.PLATFORM.validValues.findAll { it.startsWith(ANDROID_PLATFORM_PREFIX) }
+				String errorMsg = "Platform '${platformName}' may not be suitable for analysis inputs: ${inputs}. Available Android platforms: ${androidPlatforms}"
+				throw new DoopErrorCodeException(35, errorMsg)
+			}
 			context = newJavaDefaultInputResolutionContext()
 		}
-		context.add(options.INPUTS.value as List<String>, InputType.INPUT)
+		context.add(inputs, InputType.INPUT)
 		context.add(options.LIBRARIES.value as List<String>, InputType.LIBRARY)
 
 		def sdkDir = System.getenv('ANDROID_SDK')
