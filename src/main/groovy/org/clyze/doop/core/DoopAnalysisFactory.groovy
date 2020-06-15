@@ -92,11 +92,8 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		String platformsLib = options.PLATFORMS_LIB.value as String
 		if (platformsLib != null) {
 			log.warn("WARNING: Using custom platforms library in ${platformsLib}. Unset environment variable ${DoopAnalysisFamily.DOOP_PLATFORMS_LIB_ENV} for default platform discovery.")
-		} else {
-			platformsLib = PlatformManager.ARTIFACTORY_PLATFORMS_URL
-			log.info "Using platforms library: ${platformsLib}. (Set environment variable ${DoopAnalysisFamily.DOOP_PLATFORMS_LIB_ENV} to override this location with a local platforms directory.)"
 		}
-		List<String> platformFiles = new PlatformManager(platformsLib, sdkDir).find(platformName)
+		List<String> platformFiles = new PlatformManager(platformsLib, sdkDir).find(platformName, true)
 		platformFiles.findAll { !it.startsWith(PlatformManager.ARTIFACTORY_PLATFORMS_URL) && !(new File(it)).exists() }.each {
 			if (platformName.startsWith("android_")) {
 				log.warn "WARNING: Android platform file ${it} does not exist. Please install it via the Android SDK Manager."
