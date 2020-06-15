@@ -340,7 +340,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			} catch (Exception ex) {
 				log.error "ERROR: Could not resolve files. If platform inputs could not be resolved, you can try the following:"
 				log.error "* Set environment variable ANDROID_SDK to point to an existing Android SDK location (for Android platforms)."
-				log.error "* Set environment variable ${DoopAnalysisFamily.DOOP_PLATFORMS_LIB_ENV} to point to an existing platforms library (such as a clone of the doop-benchmarks repo)."
+				log.error "* Set environment variable ${DoopAnalysisFamily.DOOP_PLATFORMS_LIB_ENV} to point to an existing platforms library (such as a clone of the doop-benchmarks repository)."
 				throw new DoopErrorCodeException(36, ex.message)
 			}
 
