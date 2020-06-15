@@ -87,7 +87,7 @@ public abstract class AndroidSupport {
 
         List<String> inputs = parameters.getInputs();
         int inputsSize = inputs.size();
-        if (inputsSize > 0) {
+        if (inputsSize > 1) {
             logger.warn("WARNING: only the first input will be analyzed.");
             inputs.subList(1, inputsSize).clear();
         }
