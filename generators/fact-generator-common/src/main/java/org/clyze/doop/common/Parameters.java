@@ -173,7 +173,7 @@ public class Parameters {
         case "--fact-gen-cores":
             i = shift(args, i);
             try {
-                _cores = new Integer(args[i]);
+                _cores = Integer.valueOf(args[i]);
             } catch (NumberFormatException nfe) {
                 System.out.println("Invalid cores argument: " + args[i]);
             }

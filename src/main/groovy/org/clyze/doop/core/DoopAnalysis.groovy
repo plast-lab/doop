@@ -282,11 +282,15 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                     runHeapDL(options.HEAPDLS.value.collect { File f -> f.canonicalPath })
                 }
 
-                log.info "Caching facts in $cacheDir"
-                deleteQuietly(cacheDir)
-                cacheDir.mkdirs()
-                FileOps.copyDirContentsWithRetry(factsDir, cacheDir)
-                new File(cacheDir, "meta").withWriter { BufferedWriter w -> w.write(cacheMeta()) }
+                if (options.X_DONT_CACHE_FACTS.value)
+                    log.info "Facts will not be cached."
+                else {
+                    log.info "Caching facts in $cacheDir"
+                    deleteQuietly(cacheDir)
+                    cacheDir.mkdirs()
+                    FileOps.copyDirContentsWithRetry(factsDir, cacheDir)
+                    new File(cacheDir, "meta").withWriter { BufferedWriter w -> w.write(cacheMeta()) }
+                }
             } else {
                 log.warn "WARNING: Imported facts are not cached."
             }
@@ -808,7 +812,9 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
         // Write arguments to file and pass that to the
         // generator. This fixes too-long argument lists.
-        String argsFile = Files.createTempFile("params-", "").toString()
+        Path tmpParams = Files.createTempFile("params-", "")
+        tmpParams.toFile().deleteOnExit()
+        String argsFile = tmpParams.toString()
         // Some special options should not be passed via the file.
         List<String> specialOpts = ["--python"]
         List<String> args = []

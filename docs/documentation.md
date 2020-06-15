@@ -26,7 +26,7 @@ Doop is a framework for Java pointer analysis. It is implemented in Datalog, Jav
 
 Doop uses [Gradle](http://www.gradle.org) as its build system.
 
-Doop uses either [Logicblox] (http://www.logicblox.com/) or [Souffle] (http://www.souffle-lang.com) as its Datalog engine. The Doop port on the Logicblox engine is currently deprecated.
+Doop uses either [Logicblox] (http://www.logicblox.com/) or [Souffle] (https://souffle-lang.github.io) as its Datalog engine. The Doop port on the Logicblox engine is currently deprecated.
 
 
 ## Building Doop {#building}

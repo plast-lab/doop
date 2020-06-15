@@ -144,6 +144,8 @@ public class Main {
             if (sootParameters._generateJimple)
                 generateIR(java, scene, sootData.classes, sootData.driver, outDir);
 
+            System.err.println("Methods without active bodies encountered (and reset): " + FactGenerator.methodsWithoutActiveBodies.get());
+
             if (sootParameters._lowMem) {
                 System.out.println("Releasing Soot structures...");
                 for (SootClass cl : scene.getClasses())
@@ -393,30 +395,10 @@ public class Main {
                                         Iterable<String> inputs) {
         final boolean demangle = false;
         final boolean truncateAddresses = true;
-        final NativeScanner scanner = new NativeScanner(methodStrings);
+        final NativeScanner scanner = new NativeScanner(true, methodStrings);
 
         ArtifactScanner.EntryProcessor gProc = (file, entry, entryName) -> {
-            boolean isSO = entryName.endsWith(".so");
-            boolean isDylib = entryName.endsWith(".dylib");
-            boolean isDLL = entryName.toLowerCase().endsWith(".dll");
-            boolean isLibsXZS = entryName.endsWith("libs.xzs");
-            boolean isLibsZSTD = entryName.endsWith("libs.zstd");
-
-            if (isSO || isDylib || isDLL || isLibsXZS || isLibsZSTD) {
-                File libTmpFile = ArtifactScanner.extractZipEntryAsFile("native-lib", file, entry, entryName);
-                String libPath = libTmpFile.getCanonicalPath();
-                // Handle some special formats.
-                if (isLibsXZS)
-                    libPath = NativeScanner.getXZSLib(libPath);
-                else if (isLibsZSTD)
-                    libPath = NativeScanner.getZSTDLib(libPath);
-                BinaryAnalysis analysis = NativeScanner.create(dbc, useRadare, libPath, preciseNativeStrings, truncateAddresses, demangle);
-                // Check that the current mode supports .dll inputs.
-                if (isDLL && !useRadare)
-                    System.err.println("WARNING: Radare mode should be activated to scan library " + entryName);
-
-                scanner.scanBinaryCode(analysis);
-            }
+            scanner.scanArchiveEntry(dbc, useRadare, preciseNativeStrings, truncateAddresses, demangle, file, entry, entryName);
         };
         for (String input : inputs) {
             System.out.println("Processing native code in input: " + input);

@@ -8,6 +8,7 @@ buildscript {
 
     dependencies {
         classpath 'commons-io:commons-io:2.4'
+        classpath 'org.apache.ant:ant:1.10.7'
     }
 }
 
@@ -108,8 +109,8 @@ compileGroovy {
 
 // Set dependency version so that they are available to subprojects.
 gradle.rootProject.ext.antlrVersion='4.7.2'
-gradle.rootProject.ext.groovyVersion="2.5.7"
-gradle.rootProject.ext.clueCommonVersion='3.20.2'
+gradle.rootProject.ext.groovyVersion="2.5.10"
+gradle.rootProject.ext.clueCommonVersion='3.21.2'
 gradle.rootProject.ext.spockVersion='1.3-groovy-2.5'
 // Set other variables for subprojects.
 gradle.rootProject.ext.resourcesDir='resources'
@@ -152,6 +153,12 @@ if (linkFactGenerators) {
         jvmArgs jvmMemArgs
     }
 }
+// Otherwise, pass the memory options for Doop to use when invoking fact generators.
+else {
+    application {
+        applicationDefaultJvmArgs = defaultFactGenJvmArgs
+    }
+}
 
 applicationDistribution.from(file("$projectDir/logic")) {
     into 'logic'
@@ -181,12 +188,17 @@ String doopCP() {
 }
 
 task writeGitCommitHash() {
-    def stdout = new ByteArrayOutputStream()
-    exec {
-        commandLine 'git', 'rev-parse', 'HEAD'
-        standardOutput = stdout
-    }
-    String hash = stdout.toString().trim()
+    String hash
+    if (file('.git').exists()) {
+	def stdout = new ByteArrayOutputStream()
+	exec {
+            commandLine 'git', 'rev-parse', 'HEAD'
+            standardOutput = stdout
+            ignoreExitValue = true
+	}
+	hash = stdout.toString().trim()
+    } else
+	hash = ''
     new File('src/main/resources/git-hash.txt').withWriter { w -> w.writeLine(hash) }
 }
 [jar, run].each { it.dependsOn writeGitCommitHash }
@@ -202,7 +214,8 @@ run {
     // We set the DOOP_HOME environment variable (see org.clyze.doop.Main)
     environment.DOOP_HOME = projectDir
     if (project.hasProperty('args')) {
-        args project.property('args').split()
+        def splitArgs = org.apache.tools.ant.types.Commandline.translateCommandline(project.property('args'))
+        args splitArgs
     }
 }
 
@@ -300,7 +313,9 @@ test {
         exceptionFormat = 'full'
     }
     environment.DOOP_HOME = projectDir
-    environment.HOME = Files.createTempDirectory("lb-test-home-dir", asFileAttribute(fromString("rwxrwxrwx"))).toString()
+    java.nio.file.Path lbTestHomeDir = Files.createTempDirectory("lb-test-home-dir", asFileAttribute(fromString("rwxrwxrwx")))
+    lbTestHomeDir.toFile().deleteOnExit()
+    environment.HOME = lbTestHomeDir.toString()
 }
 
 task buildTests {

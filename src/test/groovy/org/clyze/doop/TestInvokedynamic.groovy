@@ -19,12 +19,13 @@ class TestInvokedynamic extends DoopSpec {
 							  ["--reflection-classic"] :
 							  ["--light-reflection-glue", "--distinguish-all-string-constants"]
 		List options = ["--platform", "java_8",
-										 "--generate-jimple",
-										 // "--Xserver-logic",
-										 "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/TestInvokedynamic.dl",
-										 "--thorough-fact-gen", "--sanity",
-										 "--Xstats-none", "--no-standard-exports",
-										 "--reflection-method-handles"] + reflectionOpts
+						"--generate-jimple",
+						// "--Xserver-logic",
+						"--Xextra-logic", "${Doop.souffleAddonsPath}/testing/TestInvokedynamic.dl",
+						"--no-standard-exports",
+						"--thorough-fact-gen", "--sanity",
+						"--Xstats-none", "--no-standard-exports",
+						"--reflection-method-handles"] + reflectionOpts
 		String analysisId = "test-115-invokedynamic" + (fullReflection ? "" : "-light-refl")
 		Analysis analysis = analyzeBuiltinTest("115-invokedynamic",
 											   options,
