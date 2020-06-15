@@ -86,8 +86,22 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		context.add(inputs, InputType.INPUT)
 		context.add(options.LIBRARIES.value as List<String>, InputType.LIBRARY)
 
+		// Detect the platform files (using a combination of DOOP_PLATFORMS_LIB/ANDROID_SDK
+		// environment variables and the artifactory).
 		def sdkDir = System.getenv('ANDROID_SDK')
-		def platformFiles = new PlatformManager(options.PLATFORMS_LIB.value as String, sdkDir).find(platformName)
+		String platformsLib = options.PLATFORMS_LIB.value as String
+		if (platformsLib != null) {
+			log.warn("WARNING: Using custom platforms library in ${platformsLib}. Unset environment variable ${DoopAnalysisFamily.DOOP_PLATFORMS_LIB_ENV} for default platform discovery.")
+		} else {
+			platformsLib = PlatformManager.ARTIFACTORY_PLATFORMS_URL
+			log.info "Using platforms library: ${platformsLib}. (Set environment variable ${DoopAnalysisFamily.DOOP_PLATFORMS_LIB_ENV} to override this location with a local platforms directory.)"
+		}
+		List<String> platformFiles = new PlatformManager(platformsLib, sdkDir).find(platformName)
+		platformFiles.findAll { !it.startsWith(PlatformManager.ARTIFACTORY_PLATFORMS_URL) && !(new File(it)).exists() }.each {
+			if (platformName.startsWith("android_")) {
+				log.warn "WARNING: Android platform file ${it} does not exist. Please install it via the Android SDK Manager."
+			}
+		}
 		context.add(platformFiles, InputType.PLATFORM)
 
 		context.add(options.HEAPDLS.value as List<String>, InputType.HEAPDL)
@@ -321,7 +335,14 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
 		if (!options.X_START_AFTER_FACTS.value) {
 			log.debug "Resolving files"
-			context.resolve()
+			try {
+				context.resolve()
+			} catch (Exception ex) {
+				log.error "ERROR: Could not resolve files. If platform inputs could not be resolved, you can try the following:"
+				log.error "* Set environment variable ANDROID_SDK to point to an existing Android SDK location (for Android platforms)."
+				log.error "* Set environment variable ${DoopAnalysisFamily.DOOP_PLATFORMS_LIB_ENV} to point to an existing platforms library (such as a clone of the doop-benchmarks repo)."
+				throw new DoopErrorCodeException(36, ex.message)
+			}
 
 			options.INPUTS.value = context.allInputs
 			log.debug "Input file paths: ${context.inputs()} -> ${options.INPUTS.value}"

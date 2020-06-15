@@ -12,6 +12,7 @@ import static org.apache.commons.io.FilenameUtils.removeExtension
 // @TypeChecked
 class DoopAnalysisFamily implements AnalysisFamily {
 
+	public static final String DOOP_PLATFORMS_LIB_ENV = "DOOP_PLATFORMS_LIB"
 	private static final String DEFAULT_JAVA_PLATFORM = "java_8"
 	private static final String GROUP_ENGINE = "Datalog engine"
 	private static final String GROUP_FACTS = "Fact generation"
@@ -131,7 +132,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "PLATFORMS_LIB",
 					name: "platforms-lib",
 					description: "The path to the platform libs directory.",
-					value: System.getenv("DOOP_PLATFORMS_LIB"),
+					value: System.getenv(DOOP_PLATFORMS_LIB_ENV),
 					cli: false
 			),
 			new BooleanAnalysisOption(
