@@ -16,11 +16,11 @@ import org.clyze.utils.JHelper;
  */
 @SuppressWarnings("RedundantThrows")
 public class XMLFactGenerator extends DefaultHandler {
-    private static final boolean verbose = false;
     private final String[] ID_PREFIXES = new String[] { "@id/", "@android:id/" };
     @SuppressWarnings("FieldCanBeLocal")
     private final String LAYOUT_PREFIX = "@layout/";
 
+    private final boolean debug;
     private final Database db;
     private final File xmlFile;
     private final String relativePath;
@@ -33,10 +33,11 @@ public class XMLFactGenerator extends DefaultHandler {
     // Contains the inner data of an element.
     private String xmlData = null;
 
-    private XMLFactGenerator(Database db, File xmlFile, String topDir) {
+    private XMLFactGenerator(Database db, File xmlFile, String topDir, boolean debug) {
         this.db = db;
         this.xmlFile = xmlFile;
         this.relativePath = trimXMLPath(topDir);
+        this.debug = debug;
     }
 
     /**
@@ -44,23 +45,24 @@ public class XMLFactGenerator extends DefaultHandler {
      *
      * @param dir     the directory to process
      * @param db      the database object to use
+     * @param debug   if true, print debugging information
      * @param topDir  the top directory to use when creating relative
      *                paths (a prefix of the directory path)
      */
-    public static void processDir(File dir, Database db, String topDir) {
+    public static void processDir(File dir, Database db, String topDir, boolean debug) {
         File[] files = dir.listFiles();
         if (files != null)
             for (File f : files) {
                 if (f.isDirectory())
-                    processDir(f, db, topDir);
+                    processDir(f, db, topDir, debug);
                 else if (f.isFile()) {
                     String filePath = f.getAbsolutePath();
                     if (filePath.toLowerCase().endsWith(".xml")) {
-                        if (verbose)
+                        if (debug)
                             System.out.println("Processing: " + f);
                         // Skip original AndroidManifest.xml (binary XML data).
                         if (!f.getAbsolutePath().endsWith("/original/AndroidManifest.xml"))
-                            processFile(f, db, topDir);
+                            processFile(f, db, topDir, debug);
                     }
                 }
             }
@@ -73,29 +75,39 @@ public class XMLFactGenerator extends DefaultHandler {
      * @param db       the database object to use
      * @param topDir   the top directory to use when creating realtive
      *                 paths (a prefix of the directory path)
+     * @param debug    if true, show debug messages
      */
-    public static void processFile(File xmlFile, Database db, String topDir) {
+    public static void processFile(File xmlFile, Database db, String topDir, boolean debug) {
         try {
-            XMLFactGenerator gen = new XMLFactGenerator(db, xmlFile, topDir);
-            gen.parse();
+            XMLFactGenerator gen = new XMLFactGenerator(db, xmlFile, topDir, debug);
+            gen.parse(debug);
         } catch (ParserConfigurationException | SAXException | IOException ex) {
             String msg = ex.getMessage();
-            System.err.println("Error parsing " + xmlFile + ": " + msg);
+            if (debug)
+                System.err.println("Error parsing " + xmlFile + ": " + msg);
             // ex.printStackTrace();
         }
     }
 
-    private void parse() throws IOException, SAXException, ParserConfigurationException {
+    private void parse(boolean debug) throws IOException, SAXException, ParserConfigurationException {
         SAXParserFactory spf = SAXParserFactory.newInstance();
         spf.setNamespaceAware(true);
         XMLReader xmlReader = spf.newSAXParser().getXMLReader();
         xmlReader.setContentHandler(this);
+        // If not in debug mode, replace verbose error handler with dummy one.
+        if (!debug)
+            xmlReader.setErrorHandler(new ErrorHandler() {
+                    public void error(SAXParseException exception) { }
+                    public void fatalError(SAXParseException exception) { }
+                    public void warning(SAXParseException exception) { }
+            });
 
         try (FileInputStream is1 = new FileInputStream(xmlFile)) {
             xmlReader.parse(new InputSource(is1));
         } catch (SAXParseException ex) {
-            System.err.println("XML processing may fail for " + xmlFile.getAbsolutePath() + ", trying automatic encoding conversion...");
-            JHelper.ensureUTF8(xmlFile.getAbsolutePath());
+            if (debug)
+                System.err.println("XML processing may fail for " + xmlFile.getAbsolutePath() + ", trying automatic encoding conversion...");
+            JHelper.ensureUTF8(xmlFile.getAbsolutePath(), debug);
             try (FileInputStream is2 = new FileInputStream(xmlFile)) {
                 xmlReader.parse(new InputSource(is2));
             }
@@ -195,17 +207,18 @@ public class XMLFactGenerator extends DefaultHandler {
                 if (value.startsWith(prefix)) {
                     db.add(ANDROID_ID, file, nodeId, value, prefix, value.substring(prefix.length()));
                     handled = true;
-                } else if (value.startsWith("@+id/")) {
+                } else if (value.startsWith("@+id/") && debug) {
                     System.err.println("WARNING: non-constant id found in: " + value);
                 }
             if (!handled) {
-                System.err.println("WARNING: could not process android id: " + value);
+                if (debug)
+                    System.err.println("WARNING: could not process Android id: " + value);
                 db.add(ANDROID_ID, file, nodeId, value, "-", value);
             }
         } else if (qName.equals("layout")) {
             if (value.startsWith(LAYOUT_PREFIX)) {
                 db.add(ANDROID_INCLUDE_XML, file, nodeId, value.substring(LAYOUT_PREFIX.length()));
-            } else
+            } else if (debug)
                 System.err.println("WARNING: ignoring layout=" + value);
         }
     }

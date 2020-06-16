@@ -17,6 +17,7 @@ public class Parameters {
     private List<String> _dependencies = new ArrayList<>();
     private final List<String> _platformLibs = new ArrayList<>();
     private String _outputDir = null;
+    public boolean _debug = false;
     private String _logDir = null;
     private ClassFilter applicationClassFilter;
     public boolean _scanNativeCode = false;
@@ -157,6 +158,9 @@ public class Parameters {
         case "-d":
             i = shift(args, i);
             setOutputDir(args[i]);
+            break;
+        case "--debug":
+            _debug = true;
             break;
         case "--log-dir":
             i = shift(args, i);

@@ -110,7 +110,7 @@ compileGroovy {
 // Set dependency version so that they are available to subprojects.
 gradle.rootProject.ext.antlrVersion='4.7.2'
 gradle.rootProject.ext.groovyVersion="2.5.10"
-gradle.rootProject.ext.clueCommonVersion='3.21.2'
+gradle.rootProject.ext.clueCommonVersion='3.22.2'
 gradle.rootProject.ext.spockVersion='1.3-groovy-2.5'
 // Set other variables for subprojects.
 gradle.rootProject.ext.resourcesDir='resources'
@@ -121,7 +121,7 @@ dependencies {
     compile "org.codehaus.groovy:groovy-all:${groovyVersion}",  // Groovy
             "org.codehaus.groovy:groovy-cli-commons:${groovyVersion}", // Command line processor (Groovy wrapper)
             "commons-logging:commons-logging:1.1",              // Logging wrapper
-            "log4j:log4j:1.2.14",                               // Logging implementation
+            "log4j:log4j:1.2.17",                               // Logging implementation
             "commons-cli:commons-cli:1.2",                      // Command line processor
             "commons-io:commons-io:2.4",                        // File Utils
             "org.clyze:HeapDL:$heapDLVersion",

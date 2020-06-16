@@ -56,7 +56,8 @@ public class Main {
 
         try {
             String logDir = sootParameters.getLogDir();
-            JHelper.tryInitLogging("DEBUG", logDir, true, "soot-fact-generator");
+            String logLevel = sootParameters._debug ? "DEBUG" : "INFO";
+            JHelper.tryInitLogging(logLevel, logDir, true, "soot-fact-generator");
             logger = Logger.getLogger(Main.class);
             logger.info("Logging initialized, using directory: " + logDir);
         } catch (IOException ex) {

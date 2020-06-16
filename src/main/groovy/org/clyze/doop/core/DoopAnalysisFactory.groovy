@@ -70,16 +70,35 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 	DoopAnalysis newAnalysis(AnalysisFamily family, Map<String, AnalysisOption> options) {
 		def context
 		def platformName = options.PLATFORM.value as String
+		List<String> inputs = options.INPUTS.value as List<String>
 		if (platformName.contains("python")) {
 			context = new DefaultInputResolutionContext(DefaultInputResolutionContext.pythonResolver(new File(Doop.doopTmp)))
 		} else {
+			// Check that an Android platform is used for .apk inputs.
+			String ANDROID_PLATFORM_PREFIX = "android_"
+			if (inputs.any {it.endsWith(".apk")} && !platformName.startsWith(ANDROID_PLATFORM_PREFIX)) {
+				Collection<String> androidPlatforms = options.PLATFORM.validValues.findAll { it.startsWith(ANDROID_PLATFORM_PREFIX) }
+				String errorMsg = "Platform '${platformName}' may not be suitable for analysis inputs: ${inputs}. Available Android platforms: ${androidPlatforms}"
+				throw new DoopErrorCodeException(35, errorMsg)
+			}
 			context = newJavaDefaultInputResolutionContext()
 		}
-		context.add(options.INPUTS.value as List<String>, InputType.INPUT)
+		context.add(inputs, InputType.INPUT)
 		context.add(options.LIBRARIES.value as List<String>, InputType.LIBRARY)
 
+		// Detect the platform files (using a combination of DOOP_PLATFORMS_LIB/ANDROID_SDK
+		// environment variables and the artifactory).
 		def sdkDir = System.getenv('ANDROID_SDK')
-		def platformFiles = new PlatformManager(options.PLATFORMS_LIB.value as String, sdkDir).find(platformName)
+		String platformsLib = options.PLATFORMS_LIB.value as String
+		if (platformsLib != null) {
+			log.warn("WARNING: Using custom platforms library in ${platformsLib}. Unset environment variable ${DoopAnalysisFamily.DOOP_PLATFORMS_LIB_ENV} for default platform discovery.")
+		}
+		List<String> platformFiles = new PlatformManager(platformsLib, sdkDir).find(platformName, true)
+		platformFiles.findAll { !it.startsWith(PlatformManager.ARTIFACTORY_PLATFORMS_URL) && !(new File(it)).exists() }.each {
+			if (platformName.startsWith("android_")) {
+				log.warn "WARNING: Android platform file ${it} does not exist. Please install it via the Android SDK Manager."
+			}
+		}
 		context.add(platformFiles, InputType.PLATFORM)
 
 		context.add(options.HEAPDLS.value as List<String>, InputType.HEAPDL)
@@ -313,7 +332,14 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
 		if (!options.X_START_AFTER_FACTS.value) {
 			log.debug "Resolving files"
-			context.resolve()
+			try {
+				context.resolve()
+			} catch (Exception ex) {
+				log.error "ERROR: Could not resolve files. If platform inputs could not be resolved, you can try the following:"
+				log.error "* Set environment variable ANDROID_SDK to point to an existing Android SDK location (for Android platforms)."
+				log.error "* Set environment variable ${DoopAnalysisFamily.DOOP_PLATFORMS_LIB_ENV} to point to an existing platforms library (such as a clone of the doop-benchmarks repository)."
+				throw new DoopErrorCodeException(36, ex.message)
+			}
 
 			options.INPUTS.value = context.allInputs
 			log.debug "Input file paths: ${context.inputs()} -> ${options.INPUTS.value}"
