@@ -11,11 +11,11 @@ To create a Docker container for Doop:
 ```
 
 (2) Find the resulting archive, e.g.,
-"build/distributions/doop-4.20.43.zip" and copy it to the Dockerfile
+"build/distributions/doop-4.21.6.zip" and copy it to the Dockerfile
 directory.
 
 ```
-cp build/distributions/doop-4.20.43.zip docs/docker/
+cp build/distributions/doop-4.21.6.zip docs/docker/
 ```
 
 (3) Edit the Dockerfile and set DOOP_VERSION to the base name of the
@@ -25,7 +25,7 @@ archive (omit the file extension).
 
 ```
 cd docs/docker
-docker build -t doop .
+docker build -t doop-4.21.6 . --no-cache
 ```
 
 (5) Create a local directory for Doop's cache/out directories (needed
@@ -57,13 +57,22 @@ To connect to the container via shell:
 docker exec -it doop_container /bin/bash
 ```
 
-Run a test analysis inside the container and check its output
+To run an analysis inside the container and check its output
 relations:
 
 ```
 root@af6ca7193b3d:/# cd $DOOP_HOME
-root@af6ca7193b3d:/doop/doop-4.20.43# bin/doop -i tests/016-reflection/build/libs/016-reflection.jar -a context-insensitive --id test
-root@af6ca7193b3d:/doop/doop-4.20.43# ls /data/out/context-insensitive/test/database/
+root@af6ca7193b3d:/doop/doop-4.21.6# bin/doop -i /path/to/app.jar -a context-insensitive --id test
+root@af6ca7193b3d:/doop/doop-4.21.6# ls /data/out/context-insensitive/test/database/
+```
+
+## Publishing in Docker Hub ##
+
+The following commands publish the Doop image to the [gfour/doop repository](https://hub.docker.com/r/gfour/doop) in Docker Hub:
+
+```
+docker tag doop-4.21.6 gfour/doop:4.21.6
+docker push gfour/doop:4.21.6
 ```
 
 ## Notes ##
