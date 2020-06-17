@@ -168,6 +168,10 @@ applicationDistribution.from(file("$projectDir/souffle-logic")) {
     into 'souffle-logic'
 }
 
+applicationDistribution.from(file("$projectDir/bin")) {
+    into 'bin'
+}
+
 applicationDistribution.from(file("${projectDir}/${resourcesDir}")) {
     into resourcesDir
 }

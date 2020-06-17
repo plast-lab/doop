@@ -32,9 +32,10 @@ RUN cd /rust/rust-1.41.0-x86_64-unknown-linux-gnu && ./install.sh
 ## Haskell stack
 RUN curl -sSL https://get.haskellstack.org/ | sh
 ## Clone ddlog (on specific commit)
-RUN git clone https://github.com/vmware/differential-datalog.git /differential-datalog && cd /differential-datalog && git checkout 4dc0cd152bc91b0914c78ab74250c277c2a19c01 && stack install --local-bin-path /usr/local/bin
+RUN git clone https://github.com/vmware/differential-datalog.git /differential-datalog && cd /differential-datalog && git checkout v0.19.0 && stack install --local-bin-path /usr/local/bin
 ## Install Python dependency for ddlog Souffle converter.
 RUN apt-get install -y python2.7 python-pip && pip2 install parglare==0.9.2
+ENV DDLOG_DIR=/differential-datalog/
 
 ## Doop
 RUN apt-get install -y openjdk-8-jdk openjdk-8-jre openjdk-8-jdk-headless radare2 unzip
@@ -44,7 +45,7 @@ ENV DOOP_PLATFORMS_LIB=/doop-benchmarks
 ENV DOOP_CACHE=/data/cache
 ENV DOOP_OUT=/data/out
 RUN mkdir /doop
-ARG DOOP_VERSION=doop-4.20.46
+ARG DOOP_VERSION=doop-4.21.6
 COPY $DOOP_VERSION.zip /doop/$DOOP_VERSION.zip
 RUN cd /doop && unzip $DOOP_VERSION.zip
 ENV DOOP_HOME=/doop/$DOOP_VERSION
