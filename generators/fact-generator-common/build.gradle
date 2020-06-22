@@ -15,7 +15,7 @@ dependencies {
     compile 'org.smali:dexlib2:2.2.5'                // Dexlib2: library for reading/modifying/writing Android dex files
     compile 'net.dongliu:apk-parser:2.6.10'          // needed for reading binary XML entries from APK inputs
     compile "org.antlr:antlr4-runtime:${antlrVersion}"
-    compile 'org.clyze:native-scanner:0.5.4'
+    compile 'org.clyze:native-scanner:0.6.0'
     compile "log4j:log4j:1.2.17"                     // Logging implementation
 }
 

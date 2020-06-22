@@ -21,7 +21,9 @@ public class Parameters {
     private String _logDir = null;
     private ClassFilter applicationClassFilter;
     public boolean _scanNativeCode = false;
-    public boolean _radare = false;
+    public boolean _nativeRadare = false;
+    public boolean _nativeBuiltin = false;
+    public boolean _nativeBinutils = false;
     public boolean _preciseNativeStrings = false;
     public boolean _android = false;
     public Integer _cores = null;
@@ -217,8 +219,14 @@ public class Parameters {
         case "--scan-native-code":
             this._scanNativeCode = true;
             break;
-        case "--use-radare":
-            this._radare = true;
+        case "--native-use-radare":
+            this._nativeRadare = true;
+            break;
+        case "--native-use-builtin":
+            this._nativeBuiltin = true;
+            break;
+        case "--native-use-binutils":
+            this._nativeBinutils = true;
             break;
         case "--only-precise-native-strings":
             this._preciseNativeStrings = true;

@@ -292,10 +292,24 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
-					id: "USE_RADARE",
-					name: "use-radare",
+					id: "NATIVE_USE_RADARE",
+					name: "native-use-radare",
 					group: GROUP_NATIVE,
 					description: "Use Radare2 to find strings.",
+					forCacheID: true
+			),
+			new BooleanAnalysisOption(
+					id: "NATIVE_USE_BUILTIN",
+					name: "native-use-builtin",
+					group: GROUP_NATIVE,
+					description: "Use (naive/portable) built-in analysis to find strings.",
+					forCacheID: true
+			),
+			new BooleanAnalysisOption(
+					id: "NATIVE_USE_BINUTILS",
+					name: "native-use-binutils",
+					group: GROUP_NATIVE,
+					description: "Use binutils-based analysis to find strings.",
 					forCacheID: true
 			),
 			new BooleanAnalysisOption(
