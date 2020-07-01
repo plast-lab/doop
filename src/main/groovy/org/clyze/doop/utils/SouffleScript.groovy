@@ -1,9 +1,8 @@
 package org.clyze.doop.utils
 
-import groovy.transform.TypeChecked
+import groovy.transform.CompileStatic
 import groovy.util.logging.Log4j
 import org.clyze.doop.common.DoopErrorCodeException
-import org.clyze.doop.core.Doop
 import org.clyze.doop.core.DoopAnalysisFactory
 import org.clyze.utils.CheckSum
 import org.clyze.utils.Executor
@@ -18,7 +17,7 @@ import java.nio.file.StandardCopyOption
 import static org.apache.commons.io.FileUtils.deleteQuietly
 
 @Log4j
-@TypeChecked
+@CompileStatic
 class SouffleScript {
 
 	static final String EXE_NAME = "exe"

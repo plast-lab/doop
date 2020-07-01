@@ -1,6 +1,6 @@
 package org.clyze.doop.utils
 
-import groovy.transform.TypeChecked
+import groovy.transform.CompileStatic
 import groovy.util.logging.Log4j
 import org.apache.commons.io.FileUtils
 import org.clyze.analysis.Analysis
@@ -10,7 +10,7 @@ import org.clyze.utils.OS
 
 import java.nio.file.Files
 
-@TypeChecked
+@CompileStatic
 @Log4j
 class CPreprocessor {
     List<String> macroCli

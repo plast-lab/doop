@@ -2,9 +2,7 @@ package org.clyze.doop.core
 
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
-import groovy.transform.TypeChecked
 import groovy.util.logging.Log4j
-import org.clyze.doop.utils.SouffleScript
 
 import static org.apache.commons.io.FileUtils.deleteQuietly
 import static org.apache.commons.io.FileUtils.sizeOfDirectory
@@ -12,7 +10,6 @@ import static org.apache.commons.io.FileUtils.sizeOfDirectory
 @CompileStatic
 @InheritConstructors
 @Log4j
-@TypeChecked
 class SoufflePythonAnalysis extends SouffleAnalysis {
 
     File analysis

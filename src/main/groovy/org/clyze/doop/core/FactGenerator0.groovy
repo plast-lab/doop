@@ -1,6 +1,6 @@
 package org.clyze.doop.core
 
-import groovy.transform.TypeChecked
+import groovy.transform.CompileStatic
 import groovy.util.logging.Log4j
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -15,7 +15,7 @@ import static PredicateFile0.*
 
 // This fact generator handles facts that do not need front-end/IR information.
 @Log4j
-@TypeChecked
+@CompileStatic
 class FactGenerator0 {
 
     private File factsDir

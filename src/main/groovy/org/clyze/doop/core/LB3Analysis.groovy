@@ -2,7 +2,6 @@ package org.clyze.doop.core
 
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
-import groovy.transform.TypeChecked
 import groovy.util.logging.Log4j
 import org.clyze.doop.utils.LBBuilder
 import org.clyze.utils.Executor
@@ -22,7 +21,6 @@ import static org.apache.commons.io.FileUtils.*
 @CompileStatic
 @InheritConstructors
 @Log4j
-@TypeChecked
 class LB3Analysis extends DoopAnalysis {
 
 	boolean isRefineStep
