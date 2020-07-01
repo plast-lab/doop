@@ -13,6 +13,7 @@ import org.clyze.doop.common.ArtifactScanner;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.common.DatabaseConnector;
 import org.clyze.doop.common.DoopErrorCodeException;
+import org.clyze.doop.common.Phantoms;
 import org.clyze.doop.soot.android.AndroidSupport_Soot;
 import org.clyze.scanner.BinaryAnalysis;
 import org.clyze.scanner.NativeScanner;
@@ -263,8 +264,9 @@ public class Main {
         boolean artifacts = sootParameters._writeArtifactsMap;
         Representation rep = new Representation();
 
-        FactWriter writer = new FactWriter(db, sootParameters, artifacts, rep, reportPhantoms);
-        SootDriver driver = new SootDriver(classes.size(), sootParameters._cores, sootParameters._ignoreFactGenErrors, writer, sootParameters);
+        Phantoms phantoms = new Phantoms(reportPhantoms);
+        FactWriter writer = new FactWriter(db, sootParameters, artifacts, rep, phantoms);
+        SootDriver driver = new SootDriver(classes.size(), sootParameters._cores, sootParameters._ignoreFactGenErrors, writer, sootParameters, phantoms);
 
         if (writeFacts) {
 

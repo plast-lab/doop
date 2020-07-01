@@ -7,6 +7,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.clyze.doop.common.Driver;
+import org.clyze.doop.common.Phantoms;
 import soot.*;
 import soot.jimple.*;
 import soot.shimple.PhiExpr;
@@ -25,17 +26,17 @@ class FactGenerator implements Runnable {
     private final FactWriter _writer;
     private final boolean _ssa;
     private final Set<SootClass> _sootClasses;
-    private final boolean _reportPhantoms;
+    private final Phantoms phantoms;
     private final SootParameters sootParameters;
     private final Driver _driver;
 
-    FactGenerator(FactWriter writer, Set<SootClass> sootClasses, Driver driver, SootParameters sootParameters)
+    FactGenerator(FactWriter writer, Set<SootClass> sootClasses, Driver driver, SootParameters sootParameters, Phantoms phantoms)
     {
         this._writer = writer;
         this._sootClasses = sootClasses;
         this.sootParameters = sootParameters;
         this._ssa = sootParameters._ssa;
-        this._reportPhantoms = sootParameters._reportPhantoms;
+        this.phantoms = phantoms;
         this._driver = driver;
     }
 
@@ -148,21 +149,18 @@ class FactGenerator implements Runnable {
     private boolean isPhantomBased(SootMethod m) {
         for (SootClass clazz: m.getExceptions())
             if (isPhantom(clazz.getType())) {
-                if (_reportPhantoms)
-                    System.out.println("Exception " + clazz.getName() + " is phantom.");
+                phantoms.reportPhantom("Exception", clazz.getName());
                 return true;
             }
 
         for (int i = 0 ; i < m.getParameterCount(); i++)
             if(isPhantom(m.getParameterType(i))) {
-                if (_reportPhantoms)
-                    System.out.println("Parameter type " + m.getParameterType(i) + " of " + m.getSignature() + " is phantom.");
+                phantoms.reportPhantomSigType("Parameter type", m.getParameterType(i).toString(), m.getSignature());
                 return true;
             }
 
         if (isPhantom(m.getReturnType())) {
-            if (_reportPhantoms)
-                System.out.println("Return type " + m.getReturnType() + " of " + m.getSignature() + " is phantom.");
+            phantoms.reportPhantomSigType("Return type", m.getReturnType().toString(), m.getSignature());
             return true;
         }
 

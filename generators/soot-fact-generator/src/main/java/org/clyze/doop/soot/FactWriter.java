@@ -4,6 +4,7 @@ import com.google.common.collect.Lists;
 import org.clyze.doop.common.BasicJavaSupport;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.common.JavaFactWriter;
+import org.clyze.doop.common.Phantoms;
 import org.clyze.doop.common.PredicateFile;
 import org.clyze.doop.common.SessionCounter;
 import org.clyze.utils.TypeUtils;
@@ -27,14 +28,14 @@ import static org.clyze.doop.common.PredicateFile.*;
 class FactWriter extends JavaFactWriter {
     private final Representation _rep;
     private final Map<String, Type> _varTypeMap = new ConcurrentHashMap<>();
-    private final boolean _reportPhantoms;
+    private final Phantoms phantoms;
     private final Collection<Object> seenPhantoms = new HashSet<>();
 
     FactWriter(Database db, SootParameters params, boolean artifacts,
-               Representation rep, boolean reportPhantoms) {
+               Representation rep, Phantoms phantoms) {
         super(db, params, artifacts);
-        _rep = rep;
-        _reportPhantoms = reportPhantoms;
+        this._rep = rep;
+        this.phantoms = phantoms;
     }
 
     private String methodSig(SootMethod m, String methodRaw) {
@@ -85,8 +86,7 @@ class FactWriter extends JavaFactWriter {
         String classStr = c.getName();
         boolean isInterface = c.isInterface();
         if (isInterface && c.isPhantom()) {
-            if (_reportPhantoms)
-                System.out.println("Interface " + classStr + " is phantom.");
+            phantoms.reportPhantom("Interface", classStr);
             writePhantomType(c);
         }
         _db.add(isInterface ? INTERFACE_TYPE : CLASS_TYPE, classStr);
@@ -190,8 +190,7 @@ class FactWriter extends JavaFactWriter {
     }
 
     void writePhantomType(Type t) {
-        if (_reportPhantoms)
-            System.out.println("Type " + t + " is phantom.");
+        phantoms.reportPhantom("Type", t.toString());
         writePhantomType(writeType(t));
     }
 
@@ -201,15 +200,13 @@ class FactWriter extends JavaFactWriter {
 
     void writePhantomMethod(SootMethod m) {
         String sig = methodSig(m, null);
-        if (_reportPhantoms)
-            System.out.println("Method " + sig + " is phantom.");
+        phantoms.reportPhantom("Method", sig);
         writePhantomMethod(sig);
     }
 
     void writePhantomBasedMethod(SootMethod m) {
         String sig = methodSig(m, null);
-        if (_reportPhantoms)
-            System.out.println("Method signature " + sig + " contains phantom types.");
+        phantoms.reportPhantomSignature(sig);
         _db.add(PHANTOM_BASED_METHOD, sig);
     }
 
@@ -884,8 +881,7 @@ class FactWriter extends JavaFactWriter {
         SootMethodRef bootstrapMeth = di.getBootstrapMethodRef();
         if (bootstrapMeth.declaringClass().isPhantom()) {
             String bootstrapSig = Representation.signature(bootstrapMeth);
-            if (_reportPhantoms)
-                System.out.println("Bootstrap method is phantom: " + bootstrapSig);
+            phantoms.reportPhantom("Bootstrap method", bootstrapSig);
             _db.add(PHANTOM_METHOD, bootstrapSig);
             return bootstrapSig;
         } else
@@ -1022,6 +1018,12 @@ class FactWriter extends JavaFactWriter {
 
         seenPhantoms.add(phantom);
         return false;
+    }
+
+    @Override
+    public void writeLastFacts(BasicJavaSupport java) {
+        super.writeLastFacts(java);
+        phantoms.showPhantomInfo();
     }
 
     static class SigInfo {

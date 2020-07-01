@@ -255,10 +255,10 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forCacheID: true
 			),
 			new BooleanAnalysisOption(
-					id: "DONT_REPORT_PHANTOMS",
-					name: "dont-report-phantoms",
+					id: "REPORT_PHANTOMS",
+					name: "report-phantoms",
 					group: GROUP_FACTS,
-					description: "Do not report phantom methods/types during fact generation.",
+					description: "Report phantom methods/types during fact generation.",
 					value: false
 			),
 			new BooleanAnalysisOption(

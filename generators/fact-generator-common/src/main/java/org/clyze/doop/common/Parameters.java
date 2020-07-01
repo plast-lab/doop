@@ -13,6 +13,8 @@ import org.clyze.doop.util.filter.GlobClassFilter;
  * This class handles common parameters for Doop Java front-ends.
  */
 public class Parameters {
+    public static final String OPT_REPORT_PHANTOMS = "--report-phantoms";
+
     private List<String> _inputs = new ArrayList<>();
     private List<String> _dependencies = new ArrayList<>();
     private final List<String> _platformLibs = new ArrayList<>();
@@ -34,7 +36,7 @@ public class Parameters {
     private boolean _decodeApk = false;
     public boolean _extractMoreStrings = false;
     public boolean _writeArtifactsMap = false;
-    public boolean _reportPhantoms = true;
+    public boolean _reportPhantoms = false;
     public boolean _dex = false;
     public boolean _legacyAndroidProcessing = false;
 
@@ -210,8 +212,8 @@ public class Parameters {
         case "--write-artifacts-map":
             _writeArtifactsMap = true;
             break;
-        case "--dont-report-phantoms":
-            this._reportPhantoms = false;
+        case OPT_REPORT_PHANTOMS:
+            this._reportPhantoms = true;
             break;
         case "--dex":
             this._dex = true;
