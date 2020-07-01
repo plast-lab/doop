@@ -10,7 +10,7 @@ dependencies {
         exclude group: 'org.apache.ivy', module: 'ivy'
         exclude group: 'org.codehaus.groovy', module: 'groovy-all'
     }
-    compile 'org.clyze:metadata-model:1.0.1'
+    compile 'org.clyze:metadata-model:1.0.2'
     compile 'org.ow2.asm:asm-debug-all:5.1'          // Java bytecode library
     compile 'org.smali:dexlib2:2.2.5'                // Dexlib2: library for reading/modifying/writing Android dex files
     compile 'net.dongliu:apk-parser:2.6.10'          // needed for reading binary XML entries from APK inputs
