@@ -110,7 +110,7 @@ compileGroovy {
 // Set dependency version so that they are available to subprojects.
 gradle.rootProject.ext.antlrVersion='4.7.2'
 gradle.rootProject.ext.groovyVersion="2.5.10"
-gradle.rootProject.ext.clueCommonVersion='3.22.2'
+gradle.rootProject.ext.clueCommonVersion='3.22.3'
 gradle.rootProject.ext.spockVersion='1.3-groovy-2.5'
 // Set other variables for subprojects.
 gradle.rootProject.ext.resourcesDir='resources'
@@ -318,8 +318,10 @@ test {
     }
     environment.DOOP_HOME = projectDir
     java.nio.file.Path lbTestHomeDir = Files.createTempDirectory("lb-test-home-dir", asFileAttribute(fromString("rwxrwxrwx")))
-    lbTestHomeDir.toFile().deleteOnExit()
     environment.HOME = lbTestHomeDir.toString()
+    doLast {
+        lbTestHomeDir.toFile().delete()
+    }
 }
 
 task buildTests {

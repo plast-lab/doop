@@ -70,6 +70,7 @@ class SouffleScript {
                  boolean forceRecompile = true, boolean removeContext = false, boolean useFunctors = false) {
 
 		scriptFile = File.createTempFile("gen_", ".dl", outDir)
+		scriptFile.deleteOnExit()
 		preprocess(scriptFile, origScriptFile)
 
 		if (useFunctors) {
@@ -102,6 +103,7 @@ class SouffleScript {
 			def ignoreCounter = 0
 			compilationTime = Helper.timing {
 				Path tmpFile = Files.createTempFile("", "")
+				tmpFile.toFile().deleteOnExit()
 				executor.executeWithRedirectedOutput(compilationCommand, tmpFile.toFile()) { String line ->
 					if (ignoreCounter != 0) ignoreCounter--
 					else if (line.startsWith("Warning: No rules/facts defined for relation") ||
@@ -186,7 +188,8 @@ class SouffleScript {
                         int jobs, boolean profile = false, boolean debug = false,
                         boolean removeContext = false) {
 
-        def scriptFile = File.createTempFile("gen_", ".dl", outDir)
+		File scriptFile = File.createTempFile("gen_", ".dl", outDir)
+		scriptFile.deleteOnExit()
 		preprocess(scriptFile, origScriptFile)
 
 		def db = makeDatabase(outDir)
@@ -207,6 +210,7 @@ class SouffleScript {
         def ignoreCounter = 0
         executionTime = Helper.timing {
             Path tmpFile = Files.createTempFile("", "")
+            tmpFile.toFile().deleteOnExit()
             executor.executeWithRedirectedOutput(interpretationCommand, tmpFile.toFile()) { String line ->
                 if (ignoreCounter != 0) ignoreCounter--
                 else if (line.startsWith("Warning: No rules/facts defined for relation") ||

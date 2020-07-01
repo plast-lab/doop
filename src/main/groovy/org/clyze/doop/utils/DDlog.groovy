@@ -91,6 +91,7 @@ class DDlog extends SouffleScript {
         checkOptions(debug, provenance, liveProf, removeContext, useFunctors)
 
         scriptFile = File.createTempFile("gen_", ".dl", outDir)
+        scriptFile.deleteOnExit()
 		preprocess(scriptFile, origScriptFile)
 
         def checksum = calcChecksum(profile, provenance, liveProf)
@@ -229,6 +230,7 @@ class DDlog extends SouffleScript {
 		String cmd = String.join(" ", command)
 		log.debug "[Working directory: ${workingDir}] ${cmd}"
 		Path tmpFile = Files.createTempFile("", "")
+		tmpFile.toFile().deleteOnExit()
 		if (workingDir) {
 			executor.currWorkingDir = workingDir
 		}

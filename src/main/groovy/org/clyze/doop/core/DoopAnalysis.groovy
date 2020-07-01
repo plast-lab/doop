@@ -486,6 +486,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         File missingClasses = null
         if (options.THOROUGH_FACT_GEN.value) {
             missingClasses = File.createTempFile("fact-gen-missing-classes", ".tmp")
+            missingClasses.deleteOnExit()
             params += ["--failOnMissingClasses", missingClasses.absolutePath ]
             // Restarting on fact generation error can only happen reliably in isolated mode.
             if (!options.X_ISOLATE_FACTGEN.value) {
@@ -742,11 +743,13 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         List<String> tmpFiles = []
         List<String> processed = filenames.collect { String heapdl ->
             if (heapdl.toLowerCase().endsWith(".gz")) {
-                String tmpPath = Files.createTempFile("gzip-", ".hprof").toString()
-                log.debug "Decompressing ${heapdl} to ${tmpPath}..."
-                FileOps.decompressGzipFile(heapdl, tmpPath)
-                tmpFiles << tmpPath
-                return tmpPath
+                Path tmpPath = Files.createTempFile("gzip-", ".hprof")
+                tmpPath.toFile().deleteOnExit()
+                String tmpPathName = tmpPath.toString()
+                log.debug "Decompressing ${heapdl} to ${tmpPathName}..."
+                FileOps.decompressGzipFile(heapdl, tmpPathName)
+                tmpFiles << tmpPathName
+                return tmpPathName
             } else {
                 return heapdl
             }

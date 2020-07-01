@@ -15,6 +15,7 @@ class LBBuilder {
 		this.cpp = cpp
 		this.outDir = outDir
 		script = File.createTempFile("run", ".lb", outDir)
+		script.deleteOnExit()
 		writer = script.newPrintWriter()
 	}
 
@@ -59,7 +60,8 @@ class LBBuilder {
 
 	void include(String filePath) {
 		def inDir = new File(filePath).parentFile
-		def tmpFile = File.createTempFile("tmp", ".lb", outDir)
+		File tmpFile = File.createTempFile("tmp", ".lb", outDir)
+		tmpFile.deleteOnExit()
 		cpp.preprocess(tmpFile.toString(), filePath)
 		tmpFile.eachLine { line ->
 			def matcher = (line =~ /^(addBlock|exec)[ \t]+-[a-zA-Z][ \t]+(.*\.logic)$/)

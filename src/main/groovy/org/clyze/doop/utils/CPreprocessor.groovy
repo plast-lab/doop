@@ -123,6 +123,8 @@ class CPreprocessor {
     }
 
     private static File createUniqueTmpFile() {
-        Files.createTempFile(FileUtils.getTempDirectory().toPath(), "tmp", "pre").toFile()
+        File f = Files.createTempFile(FileUtils.getTempDirectory().toPath(), "tmp", "pre").toFile()
+        f.deleteOnExit()
+        return f
     }
 }
