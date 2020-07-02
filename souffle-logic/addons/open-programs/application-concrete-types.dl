@@ -1,0 +1,68 @@
+.decl ApplicationConcreteType(?type:ClassType)
+
+ApplicationConcreteType(?type) :-
+    ApplicationClass(?type),
+    !isInterfaceType(?type),
+    !ClassModifier("abstract", ?type).
+
+.decl BridgeMethod(?bridge:Method, ?type:Type)
+
+BridgeMethod(?bridge, ?type) :-
+    basic._BridgeMethod(?bridge, _, ?type).
+
+//anantoni: For now we want all concrete types that are going to be used as mock object types to be part of the application
+// Our fallback is the type itself, but that will only work in case it's not abstract
+// We need to monitor the cases where entry points have arguments with no concrete implementations
+
+.decl AllApplicationConcreteImplementations(?type1:ClassType, ?type2:Type)
+.decl TypeHasApplicationConcreteSubtypes(?type:Type)
+
+TypeHasApplicationConcreteSubtypes(?abstractType),
+AllApplicationConcreteImplementations(?class, ?abstractType) :-
+    ApplicationClass(?class),
+    basic.SubtypeOf(?class, ?abstractType),
+    ?abstractType != "java.lang.Object",
+    !ClassModifier("abstract", ?class).
+
+AllApplicationConcreteImplementations(?class, ?class) :-
+    isClassType(?class),
+    !ClassModifier("abstract", ?class).
+
+.decl TypeHasNoApplicationConcreteImplementations(?type:Type)
+
+TypeHasNoApplicationConcreteImplementations(?class) :-
+    isType(?class),
+    !TypeHasApplicationConcreteSubtypes(?class).
+
+.decl AbstractOrInterfaceTypeHasNoApplicationConcreteImplementations(?type:Type)
+
+AbstractOrInterfaceTypeHasNoApplicationConcreteImplementations(?class) :-
+    isInterfaceType(?class),
+    !ClassModifier("annotation", ?class),
+    !TypeHasApplicationConcreteSubtypes(?class),
+    !AllApplicationConcreteImplementations(_, ?class).
+
+AbstractOrInterfaceTypeHasNoApplicationConcreteImplementations(?class) :-
+    isClassType(?class),
+    ClassModifier("abstract", ?class),
+    !TypeHasApplicationConcreteSubtypes(?class),
+    !AllApplicationConcreteImplementations(_, ?class).
+
+.decl NonApplicationConcreteImplementations(?class:Type, ?staticType:Type)
+.decl NonApplicationConcreteImplementationsOrd(?classOrd:number, ?staticType:Type)
+.decl NonApplicationConcreteImplementationRepresentative(?class:Type, ?staticType:Type)
+
+NonApplicationConcreteImplementations(?class, ?staticType) :-
+    AbstractOrInterfaceTypeHasNoApplicationConcreteImplementations(?staticType),
+    isClassType(?class),
+    !ClassModifier("abstract", ?class),
+    basic.SubtypeOf(?class, ?staticType).
+
+NonApplicationConcreteImplementationsOrd(?classOrd, ?staticType) :-
+    NonApplicationConcreteImplementations(_, ?staticType),
+    ?classOrd = min ord(?allConcreteImplementations): NonApplicationConcreteImplementations(?allConcreteImplementations, ?staticType).
+
+NonApplicationConcreteImplementationRepresentative(?class, ?staticType) :-
+    NonApplicationConcreteImplementationsOrd(?classOrd, ?staticType),
+    isClassType(?class),
+    ord(?class) = ?classOrd.

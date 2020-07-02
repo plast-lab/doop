@@ -1,7 +1,6 @@
 package org.clyze.doop.utils
 
-import groovy.transform.TupleConstructor
-import groovy.transform.TypeChecked
+import groovy.transform.CompileStatic
 import groovy.util.logging.Log4j
 
 import java.nio.file.Files
@@ -16,7 +15,7 @@ import org.clyze.utils.Helper
  * This class compiles and runs Souffle analysis with DDlog via the DDlog converter.
  */
 @Log4j
-@TypeChecked
+@CompileStatic
 class DDlog extends SouffleScript {
 
 	static final String convertedLogicName = "converted_logic" as String
@@ -91,6 +90,7 @@ class DDlog extends SouffleScript {
         checkOptions(debug, provenance, liveProf, removeContext, useFunctors)
 
         scriptFile = File.createTempFile("gen_", ".dl", outDir)
+        scriptFile.deleteOnExit()
 		preprocess(scriptFile, origScriptFile)
 
         def checksum = calcChecksum(profile, provenance, liveProf)
@@ -229,6 +229,7 @@ class DDlog extends SouffleScript {
 		String cmd = String.join(" ", command)
 		log.debug "[Working directory: ${workingDir}] ${cmd}"
 		Path tmpFile = Files.createTempFile("", "")
+		tmpFile.toFile().deleteOnExit()
 		if (workingDir) {
 			executor.currWorkingDir = workingDir
 		}

@@ -13,6 +13,7 @@ import org.clyze.doop.common.ArtifactScanner;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.common.DatabaseConnector;
 import org.clyze.doop.common.DoopErrorCodeException;
+import org.clyze.doop.common.Phantoms;
 import org.clyze.doop.soot.android.AndroidSupport_Soot;
 import org.clyze.scanner.BinaryAnalysis;
 import org.clyze.scanner.NativeScanner;
@@ -25,6 +26,7 @@ import soot.SootMethod;
 import soot.options.Options;
 
 import static org.clyze.doop.common.FrontEndLogger.*;
+import static org.clyze.scanner.BinaryAnalysis.AnalysisType.*;
 
 public class Main {
 
@@ -139,7 +141,18 @@ public class Main {
 
             if (writeFacts && sootParameters._scanNativeCode) {
                 DatabaseConnector dbc = new DatabaseConnector(db);
-                scanNativeInputs(dbc, sootParameters._radare, sootParameters._preciseNativeStrings, sootData.writer.getMethodStrings(), sootParameters.getInputs());
+                BinaryAnalysis.AnalysisType analysisType;
+                if (sootParameters._nativeRadare)
+                    analysisType = RADARE;
+                else if (sootParameters._nativeBuiltin)
+                    analysisType = BUILTIN;
+                else if (sootParameters._nativeBinutils)
+                    analysisType = BINUTILS;
+                else {
+                    analysisType = BINUTILS;
+                    System.out.println("No binary analysis type given, using default: " + analysisType.name());
+                }
+                scanNativeInputs(dbc, analysisType, sootParameters._preciseNativeStrings, sootData.writer.getMethodStrings(), sootParameters.getInputs());
             }
 
             if (sootParameters._generateJimple)
@@ -251,8 +264,9 @@ public class Main {
         boolean artifacts = sootParameters._writeArtifactsMap;
         Representation rep = new Representation();
 
-        FactWriter writer = new FactWriter(db, sootParameters, artifacts, rep, reportPhantoms);
-        SootDriver driver = new SootDriver(classes.size(), sootParameters._cores, sootParameters._ignoreFactGenErrors, writer, sootParameters);
+        Phantoms phantoms = new Phantoms(reportPhantoms);
+        FactWriter writer = new FactWriter(db, sootParameters, artifacts, rep, phantoms);
+        SootDriver driver = new SootDriver(classes.size(), sootParameters._cores, sootParameters._ignoreFactGenErrors, writer, sootParameters, phantoms);
 
         if (writeFacts) {
 
@@ -390,7 +404,7 @@ public class Main {
     }
 
     public static void scanNativeInputs(DatabaseConnector dbc,
-                                        boolean useRadare,
+                                        BinaryAnalysis.AnalysisType binAnalysisType,
                                         boolean preciseNativeStrings,
                                         Set<String> methodStrings,
                                         Iterable<String> inputs) {
@@ -399,7 +413,7 @@ public class Main {
         final NativeScanner scanner = new NativeScanner(true, methodStrings);
 
         ArtifactScanner.EntryProcessor gProc = (file, entry, entryName) -> {
-            scanner.scanArchiveEntry(dbc, useRadare, preciseNativeStrings, truncateAddresses, demangle, file, entry, entryName);
+            scanner.scanArchiveEntry(dbc, binAnalysisType, preciseNativeStrings, truncateAddresses, demangle, file, entry, entryName);
         };
         for (String input : inputs) {
             System.out.println("Processing native code in input: " + input);

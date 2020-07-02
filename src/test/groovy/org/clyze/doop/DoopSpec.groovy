@@ -19,7 +19,6 @@ abstract class DoopSpec extends Specification {
 			 "-a", analysisName,
 			 "--id", analysisId,
 			 "-Ldebug",
-			 "--dont-report-phantoms",
 			 "--Xstats-full"] + extraArgs
 	    Main.main2((String[])args)
 	    return Main.analysis

@@ -1,9 +1,8 @@
 package org.clyze.doop.utils
 
-import groovy.transform.TypeChecked
+import groovy.transform.CompileStatic
 import groovy.util.logging.Log4j
 import org.clyze.doop.common.DoopErrorCodeException
-import org.clyze.doop.core.Doop
 import org.clyze.doop.core.DoopAnalysisFactory
 import org.clyze.utils.CheckSum
 import org.clyze.utils.Executor
@@ -18,7 +17,7 @@ import java.nio.file.StandardCopyOption
 import static org.apache.commons.io.FileUtils.deleteQuietly
 
 @Log4j
-@TypeChecked
+@CompileStatic
 class SouffleScript {
 
 	static final String EXE_NAME = "exe"
@@ -70,6 +69,7 @@ class SouffleScript {
                  boolean forceRecompile = true, boolean removeContext = false, boolean useFunctors = false) {
 
 		scriptFile = File.createTempFile("gen_", ".dl", outDir)
+		scriptFile.deleteOnExit()
 		preprocess(scriptFile, origScriptFile)
 
 		if (useFunctors) {
@@ -102,6 +102,7 @@ class SouffleScript {
 			def ignoreCounter = 0
 			compilationTime = Helper.timing {
 				Path tmpFile = Files.createTempFile("", "")
+				tmpFile.toFile().deleteOnExit()
 				executor.executeWithRedirectedOutput(compilationCommand, tmpFile.toFile()) { String line ->
 					if (ignoreCounter != 0) ignoreCounter--
 					else if (line.startsWith("Warning: No rules/facts defined for relation") ||
@@ -186,7 +187,8 @@ class SouffleScript {
                         int jobs, boolean profile = false, boolean debug = false,
                         boolean removeContext = false) {
 
-        def scriptFile = File.createTempFile("gen_", ".dl", outDir)
+		File scriptFile = File.createTempFile("gen_", ".dl", outDir)
+		scriptFile.deleteOnExit()
 		preprocess(scriptFile, origScriptFile)
 
 		def db = makeDatabase(outDir)
@@ -207,6 +209,7 @@ class SouffleScript {
         def ignoreCounter = 0
         executionTime = Helper.timing {
             Path tmpFile = Files.createTempFile("", "")
+            tmpFile.toFile().deleteOnExit()
             executor.executeWithRedirectedOutput(interpretationCommand, tmpFile.toFile()) { String line ->
                 if (ignoreCounter != 0) ignoreCounter--
                 else if (line.startsWith("Warning: No rules/facts defined for relation") ||

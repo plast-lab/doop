@@ -1,7 +1,6 @@
 package org.clyze.doop.core
 
-import com.jcabi.manifests.Manifests
-import groovy.transform.TypeChecked
+import groovy.transform.CompileStatic
 import groovy.util.logging.Log4j
 import heapdl.core.MemoryAnalyser
 import org.apache.commons.io.FilenameUtils
@@ -29,8 +28,8 @@ import static org.apache.commons.io.FileUtils.*
 /**
  * A DOOP analysis that holds all the relevant options (vars, paths, etc) and implements all the relevant steps.
  */
+@CompileStatic
 @Log4j
-@TypeChecked
 abstract class DoopAnalysis extends Analysis implements Runnable {
 
     /**
@@ -401,8 +400,16 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             params += ["--scan-native-code"]
         }
 
-        if (options.USE_RADARE.value) {
-            params += ["--use-radare"]
+        if (options.NATIVE_USE_RADARE.value) {
+            params += ["--native-use-radare"]
+        }
+
+        if (options.NATIVE_USE_BUILTIN.value) {
+            params += ["--native-use-builtin"]
+        }
+
+        if (options.NATIVE_USE_BINUTILS.value) {
+            params += ["--native-use-binutils"]
         }
 
         if (options.ONLY_PRECISE_NATIVE_STRINGS.value) {
@@ -451,8 +458,8 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             params += ["--allow-phantom"]
         }
 
-        if (options.DONT_REPORT_PHANTOMS.value) {
-            params += ["--dont-report-phantoms"]
+        if (options.REPORT_PHANTOMS.value) {
+            params += ["--report-phantoms"]
         }
 
         if (options.RUN_FLOWDROID.value) {
@@ -478,6 +485,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         File missingClasses = null
         if (options.THOROUGH_FACT_GEN.value) {
             missingClasses = File.createTempFile("fact-gen-missing-classes", ".tmp")
+            missingClasses.deleteOnExit()
             params += ["--failOnMissingClasses", missingClasses.absolutePath ]
             // Restarting on fact generation error can only happen reliably in isolated mode.
             if (!options.X_ISOLATE_FACTGEN.value) {
@@ -734,11 +742,13 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         List<String> tmpFiles = []
         List<String> processed = filenames.collect { String heapdl ->
             if (heapdl.toLowerCase().endsWith(".gz")) {
-                String tmpPath = Files.createTempFile("gzip-", ".hprof").toString()
-                log.debug "Decompressing ${heapdl} to ${tmpPath}..."
-                FileOps.decompressGzipFile(heapdl, tmpPath)
-                tmpFiles << tmpPath
-                return tmpPath
+                Path tmpPath = Files.createTempFile("gzip-", ".hprof")
+                tmpPath.toFile().deleteOnExit()
+                String tmpPathName = tmpPath.toString()
+                log.debug "Decompressing ${heapdl} to ${tmpPathName}..."
+                FileOps.decompressGzipFile(heapdl, tmpPathName)
+                tmpFiles << tmpPathName
+                return tmpPathName
             } else {
                 return heapdl
             }
