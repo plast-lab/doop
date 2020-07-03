@@ -122,10 +122,9 @@ You can also override the options from a properties file with options from the c
     $ ./doop -p /path/to/file.properties -a context-insensitive --platform java_6
 
 #### Native code scanner (--scan-native-code)
-This option makes Doop scan the native dynamic libraries bundled in .jar or .apk inputs, to find possible calls from JNI code to Java code.
-
-* For Java programs, this functionality assumes that standard command-line tools are available (such as `nm`, `objdump`, or `strings`).
-* For Android programs containing ARM native code, at least one the following environment variables must be set: `ARMEABI_TOOLCHAIN`/`AARCH64_TOOLCHAIN`. Each such variable points to the corresponding architecture directory inside the toolchain of an Android NDK installation, such as `/path/to/toolchain/arm-linux-androideabi`. Consult Android documentation for generating such a [standalone toolchain](https://developer.android.com/ndk/guides/standalone_toolchain).
+This option makes Doop scan the native dynamic libraries bundled in
+.jar or .apk inputs, to find possible calls from JNI code to Java
+code. For setup instructions, see the [project repository](https://github.com/plast-lab/native-scanner).
 
 ### Soufflé multithreading
 
