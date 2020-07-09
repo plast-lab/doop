@@ -401,7 +401,7 @@ HighlyPossibleNativeCodeTargetMethod(?method, ?function, ?file) :-
   basic.ClassConstructor(?method, ?type),
   Method_DeclaringType(?instanceMethod, ?type),
   Reachable(?instanceMethod),
-  !Method_Modifier("final", ?instanceMethod).
+  !Method_Modifier("static", ?instanceMethod).
 // Accept calls to constructors if instance fields are used.
 HighlyPossibleNativeCodeTargetMethod(?method, ?function, ?file) :-
   basic.PossibleNativeCodeTargetMethod(?method, ?function, ?file),
@@ -409,7 +409,7 @@ HighlyPossibleNativeCodeTargetMethod(?method, ?function, ?file) :-
   Field_DeclaringType(?field, ?type),
   ( StoreHeapInstanceField(?field, _, _, _, _)
   ; LoadHeapInstanceField(_, _, ?field, _, _)),
-  !Field_Modifier("final", ?field).
+  !Field_Modifier("static", ?field).
 
 // Reachability for methods discovered by the native code scanner.
 .decl ReachableMethodFromNativeCode(?method:Method)
