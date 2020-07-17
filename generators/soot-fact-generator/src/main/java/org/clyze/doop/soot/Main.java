@@ -15,8 +15,6 @@ import org.clyze.doop.common.DatabaseConnector;
 import org.clyze.doop.common.DoopErrorCodeException;
 import org.clyze.doop.common.Phantoms;
 import org.clyze.doop.soot.android.AndroidSupport_Soot;
-import org.clyze.scanner.BinaryAnalysis;
-import org.clyze.scanner.NativeScanner;
 import org.clyze.utils.AARUtils;
 import org.clyze.utils.JHelper;
 import org.xmlpull.v1.XmlPullParserException;
@@ -26,7 +24,6 @@ import soot.SootMethod;
 import soot.options.Options;
 
 import static org.clyze.doop.common.FrontEndLogger.*;
-import static org.clyze.scanner.BinaryAnalysis.AnalysisType.*;
 
 public class Main {
 
@@ -139,21 +136,8 @@ public class Main {
             if (numErrors != 0)
                 throw new DoopErrorCodeException(35, "Fact generation failed with " + numErrors + " errors.");
 
-            if (writeFacts && sootParameters._scanNativeCode) {
-                DatabaseConnector dbc = new DatabaseConnector(db);
-                BinaryAnalysis.AnalysisType analysisType;
-                if (sootParameters._nativeRadare)
-                    analysisType = RADARE;
-                else if (sootParameters._nativeBuiltin)
-                    analysisType = BUILTIN;
-                else if (sootParameters._nativeBinutils)
-                    analysisType = BINUTILS;
-                else {
-                    analysisType = BINUTILS;
-                    System.out.println("No binary analysis type given, using default: " + analysisType.name());
-                }
-                scanNativeInputs(dbc, analysisType, sootParameters._preciseNativeStrings, sootData.writer.getMethodStrings(), sootParameters.getInputs());
-            }
+            if (writeFacts && sootParameters._scanNativeCode)
+		ArtifactScanner.scanNativeCode(db, sootParameters, sootData.writer.getMethodStrings());
 
             if (sootParameters._generateJimple)
                 generateIR(java, scene, sootData.classes, sootData.driver, outDir);
@@ -401,28 +385,6 @@ public class Main {
             DoopAddons.structureJimpleFiles(outDir);
         // Revert to standard output dir for the rest of the code.
         Options.v().set_output_dir(outDir);
-    }
-
-    public static void scanNativeInputs(DatabaseConnector dbc,
-                                        BinaryAnalysis.AnalysisType binAnalysisType,
-                                        boolean preciseNativeStrings,
-                                        Set<String> methodStrings,
-                                        Iterable<String> inputs) {
-        final boolean demangle = false;
-        final boolean truncateAddresses = true;
-        final NativeScanner scanner = new NativeScanner(true, methodStrings);
-
-        ArtifactScanner.EntryProcessor gProc = (file, entry, entryName) -> {
-            scanner.scanArchiveEntry(dbc, binAnalysisType, preciseNativeStrings, truncateAddresses, demangle, file, entry, entryName);
-        };
-        for (String input : inputs) {
-            System.out.println("Processing native code in input: " + input);
-            try {
-                (new ArtifactScanner()).processArchive(input, null, gProc);
-            } catch (IOException ex) {
-                ex.printStackTrace();
-            }
-        }
     }
 }
 

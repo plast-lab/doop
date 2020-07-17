@@ -130,6 +130,9 @@ class WalaInvoker {
             if (walaFactWriter.getNumberOfPhantomBasedMethods() > 0)
                 System.out.println("WARNING: Input contains phantom based methods. \nNumber of phantom based methods: " + walaFactWriter.getNumberOfPhantomBasedMethods());
 
+            if (walaParameters._scanNativeCode)
+		ArtifactScanner.scanNativeCode(db, walaParameters, null);
+
             walaFactWriter.writeLastFacts(java);
 
             db.flush();

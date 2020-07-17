@@ -397,6 +397,14 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         }
 
         if (options.SCAN_NATIVE_CODE.value) {
+            // The WALA/Dex front-ends currently do not record method strings; using this
+            // functionality may introduce some imprecision.
+            def check = { AnalysisOption opt ->
+                if (opt.value)
+                    println "WARNING: option --${options.SCAN_NATIVE_CODE.name} is not fully compatible with --${opt.name}"
+            }
+            check(options.DEX_FACT_GEN)
+            check(options.WALA_FACT_GEN)
             params += ["--scan-native-code"]
         }
 
