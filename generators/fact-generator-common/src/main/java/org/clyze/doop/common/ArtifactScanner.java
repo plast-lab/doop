@@ -11,8 +11,9 @@ import java.util.function.Consumer;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
-
 import org.apache.log4j.Logger;
+import org.clyze.scanner.BinaryAnalysis;
+import org.clyze.scanner.NativeScanner;
 import org.clyze.utils.TypeUtils;
 import org.jf.dexlib2.Opcodes;
 import org.jf.dexlib2.dexbacked.DexBackedDexFile;
@@ -22,6 +23,7 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.tree.ClassNode;
 
+import static org.clyze.scanner.BinaryAnalysis.AnalysisType.*;
 import static org.jf.dexlib2.DexFileFactory.loadDexContainer;
 import static org.objectweb.asm.Opcodes.*;
 
@@ -189,6 +191,45 @@ public class ArtifactScanner {
         libTmpFile.deleteOnExit();
         Files.copy(zipFile.getInputStream(entry), libTmpFile.toPath());
         return libTmpFile;
+    }
+
+    public static void scanNativeCode(Database db, Parameters parameters,
+				      Set<String> methodStrings) {
+	DatabaseConnector dbc = new DatabaseConnector(db);
+	BinaryAnalysis.AnalysisType analysisType;
+	if (parameters._nativeRadare)
+	    analysisType = RADARE;
+	else if (parameters._nativeBuiltin)
+	    analysisType = BUILTIN;
+	else if (parameters._nativeBinutils)
+	    analysisType = BINUTILS;
+	else {
+	    analysisType = BINUTILS;
+	    System.out.println("No binary analysis type given, using default: " + analysisType.name());
+	}
+	scanNativeInputs(dbc, analysisType, parameters._preciseNativeStrings, methodStrings, parameters.getInputs());
+    }
+
+    private static void scanNativeInputs(DatabaseConnector dbc,
+					 BinaryAnalysis.AnalysisType binAnalysisType,
+					 boolean preciseNativeStrings,
+					 Set<String> methodStrings,
+					 Iterable<String> inputs) {
+        final boolean demangle = false;
+        final boolean truncateAddresses = true;
+        final NativeScanner scanner = new NativeScanner(true, methodStrings);
+
+        EntryProcessor gProc = (file, entry, entryName) -> {
+            scanner.scanArchiveEntry(dbc, binAnalysisType, preciseNativeStrings, truncateAddresses, demangle, file, entry, entryName);
+        };
+        for (String input : inputs) {
+            System.out.println("Processing native code in input: " + input);
+            try {
+                (new ArtifactScanner()).processArchive(input, null, gProc);
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        }
     }
 
     @FunctionalInterface

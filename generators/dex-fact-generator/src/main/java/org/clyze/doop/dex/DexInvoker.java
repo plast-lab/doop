@@ -90,6 +90,9 @@ public class DexInvoker {
                 }
             }
 
+            if (dexParams._scanNativeCode)
+		ArtifactScanner.scanNativeCode(db, dexParams, null);
+
             writer.writeLastFacts(java);
             cha.conclude(db, writer, dexParams._reportPhantoms);
         } catch (Exception ex) {

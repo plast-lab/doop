@@ -321,13 +321,6 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
-					id: "SMART_NATIVE_TARGETS",
-					name: "smart-native-targets",
-					group: GROUP_NATIVE,
-					description: "Filter native targets (heuristic).",
-					forPreprocessor: true
-			),
-			new BooleanAnalysisOption(
 					id: "USE_STRING_LOCALITY",
 					name: "use-string-locality",
 					group: GROUP_NATIVE,
