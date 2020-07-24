@@ -1,6 +1,14 @@
 # Doop - Framework for Java Pointer and Taint Analysis (using P/Taint)
 
-This document contains instructions for invoking the main driver of Doop. For an introduction to Datalog, please consult [Datalog-101](docs/datalog-101.md). For a more detailed tutorial on using the results of Doop analyses, please consult [Doop-101](docs/doop-101.md). For an introduction to pointer analysis using Datalog, you can read a [research-level tutorial](http://yanniss.github.io/points-to-tutorial15.pdf). For information about Taint Analysis using Doop, please consult our [P/Taint paper](https://yanniss.github.io/ptaint-oopsla17.pdf), or [P/Taint tutorial](docs/ptaint.md).
+This document contains instructions for invoking the main driver of Doop. For an introduction to Datalog, please
+ consult [Datalog-101](docs/datalog-101.md). For a more detailed tutorial on using the results of Doop analyses
+ , please consult [Doop-101](docs/doop-101.md). For an introduction to pointer analysis using Datalog, you can read a
+  [research-level tutorial](http://yanniss.github.io/points-to-tutorial15.pdf). For information about Taint Analysis
+   using Doop, please consult our [P/Taint paper](https://yanniss.github.io/ptaint-oopsla17.pdf), or [P/Taint
+    tutorial](docs/ptaint.md). For information about JavaEE application analysis using Doop, please consult our [PLDI'20
+     paper
+    ](http://yanniss.github.io/enterprise-pldi20.pdf). For information about Python Tensorflow Shape analysis using
+     Doop, please consult our [ECOOP'20 paper](http://yanniss.github.io/tensor-ecoop20.pdf).
 
 ## Getting Started
 
@@ -162,7 +170,7 @@ JackEE's rules can easily be extended by using this vocabulary. JackEE is only a
 
 Currently supported web frameworks: Spring, Struts2, JAX-RS REST API, JavaEE Servlets and Enterprise Java Beans.
 
-    $ ./doop -i ../doop-benchmarks/javaee-benchmarks/WebGoat.jar -a context-insensitive --open-programs jackee 
+    $ ./doop -i ../doop-benchmarks/javaee-benchmarks/WebGoat.war -a context-insensitive --open-programs jackee 
 
 ### Python TensorFlow Shape Analysis using Pythia
 
@@ -170,7 +178,8 @@ Pythia is only available for Soufflé.
 
 ### Taint Analysis Using P/Taint
     
-P/Taint is activated using the `--information-flow` flag, is fully integrated into Doop, and is available for both Soufflé and Logicblox backends. P/Taint can track taint flow out of the box through Android and Servlet applications. Custom platform architectures can be easily integrated into P/Taint by creating new lists of taint sources/sinks and taint transform methods.
+P/Taint is activated using the `--information-flow` flag, is fully integrated into Doop, and is available for both
+ Soufflé and LogicBlox backends. P/Taint can track taint flow out of the box through Android and Servlet applications. Custom platform architectures can be easily integrated into P/Taint by creating new lists of taint sources/sinks and taint transform methods.
 
 In the case of Android, additional sensitive layout controls can be defined using the `--information-flow-extra-controls` flag.
 
@@ -261,7 +270,7 @@ dynamic proxies, lambdas, method handles, method references,
 dependency injection, test framework code), Doop fails to handle these
 features.
 
-Solution: Ensure that you do not use the legacy Logicblox mode
+Solution: Ensure that you do not use the legacy LogicΒlox mode
 (`--lb`) and appropriate options are set (check `doop --help`).
 
 *Problem:* Analyzing a program targeting Java on an Apple platform
