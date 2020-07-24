@@ -83,7 +83,7 @@ To illustrate these two approaches, assume we want to find all
 variable-points-to information for method `Example.test()`, when doing
 a context-insensitive analysis.
 
-### Run custom logic inside the analysis
+### Running custom logic inside the analysis
 
 Put the following logic in file extra.dl:
 
@@ -128,11 +128,11 @@ $ cat last-analysis/Temp.csv
 ```
 
 The advantage of running custom logic this way is that it has access
-to all analysis relations (not just those written on disk). This
-disadvantage is that changes to this custom logic need to rerun the
-analysis (and recompile the logic).
+to all analysis relations (not just those written on disk). The
+disadvantage is that changes to this custom logic require running the
+analysis again (and waiting for the analysis logic to be recompiled).
 
-### Run custom logic after the analysis
+### Running custom logic after the analysis
 
 In a file temp.dl put the code:
 
