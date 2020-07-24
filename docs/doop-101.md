@@ -107,7 +107,11 @@ $ ls jimple-dir
 Animal.jimple  Cat.jimple  Dog.jimple  Example.jimple
 ```
 
-## Logicblox-only functionality
+## LogicBlox-only functionality (legacy)
+
+This section is about interacting with the legacy LogicBlox analysis
+logic. This analysis logic is no longer maintained but may be useful
+for experimenting with published artifacts or other past work.
 
 ### Get a predicate's entries
 As we already saw, the easiest way to interact with the database is to simply
