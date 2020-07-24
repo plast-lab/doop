@@ -29,7 +29,7 @@ One important directory in that repository is `JREs`. It can be used for the `DO
 
 Doop only supports invocations from its home directory. The main options when running Doop are the analysis and the jar(s) options. For example, for a context-insensitive analysis on a jar file we issue:
 
-    $ ./doop --platform java_8 -a context-insensitive -i com.example.some.jar
+    $ ./doop -a context-insensitive -i com.example.some.jar
 
 ### Common command line options
 To see the list of available options (and valid argument values in certain cases), issue:
@@ -75,7 +75,7 @@ Optional --- default: java_8. The platform to use for the analysis. The possible
 
 Example:
 
-    $ ./doop -a context-insensitive -i com.example.some.jar --platform java_4
+    $ ./doop -a context-insensitive -i com.example.some.jar --platform java_7
     $ ./doop -a context-insensitive -i some-app.apk --platform android_24
 
 #### Main class (--main)
@@ -128,28 +128,61 @@ code. For setup instructions, see the [project repository](https://github.com/pl
 
 ### Soufflé multithreading
 
-Soufflé supports multithreading so you can select the number of threads the analysis will run on by providing the --souffle-jobs argument to doop. For example:
+Soufflé supports multithreading, so you can select the number of threads the analysis will run on by providing the --souffle-jobs argument to doop. For example:
 
-    $ ./doop -i ../doop-benchmarks/dacapo-2006/antlr.jar -a context-insensitive --platform java_7 --dacapo --id souffle-antlr --souffle-jobs 12
+    $ ./doop -i ../doop-benchmarks/dacapo-2006/antlr.jar -a context-insensitive --id antlr-ci --dacapo --souffle-jobs 12
 
 ### Soufflé profile
 
-You can then inspect the analysis results by using the souffle-profile command and providing the profile.txt file produced by Souffle under the output directory of the analysis. In order to inspect the profile.txt of the above doop invocation with --souffle you would use the following command:
+You can then inspect the analysis results by using `souffle-profile` and providing the profile.txt file produced by Souffle under the output directory of the analysis database. In order to inspect the profile.txt of the above doop invocation with --souffle you would use the following command:
 
-    $ souffle-profile out/context-insensitive/souffle-antlr/profile.txt
+    $ souffle-profile out/context-insensitive/antlr-ci/profile.txt
 
-### Using LogicBlox as the Datalog engine of choice
+### Using LogicBlox as the Datalog engine of choice 
 
 In order to use LogicBlox instead of the Soufflé engine you can provide the --lb argument. Be warned that this will use older analysis logic and thus some Java features (such as lambdas, dynamic proxies, or Android-specific behavior) may not be handled successfully.
 
-    $ ./doop -i ../doop-benchmarks/dacapo-2006/antlr.jar -a context-insensitive --platform java_7 --dacapo --id lb-antlr --lb
+    $ ./doop -i ../doop-benchmarks/dacapo-2006/antlr.jar -a context-insensitive --dacapo --id lb-antlr --lb
+##### Warning: For the latest features we recommend using Souffle    
+    
+### Android Analysis
 
+You can select to run an Android-specific analysis on an Android application by providing the `--android` option.
+An Android-specific analysis selects entry-points to the application based on the Android specification. The platform
+provided needs to be one of the valid `android_XZ_stubs/fulljars/robolectric/apk` values.
+
+    $ ./doop -i ../doop-benchmarks/android-benchmarks/Camera2Basic-debug.apk -a context-insensitive --android --platform android_25_fulljars
+      
+### Java Enterprise Application Analysis using JackEE 
+
+You can select to run an JavaEE-specific analysis on an Java Enterprise application by providing the `--open-programs jackee` option.
+An JavaEE analysis selects entry-points to the application based on the JavaEE specification and the web application framework
+used by the application. JackEE discovers entry points in a semi-automatic manner using a JavaEE-specific generalized vocabulary.
+JackEE's rules can easily be extended by using this vocabulary. JackEE is only available for Soufflé.
+
+Currently supported web frameworks: Spring, Struts2, JAX-RS REST API, JavaEE Servlets and Enterprise Java Beans.
+
+    $ ./doop -i ../doop-benchmarks/javaee-benchmarks/WebGoat.jar -a context-insensitive --open-programs jackee 
+
+### Python TensorFlow Shape Analysis using Pythia
+
+Pythia is only available for Soufflé.
+
+### Taint Analysis Using P/Taint
+    
+P/Taint is activated using the `--information-flow` flag, is fully integrated into Doop, and is available for both Soufflé and Logicblox backends. P/Taint can track taint flow out of the box through Android and Servlet applications. Custom platform architectures can be easily integrated into P/Taint by creating new lists of taint sources/sinks and taint transform methods.
+
+In the case of Android, additional sensitive layout controls can be defined using the `--information-flow-extra-controls` flag.
+
+    $ ./doop -i ../doop-benchmarks/android-benchmarks/Camera2Basic-debug.apk -a context-insensitive --android --information-flow --platform android_25_fulljars
+
+    
 ### Running Doop in offline mode
 
 Normally, on each invocation of Doop the underlying build system will check for newer versions of all dependency libraries.
-Sometimes, it might be desirable to invoke doop in an offline mode. There is an alternative script for this purpose.
+Sometimes, it might be desirable to invoke doop in offline mode. There is an alternative script for this purpose.
 
-    $ ./doopOffline --platform java_8 -a context-insensitive -i com.example.some.jar
+    $ ./doopOffline -a context-insensitive -i com.example.some.jar
 
 ### Using Differential Datalog
 
