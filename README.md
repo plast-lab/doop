@@ -1,13 +1,34 @@
 # Doop - Framework for Java Pointer and Taint Analysis (using P/Taint)
 
-This document contains instructions for invoking the main driver of Doop. For an introduction to Datalog, please consult [Datalog-101](docs/datalog-101.md). For a more detailed tutorial on using the results of Doop analyses, please consult [Doop-101](docs/doop-101.md). For an introduction to pointer analysis using Datalog, you can read a [research-level tutorial](http://yanniss.github.io/points-to-tutorial15.pdf). For information about Taint Analysis using Doop, please consult our [P/Taint paper](https://yanniss.github.io/ptaint-oopsla17.pdf), or [P/Taint tutorial](docs/ptaint.md).
+This document contains instructions for invoking the main driver of Doop. For an introduction to Datalog, please
+ consult [Datalog-101](docs/datalog-101.md). For a more detailed tutorial on using the results of Doop analyses
+ , please consult [Doop-101](docs/doop-101.md). For an introduction to pointer analysis using Datalog, you can read a
+  [research-level tutorial](http://yanniss.github.io/points-to-tutorial15.pdf). For information about Taint Analysis
+   using Doop, please consult our [P/Taint paper](https://yanniss.github.io/ptaint-oopsla17.pdf), or [P/Taint
+    tutorial](docs/ptaint.md). For information about JavaEE application analysis using Doop, please consult our [PLDI'20
+     paper
+    ](http://yanniss.github.io/enterprise-pldi20.pdf). For information about Python Tensorflow Shape analysis using
+     Doop, please consult our [ECOOP'20 paper](http://yanniss.github.io/tensor-ecoop20.pdf).
 
 ## Getting Started
 
 At its core, Doop is a collection of various analyses expressed in the form of Datalog rules. The framework has two versions of its rules:
-one for [Soufflé](http://souffle-lang.org/), an open-source Datalog engine for program analysis (which is the default engine used), and another for **LogiQL**, a Datalog dialect developed by [LogicBlox](http://www.logicblox.com/). 
-In order to install an up-to-date version of Soufflé, the best practice is to clone the development Github [repo](https://github.com/souffle-lang/souffle) and follow the instructions found on [this page](http://souffle-lang.org/docs/build/). 
-For a LogicBlox engine, you can use **PA-Datalog**, a port available for academic use, by following the instructions found on [this page](http://snf-705535.vm.okeanos.grnet.gr/agreement.html). 
+
+1. The currently maintained version targets
+   [Soufflé](http://souffle-lang.org/), an open-source Datalog engine
+   for program analysis (which is the default engine used). In order
+   to install an up-to-date version of Soufflé, the best practice is
+   to clone the development Github
+   [repo](https://github.com/souffle-lang/souffle) and follow the
+   instructions found on [this
+   page](https://souffle-lang.github.io/build). Doop is currently
+   tested with Souffle 1.5.
+
+2. The legacy (unmaintained) version uses **LogiQL**, a Datalog
+   dialect developed by [LogicBlox](http://www.logicblox.com/). For a
+   LogicBlox engine, you can use **PA-Datalog**, a port available for
+   academic use, by following the instructions found on [this
+   page](http://snf-705535.vm.okeanos.grnet.gr/agreement.html).
 
 For trouble-free configuration:
 
@@ -29,7 +50,7 @@ One important directory in that repository is `JREs`. It can be used for the `DO
 
 Doop only supports invocations from its home directory. The main options when running Doop are the analysis and the jar(s) options. For example, for a context-insensitive analysis on a jar file we issue:
 
-    $ ./doop --platform java_8 -a context-insensitive -i com.example.some.jar
+    $ ./doop -a context-insensitive -i com.example.some.jar
 
 ### Common command line options
 To see the list of available options (and valid argument values in certain cases), issue:
@@ -75,7 +96,7 @@ Optional --- default: java_8. The platform to use for the analysis. The possible
 
 Example:
 
-    $ ./doop -a context-insensitive -i com.example.some.jar --platform java_4
+    $ ./doop -a context-insensitive -i com.example.some.jar --platform java_7
     $ ./doop -a context-insensitive -i some-app.apk --platform android_24
 
 #### Main class (--main)
@@ -128,28 +149,62 @@ code. For setup instructions, see the [project repository](https://github.com/pl
 
 ### Soufflé multithreading
 
-Soufflé supports multithreading so you can select the number of threads the analysis will run on by providing the --souffle-jobs argument to doop. For example:
+Soufflé supports multithreading, so you can select the number of threads the analysis will run on by providing the --souffle-jobs argument to doop. For example:
 
-    $ ./doop -i ../doop-benchmarks/dacapo-2006/antlr.jar -a context-insensitive --platform java_7 --dacapo --id souffle-antlr --souffle-jobs 12
+    $ ./doop -i ../doop-benchmarks/dacapo-2006/antlr.jar -a context-insensitive --id antlr-ci --dacapo --souffle-jobs 12
 
 ### Soufflé profile
 
-You can then inspect the analysis results by using the souffle-profile command and providing the profile.txt file produced by Souffle under the output directory of the analysis. In order to inspect the profile.txt of the above doop invocation with --souffle you would use the following command:
+You can then inspect the analysis results by using `souffle-profile` and providing the profile.txt file produced by Souffle under the output directory of the analysis database. In order to inspect the profile.txt of the above doop invocation with --souffle you would use the following command:
 
-    $ souffle-profile out/context-insensitive/souffle-antlr/profile.txt
+    $ souffle-profile out/context-insensitive/antlr-ci/profile.txt
 
-### Using LogicBlox as the Datalog engine of choice
+### Using LogicBlox as the Datalog engine of choice 
 
 In order to use LogicBlox instead of the Soufflé engine you can provide the --lb argument. Be warned that this will use older analysis logic and thus some Java features (such as lambdas, dynamic proxies, or Android-specific behavior) may not be handled successfully.
 
-    $ ./doop -i ../doop-benchmarks/dacapo-2006/antlr.jar -a context-insensitive --platform java_7 --dacapo --id lb-antlr --lb
+    $ ./doop -i ../doop-benchmarks/dacapo-2006/antlr.jar -a context-insensitive --dacapo --id lb-antlr --lb
+##### Warning: For the latest features we recommend using Souffle    
+    
+### Android Analysis
 
+You can select to run an Android-specific analysis on an Android application by providing the `--android` option.
+An Android-specific analysis selects entry-points to the application based on the Android specification. The platform
+provided needs to be one of the valid `android_XZ_stubs/fulljars/robolectric/apk` values.
+
+    $ ./doop -i ../doop-benchmarks/android-benchmarks/Camera2Basic-debug.apk -a context-insensitive --android --platform android_25_fulljars
+      
+### Java Enterprise Application Analysis using JackEE 
+
+You can select to run an JavaEE-specific analysis on an Java Enterprise application by providing the `--open-programs jackee` option.
+An JavaEE analysis selects entry-points to the application based on the JavaEE specification and the web application framework
+used by the application. JackEE discovers entry points in a semi-automatic manner using a JavaEE-specific generalized vocabulary.
+JackEE's rules can easily be extended by using this vocabulary. JackEE is only available for Soufflé.
+
+Currently supported web frameworks: Spring, Struts2, JAX-RS REST API, JavaEE Servlets and Enterprise Java Beans.
+
+    $ ./doop -i ../doop-benchmarks/javaee-benchmarks/WebGoat.war -a context-insensitive --open-programs jackee 
+
+### Python TensorFlow Shape Analysis using Pythia
+
+Pythia is only available for Soufflé.
+
+### Taint Analysis Using P/Taint
+    
+P/Taint is activated using the `--information-flow` flag, is fully integrated into Doop, and is available for both
+ Soufflé and LogicBlox backends. P/Taint can track taint flow out of the box through Android and Servlet applications. Custom platform architectures can be easily integrated into P/Taint by creating new lists of taint sources/sinks and taint transform methods.
+
+In the case of Android, additional sensitive layout controls can be defined using the `--information-flow-extra-controls` flag.
+
+    $ ./doop -i ../doop-benchmarks/android-benchmarks/Camera2Basic-debug.apk -a context-insensitive --android --information-flow --platform android_25_fulljars
+
+    
 ### Running Doop in offline mode
 
 Normally, on each invocation of Doop the underlying build system will check for newer versions of all dependency libraries.
-Sometimes, it might be desirable to invoke doop in an offline mode. There is an alternative script for this purpose.
+Sometimes, it might be desirable to invoke doop in offline mode. There is an alternative script for this purpose.
 
-    $ ./doopOffline --platform java_8 -a context-insensitive -i com.example.some.jar
+    $ ./doopOffline -a context-insensitive -i com.example.some.jar
 
 ### Using Differential Datalog
 
@@ -228,7 +283,7 @@ dynamic proxies, lambdas, method handles, method references,
 dependency injection, test framework code), Doop fails to handle these
 features.
 
-Solution: Ensure that you do not use the legacy Logicblox mode
+Solution: Ensure that you do not use the legacy LogicΒlox mode
 (`--lb`) and appropriate options are set (check `doop --help`).
 
 *Problem:* Analyzing a program targeting Java on an Apple platform
