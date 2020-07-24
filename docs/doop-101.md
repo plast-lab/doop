@@ -101,7 +101,7 @@ Temp(v, h) :-
 Note that some relations belong to the "mainAnalysis" component and
 thus must be qualified.
 
-Then, run the analysis using this custom logic:
+Then, run the analysis using the custom logic:
 
 ```
 #!bash
