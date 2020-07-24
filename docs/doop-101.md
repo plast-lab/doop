@@ -65,7 +65,7 @@ found under the `results` directory. Also, for convenience, a second symbolic
 link is created at top level called `last-analysis`, each time pointing to the
 latest successful analysis.
 
-## Analysis Schema and Rules
+## Analysis schema and rules
 
 Note that `micro` used here attempts to be self-contained, so it
 contains all core login in the same file. To examine the other
@@ -73,7 +73,115 @@ analyses of the Doop framework, follow this structure:
 * Their input schema can be found in `souffle-logic/facts/flow-insensitivite-schema.dl`.
 * The rules for an analysis A, can be found in `souffle-logic/analyses/$A/analysis.dl`.
 
-### Doop & the DaCapo Benchmarks suite
+## Running custom logic
+
+There are two ways to process the analysis results: we can run custom
+logic alongside the analysis logic (while the analysis runs), or let
+the analysis compute its results and post-process them.
+
+To illustrate these two approaches, assume we want to find all
+variable-points-to information for method `Example.test()`, when doing
+a context-insensitive analysis.
+
+### Run custom logic inside the analysis
+
+Put the following logic in file extra.dl:
+
+```
+#!java
+.decl Temp(v: Var, h: mainAnalysis.Value)
+
+Temp(v, h) :-
+  mainAnalysis.VarPointsTo(_, h, _, v),
+  Var_DeclaringMethod(v, "<Example: void test(int)>").
+
+.output Temp
+```
+
+Note that some relations belong to the "mainAnalysis" component and
+thus must be qualified.
+
+Then, run the analysis using this custom logic:
+
+```
+#!bash
+$ ./doop -a context-insensitive -i docs/doop-101-examples/Example.jar --Xstats-none --Xextra-logic extra.dl
+```
+
+The new relation is now included in the results:
+
+```
+#!bash
+$ cat last-analysis/Temp.csv
+<Example: void test(int)>/@this <Example: void main(java.lang.String[])>/new Example/0
+<Example: void test(int)>/l0#_0 <Example: void main(java.lang.String[])>/new Example/0
+<Example: void test(int)>/l3#_32        <Example: void test(int)>/new Cat/1
+<Example: void test(int)>/l4#_33        <Example: void test(int)>/new Cat/2
+<Example: void test(int)>/$stack5       <Example: void test(int)>/new Dog/0
+<Example: void test(int)>/$stack6       <Example: void test(int)>/new Cat/1
+<Example: void test(int)>/$stack7       <Example: void test(int)>/new Cat/2
+<Example: void test(int)>/$stack8       <Example: void test(int)>/new Cat/0
+<Example: void test(int)>/l2#_26        <Example: void test(int)>/new Cat/0
+<Example: void test(int)>/l2_$$A_1#_28  <Example: void test(int)>/new Dog/0
+<Example: void test(int)>/l2_$$A_2#_29  <Example: void test(int)>/new Cat/0
+<Example: void test(int)>/l2_$$A_2#_29  <Example: void test(int)>/new Dog/0
+```
+
+The advantage of running custom logic this way is that it has access
+to all analysis relations (not just those written on disk). This
+disadvantage is that changes to this custom logic need to rerun the
+analysis (and recompile the logic).
+
+### Run custom logic after the analysis
+
+In a file temp.dl put the code:
+
+```
+#!java
+.decl Var_DeclaringMethod(v: symbol, m: symbol)
+.input Var_DeclaringMethod(IO="file", filename="Var-DeclaringMethod.facts", delimiter="\t")
+
+.decl VarPointsTo(c1: symbol, h: symbol, c2: symbol, v: symbol)
+.input VarPointsTo(IO="file", filename="VarPointsTo.csv", delimiter="\t")
+
+.decl Temp(v: symbol, h: symbol)
+Temp(v, h) :-
+  VarPointsTo(_, h, _, v),
+  Var_DeclaringMethod(v, "<Example: void test(int)>").
+
+.output Temp
+```
+
+Copy the Var-DeclaringMethod.facts so that they are in the same
+directory as the output relation VarPointsTo (replace `$id` with your
+analysis id):
+
+```
+#!bash
+$ cp out/context-insensitive/$id/facts/Var-DeclaringMethod.facts out/context-insensitive/$id/database/
+```
+
+Run the query and view its results:
+
+```
+#!bash
+$ souffle -F out/context-insensitive/$id/database/ temp.dl
+$ cat Temp.csv
+<Example: void test(int)>/@this <Example: void main(java.lang.String[])>/new Example/0
+<Example: void test(int)>/l0#_0 <Example: void main(java.lang.String[])>/new Example/0
+<Example: void test(int)>/l3#_32        <Example: void test(int)>/new Cat/1
+<Example: void test(int)>/l4#_33        <Example: void test(int)>/new Cat/2
+<Example: void test(int)>/$stack5       <Example: void test(int)>/new Dog/0
+<Example: void test(int)>/$stack6       <Example: void test(int)>/new Cat/1
+<Example: void test(int)>/$stack7       <Example: void test(int)>/new Cat/2
+<Example: void test(int)>/$stack8       <Example: void test(int)>/new Cat/0
+<Example: void test(int)>/l2#_26        <Example: void test(int)>/new Cat/0
+<Example: void test(int)>/l2_$$A_1#_28  <Example: void test(int)>/new Dog/0
+<Example: void test(int)>/l2_$$A_2#_29  <Example: void test(int)>/new Cat/0
+<Example: void test(int)>/l2_$$A_2#_29  <Example: void test(int)>/new Dog/0
+```
+
+## Doop & the DaCapo benchmarks suite
 We frequently analyze various programs from the [DaCapo Benchmarks
 suite](http://www.dacapobench.org/) using a variety of advanced analyses. E.g.,
 let's analyze the `antlr` benchmark using a 2 type-sensitive analysis.
@@ -91,7 +199,7 @@ queries on the resulting database. Those can be found under
 
 ***
 
-## Auxiliary Tools
+## Auxiliary tools
 
 ### mkjar
 You can use `bin/mkjar` to easily generate a jar file from a single java file.
@@ -262,7 +370,7 @@ The above query can be found isolated in [query3.logic](doop-101-examples/query3
 $ bloxbatch -db last-analysis -query -file docs/doop-101-examples/query3.logic
 ```
 
-### Aggregate Functions
+### Aggregate functions
 Datalog supports the use of aggregation functions. One such function is
 `count`. E.g., let's to compute the total number of VarPointsTo entries.
 
