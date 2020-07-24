@@ -2,7 +2,7 @@
 
 Our running example can be found in [Example.java](doop-101-examples/Example.java).
 
-We will run a simple naive analysis (`-a context-insensitive` option) on the generated jar
+We will run a lightweight naive analysis (`-a micro` option) on the generated jar
 file (`-i Example.jar` option). This analysis has only a few basic rules but
 it's a good representative skeleton of actual analyses. Since Doop performs a
 whole program analysis, the library will be analyzed along with application
@@ -11,7 +11,7 @@ or `--platform android_24` option). If not platform is provided by the user, it 
 
 ```
 #!bash
-$ ./doop -a context-insensitive -i docs/doop-101-examples/Example.jar --platform java_8 --Xstats:none
+$ ./doop -a context-insensitive -i docs/doop-101-examples/Example.jar --Xstats-none
 ```
 
 After the analysis has run, we can gather results by issuing queries directly to the database.
