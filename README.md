@@ -13,9 +13,22 @@ This document contains instructions for invoking the main driver of Doop. For an
 ## Getting Started
 
 At its core, Doop is a collection of various analyses expressed in the form of Datalog rules. The framework has two versions of its rules:
-one for [Soufflé](http://souffle-lang.org/), an open-source Datalog engine for program analysis (which is the default engine used), and another for **LogiQL**, a Datalog dialect developed by [LogicBlox](http://www.logicblox.com/). 
-In order to install an up-to-date version of Soufflé, the best practice is to clone the development Github [repo](https://github.com/souffle-lang/souffle) and follow the instructions found on [this page](http://souffle-lang.org/docs/build/). 
-For a LogicBlox engine, you can use **PA-Datalog**, a port available for academic use, by following the instructions found on [this page](http://snf-705535.vm.okeanos.grnet.gr/agreement.html). 
+
+1. The currently maintained version targets
+   [Soufflé](http://souffle-lang.org/), an open-source Datalog engine
+   for program analysis (which is the default engine used). In order
+   to install an up-to-date version of Soufflé, the best practice is
+   to clone the development Github
+   [repo](https://github.com/souffle-lang/souffle) and follow the
+   instructions found on [this
+   page](http://souffle-lang.org/docs/build/). Doop is currently
+   tested with Souffle 1.5.
+
+2. The legacy (unmaintained) version uses **LogiQL**, a Datalog
+   dialect developed by [LogicBlox](http://www.logicblox.com/). For a
+   LogicBlox engine, you can use **PA-Datalog**, a port available for
+   academic use, by following the instructions found on [this
+   page](http://snf-705535.vm.okeanos.grnet.gr/agreement.html).
 
 For trouble-free configuration:
 
