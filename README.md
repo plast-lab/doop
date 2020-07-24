@@ -21,7 +21,7 @@ At its core, Doop is a collection of various analyses expressed in the form of D
    to clone the development Github
    [repo](https://github.com/souffle-lang/souffle) and follow the
    instructions found on [this
-   page](http://souffle-lang.org/docs/build/). Doop is currently
+   page](https://souffle-lang.github.io/build). Doop is currently
    tested with Souffle 1.5.
 
 2. The legacy (unmaintained) version uses **LogiQL**, a Datalog
