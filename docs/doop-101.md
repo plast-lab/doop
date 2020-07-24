@@ -65,49 +65,14 @@ let's analyze the `antlr` benchmark using a 2 type-sensitive analysis.
 
 ```
 #!bash
-$ ./doop -a 2-type-sensitive+heap -i benchmarks/dacapo-2006/antlr.jar --dacapo --platform java_7
+$ ./doop -a 2-type-sensitive+heap -i benchmarks/dacapo-2006/antlr.jar --dacapo --platform java_8
 ```
 
 Towards the end of execution, Doop will report a set of metrics gathered from
 the analyzed program. Those metrics are computed through the use of various
 queries on the resulting database. Those can be found under
-`logic/addons/statistics`.
+`souffle-logic/addons/statistics`.
 
-### Query 3
-For example, one metric is the computation of casts that potentially may fail.
-It joins input facts as well as facts computed during execution to infer casts
-where the related variable may point to an object that is incompatible with the
-type of the cast.
-
-```
-#!java
-_Stats:Simple:PotentiallyFailingCast(?type, ?from, ?to) <-
-    _Stats:Simple:ReachableCast(_, ?type, ?to, ?from),
-    Stats:Simple:InsensVarPointsTo(?heap, ?from),
-    HeapAllocation:Type[?heap] = ?heaptype,
-    ! AssignCompatible(?type, ?heaptype).
-```
-
-The use of `_` as a predicate parameter denotes that we don't care for a
-specific value. It represent a parameter that is not bound.
-
-The above query can be found isolated in [query3.logic](doop-101-examples/query3.logic).
-
-```
-#!bash
-$ bloxbatch -db last-analysis -query -file docs/doop-101-examples/query3.logic
-```
-
-### Aggregate Functions
-Datalog supports the use of aggregation functions. One such function is
-`count`. E.g., let's to compute the total number of VarPointsTo entries.
-
-```
-#!bash
-$ bloxbatch -db last-analysis -query \
-'_[] = ?n <- agg<<?n = count()>> VarPointsTo(_, _, _, _).'
-  4569312
-```
 
 ***
 
@@ -252,6 +217,42 @@ The line `Instruction:Method[?invocation] = ?fromMethod` found in the previous
 query uses a special form of predicate known as a **functional** predicate.
 Those are similar to normal ones, but they act like a map. Values found between
 the square brackets are mapped to only on value on the right.
+
+### Query 3
+For example, one metric is the computation of casts that potentially may fail.
+It joins input facts as well as facts computed during execution to infer casts
+where the related variable may point to an object that is incompatible with the
+type of the cast.
+
+```
+#!java
+_Stats:Simple:PotentiallyFailingCast(?type, ?from, ?to) <-
+    _Stats:Simple:ReachableCast(_, ?type, ?to, ?from),
+    Stats:Simple:InsensVarPointsTo(?heap, ?from),
+    HeapAllocation:Type[?heap] = ?heaptype,
+    ! AssignCompatible(?type, ?heaptype).
+```
+
+The use of `_` as a predicate parameter denotes that we don't care for a
+specific value. It represent a parameter that is not bound.
+
+The above query can be found isolated in [query3.logic](doop-101-examples/query3.logic).
+
+```
+#!bash
+$ bloxbatch -db last-analysis -query -file docs/doop-101-examples/query3.logic
+```
+
+### Aggregate Functions
+Datalog supports the use of aggregation functions. One such function is
+`count`. E.g., let's to compute the total number of VarPointsTo entries.
+
+```
+#!bash
+$ bloxbatch -db last-analysis -query \
+'_[] = ?n <- agg<<?n = count()>> VarPointsTo(_, _, _, _).'
+  4569312
+```
 
 ### Log Analyzer
 Using additional runtime flags, you can emit extra debug information related to
