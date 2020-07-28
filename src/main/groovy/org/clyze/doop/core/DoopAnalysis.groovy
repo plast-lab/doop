@@ -545,7 +545,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                         //
                         loader = ClassPathHelper.copyOfCurrentClasspath(log, this)
                         try {
-                            def args = params.toArray(new String[params.size()])
+                            String[] args = params.toArray(new String[params.size()])
                             Helper.execJavaNoCatch(loader, SOOT_MAIN, args)
                         } catch (ClassNotFoundException ex) {
                             throw new RuntimeException("Cannot find Soot-based front end.")
