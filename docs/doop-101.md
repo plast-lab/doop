@@ -39,7 +39,7 @@ this heap object.
 
 ```
 #!java
-VarPointsTo(?var, ?heap) :
+VarPointsTo(?var, ?heap) :-
   AssignHeapAllocation(?heap, ?var, ?inMethod),
   Reachable(?inMethod).
 ```
