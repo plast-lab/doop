@@ -55,6 +55,21 @@ public class AndroidSupport_Soot extends AndroidSupport implements ClassAdder {
         addClasses(parameters.getDependencies(), classes, scene, java.getClassesInDependencyJars());
     }
 
+    @Override
+    public boolean isAppClass(String t) {
+        return java.getClassesInApplicationJars().contains(t);
+    }
+
+    @Override
+    public boolean isLibClass(String t) {
+        return java.getClassesInLibraryJars().contains(t);
+    }
+
+    @Override
+    public boolean isAppOrDepClass(String t) {
+        return java.getClassesInDependencyJars().contains(t) || isAppClass(t);
+    }
+
     // Parses Android manifests. Supports binary and plain-text XML
     // files (found in .apk and .aar files respectively).
     @Override

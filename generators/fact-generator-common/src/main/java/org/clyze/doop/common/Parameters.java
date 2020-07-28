@@ -243,19 +243,7 @@ public class Parameters {
     }
 
     protected void finishArgProcessing() throws DoopErrorCodeException {
-        // For some facts-subset values, some options will be ignored (cleared).
-        if (_factsSubSet == FactsSubSet.APP) {
-            _dependencies.clear();
-            _platformLibs.clear();
-        } else if (_factsSubSet == FactsSubSet.APP_N_DEPS)
-            _platformLibs.clear();
-        else if (_factsSubSet == FactsSubSet.PLATFORM) {
-            _inputs.clear();
-            _dependencies.clear();
-        } else if (_factsSubSet != null) {
-            System.err.println("Illegal facts subset option: " + _factsSubSet);
-            throw new DoopErrorCodeException(4);
-        } else if (getOutputDir() == null) {
+        if (getOutputDir() == null) {
             System.err.println("Error: no output facts directory.");
             throw new DoopErrorCodeException(16);
         }
