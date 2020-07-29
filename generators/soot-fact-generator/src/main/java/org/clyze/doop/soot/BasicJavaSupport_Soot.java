@@ -22,6 +22,21 @@ public class BasicJavaSupport_Soot extends BasicJavaSupport implements ClassAdde
     }
 
     @Override
+    public boolean isAppClass(String t) {
+        return classesInApplicationJars.contains(t);
+    }
+
+    @Override
+    public boolean isLibClass(String t) {
+        return classesInLibraryJars.contains(t);
+    }
+
+    @Override
+    public boolean isAppOrDepClass(String t) {
+        return classesInDependencyJars.contains(t) || isAppClass(t);
+    }
+
+    @Override
     public void addAppClasses(Set<SootClass> classes, Scene scene) {
         addSootClasses(classesInApplicationJars, classes, scene);
         addBasicClasses(scene);

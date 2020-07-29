@@ -7,17 +7,17 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Predicate;
+
 import org.apache.log4j.Logger;
 import org.clyze.doop.common.ArtifactEntry;
 import org.clyze.doop.common.ArtifactScanner;
 import org.clyze.doop.common.Database;
-import org.clyze.doop.common.DatabaseConnector;
 import org.clyze.doop.common.DoopErrorCodeException;
 import org.clyze.doop.common.Phantoms;
 import org.clyze.doop.soot.android.AndroidSupport_Soot;
 import org.clyze.utils.AARUtils;
 import org.clyze.utils.JHelper;
-import org.xmlpull.v1.XmlPullParserException;
 import soot.Scene;
 import soot.SootClass;
 import soot.SootMethod;
@@ -198,14 +198,21 @@ public class Main {
 
         Set<SootClass> classes = new HashSet<>();
         ClassAdder classAdder = (android != null) ? android : java;
-        if (sootParameters._factsSubSet == SootParameters.FactsSubSet.APP)
+        if (sootParameters._factsSubSet == SootParameters.FactsSubSet.APP) {
+            System.out.println("WARNING: only application classes will be used.");
             classAdder.addAppClasses(classes, scene);
-        else if (sootParameters._factsSubSet == SootParameters.FactsSubSet.APP_N_DEPS) {
+            // Add library classes, to be pruned later.
+            classAdder.addLibClasses(classes, scene);
+        } else if (sootParameters._factsSubSet == SootParameters.FactsSubSet.APP_N_DEPS) {
+            System.out.println("WARNING: only application/dependency classes will be used.");
             classAdder.addAppClasses(classes, scene);
             classAdder.addDepClasses(classes, scene);
-        } else if (sootParameters._factsSubSet == SootParameters.FactsSubSet.PLATFORM)
+            // Add library classes, to be pruned later.
             classAdder.addLibClasses(classes, scene);
-        else
+        } else if (sootParameters._factsSubSet == SootParameters.FactsSubSet.PLATFORM) {
+            System.out.println("WARNING: only platform classes will be used.");
+            classAdder.addLibClasses(classes, scene);
+        } else
             classAdder.addAppClasses(classes, scene);
 
         for (String extraClass : sootParameters.getExtraClassesToResolve()) {
@@ -227,6 +234,21 @@ public class Main {
 
         classes = new HashSet<>(scene.getClasses());
         System.out.println("Total classes in Scene: " + classes.size());
+
+        // If a facts subset is selected, delete all other classes before fact generation.
+        if (sootParameters._factsSubSet != null) {
+            switch (sootParameters._factsSubSet) {
+                case APP:
+                    deleteClassesFailingCheck(classes, classAdder::isAppClass);
+                    break;
+                case APP_N_DEPS:
+                    deleteClassesFailingCheck(classes, classAdder::isAppOrDepClass);
+                    break;
+                case PLATFORM:
+                    deleteClassesFailingCheck(classes, classAdder::isLibClass);
+                    break;
+            }
+        }
 
         // Skip "retrieve all bodies" step for Android apps.
         if (android == null) {
@@ -296,6 +318,16 @@ public class Main {
         sootData.classes = classes;
         sootData.driver = driver;
         sootData.writer = writer;
+    }
+
+    private static void deleteClassesFailingCheck(Set<SootClass> classes, Predicate<String> check) {
+        Collection<SootClass> typesToDelete = new LinkedList<>();
+        classes.forEach((SootClass sc) -> {
+            if (!check.test(sc.getName()))
+                typesToDelete.add(sc);
+        });
+        System.out.println("Deleting " + typesToDelete.size() + " types due to selected facts subset.");
+        classes.removeAll(typesToDelete);
     }
 
     private static boolean sootClassPathFirstElement = true;

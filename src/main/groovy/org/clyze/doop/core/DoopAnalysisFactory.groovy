@@ -615,7 +615,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
 		options.values().each {
 			if (it.argName && it.value && it.validValues && !(it.value in it.validValues))
-				throw new DoopErrorCodeException(33, "Invalid value `$it.value` for option: $it.name")
+				throw new DoopErrorCodeException(33, "Invalid value ${it.value} for option: ${it.name}, valid values: ${it.validValues}")
 		}
 
 		options.values().findAll { it.isMandatory }.each {
