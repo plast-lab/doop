@@ -1,6 +1,7 @@
 package org.clyze.doop
 
 import org.clyze.analysis.Analysis
+import org.clyze.doop.common.Parameters
 import spock.lang.Unroll
 
 class FactsSubsetTest extends ServerAnalysisTests {
@@ -13,6 +14,9 @@ class FactsSubsetTest extends ServerAnalysisTests {
 
         then:
         true
+
+        where:
+        subset << Parameters.FactsSubSet.valueSet()
     }
 
 }

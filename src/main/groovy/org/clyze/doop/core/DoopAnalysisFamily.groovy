@@ -1037,7 +1037,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					group: GROUP_FACTS,
 					description: "Produce facts only for a subset of the given classes.",
 					argName: "SUBSET",
-					validValues: Parameters.FactsSubSet.values().collect { it as String } as Set<String>,
+					validValues: Parameters.FactsSubSet.valueSet(),
 					forCacheID: true
 			),
 			new BooleanAnalysisOption(
