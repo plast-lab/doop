@@ -10,6 +10,7 @@ public class GlobClassFilter implements ClassFilter {
     private final ArrayList<String> otherPatterns;
     private final boolean matchEverything;
 
+    @SuppressWarnings("DuplicateExpressions")
     public GlobClassFilter(String glob) {
         String[] patterns = glob.split(File.pathSeparator);
 
@@ -60,7 +61,7 @@ public class GlobClassFilter implements ClassFilter {
                     return true;
 
         // Package name, lazily initialized at most once.
-        String pkgName = null;
+        String pkgName;
 
         if (otherPatterns != null)
             for (String pattern : otherPatterns) {

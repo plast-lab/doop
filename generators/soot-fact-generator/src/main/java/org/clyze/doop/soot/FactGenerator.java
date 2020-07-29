@@ -28,9 +28,9 @@ class FactGenerator implements Runnable {
     private final Set<SootClass> _sootClasses;
     private final Phantoms phantoms;
     private final SootParameters sootParameters;
-    private final Driver _driver;
+    private final SootDriver _driver;
 
-    FactGenerator(FactWriter writer, Set<SootClass> sootClasses, Driver driver, SootParameters sootParameters, Phantoms phantoms)
+    FactGenerator(FactWriter writer, Set<SootClass> sootClasses, SootDriver driver, SootParameters sootParameters, Phantoms phantoms)
     {
         this._writer = writer;
         this._sootClasses = sootClasses;
