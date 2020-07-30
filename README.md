@@ -1,14 +1,9 @@
 # Doop - Framework for Java Pointer and Taint Analysis (using P/Taint)
 
-This document contains instructions for invoking the main driver of Doop. For an introduction to Datalog, please
- consult [Datalog-101](docs/datalog-101.md). For a more detailed tutorial on using the results of Doop analyses
- , please consult [Doop-101](docs/doop-101.md). For an introduction to pointer analysis using Datalog, you can read a
-  [research-level tutorial](http://yanniss.github.io/points-to-tutorial15.pdf). For information about Taint Analysis
-   using Doop, please consult our [P/Taint paper](https://yanniss.github.io/ptaint-oopsla17.pdf), or [P/Taint
-    tutorial](docs/ptaint.md). For information about JavaEE application analysis using Doop, please consult our [PLDI'20
-     paper
-    ](http://yanniss.github.io/enterprise-pldi20.pdf). For information about Python Tensorflow Shape analysis using
-     Doop, please consult our [ECOOP'20 paper](http://yanniss.github.io/tensor-ecoop20.pdf).
+This document contains instructions for invoking the main driver of Doop. 
+* For an introduction to Datalog, please consult [Datalog-101](docs/datalog-101.md). 
+* For a more detailed tutorial on using the results of Doop analyses, please consult [Doop-101](docs/doop-101.md). 
+* For an introduction to pointer analysis using Datalog, you can read a [research-level tutorial](http://yanniss.github.io/points-to-tutorial15.pdf).
 
 ## Getting Started
 
@@ -22,7 +17,7 @@ At its core, Doop is a collection of various analyses expressed in the form of D
    [repo](https://github.com/souffle-lang/souffle) and follow the
    instructions found on [this
    page](https://souffle-lang.github.io/build). Doop is currently
-   tested with Souffle 1.5.
+   tested with Souffle 1.5.1.
 
 2. The legacy (unmaintained) version uses **LogiQL**, a Datalog
    dialect developed by [LogicBlox](http://www.logicblox.com/). For a
@@ -93,6 +88,7 @@ $ ./doop -i ./lib/asm-debug-all-4.1.jar      [local file]
 
 #### PLATFORM (--platform)
 Optional --- default: java_8. The platform to use for the analysis. The possible Java options are java_N where N is the java version (3, 4, 5, 6, 7, 8 etc.). The android options are android_N_V where N is the Android version (20, 21, 22, 23, 24, 25 etc.) and V is the variant ("stubs" for the Android SDK libraries or "fulljars" for custom built platforms).
+At the moment Doop does not support the Java 9+ platforms as for these versions the runtime is packaged differently.
 
 Example:
 
@@ -185,9 +181,13 @@ Currently supported web frameworks: Spring, Struts2, JAX-RS REST API, JavaEE Ser
 
     $ ./doop -i ../doop-benchmarks/javaee-benchmarks/WebGoat.war -a context-insensitive --open-programs jackee 
 
+For information about JavaEE application analysis using Doop, please consult our [PLDI'20 paper](http://yanniss.github.io/enterprise-pldi20.pdf).
+
 ### Python TensorFlow Shape Analysis using Pythia
 
 Pythia is only available for Soufflé.
+
+For information about Python Tensorflow Shape analysis using Doop, please consult our [ECOOP'20 paper](http://yanniss.github.io/tensor-ecoop20.pdf).
 
 ### Taint Analysis Using P/Taint
     
@@ -197,7 +197,8 @@ P/Taint is activated using the `--information-flow` flag, is fully integrated in
 In the case of Android, additional sensitive layout controls can be defined using the `--information-flow-extra-controls` flag.
 
     $ ./doop -i ../doop-benchmarks/android-benchmarks/Camera2Basic-debug.apk -a context-insensitive --android --information-flow --platform android_25_fulljars
-
+    
+For information about Taint Analysis using Doop, please consult our [P/Taint paper](https://yanniss.github.io/ptaint-oopsla17.pdf), or [P/Taint tutorial](docs/ptaint.md). 
     
 ### Running Doop in offline mode
 
@@ -297,4 +298,4 @@ example, for Java 8, these could be: `apple.laf-jdk1.8.jar`,
 
 Solution: Change the "maximum heap size" or "stack size" options in
 build.gradle (if running via Gradle) or in the DEFAULT_JVM_OPTS
-environment variable in bin/doop (if using a Doop distrubution).
+environment variable in bin/doop (if using a Doop distribution).
