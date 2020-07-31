@@ -4,6 +4,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.io.*;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.clyze.doop.util.filter.ClassFilter;
@@ -40,7 +41,12 @@ public class Parameters {
     public boolean _dex = false;
     public boolean _legacyAndroidProcessing = false;
 
-    public enum FactsSubSet { APP, APP_N_DEPS, PLATFORM }
+    public enum FactsSubSet {
+        APP, APP_N_DEPS, PLATFORM;
+        public static Set<String> valueSet() {
+            return Arrays.stream(values()).map(Enum::name).collect(Collectors.toSet());
+        }
+    }
 
     public Parameters() {
         setAppRegex("**");

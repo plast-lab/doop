@@ -320,7 +320,7 @@ public class Main {
         sootData.writer = writer;
     }
 
-    private static void deleteClassesFailingCheck(Set<SootClass> classes, Predicate<String> check) {
+    private static void deleteClassesFailingCheck(Collection<SootClass> classes, Predicate<String> check) {
         Collection<SootClass> typesToDelete = new LinkedList<>();
         classes.forEach((SootClass sc) -> {
             if (!check.test(sc.getName()))

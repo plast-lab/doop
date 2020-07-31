@@ -219,9 +219,7 @@ public class ArtifactScanner {
         final boolean truncateAddresses = true;
         final NativeScanner scanner = new NativeScanner(true, methodStrings);
 
-        EntryProcessor gProc = (file, entry, entryName) -> {
-            scanner.scanArchiveEntry(dbc, binAnalysisType, preciseNativeStrings, truncateAddresses, demangle, file, entry, entryName);
-        };
+        EntryProcessor gProc = (file, entry, entryName) -> scanner.scanArchiveEntry(dbc, binAnalysisType, preciseNativeStrings, truncateAddresses, demangle, file, entry, entryName);
         for (String input : inputs) {
             System.out.println("Processing native code in input: " + input);
             try {
