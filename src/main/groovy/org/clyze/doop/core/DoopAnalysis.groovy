@@ -67,6 +67,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
      */
     static final String INFORMATION_FLOW_SUFFIX = "-sources-and-sinks"
 
+    @Override
     String getId() { options.USER_SUPPLIED_ID.value as String }
 
     String getName() { options.ANALYSIS.value.toString().replace(File.separator, "-") }
