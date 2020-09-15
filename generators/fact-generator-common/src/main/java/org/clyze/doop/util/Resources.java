@@ -32,17 +32,12 @@ public class Resources {
 
         List<String> matches = new LinkedList<>();
         if (doopHome != null) {
-            // Remove quotes used for escaping in the command line.
-            doopHome = doopHome.replaceAll("\"", "");
-            File resourcesDir = new File(doopHome + File.separator + "resources");
-            if (!resourcesDir.exists())
-                throw new RuntimeException("ERROR: resources directory does not exist: " + resourcesDir.getCanonicalPath());
-            File[] files = resourcesDir.listFiles();
-            if (files == null)
-                throw new RuntimeException("ERROR: could not list directory " + resourcesDir.getCanonicalPath());
-            for (File f : files)
-                if (f.getName().startsWith(resource))
-                    matches.add(f.getCanonicalPath());
+            matches = getMatchingResources(doopHome, resource);
+            // Also look in DOOP_HOME (to be used by client libraries, see example doop-as-lib).
+            if (matches.size() == 0) {
+                String doopHome2 = System.getenv("DOOP_HOME");
+                matches = getMatchingResources(doopHome2, resource);
+            }
 
             if (matches.size() > 0) {
                 if (matches.size() == 1)
@@ -71,6 +66,31 @@ public class Resources {
         JHelper.runJar(new String[0], jvmArgs, resourceJar, args, TAG, logger.isDebugEnabled(), proc);
         if (proc.error != null)
             throw new RuntimeException(proc.error);
+    }
+
+    /**
+     * Get the resource files that match a given "resource" substring.
+     *
+     * @param resourcesParentDir   the top directory containing the "resources" directory
+     * @param resource             the resource name substring
+     * @return                     a list of file paths
+     * @throws IOException
+     */
+    private static List<String> getMatchingResources(String resourcesParentDir, String resource)
+            throws IOException {
+        List<String> matches = new LinkedList<>();
+        // Remove quotes used for escaping in the command line.
+        resourcesParentDir = resourcesParentDir.replaceAll("\"", "");
+        File resourcesDir = new File(resourcesParentDir, "resources");
+        if (!resourcesDir.exists())
+            throw new RuntimeException("ERROR: resources directory does not exist: " + resourcesDir.getCanonicalPath());
+        File[] files = resourcesDir.listFiles();
+        if (files == null)
+            throw new RuntimeException("ERROR: could not list directory " + resourcesDir.getCanonicalPath());
+        for (File f : files)
+            if (f.getName().startsWith(resource))
+                matches.add(f.getCanonicalPath());
+        return matches;
     }
 
     private static String[] extraJvmArgs(String[] jvmArgs, String doopHome) {
