@@ -4,12 +4,12 @@ Quick setup:
 
 Step 1. Build the example program:
 ```
-gradle build
+./gradlew build
 ```
 
 Step 2. Set environment variable `DOOP_HOME` to doop-home directory (see message printed by previous step).
 
 Step 3. Run the example program via Gradle:
 ```
-gradle run
+./gradlew run
 ```

@@ -67,3 +67,7 @@ task resolveDoopResources {
 tasks.build.dependsOn resolveDoopResources
 
 mainClassName = "DoopRunner"
+
+wrapper {
+    gradleVersion = "5.4.1"
+}
