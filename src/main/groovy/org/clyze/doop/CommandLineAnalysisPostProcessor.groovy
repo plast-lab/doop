@@ -14,9 +14,9 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor<DoopAnal
 
 	@Override
 	void process(DoopAnalysis analysis) {
-		if (!analysis.options.X_STOP_AT_FACTS.value && !analysis.options.X_STOP_AT_BASIC.value)
+		if (!analysis.options.get('X_STOP_AT_FACTS').value && !analysis.options.get('X_STOP_AT_BASIC').value)
 			printStats(analysis)
-		if (analysis.options.SANITY.value && !analysis.options.X_DRY_RUN.value)
+		if (analysis.options.get('SANITY').value && !analysis.options.get('X_DRY_RUN').value)
 			printSanityResults(analysis)
 		linkResult(analysis)
 	}
@@ -29,7 +29,7 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor<DoopAnal
 				if (!filterOutLBWarn(line)) lines << line
 			}
 		} else {
-			def file = new File("${analysis.database}/Stats_Runtime.csv")
+			def file = new File(analysis.database, 'Stats_Runtime.csv')
 			file.eachLine { String line -> lines << line.replace("\t", ", ") }
 		}
 
@@ -38,7 +38,7 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor<DoopAnal
 			printf("%-80s %,d\n", it[0], it[1] as long)
 		}
 
-		if (!analysis.options.X_STATS_NONE.value && !analysis.options.X_DRY_RUN.value) {
+		if (!analysis.options.get('X_STATS_NONE').value && !analysis.options.get('X_DRY_RUN').value) {
 			lines = []
 
 			if (analysis.options.LB3.value) {
@@ -66,15 +66,16 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor<DoopAnal
 	}
 
 	void linkResult(DoopAnalysis analysis) {
-		if (analysis.options.X_STOP_AT_FACTS.value) {
-			log.info "Making facts available at ${analysis.options.X_STOP_AT_FACTS.value}"
+		def xStopAtFactsOpt = analysis.options.get('X_STOP_AT_FACTS').value
+		if (xStopAtFactsOpt) {
+			log.info "Making facts available at ${xStopAtFactsOpt}"
 			return
 		}
 
 		def inputName
-		def platform = analysis.options.PLATFORM.value
+		def platform = analysis.options.get('PLATFORM').value
 
-		if (analysis.options.X_START_AFTER_FACTS.value)
+		if (analysis.options.get('X_START_AFTER_FACTS').value)
 			inputName = analysis.id
 		else
 			inputName = FilenameUtils.getBaseName(analysis.inputFiles[0].toString())
