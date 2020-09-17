@@ -39,6 +39,9 @@ group = "org.clyze"
 // Doop entry point.
 mainClassName = "org.clyze.doop.Main"
 
+// Windows support flag.
+def onWindows = System.properties['os.name'].toLowerCase().contains('windows')
+
 def heapDLVersion = "1.1.9"
 if (project.hasProperty('heapDLVersion'))
     heapDLVersion = project.property('heapDLVersion')
@@ -318,7 +321,7 @@ test {
         exceptionFormat = 'full'
     }
     environment.DOOP_HOME = projectDir
-    java.nio.file.Path lbTestHomeDir = Files.createTempDirectory("lb-test-home-dir", asFileAttribute(fromString("rwxrwxrwx")))
+    java.nio.file.Path lbTestHomeDir = Files.createTempDirectory("lb-test-home-dir", onWindows ? ([] as java.nio.file.attribute.FileAttribute[]) : asFileAttribute(fromString("rwxrwxrwx")))
     environment.HOME = lbTestHomeDir.toString()
     doLast {
         lbTestHomeDir.toFile().delete()
