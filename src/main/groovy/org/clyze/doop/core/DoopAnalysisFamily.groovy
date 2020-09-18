@@ -840,7 +840,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "LB3",
 					name: "lb",
 					group: GROUP_ENGINE,
-					description: "Use the LB engine."
+					description: "Use legacy LB engine."
 			),
 			/* End LogicBlox related options */
 
