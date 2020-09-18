@@ -24,7 +24,18 @@ public class Person {
     public void printPerson() { }
 
     public static int compareByAge(Person a, Person b) {
-        return a.birthday.compareTo(b.birthday);
+        // Original code, breaks TimSort in Java 8.
+//        return a.birthday.compareTo(b.birthday);
+        LocalDate aDate = a.birthday;
+        LocalDate bDate = b.birthday;
+        if (aDate == bDate)
+            return 0;
+        else if (aDate == null && bDate != null)
+            return 1;
+        else if (aDate != null && bDate == null)
+            return -1;
+        else
+            return aDate.compareTo(bDate);
     }
 
     public static List<Person> createRoster() {
