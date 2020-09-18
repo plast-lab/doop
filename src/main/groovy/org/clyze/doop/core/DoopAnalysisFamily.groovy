@@ -26,6 +26,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 	private static final int SERVER_DEFAULT_THRESHOLD = 1000
 	private static final int DEFAULT_JOBS = 4
 	private static final int DEFAULT_STRINGS_DISTANCE = 5
+	static String USE_ANALYSIS_BINARY_NAME = 'use-analysis-binary'
 
 	@Override
 	String getName() { "doop" }
@@ -688,6 +689,13 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "souffle-force-recompile",
 					group: GROUP_ENGINE,
 					description: "Force recompilation of Souffle logic."
+			),
+			new BooleanAnalysisOption(
+					id: "USE_ANALYSIS_BINARY",
+					name: USE_ANALYSIS_BINARY_NAME,
+					group: GROUP_ENGINE,
+					description: "Use precompiled analysis binary (for Windows compatibility).",
+					argName: "PATH"
 			),
 			new BooleanAnalysisOption(
 					id: "SOUFFLE_RUN_INTERPRETED",

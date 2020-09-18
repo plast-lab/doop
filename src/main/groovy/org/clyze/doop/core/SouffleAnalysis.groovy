@@ -40,7 +40,8 @@ class SouffleAnalysis extends DoopAnalysis {
 		boolean provenance = options.SOUFFLE_PROVENANCE.value as boolean
 		boolean profiling = options.SOUFFLE_PROFILE.value as boolean
 		boolean liveProf = options.SOUFFLE_LIVE_PROFILE.value as boolean
-		if (!options.X_STOP_AT_FACTS.value) {
+		String analysisBinaryPath = options.USE_ANALYSIS_BINARY.value
+		if (!options.X_STOP_AT_FACTS.value && !analysisBinaryPath) {
 			if (options.VIA_DDLOG.value) {
 				// Copy the DDlog converter, needed both for logic
 				// compilation and fact post-processing.
@@ -70,7 +71,7 @@ class SouffleAnalysis extends DoopAnalysis {
 		}
 		runtimeMetricsFile.createNewFile()
 
-		def generatedFile
+		File generatedFile
 		if (options.X_SERIALIZE_FACTGEN_COMPILATION.value) {
 			generatedFile = compilationFuture.get()
 			System.gc()
@@ -101,15 +102,18 @@ class SouffleAnalysis extends DoopAnalysis {
 
 			if (options.X_STOP_AT_FACTS.value) return
 
-			if (!options.X_SERIALIZE_FACTGEN_COMPILATION.value) {
-				generatedFile = compilationFuture.get()
+			if (!analysisBinaryPath) {
+				if (!options.X_SERIALIZE_FACTGEN_COMPILATION.value) {
+					generatedFile = compilationFuture.get()
+				}
+				runtimeMetricsFile.append("analysis compilation time (sec)\t${script.compilationTime}\n")
 			}
-			runtimeMetricsFile.append("analysis compilation time (sec)\t${script.compilationTime}\n")
 
 			if (!options.X_DRY_RUN.value) {
-				script.run(generatedFile, factsDir, outDir, options.SOUFFLE_JOBS.value as int,
-						   (options.X_MONITORING_INTERVAL.value as long) * 1000, monitorClosure,
-						   provenance, liveProf, profiling)
+				File analysisBinary = analysisBinaryPath ? new File(analysisBinaryPath) : generatedFile
+				script.run(analysisBinary, factsDir, outDir, options.SOUFFLE_JOBS.value as int,
+						(options.X_MONITORING_INTERVAL.value as long) * 1000, monitorClosure,
+						provenance, liveProf, profiling)
 
 				runtimeMetricsFile.append("analysis execution time (sec)\t${script.executionTime}\n")
 				int dbSize = (sizeOfDirectory(database) / 1024).intValue()

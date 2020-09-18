@@ -1,13 +1,13 @@
 package org.clyze.doop
 
 import groovy.util.logging.Log4j
+import java.nio.file.Files
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
 import org.clyze.analysis.AnalysisPostProcessor
 import org.clyze.doop.core.Doop
 import org.clyze.doop.core.DoopAnalysis
-
-import java.nio.file.Files
+import org.clyze.utils.OS
 
 @Log4j
 class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor<DoopAnalysis> {
@@ -80,18 +80,23 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor<DoopAnal
 		else
 			inputName = FilenameUtils.getBaseName(analysis.inputFiles[0].toString())
 
-		def humanDatabase = new File("${Doop.doopHome}/results/${inputName}/${analysis.name}/${platform}/${analysis.id}")
-		humanDatabase.mkdirs()
-		if (humanDatabase.exists()) {
-			FileUtils.deleteDirectory(humanDatabase)
-		}
-		log.info "Making database available at $humanDatabase"
-		Files.createSymbolicLink(humanDatabase.toPath(), analysis.database.toPath())
+		// Skip symbolic links on Windows.
+		if (OS.win) {
+			log.info "Making database available at $analysis.database"
+		} else {
+			def humanDatabase = new File("${Doop.doopHome}/results/${inputName}/${analysis.name}/${platform}/${analysis.id}")
+			humanDatabase.mkdirs()
+			if (humanDatabase.exists()) {
+				FileUtils.deleteDirectory(humanDatabase)
+			}
+			log.info "Making database available at $humanDatabase"
+			Files.createSymbolicLink(humanDatabase.toPath(), analysis.database.toPath())
 
-		def lastAnalysis = new File("${Doop.doopHome}/last-analysis")
-		Files.deleteIfExists(lastAnalysis.toPath())
-		log.info "Making database available at $lastAnalysis"
-		Files.createSymbolicLink(lastAnalysis.toPath(), analysis.database.toPath())
+			def lastAnalysis = new File("${Doop.doopHome}/last-analysis")
+			Files.deleteIfExists(lastAnalysis.toPath())
+			log.info "Making database available at $lastAnalysis"
+			Files.createSymbolicLink(lastAnalysis.toPath(), analysis.database.toPath())
+		}
 
 		if (analysis.options.SOUFFLE_PROFILE.value)
 			log.info "Souffle analysis profile available at ${analysis.outDir}/profile.txt"
