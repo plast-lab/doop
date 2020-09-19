@@ -690,7 +690,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					group: GROUP_ENGINE,
 					description: "Force recompilation of Souffle logic."
 			),
-			new BooleanAnalysisOption(
+			new AnalysisOption<String>(
 					id: "USE_ANALYSIS_BINARY",
 					name: USE_ANALYSIS_BINARY_NAME,
 					group: GROUP_ENGINE,
