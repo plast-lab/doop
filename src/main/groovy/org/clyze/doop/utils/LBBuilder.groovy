@@ -1,6 +1,7 @@
 package org.clyze.doop.utils
 
 import groovy.util.logging.Log4j
+import java.util.regex.Matcher
 import org.clyze.utils.Executor
 
 @Log4j
@@ -64,9 +65,9 @@ class LBBuilder {
 		tmpFile.deleteOnExit()
 		cpp.preprocess(tmpFile.toString(), filePath)
 		tmpFile.eachLine { line ->
-			def matcher = (line =~ /^(addBlock|exec)[ \t]+-[a-zA-Z][ \t]+(.*\.logic)$/)
+			Matcher matcher = (line =~ /^(addBlock|exec)[ \t]+-[a-zA-Z][ \t]+(.*\.logic)$/)
 			if (matcher.matches()) {
-				def inFile = matcher[0][2]
+				String inFile = matcher[0][2] as String
 				def outFile = inFile.replaceAll(File.separator, "-")
 				cpp.preprocess("$outDir/$outFile", "$inDir/$inFile")
 			}

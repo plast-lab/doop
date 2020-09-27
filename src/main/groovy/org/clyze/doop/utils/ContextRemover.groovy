@@ -1,7 +1,10 @@
 package org.clyze.doop.utils
 
+import groovy.transform.CompileStatic
+
 // Reads a context-insensitive.dl file and removes all context fields
 // from its relations. This code is a search & replace heuristic.
+@CompileStatic
 class ContextRemover {
 	// Relations containing context fields (but also other fields).
 	static Map<String, List<Integer>> fieldsToRemove = [:]
@@ -42,12 +45,12 @@ class ContextRemover {
 		println "WARNING: Running the experimental context remover..."
 		outFile.delete()
 
-		def outLines = ['.decl TRUE(t:number)', "${CONST_TRUE}."]
+		List<String> outLines = ['.decl TRUE(t:number)', "${CONST_TRUE}."] as List<String>
 		// First pass: recognize and transform declarations.
 		inFile.eachLine { String line -> outLines << translateDecl(line) }
 		// Second pass: transform logic and remove most trivial placeholders.
-		outLines = outLines.collect { translateLine(it) }
-				.collect { it.replace("${CONST_TRUE},", "") }
+		String constTruePart = "${CONST_TRUE},"
+		outLines = outLines.collect { String s -> translateLine(s).replaceAll(constTruePart, "") }
 		// Write output.
 		outFile << outLines.join('\n')
 	}
@@ -119,7 +122,7 @@ class ContextRemover {
 		}
 		// Replace context-only relations with trivial truths.
 		relationsToDelete.each { String relName ->
-			findRels(line, relName).each { List r ->
+			findRels(line, relName).each { List<String> r ->
 				if (r[0] != -1) {
 					lineSubstitutions << [r[4], CONST_TRUE]
 				}
@@ -128,8 +131,8 @@ class ContextRemover {
 		return subst(lineSubstitutions, line)
 	}
 
-	static String subst(List lineSubstitutions, String line) {
-		lineSubstitutions.forEach { List subst ->
+	static String subst(List<List<String>> lineSubstitutions, String line) {
+		lineSubstitutions.forEach { List<String> subst ->
 			line = line.replace(subst[0], subst[1])
 			// println "${lineN}: [${subst[0]}] ~> [${subst[1]}]"
 		}
@@ -178,7 +181,7 @@ class ContextRemover {
 		return (-1)
 	}
 
-	static List findRels(String line, String relName) {
+	static List<List<String>> findRels(String line, String relName) {
 		def ret = []
 		def startIdx = 0
 		while (true) {
@@ -192,7 +195,7 @@ class ContextRemover {
 	}
 
 	// Pattern matching for relation uses.
-	static List findRel(String line, String relName, int startIdx) {
+	static List<String> findRel(String line, String relName, int startIdx) {
 		def relHead = "${relName}("
 		def relHeadStartIdx
 		def relHeadEndIdx = -1
@@ -225,12 +228,12 @@ class ContextRemover {
 			original = line.substring(relHeadStartIdx, rParenIdx + 1)
 			args = splitOuter(line.substring(relHeadEndIdx, rParenIdx))
 		}
-		return [relHeadStartIdx, relHeadEndIdx, relHead, rParenIdx, original, args]
+		return [relHeadStartIdx, relHeadEndIdx, relHead, rParenIdx, original, args] as List<String>
 	}
 
 	static int findWordStartBackwards(String line, int startIdx) {
 		for (int idx = startIdx; idx >= 0; idx--) {
-			if (!((Character) line[idx]).letter)
+			if (!Character.isLetter(line.charAt(idx)))
 				return idx
 		}
 		return 0

@@ -2,11 +2,14 @@ package org.clyze.doop.utils
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Log4j
+import org.apache.commons.io.FileUtils
 import org.clyze.doop.common.DoopErrorCodeException
 import org.clyze.doop.core.DoopAnalysisFactory
+import org.clyze.doop.core.DoopAnalysisFamily
 import org.clyze.utils.CheckSum
 import org.clyze.utils.Executor
 import org.clyze.utils.Helper
+import org.clyze.utils.OS
 
 import java.nio.file.FileAlreadyExistsException
 import java.nio.file.Files
@@ -20,7 +23,7 @@ import static org.apache.commons.io.FileUtils.deleteQuietly
 @CompileStatic
 class SouffleScript {
 
-	static final String EXE_NAME = "exe"
+	static final String EXE_NAME = "analysis-binary"
 	protected static final String TIME_UTIL = "/usr/bin/time"
 
 	Executor executor
@@ -35,6 +38,10 @@ class SouffleScript {
 		if (!cacheDir.exists()) {
 			cacheDir.mkdirs()
 		}
+	}
+
+	static String getExeName() {
+		return OS.win ? EXE_NAME + '.exe' : EXE_NAME
 	}
 
 	static SouffleScript newScript(Executor executor, File cacheDir, boolean viaDDlog) {
@@ -84,14 +91,27 @@ class SouffleScript {
 				removeContexts(scriptFile)
 			}
 
-			def executable = new File(outDir, EXE_NAME)
-			def compilationCommand = "souffle -c -o $executable $scriptFile".split().toList()
+			File executable = new File(outDir, exeName)
+			String executablePath = executable.canonicalPath
+			String scriptFilePath = scriptFile.canonicalPath
+			String souffleCmd = 'souffle'
+			String output = "-c -o ${executablePath}"
+			// On Windows, compile logic to C++ via WSL/Souffle.
+			if (OS.win) {
+				log.warn("WARNING: Windows detected, using experimental WSL/Cygwin mode.")
+				souffleCmd = 'wsl souffle'
+				executablePath = makePathWsl(executablePath)
+				scriptFilePath = makePathWsl(scriptFilePath)
+				output = "-g ${executablePath}.cpp"
+			}
+
+			def compilationCommand = "${souffleCmd} ${output} ${scriptFilePath}".split().toList()
 			if (profile)
 				compilationCommand << ("-p${outDir}/profile.txt" as String)
 			if (debug)
 				compilationCommand << ("-r${outDir}/report.html" as String)
 			if (provenance)
-				// Another possible mode is 'explore' but does not support history.
+			// Another possible mode is 'explore' but does not support history.
 				compilationCommand << ("--provenance=explain" as String)
 			if (liveProf)
 				compilationCommand << ("--live-profile" as String)
@@ -102,8 +122,9 @@ class SouffleScript {
 			def ignoreCounter = 0
 			compilationTime = Helper.timing {
 				Path tmpFile = Files.createTempFile("", "")
-				tmpFile.toFile().deleteOnExit()
-				executor.executeWithRedirectedOutput(compilationCommand, tmpFile.toFile()) { String line ->
+				File tmpFile0 = tmpFile.toFile()
+				tmpFile0.deleteOnExit()
+				executor.executeWithRedirectedOutput(compilationCommand, tmpFile0) { String line ->
 					if (ignoreCounter != 0) ignoreCounter--
 					else if (line.startsWith("Warning: No rules/facts defined for relation") ||
 							line.startsWith("Warning: Deprecated output qualifier was used")) {
@@ -111,6 +132,10 @@ class SouffleScript {
 						ignoreCounter = 2
 					} else if (line.startsWith("Warning: Record types in output relations are not printed verbatim")) ignoreCounter = 2
 					else log.info line
+				}
+				if (OS.win) {
+					prepareSourcesForWindowsCompilation(executable, tmpFile0)
+					System.exit(0)
 				}
 				Files.delete(tmpFile)
 			}
@@ -150,13 +175,13 @@ class SouffleScript {
 	 */
 	void postprocessFacts(File outDir, boolean profile) { }
 
-	def run(File cacheFile, File factsDir, File outDir,
+	def run(File analysisBinary, File factsDir, File outDir,
 	        int jobs, long monitoringInterval, Closure monitorClosure,
 			boolean provenance = false, boolean liveProf = false,
 			boolean profile = false) {
 
 		def db = makeDatabase(outDir)
-		def baseCommand = "${cacheFile} -j${jobs} -F${factsDir.canonicalPath} -D${db.canonicalPath}"
+		def baseCommand = "${analysisBinary} -j${jobs} -F${factsDir.canonicalPath} -D${db.canonicalPath}"
 		if (new File(TIME_UTIL).exists()) {
 			println "Using ${TIME_UTIL} to gather performance statistics..."
 			baseCommand = TIME_UTIL + " " + baseCommand
@@ -262,5 +287,45 @@ class SouffleScript {
 		def backupFile = new File("${scriptFile}.backup")
 		Files.copy(scriptFile.toPath(), backupFile.toPath(), StandardCopyOption.COPY_ATTRIBUTES)
 		ContextRemover.removeContexts(backupFile, scriptFile)
+	}
+
+	/**
+	 * Replace "C:\foo\bar" with "/mnt/c/foo/bar" for WSL compatibility.
+	 * @param path  the original path
+	 * @return      the WSL-compatible path
+	 */
+	private static String makePathWsl(String path) {
+		String ret = path.replace('\\', '/')
+		for (char c in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.toCharArray()) {
+			if (ret.startsWith("${c}:")) {
+				ret = '/mnt/' + Character.toLowerCase(c) + ret.substring(2)
+				break
+			}
+		}
+		println "${path} -> ${ret}"
+		return ret
+	}
+
+	void prepareSourcesForWindowsCompilation(File executable, File consoleOutputFile) {
+		Path tmpSouffleInclude = Files.createTempDirectory("")
+		for (String includeDir : ['/usr/local/include/souffle', '/usr/include/souffle']) {
+			List<String> copy = ['wsl', 'cp', '-R', includeDir, makePathWsl(tmpSouffleInclude.toString())] as List<String>
+			println copy
+			try {
+				executor.executeWithRedirectedOutput(copy, consoleOutputFile, { println it })
+			} catch (Throwable t) {
+				println "ERROR: ${t.message}"
+			}
+		}
+
+		// Stop evaluation and show compilation command for user.
+		List<String> compile = ['g++',
+								'-I', tmpSouffleInclude.toString(),
+								'-Wa,-mbig-obj',
+								'-O3',
+								executable.canonicalPath + '.cpp',
+								'-o', executable.canonicalPath] as List<String>
+		println("Use this command to compile the analysis logic: " + compile.join(' ') + '\n' +
+				"Then, rerun Doop with the binary (option --${DoopAnalysisFamily.USE_ANALYSIS_BINARY_NAME}).")
 	}
 }

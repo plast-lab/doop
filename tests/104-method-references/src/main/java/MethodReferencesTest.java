@@ -29,6 +29,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */ 
  
+import java.time.LocalDate;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -71,7 +72,18 @@ public class MethodReferencesTest {
         class PersonAgeComparator
             implements Comparator<Person> {
             public int compare(Person a, Person b) {
-                return a.getBirthday().compareTo(b.getBirthday());
+                LocalDate aDate = a.getBirthday();
+                LocalDate bDate = b.getBirthday();
+                if (aDate == bDate)
+                    return 0;
+                else if (aDate == null && bDate != null)
+                    return 1;
+                else if (aDate != null && bDate == null)
+                    return -1;
+                else
+                    return aDate.compareTo(bDate);
+                // Original code, breaks Java 8 TimSort.
+//                return a.getBirthday().compareTo(b.getBirthday());
             }
         }
         
@@ -81,7 +93,18 @@ public class MethodReferencesTest {
         // With lambda expression
         Arrays.sort(rosterAsArray,
             (Person a, Person b) -> {
-                return a.getBirthday().compareTo(b.getBirthday());
+                LocalDate aDate = a.getBirthday();
+                LocalDate bDate = b.getBirthday();
+                if (aDate == bDate)
+                    return 0;
+                else if (aDate == null && bDate != null)
+                    return 1;
+                else if (aDate != null && bDate == null)
+                    return -1;
+                else
+                    return aDate.compareTo(bDate);
+                // Original code, breaks Java 8 TimSort.
+//                return a.getBirthday().compareTo(b.getBirthday());
             }
         );
         

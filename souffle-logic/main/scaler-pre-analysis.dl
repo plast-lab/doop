@@ -129,7 +129,115 @@ Method_TotalVPT(?method, 0) :-
 
 .output Method_TotalVPT(IO="file", filename="Method_TotalVPT.csv", delimiter="\t")
 
+.decl InvokedMethod(method:Method)
 
+InvokedMethod(?method) :-
+    Stats_Simple_InsensCallGraphEdge(_, ?method).
+
+.ouptput InvokedMethod
+
+.decl PolymorphicallyInvokedMethod(?method:Method)
+
+PolymorphicallyInvokedMethod(?method) :-
+    Stats_Simple_InsensCallGraphEdge(?invo, ?method),
+    Stats_Simple_InsensCallGraphEdge(?invo, ?othermethod),
+    ?method != ?othermethod.
+
+.decl MonomorphicallyInvokedMethod(?method:Method)
+
+MonomorphicallyInvokedMethod(?method) :-
+    InvokedMethod(?method),
+    !PolymorphicallyInvokedMethod(?method).
+
+.output MonomorphicallyInvokedMethod
+
+.decl Stats_Simple_InsensStaticFieldPointsToCount(?field:Field, ?n:number)
+
+Stats_Simple_InsensStaticFieldPointsToCount(?field, ?n) :-
+    isField(?field),
+?n = count : Stats_Simple_InsensStaticFieldPointsTo(_, ?field).
+
+.output Stats_Simple_InsensStaticFieldPointsToCount
+
+.decl Stats_Simple_SensStaticFieldPointsToCount(?field:Field, ?n:number)
+
+Stats_Simple_SensStaticFieldPointsToCount(?field, ?n) :-
+    isField(?field),
+?n = count : mainAnalysis.StaticFieldPointsTo(_, _, ?field).
+
+.output Stats_Simple_SensStaticFieldPointsToCount
+
+.decl VarsInSameMethodPointToDifferentObjects(?var1:Var, ?var2:Var)
+
+VarsInSameMethodPointToDifferentObjects(?var1, ?var2) :-
+    Var_DeclaringMethod(?var1, ?method),
+    Var_DeclaringMethod(?var2, ?method),
+    Stats_Simple_InsensVarPointsTo(?value1, ?var1),
+    Stats_Simple_InsensVarPointsTo(?value2, ?var2),
+    ?value1 != ?value2.
+
+.output VarsInSameMethodPointToDifferentObjects
+
+.decl VarsInSameMethodHaveSamePointsToSet(?var1:Var, ?var2:Var)
+
+VarsInSameMethodHaveSamePointsToSet(?var1, ?var2) :-
+    Var_DeclaringMethod(?var1, ?method),
+    Var_DeclaringMethod(?var2, ?method),
+    !VarsInSameMethodPointToDifferentObjects(?var1, ?var2),
+    ?var1 != ?var2.
+
+.output VarsInSameMethodHaveSamePointsToSet
+
+
+.decl MethodFormalParam(?method:Method, ?var:Var)
+
+MethodFormalParam(?method, ?formal) :-
+    FormalParam(_, ?method, ?formal).
+
+.decl InvocationActualParam(?invo:MethodInvocation, ?var:Var)
+
+InvocationActualParam(?invo, ?actual) :-
+    Actual(_, ?invo, ?actual).
+
+.decl InvocationReceiver(?invo:MethodInvocation, ?method:Method, ?var:Var)
+
+InvocationReceiver(?invo, ?method, ?receiver) :-
+    Instruction_Method(?invo, ?method),
+    (VirtualMethodInvocation_Base(?invo, ?receiver);
+     SpecialMethodInvocation_Base(?invo, ?receiver)).
+
+.decl InvocationHasMethodArgumentAsReceiver(?invo:MethodInvocation)
+
+InvocationHasMethodArgumentAsReceiver(?invo) :-
+    InvocationReceiver(?invo, ?method, ?receiver),
+    MethodFormalParam(?method, ?formal),
+    VarsInSameMethodHaveSamePointsToSet(?formal, ?receiver).
+
+.decl InvocationHasMethodReceiverasArgument(?invo) :-
+
+InvocationHasMethodReceiverAsArgument(?invo) :-
+    InvocationActualParam(?invo, ?actual),
+    Instruction_Method(?invo, ?method),
+    ThisVar(?method, ?this),
+    VarsInSameMethodHaveSamePointsToSet(?this, ?actual).
+
+DoubleDispatchInvocation(?invo) :-
+    InvocationHasMethodReceiverAsArgument(?invo),
+    InvocationHasMethodArgumentAsReceiver(?invo).
+
+.output DoubleDispatchInvocation
+
+
+
+
+
+
+.decl InvocationHasMethodReceiverAsArgument(?invo:MethodInvocation)
+
+.decl DoubleDispatchInvocation(?invo:MethodInvocation)
+
+DoubleDispatchInvocation(?invo) :-
+    isInstruction(?invo)
 /*
 .decl EntryNonDataStructureMethod(?method:Method)
 

@@ -80,6 +80,10 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
     List<File> getLibraryFiles() { options.LIBRARIES.value as List<File> }
 
+    File getDatabase() {
+        return database
+    }
+
     FactGenerator0 gen0
 
     /*
