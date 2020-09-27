@@ -33,7 +33,11 @@ For trouble-free configuration:
 * The `DOOP_LOG` environment variable could point to a log output directory (optional, defaults to `build/logs`).
 * The `LOGICBLOX_HOME` environment variable should point to the `logicblox` directory of the engine, if you want to use LogicBlox.
 
-There is currently no mailing list, but there is an alias for support questions: doop-support@googlegroups.com
+Support:
+
+(a) Email: there is currently no mailing list, but there is an alias for support questions: doop-support@googlegroups.com
+
+(b) [Discord server](https://discord.gg/4q7rj5s)
 
 ## Benchmarks & Platform Lib
 
