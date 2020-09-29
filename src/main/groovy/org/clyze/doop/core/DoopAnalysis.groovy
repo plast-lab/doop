@@ -522,7 +522,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                 try {
                     redo = false
                     String SOOT_MAIN = "org.clyze.doop.soot.Main"
-                    if (!java9Plus() && options.LEGACY_SOOT_INVOCATION.value) {
+                    if (!JHelper.java9Plus() && options.LEGACY_SOOT_INVOCATION.value) {
                         // We invoke the Soot-based fact generator reflectively
                         // using a separate class-loader to be able to support
                         // multiple soot invocations in the same JVM
@@ -798,20 +798,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             } else {
                 copyFileToDirectory(f, factsDir)
             }
-        }
-    }
-
-    /**
-     * Checks if the Java runtime is 9+.
-     *
-     * @return true if the runtime supports Java 9+
-     */
-    static boolean java9Plus() {
-        try {
-            Class c = Class.forName('java.lang.Runtime$Version')
-            return true
-        } catch (ClassNotFoundException ex) {
-            return false
         }
     }
 
