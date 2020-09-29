@@ -79,7 +79,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			if (inputs.any {it.endsWith(".apk")} && !platformName.startsWith(ANDROID_PLATFORM_PREFIX)) {
 				Collection<String> androidPlatforms = options.PLATFORM.validValues.findAll { it.startsWith(ANDROID_PLATFORM_PREFIX) }
 				String errorMsg = "Platform '${platformName}' may not be suitable for analysis inputs: ${inputs}. Available Android platforms: ${androidPlatforms}"
-				throw new DoopErrorCodeException(35, errorMsg)
+				throw new DoopErrorCodeException(37, errorMsg)
 			}
 			context = newJavaDefaultInputResolutionContext()
 		}
