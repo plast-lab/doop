@@ -93,13 +93,17 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		if (platformsLib != null) {
 			log.warn("WARNING: Using custom platforms library in ${platformsLib}. Unset environment variable ${DoopAnalysisFamily.DOOP_PLATFORMS_LIB_ENV} for default platform discovery.")
 		}
-		List<String> platformFiles = new PlatformManager(platformsLib, sdkDir).find(platformName, true)
-		platformFiles.findAll { !it.startsWith(PlatformManager.ARTIFACTORY_PLATFORMS_URL) && !(new File(it)).exists() }.each {
-			if (platformName.startsWith("android_")) {
-				log.warn "WARNING: Android platform file ${it} does not exist. Please install it via the Android SDK Manager."
+		try {
+			List<String> platformFiles = new PlatformManager(platformsLib, sdkDir).find(platformName, true)
+			platformFiles.findAll { !it.startsWith(PlatformManager.ARTIFACTORY_PLATFORMS_URL) && !(new File(it)).exists() }.each {
+				if (platformName.startsWith("android_")) {
+					log.warn "WARNING: Android platform file ${it} does not exist. Please install it via the Android SDK Manager."
+				}
 			}
+			context.add(platformFiles, InputType.PLATFORM)
+		} catch (Exception ex) {
+			throw new DoopErrorCodeException(38, ex.message)
 		}
-		context.add(platformFiles, InputType.PLATFORM)
 
 		context.add(options.HEAPDLS.value as List<String>, InputType.HEAPDL)
 		return newAnalysis(options, context)
