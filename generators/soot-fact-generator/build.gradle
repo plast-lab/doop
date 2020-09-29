@@ -1,6 +1,8 @@
 plugins {
-    id 'groovy'
+    id 'application'
 }
+
+mainClassName = 'org.clyze.doop.soot.Main'
 
 repositories {
     maven {
@@ -25,7 +27,7 @@ dependencies {
 //fatJar already exists
 fatJar {
     manifest {
-        attributes 'Main-Class': 'org.clyze.doop.soot.Main'
+        attributes 'Main-Class': mainClassName
     }
     from { configurations.compile.collect { it.directory ? it : zipTree(it) } }
     with jar
