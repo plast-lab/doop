@@ -622,8 +622,12 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		}
 
 		options.values().each {
-			if (it.argName && it.value && it.validValues && !(it.value in it.validValues))
-				throw new DoopErrorCodeException(33, "Invalid value ${it.value} for option: ${it.name}, valid values: ${it.validValues}")
+			if (it.argName && it.value && it.validValues && !(it.value in it.validValues)) {
+				if (it.id == 'PLATFORM' && options.USE_LOCAL_JAVA_PLATFORM.value)
+					log.warn "WARNING: Using unsupported custom platform ${it.value}"
+				else
+					throw new DoopErrorCodeException(33, "Invalid value ${it.value} for option: ${it.name}, valid values: ${it.validValues}")
+			}
 		}
 
 		options.values().findAll { it.isMandatory }.each {
