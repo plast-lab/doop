@@ -136,6 +136,12 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					value: System.getenv(DOOP_PLATFORMS_LIB_ENV),
 					cli: false
 			),
+			new AnalysisOption<String>(
+					id: "USE_LOCAL_JAVA_PLATFORM",
+					name: "use-local-java-platform",
+					description: "The path to the Java platform to use.",
+					argName: "PATH"
+			),
 			new BooleanAnalysisOption(
 					id: "SKIP_CODE_FACTGEN",
 					name: "skip-code-factgen",

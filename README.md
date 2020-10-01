@@ -92,12 +92,16 @@ $ ./doop -i ./lib/asm-debug-all-4.1.jar      [local file]
 
 #### PLATFORM (--platform)
 Optional --- default: java_8. The platform to use for the analysis. The possible Java options are java_N where N is the java version (3, 4, 5, 6, 7, 8 etc.). The android options are android_N_V where N is the Android version (20, 21, 22, 23, 24, 25 etc.) and V is the variant ("stubs" for the Android SDK libraries or "fulljars" for custom built platforms).
-At the moment Doop does not support the Java 9+ platforms as for these versions the runtime is packaged differently.
 
 Example:
 
     $ ./doop -a context-insensitive -i com.example.some.jar --platform java_7
     $ ./doop -a context-insensitive -i some-app.apk --platform android_24
+
+To use a custom Java platform, you can use option `--use-local-java-platform`, for example:
+
+    $ ./doop -a context-insensitive -i com.example.some.jar --platform java_11 --use-local-java-platform /path/to/java/11/installation
+
 
 #### Main class (--main)
 The main class to use as the entry point. This class must declare a method with signature `public static void main(String [])`. If not specified, Doop will try to infer this information from the manifest file of the provided jar file(s).

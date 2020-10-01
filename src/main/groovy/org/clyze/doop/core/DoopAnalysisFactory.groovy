@@ -94,7 +94,11 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			log.warn("WARNING: Using custom platforms library in ${platformsLib}. Unset environment variable ${DoopAnalysisFamily.DOOP_PLATFORMS_LIB_ENV} for default platform discovery.")
 		}
 		try {
-			List<String> platformFiles = new PlatformManager(platformsLib, sdkDir).find(platformName, true)
+			PlatformManager pm = new PlatformManager(platformsLib, sdkDir, Doop.doopCache)
+			String localJavaPlatform = options.get('USE_LOCAL_JAVA_PLATFORM').value as String
+			if (localJavaPlatform)
+				println "Using local Java platform from ${localJavaPlatform}"
+			List<String> platformFiles = pm.find(platformName, true, localJavaPlatform)
 			platformFiles.findAll { !it.startsWith(PlatformManager.ARTIFACTORY_PLATFORMS_URL) && !(new File(it)).exists() }.each {
 				if (platformName.startsWith("android_")) {
 					log.warn "WARNING: Android platform file ${it} does not exist. Please install it via the Android SDK Manager."
