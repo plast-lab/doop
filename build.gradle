@@ -47,7 +47,7 @@ if (project.hasProperty('heapDLVersion'))
     heapDLVersion = project.property('heapDLVersion')
 
 wrapper {
-    gradleVersion = "5.4.1"
+    gradleVersion = "6.2"
 }
 
 def allGeneratorProjects = subprojects.findAll { it.name.indexOf('fact-generator') >= 0 }
