@@ -22,6 +22,7 @@ public enum PredicateFile
     ARRAY_INITIAL_VALUE_FROM_CONST("ArrayInitialValueFromConst"),
     ARRAY_INSN_INDEX("ArrayInsnIndex"),
     ARRAY_TYPE("ArrayType"),
+    ARRAY_ALLOC("ArrayAllocation"),
     ASSIGN_BINOP("AssignBinop"),
     ASSIGN_CAST("AssignCast"),
     ASSIGN_CAST_NUM_CONST("AssignCastNumConstant"),

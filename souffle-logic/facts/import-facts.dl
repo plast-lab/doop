@@ -130,6 +130,14 @@ OriginalHeapAllocation_Type(?id, "java.lang.invoke.MethodType") :-
 HeapAllocation_EmptyArray(?id) :-
   _EmptyArray(?id).
 
+// Array Allocation
+
+.decl _ArrayAllocation(?instruction:symbol, ?sizeVar:symbol)
+.input _ArrayAllocation(IO="file", filename="ArrayAllocation.facts", delimiter="\t")
+
+ArrayAllocation(?insn, ?sizeVar) :-
+  _ArrayAllocation(?insn, ?sizeVar).
+
 
 // AssignHeapAllocation
 
