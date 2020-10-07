@@ -725,6 +725,7 @@ class FactWriter extends JavaFactWriter {
         }
 
         writeLocal(local, writeType(type), methodSig(m, null));
+        _db.add(VAR_SIMPLENAME, local, l.getName());
     }
 
     private Local freshLocal(SootMethod inMethod, String basename, Type type, Session session) {

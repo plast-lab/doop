@@ -183,6 +183,16 @@ Var_DeclaringMethod(?var, ?method) :-
   _Var_DeclaringMethod(?var, ?method).
 
 
+// Var:SimpleName
+
+.decl _Var_SimpleName(?var:symbol, ?simplename:symbol)
+.input _Var_SimpleName(IO="file", filename="Var-SimpleName.facts", delimiter="\t")
+
+isVar(?var),
+Var_SimpleName(?var, ?simplename) :-
+  _Var_SimpleName(?var, ?simplename).
+
+
 // ApplicationClass
 
 .decl _ApplicationClass(?type:symbol)

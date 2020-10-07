@@ -111,6 +111,7 @@
 
 .decl Var_Type(?var:Var, ?type:Type)
 .decl Var_DeclaringMethod(?var:Var, ?method:Method)
+.decl Var_SimpleName(?var:Var, ?simplename:symbol)
 
 .decl ApplicationVar(?var:Var)
 
