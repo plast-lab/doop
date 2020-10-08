@@ -1,14 +1,10 @@
-/*
-This stage must be executed before any basic analysis but *AFTER* Heap Allocations have been resolved.
-*/
-
 //-----------------------------------------------------------------------------
 // [Dynamic analysis related]
 //-----------------------------------------------------------------------------
 
 
 // DynamicNormalHeapAllocation
-.input _DynamicNormalHeapAllocation(IO="file", filename="DynamicNormalHeapAllocation.facts", delimiter="\t")
+.input _DynamicNormalHeapAllocation(filename="DynamicNormalHeapAllocation.facts")
 
 .decl _DynamicNormalHeapAllocation(?param1:number, ?param2:symbol, ?param3:symbol, ?param4:symbol)
 
@@ -98,7 +94,7 @@ UnmatchedStaticNormalHeapAllocation(?method, ?lineNumber, ?type) :-
 
 // DynamicReachableMethod
 
-.input _DynamicReachableMethod(IO="file", filename="DynamicReachableMethod.facts", delimiter="\t")
+.input _DynamicReachableMethod(filename="DynamicReachableMethod.facts")
 
 .decl _DynamicReachableMethod(?param1:symbol)
 
@@ -136,7 +132,7 @@ DynamicHeapAllocation(?representation, ?heap) :-
    ReconstructedUnmatchedDynamicHeapAllocation(?representation, ?heap).
 
 // DynamicContext
-.input _DynamicContext(IO="file", filename="DynamicContext.facts", delimiter="\t")
+.input _DynamicContext(filename="DynamicContext.facts")
 
 .decl _DynamicContext(?representation:symbol, ?heap1rep:symbol, ?heap2rep:symbol, ?site1inMeth:symbol, ?site1line:number, ?site2inMeth:symbol, ?site2line:number)
 
@@ -167,7 +163,7 @@ isDynamicContext("<Immutable dctx>").
 // TODO call site sensitivity
 
 // DynamicNormalHeapObject
-.input _DynamicNormalHeapObject(IO="file", filename="DynamicNormalHeapObject.facts", delimiter="\t")
+.input _DynamicNormalHeapObject(filename="DynamicNormalHeapObject.facts")
 
 .decl _DynamicNormalHeapObject(?param1:symbol, ?param2:symbol, ?param3:symbol)
 
@@ -184,18 +180,18 @@ DynamicHeapObject(?heapRepresentation, ?heap, "<Immutable dctx>") :-
 
 
 // DynamicStaticFieldPointsTo
-.input _DynamicStaticFieldPointsTo(IO="file", filename="DynamicStaticFieldPointsTo.facts", delimiter="\t")
+.input _DynamicStaticFieldPointsTo(filename="DynamicStaticFieldPointsTo.facts")
 
 .decl _DynamicStaticFieldPointsTo(?param1:symbol, ?param2:symbol, ?param3:symbol)
 
 // DynamicInstanceFieldPointsTo
-.input _DynamicInstanceFieldPointsTo(IO="file", filename="DynamicInstanceFieldPointsTo.facts", delimiter="\t")
+.input _DynamicInstanceFieldPointsTo(filename="DynamicInstanceFieldPointsTo.facts")
 
 .decl _DynamicInstanceFieldPointsTo(?param1:symbol, ?param2:symbol, ?param3:symbol, ?param4:symbol)
 
 
 // DynamicArrayIndexPointsTo
-.input _DynamicArrayIndexPointsTo(IO="file", filename="DynamicArrayIndexPointsTo.facts", delimiter="\t")
+.input _DynamicArrayIndexPointsTo(filename="DynamicArrayIndexPointsTo.facts")
 
 .decl _DynamicArrayIndexPointsTo(?param1:symbol, ?param2:symbol)
 
@@ -228,7 +224,7 @@ DynamicArrayIndexPointsTo(?ctx, ?heap, ?baseCtx, ?baseHeap) :-
 
 
 // DynamicCallGraphEdge
-.input _DynamicCallGraphEdge(IO="file", filename="DynamicCallGraphEdge.facts", delimiter="\t")
+.input _DynamicCallGraphEdge(filename="DynamicCallGraphEdge.facts")
 
 .decl _DynamicCallGraphEdge(?param1:symbol, ?param2:number, ?param3:symbol, ?param4:symbol, ?param5:symbol)
 
@@ -257,7 +253,7 @@ DynamicCallGraphEdge(?ctxTo, ?toMethod, ?invocation, ?ctxFrom, ?fromMethod) :-
 
 // Import DynamicVarPointsTo facts
 .decl _DynamicVarPointsTo(?hctx: symbol, ?heap: symbol, ?ctx: symbol, ?var: symbol)
-.input _DynamicVarPointsTo(IO="file", filename="DynamicVarPointsTo.facts", delimiter="\t")
+.input _DynamicVarPointsTo(filename="DynamicVarPointsTo.facts")
 
 // DynamicVarPointsTo
 .decl DynamicVarPointsTo(?hctx: mainAnalysis.configuration.HContext, ?heap: HeapAllocation, ?ctx: DynamicContext, ?var: Var)

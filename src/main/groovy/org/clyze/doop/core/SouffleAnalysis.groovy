@@ -131,19 +131,21 @@ class SouffleAnalysis extends DoopAnalysis {
 		}
 		def commonMacros = "${Doop.souffleLogicPath}/commonMacros.dl"
 		cpp.includeAtEnd("$analysis", "${Doop.souffleFactsPath}/flow-sensitive-schema.dl")
-		cpp.includeAtEnd("$analysis", "${Doop.souffleFactsPath}/flow-insensitive-schema.dl")
-		cpp.includeAtEnd("$analysis", "${Doop.souffleFactsPath}/import-entities.dl")
-		cpp.includeAtEnd("$analysis", "${Doop.souffleFactsPath}/import-facts.dl")
-		cpp.includeAtEnd("$analysis", "${Doop.souffleFactsPath}/to-flow-sensitive.dl")
-		cpp.includeAtEnd("$analysis", "${Doop.souffleFactsPath}/post-process.dl", commonMacros)
-		cpp.includeAtEnd("$analysis", "${Doop.souffleFactsPath}/mock-heap.dl", commonMacros)
+		cpp.includeAtEnd("$analysis", "${Doop.souffleFactsPath}/imports.dl", commonMacros)
+		cpp.includeAtEnd("$analysis", "${Doop.souffleFactsPath}/flow-insensitive-facts.dl")
+		cpp.includeAtEnd("$analysis", "${Doop.souffleFactsPath}/keep.dl")
 
 		handleImportDynamicFacts()
 
+		if (options.ANDROID.value) {
+			cpp.includeAtEnd("$analysis", "${Doop.souffleFactsPath}/android.dl", commonMacros)
+		}
 		if (options.HEAPDLS.value || options.IMPORT_DYNAMIC_FACTS.value) {
 			cpp.includeAtEnd("$analysis", "${Doop.souffleFactsPath}/import-dynamic-facts.dl", commonMacros)
 		}
-
+		if (options.GENERICS_PRE_ANALYSIS.value) {
+			cpp.includeAtEnd("$analysis", "${Doop.souffleFactsPath}/generics.dl", commonMacros)
+		}
 		if (options.TAMIFLEX.value) {
 			def tamiflexPath = "${Doop.souffleAddonsPath}/tamiflex"
 			cpp.includeAtEnd("$analysis", "${tamiflexPath}/fact-declarations.dl")

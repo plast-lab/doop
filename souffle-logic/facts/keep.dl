@@ -1,0 +1,10 @@
+// Keep method/class information.
+.decl KeepMethod(?m:Method)
+.decl KeepClassMembers(?m:Method)
+.decl KeepClassesWithMembers(?m:Method)
+.decl KeepClass(?c:ClassType)
+
+.input KeepMethod(filename="KeepMethod.facts")
+.input KeepClassMembers(filename="KeepClassMembers.facts")
+.input KeepClassesWithMembers(filename="KeepClassesWithMembers.facts")
+.input KeepClass(filename="KeepClass.facts")
