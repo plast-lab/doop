@@ -665,6 +665,15 @@ ArrayInsnIndex(?instruction, ?index) :-
   _ArrayInsnIndex(?instruction, ?index).
 
 
+// ArrayNumIndex
+
+.decl _ArrayNumIndex(?instruction:symbol, ?index:number)
+.input _ArrayNumIndex(IO="file", filename="ArrayNumIndex.facts", delimiter="\t")
+
+ArrayNumIndex(?instruction, ?index) :-
+  _ArrayNumIndex(?instruction, ?index).
+
+
 // Goto
 
 .decl _Goto(?instruction:symbol, ?index:number, ?to:number, ?method:symbol)

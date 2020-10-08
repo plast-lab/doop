@@ -21,6 +21,7 @@ public enum PredicateFile
     ARRAY_INITIAL_VALUE_FROM_LOCAL("ArrayInitialValueFromLocal"),
     ARRAY_INITIAL_VALUE_FROM_CONST("ArrayInitialValueFromConst"),
     ARRAY_INSN_INDEX("ArrayInsnIndex"),
+    ARRAY_NUM_INDEX("ArrayNumIndex"),
     ARRAY_TYPE("ArrayType"),
     ARRAY_ALLOC("ArrayAllocation"),
     ASSIGN_BINOP("AssignBinop"),

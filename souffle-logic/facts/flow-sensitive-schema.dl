@@ -338,6 +338,7 @@
 //-----------------------------------------------------------------------------
 
 .decl ArrayInsnIndex(?insn:Instruction, ?index:Var)
+.decl ArrayNumIndex(?insn:Instruction, ?index:number)
 
 .decl ComponentType(?arrayType:ArrayType, ?componentType:Type)
 
