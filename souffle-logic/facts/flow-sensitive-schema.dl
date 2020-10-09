@@ -232,7 +232,7 @@
 .type VirtualMethodInvocation_Insn    = MethodInvocation
 .type SpecialMethodInvocation_Insn    = MethodInvocation
 .type StaticMethodInvocation_Insn     = MethodInvocation
-.type SuperMethodInvocation_Insn    = MethodInvocation
+.type SuperMethodInvocation_Insn      = MethodInvocation
 .type DynamicMethodInvocation_Insn    = MethodInvocation
 
 .decl isMethodInvocation(?insn:MethodInvocation)

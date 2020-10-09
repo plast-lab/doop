@@ -45,7 +45,6 @@
 .decl StaticMethodInvocation(?invocation:MethodInvocation, ?signature:Method, ?inmethod:Method)
 
 
-
 Throw(?insn, ?var) :-
 	isThrow_Insn(?insn),
 	Throw_Var(?insn, ?var).

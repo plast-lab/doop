@@ -1,12 +1,55 @@
+isType(?t) :- isPrimitiveType(?t) ; isReferenceType(?t).
+
+isReferenceType(?t) :-
+  isNullType(?t) ; isArrayType(?t) ; isClassType(?t) ; isInterfaceType(?t) ; isAnnotation(?t).
+
+
+isHeapAllocation(?h) :-
+  isNormalHeap(?h) ; isStringConstant(?h) ; isClassHeap(?h) ; isMethodHandleConstant(?h) ; isMethodTypeConstant(?h).
+
+
+isInstruction(?i) :-
+  isThrow_Insn(?i) ; isGoto_Insn(?i) ; isIf_Insn(?i) ; isSwitch_Insn(?i) ; isMonitorInstruction(?i) ;
+  isFieldInstruction(?i) ; isArrayInstruction(?i) ; isAssignInstruction(?i) ;
+  isReturnInstruction(?i) ; isMethodInvocation(?i) ; isUnsupportedInstruction(?i).
+
+isThrowNull_Insn(?i) :- isThrow_Insn(?i).
+
+isSwitch_Insn(?i) :- isTableSwitch_Insn(?i) ; isLookupSwitch_Insn(?i).
+
+isMonitorInstruction(?i) :- isEnterMonitor_Insn(?i) ; isExitMonitor_Insn(?i).
+
+isFieldInstruction(?i) :-
+  isLoadInstanceField_Insn(?i) ; isStoreInstanceField_Insn(?i) ;
+  isLoadStaticField_Insn(?i) ; isStoreStaticField_Insn(?i).
+
+isArrayInstruction(?i) :- isLoadArrayIndex_Insn(?i) ; isStoreArrayIndex_Insn(?i).
+
+isAssignInstruction(?i) :-
+  isAssignOper_Insn(?i) ; isAssignInstanceOf_Insn(?i) ; isAssignNull_Insn(?i) ;
+  isAssignNumConstant_Insn(?i) ; isAssignCast_Insn(?i) ; isAssignHeapAllocation_Insn(?i).
+
+isAssignOper_Insn(?i) :-
+  isAssignBinop_Insn(?i) ; isAssignUnop_Insn(?i) ; isAssignLocal_Insn(?i).
+
+isAssignCast_Insn(?i) :- isAssignCastNumConstant_Insn(?i) ; isAssignCastNull_Insn(?i).
+
+isReturnInstruction(?i) :- isReturnVoid_Insn(?i) ; isReturnNonvoid_Insn(?i).
+
+isMethodInvocation(?i) :-
+  isVirtualMethodInvocation_Insn(?i) ; isSpecialMethodInvocation_Insn(?i) ; isStaticMethodInvocation_Insn(?i) ;
+  isSuperMethodInvocation_Insn(?i) ; isDynamicMethodInvocation_Insn(?i).
+
+isUnsupportedInstruction(?i) :- isAssignPhantomInvoke(?i) ; isBreakpointStmt(?i).
+
+
+
 // ClassType
 
 .decl _ClassType(?class:symbol)
 .input _ClassType(filename="ClassType.facts")
 
-isType(?class),
-isReferenceType(?class),
-isClassType(?class) :-
-  _ClassType(?class).
+isClassType(?class) :- _ClassType(?class).
 
 
 // ArrayType
@@ -14,10 +57,7 @@ isClassType(?class) :-
 .decl _ArrayType(?arrayType:symbol)
 .input _ArrayType(filename="ArrayType.facts")
 
-isType(?arrayType),
-isReferenceType(?arrayType),
-isArrayType(?arrayType) :-
-  _ArrayType(?arrayType).
+isArrayType(?arrayType) :- _ArrayType(?arrayType).
 
 
 // InterfaceType
@@ -25,10 +65,7 @@ isArrayType(?arrayType) :-
 .decl _InterfaceType(?interface:symbol)
 .input _InterfaceType(filename="InterfaceType.facts")
 
-isType(?interface),
-isReferenceType(?interface),
-isInterfaceType(?interface) :-
-  _InterfaceType(?interface).
+isInterfaceType(?interface) :- _InterfaceType(?interface).
 
 
 // ComponentType
@@ -36,8 +73,6 @@ isInterfaceType(?interface) :-
 .decl _ComponentType(?arrayType:symbol, ?componentType:symbol)
 .input _ComponentType(filename="ComponentType.facts")
 
-isType(?arrayType),
-isReferenceType(?arrayType),
 isArrayType(?arrayType),
 isType(?componentType),
 ComponentType(?arrayType, ?componentType) :-
@@ -49,7 +84,6 @@ ComponentType(?arrayType, ?componentType) :-
 .decl _ActualParam(?index:number, ?invocation:symbol, ?var:symbol)
 .input _ActualParam(filename="ActualParam.facts")
 
-isInstruction(?invocation),
 isMethodInvocation(?invocation),
 isVar(?var),
 ActualParam(?index, ?invocation, ?var) :-
@@ -60,8 +94,6 @@ ActualParam(?index, ?invocation, ?var) :-
 .decl _BootstrapParam(?index:number, ?invocation:symbol, ?var:symbol)
 .input _BootstrapParam(filename="BootstrapParam.facts")
 
-isInstruction(?invocation),
-isMethodInvocation(?invocation),
 isDynamicMethodInvocation_Insn(?invocation),
 isVar(?var),
 BootstrapParam(?index, ?invocation, ?var) :-
@@ -72,10 +104,7 @@ BootstrapParam(?index, ?invocation, ?var) :-
 .decl _DirectSuperinterface(?class:symbol, ?interface:symbol)
 .input _DirectSuperinterface(filename="DirectSuperinterface.facts")
 
-isType(?class),
 isReferenceType(?class),
-isType(?interface),
-isReferenceType(?interface),
 isInterfaceType(?interface),
 DirectSuperinterface(?class, ?interface) :-
   _DirectSuperinterface(?class, ?interface).
@@ -86,11 +115,7 @@ DirectSuperinterface(?class, ?interface) :-
 .decl _DirectSuperclass(?class:symbol, ?superclass:symbol)
 .input _DirectSuperclass(filename="DirectSuperclass.facts")
 
-isType(?class),
-isReferenceType(?class),
 isClassType(?class),
-isType(?superclass),
-isReferenceType(?superclass),
 isClassType(?superclass),
 DirectSuperclass(?class, ?superclass) :-
   _DirectSuperclass(?class, ?superclass).
@@ -132,7 +157,6 @@ FormalParam(?index, ?method, ?var) :-
 .decl _Method_DeclaresException(?exceptionType:symbol, ?method:symbol)
 .input _Method_DeclaresException(filename="Method-DeclaresException.facts")
 
-isType(?exceptionType),
 isReferenceType(?exceptionType),
 isMethod(?method),
 Method_DeclaresException(?exceptionType, ?method) :-
@@ -198,7 +222,6 @@ Var_SimpleName(?var, ?simplename) :-
 .decl _ApplicationClass(?type:symbol)
 .input _ApplicationClass(filename="ApplicationClass.facts")
 
-isType(?type),
 isReferenceType(?type),
 ApplicationClass(?type) :-
   _ApplicationClass(?type).
@@ -237,7 +260,6 @@ ExceptionHandler_Previous(?handler, ?previous) :-
 .decl _AssignReturnValue(?invocation:symbol, ?to:symbol)
 .input _AssignReturnValue(filename="AssignReturnValue.facts")
 
-isInstruction(?invocation),
 isMethodInvocation(?invocation),
 isVar(?to),
 AssignReturnValue(?invocation, ?to) :-
@@ -245,23 +267,14 @@ AssignReturnValue(?invocation, ?to) :-
 
 
 // Properties
-
-.decl _Properties(?path:symbol, ?key:symbol, ?value:symbol)
-.input _Properties(filename="Properties.facts")
-
-Properties(?path, ?key, ?value) :-
-  _Properties(?path, ?key, ?value).
+.input Properties
 
 
 .decl _OperatorAt(?instruction:symbol, ?operator:symbol)
 .input _OperatorAt(filename="OperatorAt.facts")
 
 // MainClass
-.decl _MainClass(?class:symbol)
-.input _MainClass(filename="MainClass.facts")
-
-MainClass(?class) :-
-  _MainClass(?class).
+.input MainClass
 
 // ClassArtifact
 .decl _ClassArtifact(?artifact:symbol, ?className:symbol, ?subArtifact:symbol, ?size:number)
@@ -273,7 +286,6 @@ MainClass(?class) :-
 .input _NormalHeap(filename="NormalHeap.facts")
 
 isType(?type),
-isHeapAllocation(?id),
 isNormalHeap(?id),
 OriginalHeapAllocation_Type(?id, ?type),
 HeapAllocation_Type(?id, ?type) :-
@@ -287,7 +299,6 @@ isClassType("java.lang.String").
 .decl _StringConstant(?id:symbol)
 .input _StringConstant(filename="StringConstant.facts")
 
-isHeapAllocation(?id),
 isStringConstant(?id),
 OriginalHeapAllocation_Type(?id, "java.lang.String"),
 HeapAllocation_Type(?id, "java.lang.String") :-
@@ -312,7 +323,6 @@ String_toRaw(?id, ?rawId) :-
 .input _ClassHeap(filename="ClassHeap.facts")
 
 isType(?instanceType),
-isHeapAllocation(?id),
 isClassHeap(?id),
 ClassHeap_InstanceType(?id, ?instanceType),
 OriginalHeapAllocation_Type(?id, "java.lang.Class"),
@@ -328,7 +338,6 @@ isType("java.lang.invoke.MethodHandle").
 isReferenceType("java.lang.invoke.MethodHandle").
 isClassType("java.lang.invoke.MethodHandle").
 
-isHeapAllocation(?id),
 isMethodHandleConstant(?id),
 OriginalHeapAllocation_Type(?id, "java.lang.invoke.MethodHandle"),
 MethodHandleConstant_Method(?id, ?method),
@@ -343,7 +352,6 @@ HeapAllocation_Type(?id, "java.lang.invoke.MethodHandle") :-
 .decl _MethodTypeConstant(?id:symbol, ?arity:number, ?retType:symbol, ?paramTypes:symbol)
 .input _MethodTypeConstant(filename="MethodTypeConstant.facts")
 
-isHeapAllocation(?id),
 isMethodTypeConstant(?id),
 HeapAllocation_Type(?id, "java.lang.invoke.MethodType"),
 MethodTypeConstant_Arity(?id, ?arity),
@@ -397,8 +405,6 @@ ArrayAllocation(?insn, ?sizeVar) :-
 .decl _AssignHeapAllocation(?instruction:symbol, ?index:number, ?heap:symbol, ?to:symbol, ?inmethod:symbol, ?linenumber:number)
 .input _AssignHeapAllocation(filename="AssignHeapAllocation.facts")
 
-isInstruction(?instruction),
-isAssignInstruction(?instruction),
 isAssignHeapAllocation_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Line(?instruction, ?linenumber),
@@ -413,9 +419,6 @@ AssignHeapAllocation_Heap(?instruction, ?heap) :-
 .decl _AssignLocal(?instruction:symbol, ?index:number, ?from:symbol, ?to:symbol, ?inmethod:symbol)
 .input _AssignLocal(filename="AssignLocal.facts")
 
-isInstruction(?instruction),
-isAssignInstruction(?instruction),
-isAssignOper_Insn(?instruction),
 isAssignLocal_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method),
@@ -429,9 +432,6 @@ AssignInstruction_To(?instruction, ?to) :-
 .decl _AssignBinop(?instruction:symbol, ?index:number, ?to:symbol, ?inmethod:symbol)
 .input _AssignBinop(filename="AssignBinop.facts")
 
-isInstruction(?instruction),
-isAssignInstruction(?instruction),
-isAssignOper_Insn(?instruction),
 isAssignBinop_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method),
@@ -444,9 +444,6 @@ AssignInstruction_To(?instruction, ?to) :-
 .decl _AssignUnop(?instruction:symbol, ?index:number, ?to:symbol, ?inmethod:symbol)
 .input _AssignUnop(filename="AssignUnop.facts")
 
-isInstruction(?instruction),
-isAssignInstruction(?instruction),
-isAssignOper_Insn(?instruction),
 isAssignUnop_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method),
@@ -500,8 +497,6 @@ DummyIf_Var(?instruction, ?var) :-
 .decl _AssignCast(?instruction:symbol, ?index:number, ?from:symbol, ?to:symbol, ?type:symbol, ?inmethod:symbol)
 .input _AssignCast(filename="AssignCast.facts")
 
-isInstruction(?instruction),
-isAssignInstruction(?instruction),
 isAssignCast_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method),
@@ -516,10 +511,6 @@ AssignInstruction_To(?instruction, ?to) :-
 .decl _AssignCastNumConstant(?instruction:symbol, ?index:number, ?const:symbol, ?to:symbol, ?type:symbol, ?inmethod:symbol)
 .input _AssignCastNumConstant(filename="AssignCastNumConstant.facts")
 
-isNumConstant(?const),
-isInstruction(?instruction),
-isAssignInstruction(?instruction),
-isAssignCast_Insn(?instruction),
 isAssignCastNumConstant_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method),
@@ -534,9 +525,6 @@ AssignInstruction_To(?instruction, ?to) :-
 .decl _AssignCastNull(?instruction:symbol, ?index:number, ?to:symbol, ?type:symbol, ?method:symbol)
 .input _AssignCastNull(filename="AssignCastNull.facts")
 
-isInstruction(?instruction),
-isAssignInstruction(?instruction),
-isAssignCast_Insn(?instruction),
 isAssignCastNull_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method),
@@ -551,8 +539,6 @@ AssignInstruction_To(?instruction, ?to) :-
 .input _AssignNumConstant(filename="AssignNumConstant.facts")
 
 isNumConstant(?const),
-isInstruction(?instruction),
-isAssignInstruction(?instruction),
 isAssignNumConstant_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method),
@@ -566,8 +552,6 @@ AssignInstruction_To(?instruction, ?to) :-
 .decl _AssignNull(?instruction:symbol, ?index:number, ?to:symbol, ?method:symbol)
 .input _AssignNull(filename="AssignNull.facts")
 
-isInstruction(?instruction),
-isAssignInstruction(?instruction),
 isAssignNull_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method),
@@ -580,8 +564,6 @@ AssignInstruction_To(?instruction, ?to) :-
 .decl _AssignInstanceOf(?instruction:symbol, ?index:number, ?from:symbol, ?to:symbol, ?type:symbol, ?inmethod:symbol)
 .input _AssignInstanceOf(filename="AssignInstanceOf.facts")
 
-isInstruction(?instruction),
-isAssignInstruction(?instruction),
 isAssignInstanceOf_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method),
@@ -607,8 +589,6 @@ Field_Type(?signature, ?type) :-
 .decl _EnterMonitor(?instruction:symbol, ?index:number, ?var:symbol, ?method:symbol)
 .input _EnterMonitor(filename="EnterMonitor.facts")
 
-isInstruction(?instruction),
-isMonitorInstruction(?instruction),
 isEnterMonitor_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method),
@@ -621,8 +601,6 @@ EnterMonitor_Var(?instruction, ?var) :-
 .decl _ExitMonitor(?instruction:symbol, ?index:number, ?var:symbol, ?method:symbol)
 .input _ExitMonitor(filename="ExitMonitor.facts")
 
-isInstruction(?instruction),
-isMonitorInstruction(?instruction),
 isExitMonitor_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method),
@@ -651,7 +629,6 @@ MethodInvocation_Base(?invocation, ?base) :-
 .input _StaticMethodInvocation(filename="StaticMethodInvocation.facts")
 
 isMethod(?signature),
-isInstruction(?instruction),
 isMethodInvocation(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method),
@@ -668,7 +645,6 @@ isStaticMethodInvocation_Insn(?instruction) :-
 .input _SpecialMethodInvocation(filename="SpecialMethodInvocation.facts")
 
 isMethod(?signature),
-isInstruction(?instruction),
 isMethodInvocation(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method),
@@ -686,7 +662,6 @@ SpecialMethodInvocation_Base(?instruction, ?base) :-
 .input _VirtualMethodInvocation(filename="VirtualMethodInvocation.facts")
 
 isMethod(?signature),
-isInstruction(?instruction),
 isMethodInvocation(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method),
@@ -704,7 +679,6 @@ VirtualMethodInvocation_Base(?instruction, ?base) :-
 .input _SuperMethodInvocation(filename="SuperMethodInvocation.facts")
 
 isMethod(?signature),
-isInstruction(?instruction),
 isMethodInvocation(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method),
@@ -718,8 +692,6 @@ SuperMethodInvocation_Base(?instruction, ?base) :-
 .decl _DynamicMethodInvocation(?instruction:symbol, ?index:number, ?bootSignature:symbol, ?dynName:symbol, ?dynRetType:symbol, ?dynArity:number, ?dynParamTypes:symbol, ?tag:number, ?method:symbol)
 .input _DynamicMethodInvocation(filename="DynamicMethodInvocation.facts")
 
-isInstruction(?instruction),
-isMethodInvocation(?instruction),
 isDynamicMethodInvocation_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method),
@@ -745,7 +717,6 @@ DynamicMethodInvocation_DynArity(?instruction, ?dynArity) :-
 .decl _Throw(?instruction:symbol, ?index:number, ?var:symbol, ?method:symbol)
 .input _Throw(filename="Throw.facts")
 
-isInstruction(?instruction),
 isThrow_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method),
@@ -759,8 +730,6 @@ Throw_Var(?instruction, ?var) :-
 .decl _ThrowNull(?instruction:symbol, ?index:number, ?method:symbol)
 .input _ThrowNull(filename="ThrowNull.facts")
 
-isInstruction(?instruction),
-isThrow_Insn(?instruction),
 isThrowNull_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method) :-
@@ -811,8 +780,6 @@ Method_Descriptor(?method, ?descriptor) :-
 .decl _StoreInstanceField(?instruction:symbol, ?index:number, ?from:symbol, ?base:symbol, ?signature:symbol, ?method:symbol)
 .input _StoreInstanceField(filename="StoreInstanceField.facts")
 
-isInstruction(?instruction),
-isFieldInstruction(?instruction),
 isStoreInstanceField_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method),
@@ -827,8 +794,6 @@ StoreInstanceField_From(?instruction, ?from) :-
 .decl _LoadInstanceField(?instruction:symbol, ?index:number, ?to:symbol, ?base:symbol, ?signature:symbol, ?method:symbol)
 .input _LoadInstanceField(filename="LoadInstanceField.facts")
 
-isInstruction(?instruction),
-isFieldInstruction(?instruction),
 isLoadInstanceField_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method),
@@ -843,8 +808,6 @@ LoadInstanceField_To(?instruction, ?to) :-
 .decl _StoreStaticField(?instruction:symbol, ?index:number, ?from:symbol, ?signature:symbol, ?method:symbol)
 .input _StoreStaticField(filename="StoreStaticField.facts")
 
-isInstruction(?instruction),
-isFieldInstruction(?instruction),
 isStoreStaticField_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method),
@@ -858,8 +821,6 @@ StoreStaticField_From(?instruction, ?from) :-
 .decl _LoadStaticField(?instruction:symbol, ?index:number, ?to:symbol, ?signature:symbol, ?method:symbol)
 .input _LoadStaticField(filename="LoadStaticField.facts")
 
-isInstruction(?instruction),
-isFieldInstruction(?instruction),
 isLoadStaticField_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method),
@@ -873,8 +834,6 @@ LoadStaticField_To(?instruction, ?to) :-
 .decl _StoreArrayIndex(?instruction:symbol, ?index:number, ?from:symbol, ?base:symbol, ?method:symbol)
 .input _StoreArrayIndex(filename="StoreArrayIndex.facts")
 
-isInstruction(?instruction),
-isArrayInstruction(?instruction),
 isStoreArrayIndex_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method),
@@ -888,8 +847,6 @@ StoreArrayIndex_From(?instruction, ?from) :-
 .decl _LoadArrayIndex(?instruction:symbol, ?index:number, ?to:symbol, ?base:symbol, ?method:symbol)
 .input _LoadArrayIndex(filename="LoadArrayIndex.facts")
 
-isInstruction(?instruction),
-isArrayInstruction(?instruction),
 isLoadArrayIndex_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method),
@@ -921,7 +878,6 @@ ArrayNumIndex(?instruction, ?index) :-
 .decl _Goto(?instruction:symbol, ?index:number, ?to:number, ?method:symbol)
 .input _Goto(filename="Goto.facts")
 
-isInstruction(?instruction),
 isGoto_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method),
@@ -934,7 +890,6 @@ Goto_Target(?instruction, ?to) :-
 .decl _If(?instruction:symbol, ?index:number, ?to:number, ?method:symbol)
 .input _If(filename="If.facts")
 
-isInstruction(?instruction),
 isIf_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method),
@@ -947,8 +902,6 @@ If_Target(?instruction, ?to) :-
 .decl _TableSwitch(?instruction:symbol, ?index:number, ?key:symbol, ?method:symbol)
 .input _TableSwitch(filename="TableSwitch.facts")
 
-isInstruction(?instruction),
-isSwitch_Insn(?instruction),
 isTableSwitch_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method),
@@ -959,8 +912,6 @@ Switch_Key(?instruction, ?key) :-
 .decl _LookupSwitch(?instruction:symbol, ?index:number, ?key:symbol, ?method:symbol)
 .input _LookupSwitch(filename="LookupSwitch.facts")
 
-isInstruction(?instruction),
-isSwitch_Insn(?instruction),
 isLookupSwitch_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method),
@@ -1004,8 +955,6 @@ Switch_DefaultTarget(?instruction, ?target) :-
 .decl _Return(?instruction:symbol, ?index:number, ?var:symbol, ?method:symbol)
 .input _Return(filename="Return.facts")
 
-isInstruction(?instruction),
-isReturnInstruction(?instruction),
 isReturnNonvoid_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method),
@@ -1018,8 +967,6 @@ ReturnNonvoid_Var(?instruction, ?var) :-
 .decl _ReturnVoid(?instruction:symbol, ?index:number, ?method:symbol)
 .input _ReturnVoid(filename="ReturnVoid.facts")
 
-isInstruction(?instruction),
-isReturnInstruction(?instruction),
 isReturnVoid_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method) :-
@@ -1031,8 +978,6 @@ Instruction_Method(?instruction, ?method) :-
 .decl _AssignPhantomInvoke(?instruction:symbol, ?index:number, ?method:symbol)
 .input _AssignPhantomInvoke(filename="AssignPhantomInvoke.facts")
 
-isInstruction(?instruction),
-isUnsupportedInstruction(?instruction),
 isAssignPhantomInvoke(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method) :-
@@ -1044,8 +989,6 @@ Instruction_Method(?instruction, ?method) :-
 .decl _BreakpointStmt(?instruction:symbol, ?index:number, ?method:symbol)
 .input _BreakpointStmt(filename="BreakpointStmt.facts")
 
-isInstruction(?instruction),
-isUnsupportedInstruction(?instruction),
 isBreakpointStmt(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method) :-
@@ -1057,7 +1000,6 @@ Instruction_Method(?instruction, ?method) :-
 .decl _UnsupportedInstruction(?instruction:symbol, ?index:number, ?method:symbol)
 .input _UnsupportedInstruction(filename="UnsupportedInstruction.facts")
 
-isInstruction(?instruction),
 isUnsupportedInstruction(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method) :-
@@ -1075,19 +1017,19 @@ isModifier(?x), Modifier_static(?x)   :- ?x = "static".
 
 // Basic Types as nullary functional-predicates
 
-isType(?t), isPrimitiveType(?t), Type_boolean(?t) :- ?t = "boolean".
-isType(?t), isPrimitiveType(?t), Type_byte(?t)    :- ?t = "byte".
-isType(?t), isPrimitiveType(?t), Type_char(?t)    :- ?t = "char".
-isType(?t), isPrimitiveType(?t), Type_short(?t)   :- ?t = "short".
-isType(?t), isPrimitiveType(?t), Type_int(?t)     :- ?t = "int".
-isType(?t), isPrimitiveType(?t), Type_long(?t)    :- ?t = "long".
-isType(?t), isPrimitiveType(?t), Type_float(?t)   :- ?t = "float".
-isType(?t), isPrimitiveType(?t), Type_double(?t)  :- ?t = "double".
-isType(?t), isPrimitiveType(?t), Type_void(?t)    :- ?t = "void".
+isPrimitiveType(?t), Type_boolean(?t) :- ?t = "boolean".
+isPrimitiveType(?t), Type_byte(?t)    :- ?t = "byte".
+isPrimitiveType(?t), Type_char(?t)    :- ?t = "char".
+isPrimitiveType(?t), Type_short(?t)   :- ?t = "short".
+isPrimitiveType(?t), Type_int(?t)     :- ?t = "int".
+isPrimitiveType(?t), Type_long(?t)    :- ?t = "long".
+isPrimitiveType(?t), Type_float(?t)   :- ?t = "float".
+isPrimitiveType(?t), Type_double(?t)  :- ?t = "double".
+isPrimitiveType(?t), Type_void(?t)    :- ?t = "void".
 
-isType(?t), isReferenceType(?t), isNullType(?t), Type_null(?t) :- ?t = "null_type".
+isNullType(?t), Type_null(?t) :- ?t = "null_type".
 
-isType(?t), isReferenceType(?t), isClassType(?t), Type_object(?t) :- ?t = "java.lang.Object".
+isClassType(?t), Type_object(?t) :- ?t = "java.lang.Object".
 
 
 // Annotations
