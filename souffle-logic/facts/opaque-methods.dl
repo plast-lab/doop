@@ -10,10 +10,24 @@
 // (a) Use the imported facts directly (e.g., _VirtualMethodInvocation).
 // (b) Create call-graph edges manually via OpaqueCallGraphEdge.
 
-#if defined(REFLECTION) || defined(LIGHT_REFLECTION_GLUE)
+.type OpaqueInstruction = Instruction
+
+.decl isOpaqueInstruction(?insn:OpaqueInstruction)
 
 .decl ClassLoaderMethod(?method:Method, ?argIdx:number)
 .output ClassLoaderMethod
+
+// Opaque method invocations
+
+isOpaqueInstruction(?instruction) :-
+   _StaticMethodInvocation(?instruction, _, ?signature, _),
+   isOpaqueMethod(?signature).
+isOpaqueInstruction(?instruction) :-
+   _SpecialMethodInvocation(?instruction, _, ?signature, _, _),
+   isOpaqueMethod(?signature).
+isOpaqueInstruction(?instruction) :-
+   _VirtualMethodInvocation(?instruction, _, ?signature, _, _),
+   isOpaqueMethod(?signature).
 
 #define CLASS_LOADER_METHOD(method, idx) ClassLoaderMethod(?m, idx) :- isMethod(?m), ?m = method
 
@@ -69,5 +83,3 @@ OPAQUE_METHOD("<java.lang.invoke.MethodHandles$Lookup: java.lang.Class lookupCla
 #endif // REFLECTION_METHOD_HANDLES
 OPAQUE_METHOD("<java.lang.invoke.MethodType: java.lang.Class parameterType(int)>").
 OPAQUE_METHOD("<java.lang.invoke.MethodType: java.lang.Class returnType()>").
-
-#endif // REFLECTION, LIGHT_REFLECTION_GLUE

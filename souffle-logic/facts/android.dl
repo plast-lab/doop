@@ -1,0 +1,115 @@
+.decl FieldInitialValue(?fld:Field, ?valueString:symbol)
+.decl Activity(?x:Type)
+.decl Service(?x:Type)
+.decl ContentProvider(?x:Type)
+.decl BroadcastReceiver(?x:Type)
+.decl CallbackMethod(?x:Method)
+.decl LayoutControl(?id:NumConstant, ?type:Type, ?parent:symbol)
+.decl LayoutControl0(?id:NumConstant, ?typename:symbol, ?parent:symbol)
+.decl SensitiveLayoutControl(?id:NumConstant, ?type:Type, ?parent:symbol)
+.decl SensitiveLayoutControl0(?id:NumConstant, ?typename:symbol, ?parent:symbol)
+.decl AndroidEntryPoint(?m:Method)
+.decl AndroidApplication(?t:ClassType)
+.decl AndroidId(?file:symbol, ?nodeId:symbol, ?value:symbol, ?prefix:symbol, ?id:symbol)
+.decl AndroidIncludeXML(?file:symbol, ?nodeId:symbol, ?value:symbol)
+
+
+// AndroidEntryPoint
+.input AndroidEntryPoint(filename="AndroidEntryPoint.facts")
+
+// AndroidApplication
+.input AndroidApplication(filename="AndroidApplication.facts")
+
+// Activity
+.input Activity(filename="Activity.facts")
+isType(?id) :-
+	Activity(?id).
+
+// Service
+.input Service(filename="Service.facts")
+isType(?id) :-
+	Service(?id).
+
+// ContentProvider
+.input ContentProvider(filename="ContentProvider.facts")
+isType(?id) :-
+	ContentProvider(?id).
+
+// BroadcastReceiver
+.input BroadcastReceiver(filename="BroadcastReceiver.facts")
+isType(?id) :-
+	BroadcastReceiver(?id).
+
+// CallbackMethod
+.input CallbackMethod(filename="CallbackMethod.facts")
+
+// LayoutControl
+.input LayoutControl0(filename="LayoutControl.facts")
+
+// SensitiveLayoutControl
+.input SensitiveLayoutControl0(filename="SensitiveLayoutControl.facts")
+
+// FieldInitialVal
+.input FieldInitialValue(filename="FieldInitialValue.facts")
+
+.input AndroidId(filename="AndroidId.facts")
+.input AndroidIncludeXML(filename="AndroidIncludeXML.facts")
+
+// NumConstantRaw
+
+.decl NumConstantRaw(?const:symbol)
+.input NumConstantRaw(filename="NumConstantRaw.facts")
+
+isNumConstant(?const) :-
+	NumConstantRaw(?const).
+
+.decl ArrayInitialValueFromConst(?instruction:symbol, ?index:number, ?to:symbol, ?arrayIndex:number, ?const:symbol, ?baseHeap:symbol, ?method:Method)
+.input ArrayInitialValueFromConst(filename="ArrayInitialValueFromConst.facts")
+
+isInstruction(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?method),
+isNumConstant(?const) :-
+	ArrayInitialValueFromConst(?instruction, ?index, _, _, ?const, _, ?method).
+
+isNumConstant(?const) :-
+	ArrayInitialValueFromConst(_, _, _, _, ?const, _, _).
+
+.decl ArrayInitialValueFromLocal(?instruction:symbol, ?index:number, ?to:symbol, ?arrayIndex:number, ?from:symbol, ?baseHeap:symbol, ?method:Method)
+.input ArrayInitialValueFromLocal(filename="ArrayInitialValueFromLocal.facts")
+
+// XML facts.
+.decl XMLNode(?file:symbol, ?nodeId:symbol, ?parentNodeId:symbol, ?namespaceURI:symbol, ?localName:symbol, ?qName:symbol)
+.input XMLNode(filename="XMLNode.facts")
+.decl XMLNodeAttribute(?file:symbol, ?nodeId:symbol, ?index:symbol, ?localName:symbol, ?qName:symbol, ?value:symbol)
+.input XMLNodeAttribute(filename="XMLNodeAttribute.facts")
+.decl XMLNodeData(?file:symbol, ?nodeId:symbol, ?data:symbol)
+.input XMLNodeData(filename="XMLNodeData.facts")
+
+// Note that this is more than a straightforward import of generated facts into
+// a DB relation. It filters out the guessed control types that do not
+// correspond to existing types. Relations LayoutControl0 and
+// SensitiveLayoutControl0 may also come from XML facts (see android-xml.dl).
+// Heuristic: if the name is unqualified, it may come from android.view or
+// android.widget ("Android Programming: The Big Nerd Ranch Guide", chapter 32).
+#define QUAL_CONTROL_TYPE(t, qType) \
+  (qType = t ; qType = cat("android.view.", t) ; qType = cat("android.widget.", t))
+
+LayoutControl(?id, ?type, ?parent) :-
+	LayoutControl0(?id, ?type, ?parent),
+	QUAL_CONTROL_TYPE(?type, ?qType),
+	isType(?qType).
+
+SensitiveLayoutControl(?id, ?type, ?parent) :-
+	SensitiveLayoutControl0(?id, ?type, ?parent),
+	QUAL_CONTROL_TYPE(?type, ?qType),
+	isType(?qType).
+
+// Native UnixFileSystem objects, different in Android and OpenJDK.
+MockHeapConsMacro(?heap, ?type) :-
+	?heap = "<java.io.UnixFileSystem: java.lang.String[] list0(java.io.File)>/new java.lang.String[]/0",
+	?type = "java.lang.String[]".
+
+MockHeapConsMacro(?heap, ?type) :-
+	?heap = "<java.io.UnixFileSystem: java.lang.String[] list0(java.io.File)>/new java.lang.String/0",
+	?type = "java.lang.String".

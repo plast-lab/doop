@@ -4,9 +4,6 @@
 .type Modifier
 .decl isModifier(?m:Modifier)
 
-.type Annotation = ReferenceType
-.decl isAnnotation(?a:Annotation)
-
 .decl Modifier_abstract(?mod:Modifier)
 .decl Modifier_final(?mod:Modifier)
 .decl Modifier_public(?mod:Modifier)
@@ -62,7 +59,6 @@
 
 .type Field
 .decl isField(?field:Field)
-.decl isGenericField(?field:Field)
 
 .decl Field_DeclaringType(?field:Field, ?declaringClass:ReferenceType)
 .decl Field_SimpleName(?field:Field, ?simpleName:symbol)
@@ -77,8 +73,6 @@
 
 .type Method
 .decl isMethod(?m:Method)
-
-.decl isOpaqueMethod(?m:Method)
 
 .decl Method_DeclaringType(?method:Method, ?declaringType:ReferenceType)
 .decl Method_ReturnType(?method:Method, ?returnType:Type)
@@ -238,7 +232,7 @@
 .type VirtualMethodInvocation_Insn    = MethodInvocation
 .type SpecialMethodInvocation_Insn    = MethodInvocation
 .type StaticMethodInvocation_Insn     = MethodInvocation
-.type SuperMethodInvocation_Insn    = MethodInvocation
+.type SuperMethodInvocation_Insn      = MethodInvocation
 .type DynamicMethodInvocation_Insn    = MethodInvocation
 
 .decl isMethodInvocation(?insn:MethodInvocation)
@@ -251,12 +245,10 @@
 .type UnsupportedInstruction          = Instruction
 .type AssignPhantomInvoke             = UnsupportedInstruction
 .type BreakpointStmt                  = UnsupportedInstruction
-.type OpaqueInstruction               = Instruction
 
 .decl isUnsupportedInstruction(?insn:UnsupportedInstruction)
 .decl isAssignPhantomInvoke(?insn:AssignPhantomInvoke)
 .decl isBreakpointStmt(?insn:BreakpointStmt)
-.decl isOpaqueInstruction(?insn:OpaqueInstruction)
 
 //-----------------------------------------------------------------------------
 
@@ -489,42 +481,23 @@
 // Return variables of native methods (no instructions exist)
 .decl NativeReturnVar(?var:Var, ?method:Method)
 
-#ifndef X_STATS_NONE
-// Predicate to store analysis statistics
-.decl Stats_Metrics(order:symbol, msg:symbol, c:number)
-#endif // X_STATS_NONE
-
-// Keep method/class information.
-.decl KeepMethod(?m:Method)
-.decl KeepClassMembers(?m:Method)
-.decl KeepClassesWithMembers(?m:Method)
-.decl KeepClass(?c:ClassType)
-
-//-----------------------------------------------------------------------------
-// [Android-related]
-//-----------------------------------------------------------------------------
-#ifdef ANDROID
-
-.decl FieldInitialValue(?fld:Field, ?valueString:symbol)
-.decl Activity(?x:Type)
-.decl Service(?x:Type)
-.decl ContentProvider(?x:Type)
-.decl BroadcastReceiver(?x:Type)
-.decl CallbackMethod(?x:Method)
-.decl LayoutControl(?id:NumConstant, ?type:Type, ?parent:symbol)
-.decl LayoutControl0(?id:NumConstant, ?typename:symbol, ?parent:symbol)
-.decl SensitiveLayoutControl(?id:NumConstant, ?type:Type, ?parent:symbol)
-.decl SensitiveLayoutControl0(?id:NumConstant, ?typename:symbol, ?parent:symbol)
-.decl AndroidEntryPoint(?m:Method)
-.decl AndroidApplication(?t:ClassType)
-.decl AndroidId(?file:symbol, ?nodeId:symbol, ?value:symbol, ?prefix:symbol, ?id:symbol)
-.decl AndroidIncludeXML(?file:symbol, ?nodeId:symbol, ?value:symbol)
-
-#endif // ANDROID
-
 // Annotations
+.type Annotation = ReferenceType
+.decl isAnnotation(?a:Annotation)
 .decl Type_Annotation(?type:ReferenceType, ?annotation:Annotation)
 .decl Method_Annotation(?method:Method, ?annotation:Annotation)
 .decl Field_Annotation(?fld:Field, ?annotation:Annotation)
 .decl Param_Annotation(?method:Method, ?index:number, ?annotation:Annotation)
 .decl AnnotationElement(?annotationKind:symbol, ?element:symbol, ?parentId:symbol, ?id:symbol, ?name:symbol, ?value1:symbol, ?value2:symbol)
+
+// The definition should appear outside the include, because a few rules negatively refer to it
+.decl isOpaqueMethod(?m:Method)
+
+#if defined(REFLECTION) || defined(LIGHT_REFLECTION_GLUE)
+#include "opaque-methods.dl"
+#endif
+
+#ifndef X_STATS_NONE
+// Predicate to store analysis statistics
+.decl Stats_Metrics(order:symbol, msg:symbol, c:number)
+#endif
