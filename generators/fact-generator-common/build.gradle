@@ -2,6 +2,8 @@ plugins {
     id 'java'
 }
 
+String asmVersion = '8.0.1'
+
 // WARNING: dependencies below should be minimal, since every
 // dependency will be included as-is *in each* fact generator "fat" JAR.
 dependencies {
@@ -11,8 +13,9 @@ dependencies {
         exclude group: 'org.codehaus.groovy', module: 'groovy-all'
     }
     compile 'org.clyze:metadata-model:1.0.2'
-    compile 'org.ow2.asm:asm-debug-all:5.1'          // Java bytecode library
-    compile 'org.smali:dexlib2:2.2.5'                // Dexlib2: library for reading/modifying/writing Android dex files
+    compile "org.ow2.asm:asm-tree:${asmVersion}",    // Java bytecode library
+            "org.ow2.asm:asm-util:${asmVersion}"
+    compile 'org.smali:dexlib2:2.4.0'                // Dexlib2: library for reading/modifying/writing Android dex files
     compile 'net.dongliu:apk-parser:2.6.10'          // needed for reading binary XML entries from APK inputs
     compile "org.antlr:antlr4-runtime:${antlrVersion}"
     compile 'org.clyze:native-scanner:0.6.2'
