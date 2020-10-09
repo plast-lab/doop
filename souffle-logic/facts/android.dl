@@ -113,13 +113,3 @@ MockHeapConsMacro(?heap, ?type) :-
 MockHeapConsMacro(?heap, ?type) :-
 	?heap = "<java.io.UnixFileSystem: java.lang.String[] list0(java.io.File)>/new java.lang.String/0",
 	?type = "java.lang.String".
-
-#else
-
-MockHeapConsMacro(?heap, ?type) :-
-	?heap = "<java.io.UnixFileSystem: java.lang.String[] list(java.io.File)>/new java.lang.String[]/0",
-	?type = "java.lang.String[]".
-
-MockHeapConsMacro(?heap, ?type) :-
-	?heap = "<java.io.UnixFileSystem: java.lang.String[] list(java.io.File)>/new java.lang.String/0",
-	?type = "java.lang.String".
