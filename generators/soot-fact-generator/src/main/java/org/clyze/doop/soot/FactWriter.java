@@ -246,6 +246,10 @@ class FactWriter extends JavaFactWriter {
         String heap = _rep.heapAlloc(m, expr, session);
         _db.add(NORMAL_HEAP, heap, writeType(expr.getType()));
 
+        // statement
+        InstrInfo ii = calcInstrInfo(m, stmt, session);
+        _db.add(ASSIGN_HEAP_ALLOC, ii.insn, str(ii.index), heap, _rep.local(m, l), ii.methodId, ""+getLineNumberFromStmt(stmt));
+
         if (expr instanceof NewArrayExpr) {
             NewArrayExpr newArray = (NewArrayExpr) expr;
             Value sizeVal = newArray.getSize();
@@ -256,11 +260,9 @@ class FactWriter extends JavaFactWriter {
                 if(size.value == 0)
                     _db.add(EMPTY_ARRAY, heap);
             }
+            else if (sizeVal instanceof Local)
+                _db.add(ARRAY_ALLOC, ii.insn, _rep.local(m, (Local)sizeVal));
         }
-
-        // statement
-        InstrInfo ii = calcInstrInfo(m, stmt, session);
-        _db.add(ASSIGN_HEAP_ALLOC, ii.insn, str(ii.index), heap, _rep.local(m, l), ii.methodId, ""+getLineNumberFromStmt(stmt));
     }
 
     private static int getLineNumberFromStmt(Stmt stmt) {
@@ -452,19 +454,30 @@ class FactWriter extends JavaFactWriter {
             _db.add(staticFieldFacts, ii.insn, str(ii.index), _rep.local(m, var), fieldId, ii.methodId);
     }
 
-    void writeLoadArrayIndex(SootMethod m, Stmt stmt, Local base, Local to, Local arrIndex, Session session) {
+    void writeLoadArrayIndex(SootMethod m, Stmt stmt, Local base, Local to, Value arrIndex, Session session) {
         writeLoadOrStoreArrayIndex(m, stmt, base, to, arrIndex, session, LOAD_ARRAY_INDEX);
     }
 
-    void writeStoreArrayIndex(SootMethod m, Stmt stmt, Local base, Local from, Local arrIndex, Session session) {
+    void writeStoreArrayIndex(SootMethod m, Stmt stmt, Local base, Local from, Value arrIndex, Session session) {
         writeLoadOrStoreArrayIndex(m, stmt, base, from, arrIndex, session, STORE_ARRAY_INDEX);
     }
 
-    private void writeLoadOrStoreArrayIndex(SootMethod m, Stmt stmt, Local base, Local var, Local arrIndex, Session session, PredicateFile predicateFile) {
+    private void writeLoadOrStoreArrayIndex(SootMethod m, Stmt stmt, Local base, Local var, Value arrIndex, Session session, PredicateFile predicateFile) {
         InstrInfo ii = calcInstrInfo(m, stmt, session);
         _db.add(predicateFile, ii.insn, str(ii.index), _rep.local(m, var), _rep.local(m, base), ii.methodId);
-        if (arrIndex != null)
-            _db.add(ARRAY_INSN_INDEX, ii.insn, _rep.local(m, arrIndex));
+
+        if(arrIndex instanceof Local)
+        {
+            _db.add(ARRAY_INSN_INDEX, ii.insn, _rep.local(m, (Local) arrIndex));
+        }
+        else if(arrIndex instanceof IntConstant)
+        {
+            _db.add(ARRAY_NUM_INDEX, ii.insn, str(((IntConstant) arrIndex).value));
+        }
+        else
+        {
+            throw new RuntimeException("Cannot handle assignment: " + stmt + " (index: " + arrIndex.getClass() + ")");
+        }
     }
 
     private void writeApplicationClass(SootClass application) {
@@ -723,6 +736,7 @@ class FactWriter extends JavaFactWriter {
         }
 
         writeLocal(local, writeType(type), methodSig(m, null));
+        _db.add(VAR_SIMPLENAME, local, l.getName());
     }
 
     private Local freshLocal(SootMethod inMethod, String basename, Type type, Session session) {

@@ -12,6 +12,7 @@ import org.clyze.utils.JHelper;
 import org.jf.dexlib2.Opcodes;
 import org.jf.dexlib2.dexbacked.DexBackedDexFile;
 import org.jf.dexlib2.iface.MultiDexContainer;
+import org.jf.dexlib2.iface.MultiDexContainer.DexEntry;
 
 import java.io.File;
 import java.io.IOException;
@@ -74,13 +75,14 @@ public class DexInvoker {
                     Opcodes opcodes = Opcodes.getDefault();
                     MultiDexContainer<? extends DexBackedDexFile> multiDex = loadDexContainer(apk, opcodes);
                     long time1 = System.currentTimeMillis();
-                    for (String dexEntry : multiDex.getDexEntryNames()) {
-                        DexBackedDexFile dex = multiDex.getEntry(dexEntry);
+                    for (String dexEntryName : multiDex.getDexEntryNames()) {
+                        DexEntry<? extends DexBackedDexFile> entry = multiDex.getEntry(dexEntryName);
+                        DexBackedDexFile dex = entry.getDexFile();
                         if (dex != null) {
-                            System.out.println("Found dex file '" + dexEntry + "' with " + dex.getClassCount() + " classes in '" + apkName + "'");
-                            writer.generateFacts(java, dexParams, apk.getName(), dexEntry, dex);
+                            System.out.println("Found dex file '" + dexEntryName + "' with " + dex.getClasses().size() + " classes in '" + apkName + "'");
+                            writer.generateFacts(java, dexParams, apk.getName(), dexEntryName, dex);
                         } else
-                            throw new RuntimeException("Internal error: null .dex entry for " + dexEntry);
+                            throw new RuntimeException("Internal error: null .dex entry for " + dexEntryName);
                     }
                     long time2 = System.currentTimeMillis();
                     System.out.println("Dex processing time: " + ((time2 - time1) / 1000.0) + " sec");

@@ -47,7 +47,7 @@ if (project.hasProperty('heapDLVersion'))
     heapDLVersion = project.property('heapDLVersion')
 
 wrapper {
-    gradleVersion = "5.4.1"
+    gradleVersion = "6.2"
 }
 
 def allGeneratorProjects = subprojects.findAll { it.name.indexOf('fact-generator') >= 0 }
@@ -112,9 +112,9 @@ compileGroovy {
 
 // Set dependency version so that they are available to subprojects.
 gradle.rootProject.ext.antlrVersion='4.7.2'
-gradle.rootProject.ext.groovyVersion="2.5.10"
-gradle.rootProject.ext.clueCommonVersion='3.22.5'
-gradle.rootProject.ext.spockVersion='1.3-groovy-2.5'
+gradle.rootProject.ext.groovyVersion="3.0.6"
+gradle.rootProject.ext.clueCommonVersion='3.23.2'
+gradle.rootProject.ext.spockVersion='2.0-M3-groovy-3.0'
 // Set other variables for subprojects.
 gradle.rootProject.ext.resourcesDir='resources'
 
@@ -313,6 +313,7 @@ compileJava {
 }
 
 test {
+    useJUnitPlatform()
     // failFast = true
     maxParallelForks = 1
     // forkEvery = 1

@@ -44,7 +44,7 @@ class PackageUtil {
 		Set<String> pkgs = []
 		MultiDexContainer multiDex = loadDexContainer(apk, null)
 		for (String dex : (multiDex.dexEntryNames)) {
-			DexBackedDexFile dexFile = multiDex.getEntry(dex)
+			DexBackedDexFile dexFile = (DexBackedDexFile)multiDex.getEntry(dex).getDexFile()
 			for (DexBackedClassDef dexClass : (dexFile.classes as Set<? extends DexBackedClassDef>)) {
 				String className = dexClass.toString()
 				if (!className.startsWith("L") || !className.endsWith(";")) {

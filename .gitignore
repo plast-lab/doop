@@ -5,6 +5,7 @@ cache
 logs
 out
 results
+resources
 last-analysis
 checksums.properties
 doop.properties

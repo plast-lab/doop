@@ -92,11 +92,11 @@ public class ArtifactScanner {
             File apk = new File(inputApk);
             MultiDexContainer<? extends DexBackedDexFile> multiDex = loadDexContainer(apk, opcodes);
             for (String dexEntry : multiDex.getDexEntryNames()) {
-                DexBackedDexFile dex = multiDex.getEntry(dexEntry);
+                MultiDexContainer.DexEntry<?> dex = multiDex.getEntry(dexEntry);
                 if (dex == null)
                     logger.debug("No .dex entry for " + dexEntry);
                 else
-                    for (DexBackedClassDef dexClass : dex.getClasses()) {
+                    for (DexBackedClassDef dexClass : ((DexBackedDexFile)dex.getDexFile()).getClasses()) {
                         String className = TypeUtils.raiseTypeId(dexClass.getType());
                         registerArtifactClass(apk.getName(), className, dexEntry, dexClass.getSize());
                         if (classProc != null)

@@ -414,19 +414,7 @@ class FactGenerator implements Runnable {
             ArrayRef ref = (ArrayRef) right;
             Local base = (Local) ref.getBase();
             Value index = ref.getIndex();
-
-            if(index instanceof Local)
-            {
-                    _writer.writeLoadArrayIndex(inMethod, stmt, base, left, (Local) index, session);
-            }
-            else if(index instanceof IntConstant)
-            {
-                    _writer.writeLoadArrayIndex(inMethod, stmt, base, left, null, session);
-            }
-            else
-            {
-                throw new RuntimeException("Cannot handle assignment: " + stmt + " (index: " + index.getClass() + ")");
-            }
+            _writer.writeLoadArrayIndex(inMethod, stmt, base, left, index, session);
         }
         else if(right instanceof CastExpr)
         {
@@ -528,11 +516,7 @@ class FactGenerator implements Runnable {
             ArrayRef ref = (ArrayRef) left;
             Local base = (Local) ref.getBase();
             Value index = ref.getIndex();
-
-            if (index instanceof Local)
-                _writer.writeStoreArrayIndex(inMethod, stmt, base, rightLocal, (Local) index, session);
-            else
-                _writer.writeStoreArrayIndex(inMethod, stmt, base, rightLocal, null, session);
+            _writer.writeStoreArrayIndex(inMethod, stmt, base, rightLocal, index, session);
         }
         // NoNullSupport: use the line below to remove Null Constants from the facts.
         // else if(left instanceof InstanceFieldRef && rightLocal != null)

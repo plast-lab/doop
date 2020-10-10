@@ -34,7 +34,7 @@ public class Main {
         if (args.length == 0) {
             System.err.println("usage: [options] file...");
             SootParameters.showHelp();
-            throw new DoopErrorCodeException(0);
+            return;
         }
 
         try {

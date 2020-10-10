@@ -1,0 +1,18 @@
+.decl isGenericField(?field:Field)
+
+.decl _GenericField(?signature:symbol, ?declaringClass:symbol, ?simplename:symbol, ?type:symbol)
+.input _GenericField(filename="GenericField.facts")
+
+isGenericField(?signature),
+GenericField_DeclaringType(?signature, ?declaringType),
+GenericField_SimpleName(?signature, ?simplename),
+GenericField_Type(?signature, ?type) :-
+	_GenericField(?signature, ?declaringType, ?simplename, ?type).
+
+.decl GenericTypeParameters(?type:symbol, ?index:number, ?genericParameter:symbol)
+.decl GenericType_ErasedType(?genericType:symbol, ?erasedType:Type)
+.input GenericTypeParameters(filename="GenericTypeParameters.facts")
+.input GenericType_ErasedType(filename="GenericType-ErasedType.facts")
+.decl GenericField_DeclaringType(?field:Field, ?declaringClass:ClassType)
+.decl GenericField_SimpleName(?field:Field, ?simpleName:symbol)
+.decl GenericField_Type(?field:Field, ?type:Type)

@@ -32,19 +32,19 @@ class DexFactWriter extends JavaFactWriter {
     public void generateFacts(BasicJavaSupport java, DexParameters dexParams,
                               String apkName, String dexEntry, DexBackedDexFile dex)
             throws DoopErrorCodeException {
-        int totalClasses = dex.getClassCount();
+        int totalClasses = dex.getClasses().size();
         DexDriver driver = new DexDriver(totalClasses, dexParams._cores, false, _db, dexParams, dexEntry, apkName, cha, _extractMoreStrings, java, cachedMethodDescriptors);
         driver.generateInParallel(dex.getClasses());
 
         // Register all field/type/method references found, to find phantoms later.
-        for (DexBackedFieldReference fieldRef : dex.getFields())
+        for (DexBackedFieldReference fieldRef : dex.getFieldSection())
             cha.registerReferencedField(new DexFieldInfo(fieldRef));
-        for (DexBackedTypeReference typeRef : dex.getTypes())
+        for (DexBackedTypeReference typeRef : dex.getTypeReferences())
             cha.registerReferencedType(TypeUtils.raiseTypeId(typeRef.getType()));
-        for (DexBackedMethodReference methRef : dex.getMethods())
+        for (DexBackedMethodReference methRef : dex.getMethodSection())
             cha.registerReferencedMethod(MethodFacts.methodId(methRef));
 
-        if (dex.getMethodHandleCount() > 0)
+        if (dex.getMethodHandleSection().size() > 0)
             System.err.println("WARNING: method handles are not yet supported.");
     }
 

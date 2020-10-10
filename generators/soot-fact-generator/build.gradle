@@ -1,8 +1,12 @@
 plugins {
+    id 'application'
     id 'groovy'
 }
 
+mainClassName = 'org.clyze.doop.soot.Main'
+
 repositories {
+    mavenCentral()
     maven {
         name "soot-snapshot"
         url "https://soot-build.cs.uni-paderborn.de/nexus/repository/soot-snapshot"
@@ -16,7 +20,8 @@ repositories {
 dependencies {
     compile project(':generators:fact-generator-common')
 
-    compile "ca.mcgill.sable:soot:4.0.0"
+    // compile "ca.mcgill.sable:soot:4.0.0"
+    compile "org.soot-oss:soot:4.2.1"
 
     testCompile "org.codehaus.groovy:groovy-all:${groovyVersion}"  // Groovy
     testCompile "org.spockframework:spock-core:${spockVersion}"
@@ -25,7 +30,7 @@ dependencies {
 //fatJar already exists
 fatJar {
     manifest {
-        attributes 'Main-Class': 'org.clyze.doop.soot.Main'
+        attributes 'Main-Class': mainClassName
     }
     from { configurations.compile.collect { it.directory ? it : zipTree(it) } }
     with jar
@@ -42,4 +47,8 @@ task uninstallJar() {
         def jar = fatJar.outputs.files.singleFile
         if (jar && jar.name) { delete "../../${resourcesDir}/${jar.name}" }
     }
+}
+
+test {
+    useJUnitPlatform()
 }
