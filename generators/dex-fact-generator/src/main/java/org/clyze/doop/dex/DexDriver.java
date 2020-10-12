@@ -16,6 +16,7 @@ class DexDriver extends Driver<DexBackedClassDef> {
     private final CHA cha;
     private final String dexEntry;
     private final String apkName;
+    @SuppressWarnings("FieldCanBeLocal")
     private final boolean moreStrings;
 
     /**
