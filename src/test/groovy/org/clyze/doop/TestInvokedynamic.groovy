@@ -22,10 +22,8 @@ class TestInvokedynamic extends DoopSpec {
 						"--generate-jimple",
 						// "--Xserver-logic",
 						"--Xextra-logic", "${Doop.souffleAddonsPath}/testing/TestInvokedynamic.dl",
-						"--no-standard-exports",
 						"--thorough-fact-gen", "--sanity",
-						"--Xstats-none", "--no-standard-exports",
-						"--reflection-method-handles"] + reflectionOpts
+						"--reflection-method-handles"] + skipExports + reflectionOpts
 		String analysisId = "test-115-invokedynamic" + (fullReflection ? "" : "-light-refl")
 		Analysis analysis = analyzeBuiltinTest("115-invokedynamic",
 											   options,
