@@ -57,8 +57,8 @@ class IrrelevantStmtSwitch implements StmtSwitch
             inspectBootstrapMethod((DynamicInvokeExpr)expr);
         else {
             SootMethodRef exprMethodRef = expr.getMethodRef();
-            String declClass = exprMethodRef.declaringClass().getName();
-            String simpleName = exprMethodRef.name();
+            String declClass = exprMethodRef.getDeclaringClass().getName();
+            String simpleName = exprMethodRef.getName();
             if (DoopAddons.polymorphicHandling(declClass, simpleName)) {
                 relevant = true;
             } else

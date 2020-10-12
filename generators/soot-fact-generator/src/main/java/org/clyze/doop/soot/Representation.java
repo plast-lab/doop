@@ -61,7 +61,7 @@ class Representation extends JavaRepresentation {
     }
 
     static String simpleName(SootMethodRef m) {
-        return m.name();
+        return m.getName();
     }
 
     static String simpleName(SootField m) {
@@ -166,7 +166,7 @@ class Representation extends JavaRepresentation {
             String bootName = simpleName(bootRef);
             midPart = DynamicMethodInvocation.genericId(bootName, name);
         } else
-            midPart = exprMethodRef.declaringClass() + "." + name;
+            midPart = exprMethodRef.getDeclaringClass() + "." + name;
         return numberedInstructionId(signature(inMethod), midPart, counter);
     }
 
