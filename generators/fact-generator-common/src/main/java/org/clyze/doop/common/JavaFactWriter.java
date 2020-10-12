@@ -174,7 +174,7 @@ public abstract class JavaFactWriter {
                     PrintVisitor printVisitor = new PrintVisitor(_db);
                     printVisitor.visit(parseTree);
                 } catch (java.io.IOException e) {
-                    System.out.println(e);
+                    e.printStackTrace();
                 }
             }
             if (fi.type.contains("<")){
