@@ -6,7 +6,7 @@ import org.clyze.doop.common.scanner.antlr.GenericTypeParser.TypeContext;
 import static org.clyze.doop.common.PredicateFile.*;
 
 public class PrintVisitor extends GenericTypeBaseVisitor<String> {
-	private Database _db;
+	private final Database _db;
 
 	public PrintVisitor(Database db) {
 		_db = db;

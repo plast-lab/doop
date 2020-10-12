@@ -15,6 +15,7 @@ import java.util.zip.ZipInputStream;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.clyze.scanner.BinaryAnalysis;
+import org.clyze.scanner.NativeDatabaseConsumer;
 import org.clyze.scanner.NativeScanner;
 import org.clyze.utils.TypeUtils;
 import org.jf.dexlib2.Opcodes;
@@ -38,7 +39,7 @@ public class ArtifactScanner {
 
     private final Map<String, Set<ArtifactEntry>> artifactToClassMap = new ConcurrentHashMap<>();
     private final Logger logger = Logger.getLogger(getClass());
-    private Set<GenericFieldInfo> genericFields = new HashSet<>();
+    private final Set<GenericFieldInfo> genericFields = new HashSet<>();
 
     Set<GenericFieldInfo> getGenericFields() { return genericFields; }
 
@@ -211,11 +212,11 @@ public class ArtifactScanner {
 	scanNativeInputs(dbc, analysisType, parameters._preciseNativeStrings, methodStrings, parameters.getInputs());
     }
 
-    private static void scanNativeInputs(DatabaseConnector dbc,
-					 BinaryAnalysis.AnalysisType binAnalysisType,
-					 boolean preciseNativeStrings,
-					 Set<String> methodStrings,
-					 Iterable<String> inputs) {
+    private static void scanNativeInputs(NativeDatabaseConsumer dbc,
+                                         BinaryAnalysis.AnalysisType binAnalysisType,
+                                         boolean preciseNativeStrings,
+                                         Set<String> methodStrings,
+                                         Iterable<String> inputs) {
         final boolean demangle = false;
         final boolean truncateAddresses = true;
         final NativeScanner scanner = new NativeScanner(true, methodStrings);

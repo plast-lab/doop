@@ -16,7 +16,7 @@ public class GenericSignaturesRetriever extends ClassVisitor {
 		return genericFields;
 	}
 
-	private Set<GenericFieldInfo> genericFields;
+	private final Set<GenericFieldInfo> genericFields;
 
 	GenericSignaturesRetriever(int api) {
 		super(api);
