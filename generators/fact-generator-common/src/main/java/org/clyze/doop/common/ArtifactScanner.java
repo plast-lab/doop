@@ -11,6 +11,8 @@ import java.util.function.Consumer;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
+
+import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.clyze.scanner.BinaryAnalysis;
 import org.clyze.scanner.NativeScanner;
@@ -109,10 +111,9 @@ public class ArtifactScanner {
     }
 
     public void processClass(InputStream is, File f, Consumer<String> classProc) throws IOException {
-        ClassReader reader = new ClassReader(is);
-        String className = BytecodeUtil.getClassName(reader);
+        String className = BytecodeUtil.getClassName(new ClassReader(is));
         String artifact = f.getName();
-        registerArtifactClass(artifact, className, "-", reader.b.length);
+        registerArtifactClass(artifact, className, "-", IOUtils.toByteArray(is).length);
         if (classProc != null)
             classProc.accept(className);
 
