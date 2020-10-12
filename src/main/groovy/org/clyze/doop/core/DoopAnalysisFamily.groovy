@@ -256,12 +256,6 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forCacheID: true
 			),
 			new BooleanAnalysisOption(
-					id: "RUN_FLOWDROID",
-					name: "run-flowdroid",
-					description: "Run FlowDroid to generate dummy main method.",
-					forCacheID: true
-			),
-			new BooleanAnalysisOption(
 					id: "REPORT_PHANTOMS",
 					name: "report-phantoms",
 					group: GROUP_FACTS,
