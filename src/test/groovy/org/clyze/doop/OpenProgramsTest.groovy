@@ -8,14 +8,14 @@ import static org.clyze.doop.TestUtils.*
 /**
  * Test open-program analysis.
  */
-class OpenProgramsTest extends Specification {
+class OpenProgramsTest extends DoopSpec {
 
 	// @spock.lang.Ignore
 	@Unroll
 	def "Testing support for open programs"() {
 		when:
-		Main.main((String[])["-i", "org.apache.ivy:ivy:2.3.0", "-a", "context-insensitive", "--id", "ivy-open-programs", "--open-programs", "concrete-types", "--Xstats-full", "--platform", "java_7"])
-		Analysis analysis = Main.analysis
+		List<String> options = ['--open-programs', 'concrete-types', '--Xstats-full', '--platform', 'java_7', '--no-standard-exports']
+		Analysis analysis = analyzeTest('ivy-open-programs', 'org.apache.ivy:ivy:2.3.0', options, 'context-insensitive')
 
 		then:
 		metricIsApprox(analysis, "call graph edges (INS)", 449_742)
