@@ -8,7 +8,7 @@ import spock.lang.Unroll
  * Test the combination of open-program analysis and HeapDL.
  */
 class OpenProgramsAndHeapDL extends Specification {
-	// @spock.lang.Ignore
+	@spock.lang.Ignore
 	@Unroll
 	def "HeapDL/Open-Programs Android analysis test"() {
 		when:
