@@ -14,7 +14,7 @@ class OpenProgramsTest extends DoopSpec {
 	@Unroll
 	def "Testing support for open programs"() {
 		when:
-		List<String> options = ['--open-programs', 'concrete-types', '--Xstats-full', '--platform', 'java_7', '--no-standard-exports']
+		List<String> options = ['--open-programs', 'concrete-types', '--Xstats-full', '--platform', 'java_7', '--no-standard-exports'] + testExports
 		Analysis analysis = analyzeTest('ivy-open-programs', 'org.apache.ivy:ivy:2.3.0', options, 'context-insensitive')
 
 		then:

@@ -45,3 +45,5 @@
 .output mainAnalysis.XMLFragment_Id
 .output mainAnalysis.XMLNode_Parent
 #endif // ANDROID
+
+.output Stats_Metrics(IO="file",filename="Stats_Metrics.csv",delimiter="\t")
