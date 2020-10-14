@@ -4,6 +4,13 @@
  * Only the parts of the analysis that can affect the output are executed.
  */
 
+#ifndef X_STATS_NONE
+// Metrics are always written, even when the other standard outputs are skipped.
+.output Stats_Metrics(IO="file",filename="Stats_Metrics.csv",delimiter="\t")
+#endif // X_STATS_NONE
+
+#ifndef NO_STANDARD_EXPORTS
+
 // It is possible to have multiple relations in an .output statement
 // e.g. .output CallGraphEdge, VarPointsTo
 
@@ -36,3 +43,5 @@
 // It is possible to output facts in an sqlite3 db.
 // .output CallGraphEdge(IO=sqlite, dbname="test.db", name=CallGraphEdge)
 // .output VarPointsTo(IO=sqlite, dbname="test.db", name=VarPointsTo)
+
+#endif // NO_STANDARD_EXPORTS

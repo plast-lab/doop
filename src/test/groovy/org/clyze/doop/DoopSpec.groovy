@@ -39,8 +39,4 @@ abstract class DoopSpec extends Specification {
     protected List<String> getTestExports() {
         return [ "--Xextra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl" ]
     }
-
-    protected List<String> getSkipExports() {
-        return [ "--Xstats-none", "--no-standard-exports" ]
-    }
 }
