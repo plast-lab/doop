@@ -256,6 +256,18 @@ run. This can help with dependency resolution issues due to network
 connectivity or to avoid Gradle overhead when running Doop in batch
 mode.
 
+Note that you have to set up environment variable `DOOP_HOME` to point
+to the installation directory.
+
+Alternatively, you can build the Doop distribution and install it in
+directory `./build/` with the following command:
+
+```
+#!bash
+$ ./gradlew installDist
+$ export DOOP_HOME=$(path/to/build/install/doop)
+```
+
 ### Using Doop as a library
 
 Directory docs/doop-as-lib contains a test program that links against
