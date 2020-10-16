@@ -13,9 +13,9 @@ abstract class DoopSpec extends Specification {
 	    Doop.initDoopWithLoggingFromEnv()
     }
 
-    Analysis analyzeTest(String test, String jar, List<String> extraArgs, String analysisName = "context-insensitive", String id = null) {
+    Analysis analyzeTest(String test, String input, List<String> extraArgs, String analysisName = "context-insensitive", String id = null) {
 	String analysisId = id ?: "test-${test}"
-	    List args = ["-i", jar,
+	    List args = ["-i", input,
 			 "-a", analysisName,
 			 "--id", analysisId,
 			 "-Ldebug",

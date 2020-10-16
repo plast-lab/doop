@@ -56,7 +56,7 @@ class TestLambdasMethodReferences extends DoopSpec {
 		Analysis analysis =
 			analyzeBuiltinTest("104-method-references",
 							   ["--platform", "java_8",
-								"--thorough-fact-gen",
+								"--thorough-fact-gen", "--no-standard-exports",
 								"--generate-jimple"] + sanityOpts,
 							   analysisName)
 

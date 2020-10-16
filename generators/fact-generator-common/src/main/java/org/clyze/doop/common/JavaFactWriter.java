@@ -164,7 +164,7 @@ public abstract class JavaFactWriter {
         _db.add(METHOD_DECL_EXCEPTION, exceptionType, methodId);
     }
 
-    protected void writeGenericFields(Set<GenericFieldInfo> genericFields) {
+    protected void writeGenericFields(Iterable<GenericFieldInfo> genericFields) {
         for (GenericFieldInfo fi : genericFields) {
             if (!fi.type.contains("extends") && !fi.type.contains("super")) {
                 try {
@@ -174,7 +174,7 @@ public abstract class JavaFactWriter {
                     PrintVisitor printVisitor = new PrintVisitor(_db);
                     printVisitor.visit(parseTree);
                 } catch (java.io.IOException e) {
-                    System.out.println(e);
+                    e.printStackTrace();
                 }
             }
             if (fi.type.contains("<")){

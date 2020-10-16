@@ -475,10 +475,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             params += ["--report-phantoms"]
         }
 
-        if (options.RUN_FLOWDROID.value) {
-            params += ["--run-flowdroid"]
-        }
-
         if (options.X_IGNORE_WRONG_STATICNESS.value) {
             params += ["--ignoreWrongStaticness"]
         }

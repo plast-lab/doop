@@ -12,27 +12,18 @@ class SimpleAnalysisTests extends ServerAnalysisTests {
 
 	// @spock.lang.Ignore
 	@Unroll
-	def "Server analysis test 006 (hello world) / test additional command line options"() {
+	def "Server analysis test 011 (variance) / test additional command-line options"() {
 		when:
-		Analysis analysis = analyzeTest("006-hello-world",
+		// Test additional command-line options.
+		Analysis analysis = analyzeTest("011-variance",
 										["--coarse-grained-allocation-sites",
+										 "--generate-jimple", "--Xserver-logic",
 										 "--cs-library", "--Xextra-metrics",
 										 "--thorough-fact-gen", "--cfg",
 										 "--platform", "java_8"] + sanityOpts)
 
 		then:
-		noSanityErrors(analysis)
-	}
-
-	// @spock.lang.Ignore
-	@Unroll
-	def "Server analysis test 011 (variance)"() {
-		when:
-		Analysis analysis = analyzeTest("011-variance",
-										["--generate-jimple", "--Xserver-logic",
-										 "--thorough-fact-gen"] + sanityOpts)
-
-		then:
+		// Test variance.
 		invoValue(analysis, '<Main: void main(java.lang.String[])>/I.meth1/0', '<Test: java.lang.Object meth1(Clazz)>')
 		invoValue(analysis, '<Main: void main(java.lang.String[])>/I.meth1/1', '<Test: java.lang.Object meth1(Clazz)>')
 		invoValue(analysis, '<Main: void main(java.lang.String[])>/I.meth2/0', '<Test: Clazz meth2(java.lang.Object)>')
@@ -56,7 +47,7 @@ class SimpleAnalysisTests extends ServerAnalysisTests {
 	@Unroll
 	def "Server analysis test 013 (enums)"() {
 		when:
-		Analysis analysis = analyzeTest("013-enums", ["--reflection-classic", "--generate-jimple"] + testExports)
+		Analysis analysis = analyzeTest("013-enums", ["--reflection-classic", "--generate-jimple", "--no-standard-exports"] + testExports)
 
 		then:
 		varPointsToQ(analysis, '<Main: void main(java.lang.String[])>/enumConsts#_93', '<Enums array for Main$UndeletablePrefKey>')

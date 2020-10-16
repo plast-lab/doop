@@ -21,15 +21,6 @@ class SootDriver extends Driver<SootClass> {
         this.phantoms = phantoms;
     }
 
-    void generateMethod(SootMethod dummyMain, FactWriter writer, SootParameters sootParameters) {
-        Set<SootClass> sootClasses = new HashSet<>();
-        sootClasses.add(dummyMain.getDeclaringClass());
-        FactGenerator factGenerator = new FactGenerator(writer, sootClasses, this, sootParameters, phantoms);
-        factGenerator.generate(dummyMain, new Session());
-        writer.writeAndroidEntryPoint(dummyMain);
-        factGenerator.run();
-    }
-
     @Override
     protected Runnable getFactGenRunnable() {
         return new FactGenerator(factWriter, _tmpClassGroup, this, sootParameters, phantoms);
