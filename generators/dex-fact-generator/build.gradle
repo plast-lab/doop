@@ -16,7 +16,8 @@ repositories {
 // }
 
 dependencies {
-    compile project(':generators:fact-generator-common')
+    compile project(path: ':generators:fact-generator-common', configuration: 'shadow')
+    compile 'org.smali:dexlib2:2.4.0'
     implementation 'org.checkerframework:checker-qual:2.11.0'   // needed when the Checker plugin is disabled
 }
 

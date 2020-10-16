@@ -7,7 +7,7 @@ import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
 import org.clyze.analysis.*
 import org.clyze.doop.common.DoopErrorCodeException
-import org.clyze.doop.utils.PackageUtil
+import org.clyze.doop.util.PackageUtil
 import org.clyze.input.DefaultInputResolutionContext
 import org.clyze.input.InputResolutionContext
 import org.clyze.input.PlatformManager

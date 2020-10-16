@@ -1,4 +1,5 @@
 plugins {
+    id 'com.github.johnrengelman.shadow' version '6.1.0'
     id 'java'
 }
 
@@ -25,4 +26,17 @@ dependencies {
 compileJava {
     options.compilerArgs << '-Xlint:unchecked'
     options.compilerArgs << '-Xlint:deprecation'
+}
+
+// The Shadow JAR plugin ensures that the dexlib dependency does not
+// pollute the namespace for the fact generators or other code using
+// Doop as a library.
+shadowJar {
+    configurations = [project.configurations.compile]
+    dependencies {
+	exclude(dependency('com.google.code.gson:gson'))
+	exclude(dependency('org.apache.ivy:ivy'))
+	exclude(dependency('org.codehaus.groovy:groovy-all'))
+    }
+    relocate 'org.jf', 'org.clyze.doop.common.org.jf'
 }
