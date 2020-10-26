@@ -28,7 +28,6 @@ class AndroidTests extends DoopSpec {
 					 "--platform", "android_25_fulljars",
 					 "--id", "test-android-androidterm",
 					 "--keep-spec", keepSpec,
-					 "--Xsymlink-cached-facts",
 					 "--Xstats-full", "-Ldebug"] + defaultArgs + sanityOpts
 		Main.main((String[])args)
 		Analysis analysis = Main.analysis
