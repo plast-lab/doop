@@ -119,6 +119,11 @@ ForcedReachableAndroidContext(?ctx, ?meth) :-
 ForcedReachableAndroidContext(?ctx, ?meth) :-
   KeepMethod(?meth),
   isImmutableContext(?ctx).
+// 'root'= make method reachable.
+ForcedReachableAndroidContext(?ctx, ?meth) :-
+  RootCodeElement(?meth),
+  isMethod(?meth),
+  isImmutableContext(?ctx).
 
 // 'keep class members' / 'keep classes with members' = keep all class
 // methods if the class has a reachable method. We assume that 'keep

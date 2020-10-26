@@ -50,6 +50,9 @@ ApplicationEntryPoint(?meth) :-
 #ifndef ANDROID
 ForcedReachable(?meth) :-
   KeepMethod(?meth).
+ForcedReachable(?meth) :-
+  RootCodeElement(?meth),
+  isMethod(?meth).
 #endif // ANDROID
 
 #endif // MICRO

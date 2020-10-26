@@ -11,7 +11,7 @@ import org.clyze.doop.common.Database
 import org.clyze.doop.common.FieldInfo
 import org.clyze.doop.common.PredicateFile
 import org.clyze.utils.Helper
-import static PredicateFile0.*
+import static org.clyze.doop.core.FactGenerator0.PredicateFile0.*
 
 // This fact generator handles facts that do not need front-end/IR information.
 @Log4j
@@ -27,6 +27,7 @@ class FactGenerator0 {
         KEEP_CLASS_MEMBERS("KeepClassMembers"),
         KEEP_CLASSES_WITH_MEMBERS("KeepClassesWithMembers"),
         MAIN_CLASS("MainClass"),
+        ROOT("RootCodeElement"),
         NATIVE_STRINGS_DISTANCE("NativeStringsDistance"),
         SENSITIVE_LAYOUT_CONTROL("SensitiveLayoutControl"),
         TAMIFLEX("Tamiflex");
@@ -180,6 +181,13 @@ class FactGenerator0 {
         String[] fields = line.split("\t")
 
         switch (fields[0]) {
+            case "ROOT":
+                // Support both two- and three-column format (ignore last column).
+                if (fields.length == 2 || fields.length == 3)
+                    factsFile(ROOT.name).withWriterAppend { it << (fields[1] + "\n") }
+                else
+                    log.warn "WARNING: malformed line (should be 2 or 3 columns, tab-separated): ${line}"
+                break
             case "KEEP":
                 // Support both two- and three-column format (ignore last column).
                 if (fields.length == 2 || fields.length == 3)

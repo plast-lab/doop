@@ -377,10 +377,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             params += ["--facts-subset", options.X_FACTS_SUBSET.value.toString()]
         }
 
-        if (options.KEEP_SPEC.value) {
-            params += ["--keep-spec", options.KEEP_SPEC.value.toString()]
-        }
-
         if (options.EXTRACT_MORE_STRINGS.value) {
             params += ["--extract-more-strings"]
         }
