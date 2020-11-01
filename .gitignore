@@ -5,7 +5,6 @@ cache
 logs
 out
 results
-/resources/           # top-level "resources"
 last-analysis
 checksums.properties
 doop.properties
