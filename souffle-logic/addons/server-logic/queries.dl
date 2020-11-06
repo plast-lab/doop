@@ -328,6 +328,7 @@ Server_ClassCallsClass(?fromClass, ?toClass) :-
 .decl _AppVirtual(?invo:MethodInvocation)
 .decl _AppVirtual_Resolved(?invo:MethodInvocation)
 .decl _AppReachable(?method:Method)
+.output _AppReachable
 
 _AppVirtual(?invo) :-
   _VirtualMethodInvocation(?invo, _, _, _, ?method),
@@ -358,55 +359,3 @@ Server_Metrics("#HeapAllocation", ?n) :- ?n = count:{isHeapAllocation(_)}.
 Server_Metrics("#MethodInvocation", ?n) :- ?n = count:{isMethodInvocation(_)}.
 
 // --Metrics //
-
-// Graal / Native image helpers: these are whole-program rules, since
-// the resulting native binary contains the whole program.
-
-.decl NonFinalFieldWrittenInNonConstructor(?field:Field)
-.output NonFinalFieldWrittenInNonConstructor
-
-NonFinalFieldWrittenInNonConstructor(?field) :-
-  isField(?field),
-  !Field_Modifier("final", ?field),
-  _StoreInstanceField(_, _, _, _, ?field, ?method),
-  !Method_SimpleName(?method, "<init>").
-
-NonFinalFieldWrittenInNonConstructor(?field) :-
-  isField(?field),
-  !Field_Modifier("final", ?field),
-  _StoreStaticField(_, _, _, ?field, ?method),
-  !Method_SimpleName(?method, "<clinit>").
-
-// Fields thar are candidates for static initialization.
-.decl FieldIsFinalOrInitialized(?field:Field)
-.output FieldIsFinalOrInitialized
-
-FieldIsFinalOrInitialized(?field) :-
-  isField(?field),
-  !NonFinalFieldWrittenInNonConstructor(?field).
-
-
-#ifdef REFLECTION
-// Fields written by reflection.
-.decl FieldWrittenByReflection(?field:Field)
-FieldWrittenByReflection(?field) :- mainAnalysis.ReflectiveStoreField(_, ?field, _, _).
-FieldWrittenByReflection(?field) :- mainAnalysis.ReflectiveStoreStaticField(?field, _, _).
-FieldWrittenByReflection(?field) :- mainAnalysis.ReflectiveStoreHeapInstanceField(?field, _, _, _, _).
-FieldWrittenByReflection(?field) :- mainAnalysis.ReflectiveStoreInstanceField(_, _, ?field, _, _).
-.output FieldWrittenByReflection
-
-.output mainAnalysis.ReflectiveStoreField
-.output mainAnalysis.ReflectiveStoreStaticField
-.output mainAnalysis.ReflectiveStoreHeapInstanceField
-.output mainAnalysis.ReflectiveStoreInstanceField
-
-// Are there "final" fields written by reflection?
-
-.decl FinalFieldWrittenByReflection(?field:Field)
-.output FinalFieldWrittenByReflection
-
-FinalFieldWrittenByReflection(?field) :-
-  FieldWrittenByReflection(?field),
-  Field_Modifier("final", ?field).
-
-#endif // REFLECTION
