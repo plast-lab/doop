@@ -416,10 +416,15 @@ FieldWrittenByReflection(?field) :- mainAnalysis.ReflectiveStoreHeapInstanceFiel
 FieldWrittenByReflection(?field) :- mainAnalysis.ReflectiveStoreInstanceField(_, _, ?field, _, _).
 .output FieldWrittenByReflection
 
+// Output more tables computed by reflection analysis.
 .output mainAnalysis.ReflectiveStoreField
 .output mainAnalysis.ReflectiveStoreStaticField
 .output mainAnalysis.ReflectiveStoreHeapInstanceField
 .output mainAnalysis.ReflectiveStoreInstanceField
+.output mainAnalysis.MethodNameMatchingStringConstant_Signature
+.output mainAnalysis.FieldNameMatchingStringConstant_Signature
+.output mainAnalysis.TypeMatchingMethod
+.output mainAnalysis.TypeMatchingFieldName
 
 // Are there "final" fields written by reflection?
 
@@ -431,3 +436,14 @@ FinalFieldWrittenByReflection(?field) :-
   Field_Modifier("final", ?field).
 
 #endif // REFLECTION
+
+// Output all application methods/fields (so that tools can calculate
+// optimization effects for the whole program).
+
+.output ApplicationMethod
+
+.decl ApplicationField(?field:Field)
+.output ApplicationField
+ApplicationField(?field) :-
+  Field_DeclaringType(?field, ?type),
+  ApplicationClass(?type).
