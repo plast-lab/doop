@@ -11,14 +11,16 @@ class ConfigurationGenerator {
         String outDir = args[0]
         println "Using outDir: ${outDir}"
 
-        computeConfiguration(outDir, 'database/_AppReachable.csv', 'database/ReachableField.csv', 'app-reachable.json')
+        computeConfiguration(outDir, 'database/_AppReachable.csv', 'database/ReachableField.csv', 'app-reachable-flat.json')
+        computeConfiguration(outDir, 'database/NI_ReachableMethod.csv', 'database/NI_ReachableField.csv', 'app-reachable.json', true)
         computeConfiguration(outDir, 'database/ApplicationMethod.csv', 'database/ApplicationField.csv', 'all.json')
     }
 
-    static void computeConfiguration(String outDir, String methodsTable, String fieldsTable, String outFileName) {
-        final Set<String> types = new HashSet<>()
+    static void computeConfiguration(String outDir, String methodsTable, String fieldsTable, String outFileName,
+                                     boolean usePatterns = false) {
+        final SortedSet<String> types = new TreeSet<>()
         File appReachable = new File(outDir, methodsTable)
-        println "Processing reachable app-methods: ${appReachable.canonicalPath}"
+        println "| Processing reachable app-methods: ${appReachable.canonicalPath}"
         final Map<String, List<Method>> rMethods = new HashMap<>()
         appReachable.withReader { BufferedReader br ->
             for (String doopId : br.readLines()) {
@@ -33,7 +35,7 @@ class ConfigurationGenerator {
         }
 
         File reachableFields = new File(outDir, fieldsTable)
-        println "Processing reachable fields: ${reachableFields.canonicalPath}"
+        println "| Processing reachable fields: ${reachableFields.canonicalPath}"
         final Map<String, List<Field>> rFields = new HashMap<>()
         reachableFields.withReader { BufferedReader br ->
             for (String doopId : br.readLines()) {
@@ -42,6 +44,21 @@ class ConfigurationGenerator {
                 rFields.putIfAbsent(f.type, new LinkedList<Field>())
                 rFields.get(f.type).add(f)
             }
+        }
+
+        SortedSet<String> allDeclaredConstructors_Types = new TreeSet<>()
+        SortedSet<String> allPublicConstructors_Types   = new TreeSet<>()
+        SortedSet<String> allDeclaredMethods_Types      = new TreeSet<>()
+        SortedSet<String> allPublicMethods_Types        = new TreeSet<>()
+        SortedSet<String> allDeclaredFields_Types       = new TreeSet<>()
+        SortedSet<String> allPublicFields_Types         = new TreeSet<>()
+        if (usePatterns) {
+            allDeclaredConstructors_Types = readTypesFrom(types, outDir + '/database/NI_AllDeclaredConstructors.csv')
+            allPublicConstructors_Types   = readTypesFrom(types, outDir + '/database/NI_AllPublicConstructors.csv')
+            allDeclaredMethods_Types      = readTypesFrom(types, outDir + '/database/NI_AllDeclaredMethods.csv')
+            allPublicMethods_Types        = readTypesFrom(types, outDir + '/database/NI_AllPublicMethods.csv')
+            allDeclaredFields_Types       = readTypesFrom(types, outDir + '/database/NI_AllDeclaredFields.csv')
+            allPublicFields_Types         = readTypesFrom(types, outDir + '/database/NI_AllPublicFields.csv')
         }
 
         StringBuilder confBuilder = new StringBuilder('[\n')
@@ -61,6 +78,20 @@ class ConfigurationGenerator {
             if (fields) {
                 tJoiner.add(TAB1 + '\"fields\": [\n' + new MemberList(TAB2, fields).toString() + '\n' + TAB1 + ']')
             }
+            if (usePatterns) {
+                if (allDeclaredConstructors_Types.contains(type))
+                    tJoiner.add(TAB1 + "\"allDeclaredConstructors\" : true")
+                if (allPublicConstructors_Types.contains(type))
+                    tJoiner.add(TAB1 + "\"allPublicConstructors\" : true")
+                if (allDeclaredMethods_Types.contains(type))
+                    tJoiner.add(TAB1 + "\"allDeclaredMethods\" : true")
+                if (allPublicMethods_Types.contains(type))
+                    tJoiner.add(TAB1 + "\"allPublicMethods\" : true")
+                if (allDeclaredFields_Types.contains(type))
+                    tJoiner.add(TAB1 + "\"allDeclaredFields\" : true")
+                if (allPublicFields_Types.contains(type))
+                    tJoiner.add(TAB1 + "\"allPublicFields\" : true")
+            }
             sb.append(tJoiner.toString())
             sb.append('\n}')
             confJoiner.add(sb.toString())
@@ -68,10 +99,23 @@ class ConfigurationGenerator {
         confBuilder.append(confJoiner.toString())
         confBuilder.append(']')
 
-        println "Writing: ${outFileName}"
+        println "\\--> Writing: ${outFileName}"
         new File(outFileName).withWriter { BufferedWriter bw ->
             bw.write(confBuilder.toString())
         }
+    }
+
+    static SortedSet<String> readTypesFrom(Set<String> types, String path) {
+        File f = new File(path)
+        println "| Processing: ${f.canonicalPath}"
+        Set<String> rTypes = new TreeSet<>()
+        f.withReader { BufferedReader br ->
+            br.readLines().each { String typeId ->
+                rTypes.add(typeId)
+                types.add(typeId)
+            }
+        }
+        return rTypes
     }
 }
 
