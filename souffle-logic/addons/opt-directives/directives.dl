@@ -461,7 +461,7 @@ ApplicationField(?field) :-
 
 // Compute configuration patterns: "allDeclaredConstructors",
 // "allPublicConstructors", "allDeclaredMethods", "allPublicMethods",
-// "allDeclaredClasses", "allPublicClasses".
+// "allDeclaredFields", "allPublicFields".
 
 .decl UnreachableDeclaredMethod(?method:Method)
 .output UnreachableDeclaredMethod
@@ -482,9 +482,9 @@ UnreachableDeclaredField(?field, ?type) :-
   Field_DeclaringType(?field, ?type),
   !ReachableField(?field).
 
-.decl UnreachablePublicField(?field:Field, ?type:ReferenceType)
+.decl UnreachablePublicField(?type:ReferenceType)
 .output UnreachablePublicField
-UnreachablePublicField(?field, ?type) :-
+UnreachablePublicField(?type) :-
   UnreachableDeclaredField(?field, ?type),
   Field_Modifier("public", ?field).
 
@@ -494,9 +494,9 @@ UnreachableDeclaredConstructor(?constructor, ?type) :-
   UnreachableDeclaredMethod(?constructor),
   basic.ClassConstructor(?constructor, ?type).
 
-.decl UnreachablePublicConstructor(?constructor:Method, ?type:ReferenceType)
+.decl UnreachablePublicConstructor(?type:ReferenceType)
 .output UnreachablePublicConstructor
-UnreachablePublicConstructor(?constructor, ?type) :-
+UnreachablePublicConstructor(?type) :-
   UnreachableDeclaredConstructor(?constructor, ?type),
   Method_Modifier("public", ?constructor).
 
@@ -513,7 +513,7 @@ NI_AllPublicConstructors(?type) :-
   ApplicationClass(?type),
   basic.ClassConstructor(?constructor, ?type),  // ensure there is at least one constructor
   Method_Modifier("public", ?constructor),      // that is public  
-  !UnreachablePublicConstructor(_, ?type).
+  !UnreachablePublicConstructor(?type).
 
 .decl NI_AllDeclaredMethods(?type:ReferenceType)
 .output NI_AllDeclaredMethods
@@ -543,7 +543,7 @@ NI_AllPublicFields(?type) :-
   ReachableType(?type),
   Field_DeclaringType(?field, ?type),     // ensure there is at least one field
   Field_Modifier("public", ?field),       // that is public
-  !UnreachablePublicField(_, ?type).
+  !UnreachablePublicField(?type).
 
 .decl NI_ReachableMethod(?method:Method)
 .output NI_ReachableMethod
