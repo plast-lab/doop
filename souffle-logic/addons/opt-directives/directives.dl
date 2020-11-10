@@ -420,14 +420,14 @@ ReachableType(?type) :- APP_REACHABLE(?method), Method_DeclaringType(?method, ?t
 #ifdef REFLECTION
 // Fields written by reflection.
 .decl FieldWrittenByReflection(?field:Field)
-.output FieldWrittenByReflection
+// .output FieldWrittenByReflection
 FieldWrittenByReflection(?field) :- mainAnalysis.ReflectiveStoreField(_, ?field, _, _).
 FieldWrittenByReflection(?field) :- mainAnalysis.ReflectiveStoreStaticField(?field, _, _).
 FieldWrittenByReflection(?field) :- mainAnalysis.ReflectiveStoreHeapInstanceField(?field, _, _, _, _).
 FieldWrittenByReflection(?field) :- mainAnalysis.ReflectiveStoreInstanceField(_, _, ?field, _, _).
 // Fields read by reflection.
 .decl FieldReadByReflection(?field:Field)
-.output FieldReadByReflection
+// .output FieldReadByReflection
 FieldReadByReflection(?field) :- mainAnalysis.ReflectiveLoadField(_, _, _, ?field).
 FieldReadByReflection(?field) :- mainAnalysis.ReflectiveLoadStaticField(_, _, ?field).
 FieldReadByReflection(?field) :- mainAnalysis.ReflectiveLoadHeapInstanceField(_, _, ?field, _, _).
@@ -440,19 +440,19 @@ ReachableFieldAccessedByReflection(?field) :-
   ReachableField(?field).
 
 // Output more tables computed by reflection analysis.
-.output mainAnalysis.ReflectiveStoreField
-.output mainAnalysis.ReflectiveStoreStaticField
-.output mainAnalysis.ReflectiveStoreHeapInstanceField
-.output mainAnalysis.ReflectiveStoreInstanceField
-.output mainAnalysis.ReflectiveLoadField
-.output mainAnalysis.ReflectiveLoadStaticField
-.output mainAnalysis.ReflectiveLoadHeapInstanceField
-.output mainAnalysis.ReflectiveLoadInstanceField
-.output mainAnalysis.MethodNameMatchingStringConstant_Signature
-.output mainAnalysis.FieldNameMatchingStringConstant_Signature
-.output mainAnalysis.TypeMatchingMethod
-.output mainAnalysis.TypeMatchingFieldName
-.output mainAnalysis.ReflectiveCallGraphEdge
+// .output mainAnalysis.ReflectiveStoreField
+// .output mainAnalysis.ReflectiveStoreStaticField
+// .output mainAnalysis.ReflectiveStoreHeapInstanceField
+// .output mainAnalysis.ReflectiveStoreInstanceField
+// .output mainAnalysis.ReflectiveLoadField
+// .output mainAnalysis.ReflectiveLoadStaticField
+// .output mainAnalysis.ReflectiveLoadHeapInstanceField
+// .output mainAnalysis.ReflectiveLoadInstanceField
+// .output mainAnalysis.MethodNameMatchingStringConstant_Signature
+// .output mainAnalysis.FieldNameMatchingStringConstant_Signature
+// .output mainAnalysis.TypeMatchingMethod
+// .output mainAnalysis.TypeMatchingFieldName
+// .output mainAnalysis.ReflectiveCallGraphEdge
 
 // Are there "final" fields written by reflection?
 
@@ -488,38 +488,38 @@ ApplicationField(?field) :-
 // "allDeclaredFields", "allPublicFields".
 
 .decl UnreachableDeclaredMethod(?method:Method)
-.output UnreachableDeclaredMethod
+// .output UnreachableDeclaredMethod
 UnreachableDeclaredMethod(?method) :-
   ApplicationMethod(?method),
   NOT_APP_REACHABLE(?method).
 
 .decl UnreachablePublicMethod(?method:Method)
-.output UnreachablePublicMethod
+// .output UnreachablePublicMethod
 UnreachablePublicMethod(?method) :-
   UnreachableDeclaredMethod(?method),
   Method_Modifier("public", ?method).
 
 .decl UnreachableDeclaredField(?field:Field, ?type:ReferenceType)
-.output UnreachableDeclaredField
+// .output UnreachableDeclaredField
 UnreachableDeclaredField(?field, ?type) :-
   ApplicationField(?field),
   Field_DeclaringType(?field, ?type),
   !ReachableField(?field).
 
 .decl UnreachablePublicField(?type:ReferenceType)
-.output UnreachablePublicField
+// .output UnreachablePublicField
 UnreachablePublicField(?type) :-
   UnreachableDeclaredField(?field, ?type),
   Field_Modifier("public", ?field).
 
 .decl UnreachableDeclaredConstructor(?constructor:Method, ?type:ReferenceType)
-.output UnreachableDeclaredConstructor
+// .output UnreachableDeclaredConstructor
 UnreachableDeclaredConstructor(?constructor, ?type) :-
   UnreachableDeclaredMethod(?constructor),
   basic.ClassConstructor(?constructor, ?type).
 
 .decl UnreachablePublicConstructor(?type:ReferenceType)
-.output UnreachablePublicConstructor
+// .output UnreachablePublicConstructor
 UnreachablePublicConstructor(?type) :-
   UnreachableDeclaredConstructor(?constructor, ?type),
   Method_Modifier("public", ?constructor).
