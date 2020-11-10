@@ -420,21 +420,39 @@ ReachableType(?type) :- APP_REACHABLE(?method), Method_DeclaringType(?method, ?t
 #ifdef REFLECTION
 // Fields written by reflection.
 .decl FieldWrittenByReflection(?field:Field)
+.output FieldWrittenByReflection
 FieldWrittenByReflection(?field) :- mainAnalysis.ReflectiveStoreField(_, ?field, _, _).
 FieldWrittenByReflection(?field) :- mainAnalysis.ReflectiveStoreStaticField(?field, _, _).
 FieldWrittenByReflection(?field) :- mainAnalysis.ReflectiveStoreHeapInstanceField(?field, _, _, _, _).
 FieldWrittenByReflection(?field) :- mainAnalysis.ReflectiveStoreInstanceField(_, _, ?field, _, _).
-.output FieldWrittenByReflection
+// Fields read by reflection.
+.decl FieldReadByReflection(?field:Field)
+.output FieldReadByReflection
+FieldReadByReflection(?field) :- mainAnalysis.ReflectiveLoadField(_, _, _, ?field).
+FieldReadByReflection(?field) :- mainAnalysis.ReflectiveLoadStaticField(_, _, ?field).
+FieldReadByReflection(?field) :- mainAnalysis.ReflectiveLoadHeapInstanceField(_, _, ?field, _, _).
+FieldReadByReflection(?field) :- mainAnalysis.ReflectiveLoadInstanceField(_, _, ?field, _, _).
+
+.decl ReachableFieldAccessedByReflection(?field:Field)
+.output ReachableFieldAccessedByReflection
+ReachableFieldAccessedByReflection(?field) :-
+  (FieldWrittenByReflection(?field) ; FieldReadByReflection(?field)),
+  ReachableField(?field).
 
 // Output more tables computed by reflection analysis.
 .output mainAnalysis.ReflectiveStoreField
 .output mainAnalysis.ReflectiveStoreStaticField
 .output mainAnalysis.ReflectiveStoreHeapInstanceField
 .output mainAnalysis.ReflectiveStoreInstanceField
+.output mainAnalysis.ReflectiveLoadField
+.output mainAnalysis.ReflectiveLoadStaticField
+.output mainAnalysis.ReflectiveLoadHeapInstanceField
+.output mainAnalysis.ReflectiveLoadInstanceField
 .output mainAnalysis.MethodNameMatchingStringConstant_Signature
 .output mainAnalysis.FieldNameMatchingStringConstant_Signature
 .output mainAnalysis.TypeMatchingMethod
 .output mainAnalysis.TypeMatchingFieldName
+.output mainAnalysis.ReflectiveCallGraphEdge
 
 // Are there "final" fields written by reflection?
 
@@ -444,6 +462,12 @@ FieldWrittenByReflection(?field) :- mainAnalysis.ReflectiveStoreInstanceField(_,
 FinalFieldWrittenByReflection(?field) :-
   FieldWrittenByReflection(?field),
   Field_Modifier("final", ?field).
+
+.decl MethodInvokedByReflection(?method:Method)
+.output MethodInvokedByReflection
+MethodInvokedByReflection(?method) :-
+  mainAnalysis.ReflectiveCallGraphEdge(_, _, _, ?method),
+  ApplicationMethod(?method).
 
 #endif // REFLECTION
 

@@ -35,6 +35,8 @@ class ConfigurationGenerator {
     void generateConfigurations() {
         // app-reachable, flat configuration
         computeConfiguration('_AppReachable.csv', 'ReachableField.csv', 'app-reachable-flat.json')
+        // reflective uses only, flat configuration
+        computeConfiguration('MethodInvokedByReflection.csv', 'ReachableFieldAccessedByReflection.csv', 'app-reachable-refl.json')
         // pattern-based configurations (experimental)
         computeConfiguration('NI_ReachableMethod.csv', 'NI_ReachableField.csv', 'app-reachable.json', true)
         // whole-program dummy configuration (for benchmarking)
