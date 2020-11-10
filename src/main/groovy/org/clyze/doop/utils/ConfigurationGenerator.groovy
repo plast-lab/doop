@@ -1,3 +1,5 @@
+package org.clyze.doop.utils
+
 import groovy.transform.CompileStatic
 
 /**
