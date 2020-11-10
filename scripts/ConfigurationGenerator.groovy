@@ -1,25 +1,49 @@
 import groovy.transform.CompileStatic
 
+/**
+ * A configuration generator for use with GraalVM and the native image builder.
+ */
 @CompileStatic
 class ConfigurationGenerator {
+    final String analysisOutDir
+    final String confOutDir
+
     static void main(String[] args) {
         if (args.size() == 0) {
             println "Usage: groovy ConfigurationGenerator <OUT_DIRECTORY>"
             return
         }
 
-        String outDir = args[0]
-        println "Using outDir: ${outDir}"
-
-        computeConfiguration(outDir, 'database/_AppReachable.csv', 'database/ReachableField.csv', 'app-reachable-flat.json')
-        computeConfiguration(outDir, 'database/NI_ReachableMethod.csv', 'database/NI_ReachableField.csv', 'app-reachable.json', true)
-        computeConfiguration(outDir, 'database/ApplicationMethod.csv', 'database/ApplicationField.csv', 'all.json')
+        new ConfigurationGenerator(args[0], '.').generateConfigurations()
     }
 
-    static void computeConfiguration(String outDir, String methodsTable, String fieldsTable, String outFileName,
-                                     boolean usePatterns = false) {
+    /**
+     * Main constructor.
+     *
+     * @param analysisOutDir    the Doop analysis output directory (parent of database/ directory)
+     * @param confOutDir        the output directory where configurations will be written
+     */
+    ConfigurationGenerator(String analysisOutDir, String confOutDir) {
+        this.analysisOutDir = analysisOutDir
+        this.confOutDir = confOutDir
+        println "Using analysis output directory: ${analysisOutDir}"
+    }
+
+    /**
+     * Generates the configuration files from analysis outputs.
+     */
+    void generateConfigurations() {
+        // app-reachable, flat configuration
+        computeConfiguration('_AppReachable.csv', 'ReachableField.csv', 'app-reachable-flat.json')
+        // pattern-based configurations (experimental)
+        computeConfiguration('NI_ReachableMethod.csv', 'NI_ReachableField.csv', 'app-reachable.json', true)
+        // whole-program dummy configuration (for benchmarking)
+        computeConfiguration('ApplicationMethod.csv', 'ApplicationField.csv', 'all.json')
+    }
+
+    private void computeConfiguration(String methodsTable, String fieldsTable, String outFileName, boolean usePatterns = false) {
         final SortedSet<String> types = new TreeSet<>()
-        File appReachable = new File(outDir, methodsTable)
+        File appReachable = new File(analysisOutDir, 'database/' + methodsTable)
         println "| Processing reachable app-methods: ${appReachable.canonicalPath}"
         final Map<String, List<Method>> rMethods = new HashMap<>()
         appReachable.withReader { BufferedReader br ->
@@ -34,7 +58,7 @@ class ConfigurationGenerator {
             }
         }
 
-        File reachableFields = new File(outDir, fieldsTable)
+        File reachableFields = new File(analysisOutDir, 'database/' + fieldsTable)
         println "| Processing reachable fields: ${reachableFields.canonicalPath}"
         final Map<String, List<Field>> rFields = new HashMap<>()
         reachableFields.withReader { BufferedReader br ->
@@ -53,12 +77,12 @@ class ConfigurationGenerator {
         SortedSet<String> allDeclaredFields_Types       = new TreeSet<>()
         SortedSet<String> allPublicFields_Types         = new TreeSet<>()
         if (usePatterns) {
-            allDeclaredConstructors_Types = readTypesFrom(types, outDir + '/database/NI_AllDeclaredConstructors.csv')
-            allPublicConstructors_Types   = readTypesFrom(types, outDir + '/database/NI_AllPublicConstructors.csv')
-            allDeclaredMethods_Types      = readTypesFrom(types, outDir + '/database/NI_AllDeclaredMethods.csv')
-            allPublicMethods_Types        = readTypesFrom(types, outDir + '/database/NI_AllPublicMethods.csv')
-            allDeclaredFields_Types       = readTypesFrom(types, outDir + '/database/NI_AllDeclaredFields.csv')
-            allPublicFields_Types         = readTypesFrom(types, outDir + '/database/NI_AllPublicFields.csv')
+            allDeclaredConstructors_Types = readTypesFrom(types, 'database/NI_AllDeclaredConstructors.csv')
+            allPublicConstructors_Types   = readTypesFrom(types, 'database/NI_AllPublicConstructors.csv')
+            allDeclaredMethods_Types      = readTypesFrom(types, 'database/NI_AllDeclaredMethods.csv')
+            allPublicMethods_Types        = readTypesFrom(types, 'database/NI_AllPublicMethods.csv')
+            allDeclaredFields_Types       = readTypesFrom(types, 'database/NI_AllDeclaredFields.csv')
+            allPublicFields_Types         = readTypesFrom(types, '/database/NI_AllPublicFields.csv')
         }
 
         StringBuilder confBuilder = new StringBuilder('[\n')
@@ -99,14 +123,15 @@ class ConfigurationGenerator {
         confBuilder.append(confJoiner.toString())
         confBuilder.append(']')
 
-        println "\\--> Writing: ${outFileName}"
-        new File(outFileName).withWriter { BufferedWriter bw ->
+        File outFile = new File(confOutDir, outFileName)
+        println "\\--> Writing: ${outFile.canonicalPath}"
+        outFile.withWriter { BufferedWriter bw ->
             bw.write(confBuilder.toString())
         }
     }
 
-    static SortedSet<String> readTypesFrom(Set<String> types, String path) {
-        File f = new File(path)
+    private SortedSet<String> readTypesFrom(Set<String> types, String path) {
+        File f = new File(analysisOutDir, path)
         println "| Processing: ${f.canonicalPath}"
         Set<String> rTypes = new TreeSet<>()
         f.withReader { BufferedReader br ->
@@ -119,6 +144,9 @@ class ConfigurationGenerator {
     }
 }
 
+/**
+ * Helper class for JSON output (list of methods/fields).
+ */
 class MemberList {
     final String TAB
     final List<? extends Member> members
@@ -136,9 +164,13 @@ class MemberList {
     }
 }
 
+/**
+ * Helper class for JSON output (method or field).
+ */
 class Member {
     final String type
     final String name
+
     protected Member(String type, String name) {
         this.type = type
         this.name = name
@@ -153,8 +185,12 @@ class Member {
     }
 }
 
+/**
+ * Helper class for JSON output (method).
+ */
 class Method extends Member {
     final List<String> paramTypes = new LinkedList<>()
+
     private Method(String type, String name, String signature) {
         super(type, name)
         if (signature != null)
@@ -180,6 +216,9 @@ class Method extends Member {
     }
 }
 
+/**
+ * Helper class for JSON output (field).
+ */
 class Field extends Member {
     private Field(String type, String name) {
         super(type, name)
