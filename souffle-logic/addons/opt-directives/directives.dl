@@ -394,27 +394,18 @@ FieldPointsTo(?field) :-
   mainAnalysis.Value_Type(?value, ?t),
   isNullType(?t).
 
-// Reuse app-reachable relation if it exists.
-#ifdef X_SERVER_LOGIC
-#define APP_REACHABLE(m) _AppReachable(m)
-#define NOT_APP_REACHABLE(m) !_AppReachable(m)
-#else
-#define APP_REACHABLE(m) ApplicationMethod(m), mainAnalysis.Reachable(m)
-#define NOT_APP_REACHABLE(m) ApplicationMethod(m), !mainAnalysis.Reachable(m)
-#endif // X_SERVER_LOGIC
-
 // Fields used by (app-)reachable code.
 .decl ReachableField(?field:Field)
 .output ReachableField
 ReachableField(?field) :-
-  APP_REACHABLE(?method),
+  mainAnalysis.AppReachable(?method),
   Instruction_Method(?instruction, ?method),
   FieldInstruction_Signature(?instruction, ?field).
 
 .decl ReachableType(?type:ReferenceType)
 .output ReachableType
 ReachableType(?type) :- ReachableField(?field), Field_DeclaringType(?field, ?type).
-ReachableType(?type) :- APP_REACHABLE(?method), Method_DeclaringType(?method, ?type).
+ReachableType(?type) :- mainAnalysis.AppReachable(?method), Method_DeclaringType(?method, ?type).
 
 
 #ifdef REFLECTION
@@ -491,7 +482,7 @@ ApplicationField(?field) :-
 // .output UnreachableDeclaredMethod
 UnreachableDeclaredMethod(?method) :-
   ApplicationMethod(?method),
-  NOT_APP_REACHABLE(?method).
+  !mainAnalysis.AppReachable(?method).
 
 .decl UnreachablePublicMethod(?method:Method)
 // .output UnreachablePublicMethod
@@ -574,13 +565,13 @@ NI_AllPublicFields(?type) :-
 // App-reachable methods are registered if all-declared-methods is not
 // set for their containing type.
 NI_ReachableMethod(?method) :-
-  APP_REACHABLE(?method),
+  mainAnalysis.AppReachable(?method),
   Method_DeclaringType(?method, ?type),
   !NI_AllDeclaredMethods(?type).
 // In addition (extended rule), non-public app-reachable methods are
 // registered if all-public-methods is not set for their containing type.
 NI_ReachableMethod(?method) :-
-  APP_REACHABLE(?method),
+  mainAnalysis.AppReachable(?method),
   Method_DeclaringType(?method, ?type),
   !NI_AllDeclaredMethods(?type),
   !Method_Modifier("public", ?method),

@@ -659,6 +659,12 @@ ReachableContext(?ctx, ?method) :-
 Reachable(?method) :-
   ReachableContext(_, ?method).
 
+.decl AppReachable(?method:Method)
+
+AppReachable(?method) :-
+  Reachable(?method),
+  ApplicationMethod(?method).
+
 #ifdef SANITY
 .decl DuplicateContextRequest(?callerCtx:configuration.Context, ?hctx:configuration.HContext, ?invo:MethodInvocation, ?obj:Value, ?meth1:Method, ?meth2:Method)
 .output DuplicateContextRequest
