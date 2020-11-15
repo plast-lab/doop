@@ -39,6 +39,8 @@ class ConfigurationGenerator {
         computeConfiguration('mainAnalysis.AppReachable.csv', 'ReachableField.csv', 'app-reachable-flat.json')
         // reflective uses only, flat configuration
         computeConfiguration('MethodInvokedByReflection.csv', 'ReachableFieldAccessedByReflection.csv', 'app-reachable-refl.json')
+        // native call-backs only, flat configuration
+        computeConfiguration('AppReachableMethodFromNativeCode.csv', null, 'app-reachable-native.json')
         // pattern-based configurations (experimental)
         computeConfiguration('NI_ReachableMethod.csv', 'NI_ReachableField.csv', 'app-reachable.json', true)
         // whole-program dummy configuration (for benchmarking)
@@ -47,38 +49,47 @@ class ConfigurationGenerator {
 
     private void computeConfiguration(String methodsTable, String fieldsTable, String outFileName, boolean usePatterns = false) {
         final SortedSet<String> types = new TreeSet<>()
-        File appReachable = new File(analysisOutDir, 'database/' + methodsTable)
         final Map<String, List<Method>> rMethods = new HashMap<>()
-        if (appReachable.exists()) {
-            println "| Processing reachable app-methods: ${appReachable.canonicalPath}"
-            appReachable.withReader { BufferedReader br ->
-                for (String doopId : br.readLines()) {
-                    Method m = Method.fromDoopId(doopId)
-                    // Static class initializers are not recognized by the native image builder.
-                    if (m.name.equals('<clinit>'))
-                        continue
-                    types.add(m.type)
-                    rMethods.putIfAbsent(m.type, new LinkedList<Method>())
-                    rMethods.get(m.type).add(m)
-                }
-            }
-        } else
-            println("WARNING: file does not exist: " + appReachable.canonicalPath)
-
-        File reachableFields = new File(analysisOutDir, 'database/' + fieldsTable)
         final Map<String, List<Field>> rFields = new HashMap<>()
-        if (reachableFields.exists()) {
-            println "| Processing reachable fields: ${reachableFields.canonicalPath}"
-            reachableFields.withReader { BufferedReader br ->
-                for (String doopId : br.readLines()) {
-                    Field f = Field.fromDoopId(doopId)
-                    types.add(f.type)
-                    rFields.putIfAbsent(f.type, new LinkedList<Field>())
-                    rFields.get(f.type).add(f)
+
+        if (methodsTable == null)
+            println "WARNING: method information is not available."
+        else {
+            File appReachable = new File(analysisOutDir, 'database/' + methodsTable)
+            if (appReachable.exists()) {
+                println "| Processing reachable app-methods: ${appReachable.canonicalPath}"
+                appReachable.withReader { BufferedReader br ->
+                    for (String doopId : br.readLines()) {
+                        Method m = Method.fromDoopId(doopId)
+                        // Static class initializers are not recognized by the native image builder.
+                        if (m.name.equals('<clinit>'))
+                            continue
+                        types.add(m.type)
+                        rMethods.putIfAbsent(m.type, new LinkedList<Method>())
+                        rMethods.get(m.type).add(m)
+                    }
                 }
-            }
-        } else
-            println("WARNING: file does not exist: " + reachableFields.canonicalPath)
+            } else
+                println("WARNING: file does not exist: " + appReachable.canonicalPath)
+        }
+
+        if (fieldsTable == null)
+            println "WARNING: field information is not available."
+        else {
+            File reachableFields = new File(analysisOutDir, 'database/' + fieldsTable)
+            if (reachableFields.exists()) {
+                println "| Processing reachable fields: ${reachableFields.canonicalPath}"
+                reachableFields.withReader { BufferedReader br ->
+                    for (String doopId : br.readLines()) {
+                        Field f = Field.fromDoopId(doopId)
+                        types.add(f.type)
+                        rFields.putIfAbsent(f.type, new LinkedList<Field>())
+                        rFields.get(f.type).add(f)
+                    }
+                }
+            } else
+                println("WARNING: file does not exist: " + reachableFields.canonicalPath)
+        }
 
         SortedSet<String> allDeclaredConstructors_Types = new TreeSet<>()
         SortedSet<String> allPublicConstructors_Types   = new TreeSet<>()

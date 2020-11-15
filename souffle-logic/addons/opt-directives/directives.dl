@@ -593,3 +593,12 @@ NI_ReachableField(?field) :-
   !NI_AllDeclaredFields(?type),
   !Field_Modifier("public", ?field),
   !NI_AllPublicFields(?type).
+
+#ifdef SCAN_NATIVE_CODE
+.decl AppReachableMethodFromNativeCode(?method:Method)
+.output AppReachableMethodFromNativeCode
+
+AppReachableMethodFromNativeCode(?method) :-
+  ApplicationMethod(?method),
+  mainAnalysis.ReachableMethodFromNativeCode(?method).
+#endif // SCAN_NATIVE_CODE
