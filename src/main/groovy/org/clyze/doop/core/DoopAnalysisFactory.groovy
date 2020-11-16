@@ -67,7 +67,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 	 * the default input resolution mechanism.
 	 */
 	@Override
-	DoopAnalysis newAnalysis(AnalysisFamily family, Map<String, AnalysisOption> options) {
+	DoopAnalysis newAnalysis(AnalysisFamily family, Map<String, AnalysisOption<?>> options) {
 		def context
 		def platformName = options.PLATFORM.value as String
 		List<String> inputs = options.INPUTS.value as List<String>
@@ -121,7 +121,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 	 * - if it is valid, it will be used to identify the analysis,
 	 * - if it is invalid, an exception will be thrown.
 	 */
-	DoopAnalysis newAnalysis(Map<String, AnalysisOption> options, InputResolutionContext context) {
+	DoopAnalysis newAnalysis(Map<String, AnalysisOption<?>> options, InputResolutionContext context) {
 		processOptions(options, context)
 		// If not empty or null
 		def id = options.USER_SUPPLIED_ID.value as String
@@ -179,7 +179,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 	 * @param options        the analysis options
 	 * @param throwError     if true, then throw an error, otherwise report a warning
 	 */
-	static void checkFactsReuse(AnalysisOption factsOpt, Map<String, AnalysisOption> options, boolean throwError) {
+	static void checkFactsReuse(AnalysisOption factsOpt, Map<String, AnalysisOption<?>> options, boolean throwError) {
 		def factOpts = options.values().findAll { it.forCacheID && it.value && it.cli }
 		for (def opt : factOpts) {
 			if (opt.forPreprocessor) {
@@ -204,7 +204,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 	 * @param throwError   if true, then throw an error, otherwise report a warning
 	 * @return             the directory containing facts to reuse
 	 */
-	static File getFactsReuseDir(AnalysisOption factsOpt, Map<String, AnalysisOption> options,
+	static File getFactsReuseDir(AnalysisOption factsOpt, Map<String, AnalysisOption<?>> options,
 								 boolean throwError) {
 		checkFactsReuse(factsOpt, options, throwError)
 		File cacheDir = new File(factsOpt.value as String)
@@ -218,7 +218,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			throw new DoopErrorCodeException(28, "Error: options --${opt1.name} and --${opt2.name} are mutually exclusive.")
 	}
 
-	static void checkAnalysis(Map<String, AnalysisOption> options) {
+	static void checkAnalysis(Map<String, AnalysisOption<?>> options) {
 		def name = options.ANALYSIS.value
 		log.debug "Verifying analysis name: $name"
 		if (options.LB3.value)
@@ -240,12 +240,12 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 	}
 
 	// This method may not be static, see [Note] above.
-	private String getOutputDirectory(Map<String, AnalysisOption> options) {
+	private String getOutputDirectory(Map<String, AnalysisOption<?>> options) {
 		return "${Doop.doopOut}/${options.ANALYSIS.value}/${options.USER_SUPPLIED_ID.value}"
 	}
 
 	// This method may not be static, see [Note] above.
-	protected File createOutputDirectory(Map<String, AnalysisOption> options) {
+	protected File createOutputDirectory(Map<String, AnalysisOption<?>> options) {
 		def outDir = new File(getOutputDirectory(options))
 		FileUtils.deleteQuietly(outDir)
 		outDir.mkdirs()
@@ -254,7 +254,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		return outDir
 	}
 
-	protected String generateId(Map<String, AnalysisOption> options) {
+	protected String generateId(Map<String, AnalysisOption<?>> options) {
 		Collection<String> idComponents = options.keySet()
 				.findAll { !(it in Doop.OPTIONS_EXCLUDED_FROM_ID_GENERATION) }
 				.collect { options[it] as String }
@@ -265,7 +265,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		return CheckSum.checksum(id, HASH_ALGO)
 	}
 
-	private static String generateCacheID(Map<String, AnalysisOption> options) {
+	private static String generateCacheID(Map<String, AnalysisOption<?>> options) {
 		Collection<String> idComponents = options.values()
 			.findAll { it.forCacheID }
 			.collect { it as String }
@@ -275,7 +275,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
 		// Also calculate checksums on all other options that import
 		// files into facts.
-		Collection<AnalysisOption> miscFileOpts = options.values()
+		Collection<AnalysisOption<?>> miscFileOpts = options.values()
 			.findAll { it.forCacheID && it.argInputType == InputType.MISC && it.value }
 		for (AnalysisOption opt : miscFileOpts) {
 			if (opt != options.TAMIFLEX || opt.value != "dummy") {
@@ -299,7 +299,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 	 * @param options the Doop options to affect
 	 * @param platformName the platform ("java_8", "android_25_fulljars")
 	 */
-	private static void setOptionsForPlatform(Map<String, AnalysisOption> options, String platformName) {
+	private static void setOptionsForPlatform(Map<String, AnalysisOption<?>> options, String platformName) {
 		def (platform, version) = platformName.split("_")
 		if (platform == "java") {
 			// Generate the JRE constant for the preprocessor
@@ -321,7 +321,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 	/**
 	 * Processes the options of the analysis.
 	 */
-	static void processOptions(Map<String, AnalysisOption> options, InputResolutionContext context) {
+	static void processOptions(Map<String, AnalysisOption<?>> options, InputResolutionContext context) {
 		log.debug "Processing analysis options"
 		def platformName = options.PLATFORM.value as String
 
@@ -642,7 +642,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 	 * @param options	   the analysis options
 	 * @param className	   the name of the class
 	 */
-	static void recordAutoMainClass(Map<String, AnalysisOption> options, String className) {
+	static void recordAutoMainClass(Map<String, AnalysisOption<?>> options, String className) {
 		if (options.CACHE.value)
 			log.warn "WARNING: Ignoring auto-detected main class '${className}' when using --${options.CACHE.name}"
 		else {
@@ -667,7 +667,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 	 *
 	 * If an app regex is not present, it generates one.
 	 */
-	protected void checkAppGlob(Map<String, AnalysisOption> options) {
+	protected void checkAppGlob(Map<String, AnalysisOption<?>> options) {
 		if (!options.APP_REGEX.value) {
 			log.debug "Generating app regex"
 
@@ -694,7 +694,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 	/**
 	 * Verifies the correctness of the LogicBlox related options
 	 */
-	protected void checkLogicBlox(Map<String, AnalysisOption> options) {
+	protected void checkLogicBlox(Map<String, AnalysisOption<?>> options) {
 		//BLOX_OPTS is set by the main method
 		def lbhome = options.LOGICBLOX_HOME
 		log.debug "Verifying LogicBlox home: ${lbhome.value}"
@@ -718,7 +718,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 	 *     <li>adding the variables/paths/tweaks to meet the lb-env-bin.sh requirements of the pa-datalog distro
 	 * </ul>
 	 */
-	protected Map<String, String> initExternalCommandsEnvironment(Map<String, AnalysisOption> options) {
+	protected Map<String, String> initExternalCommandsEnvironment(Map<String, AnalysisOption<?>> options) {
 		log.debug "Initializing the environment of the external commands"
 
 		Map<String, String> env = [:]

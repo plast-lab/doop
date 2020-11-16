@@ -104,7 +104,7 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
 	}
 
 	static CliBuilder createCliBuilder() {
-		List<AnalysisOption> cliOptions = FAMILY.supportedOptions().findAll { it.cli }
+		List<AnalysisOption<?>> cliOptions = FAMILY.supportedOptions().findAll { it.cli }
 
 		def cli = new CliBuilder(
 				parser: new GnuParser(),
@@ -214,7 +214,7 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
 		w.write "$id = \n\n"
 	}
 
-	private static void addAnalysisOptionsToCliBuilder(List<AnalysisOption> options, CliBuilder cli) {
+	private static void addAnalysisOptionsToCliBuilder(List<AnalysisOption<?>> options, CliBuilder cli) {
 		convertAnalysisOptionsToCliOptions(options).each { cli << it }
 	}
 
@@ -225,7 +225,7 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
 	/**
 	 * Creates the cli args from the respective analysis options (the ones with their cli property set to true).
 	 */
-	static List<GOption> convertAnalysisOptionsToCliOptions(List<AnalysisOption> options) {
+	static List<GOption> convertAnalysisOptionsToCliOptions(List<AnalysisOption<?>> options) {
 		options.collect { AnalysisOption option ->
 			if (option.multipleValues) {
 				def o = new GOption(option.optName, option.name, true, desc(option), option.group)

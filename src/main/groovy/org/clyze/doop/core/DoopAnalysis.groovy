@@ -91,7 +91,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
      * in order to ensure that internal state is initialized at one point and the init method is no longer required.
      */
 
-    protected DoopAnalysis(Map<String, AnalysisOption> options,
+    protected DoopAnalysis(Map<String, AnalysisOption<?>> options,
                            InputResolutionContext ctx,
                            Map<String, String> commandsEnvironment) {
         super(DoopAnalysisFamily.instance, options)
@@ -731,11 +731,11 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
     protected String cacheMeta() {
         Collection<String> inputs = DoopAnalysisFamily.getAllInputs(options)
             .collect { it.toString() }
-        Collection<String> cacheOptions = options.values().findAll {
-            it.forCacheID
+        Collection<String> cacheOptions = options.values().findAll { AnalysisOption<?> opt ->
+            opt.forCacheID
         }.collect {
-            AnalysisOption option -> option.toString()
-        }.sort()
+            AnalysisOption<?> opt -> opt.toString()
+        }.sort() as List<String>
         return (inputs + cacheOptions).join("\n")
     }
 

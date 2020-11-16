@@ -37,10 +37,10 @@ class DoopAnalysisFamily implements AnalysisFamily {
 	void init() {}
 
 	@Override
-	List<AnalysisOption> supportedOptions() { SUPPORTED_OPTIONS }
+	List<AnalysisOption<?>> supportedOptions() { SUPPORTED_OPTIONS }
 
 	@Override
-	Map<String, AnalysisOption> supportedOptionsAsMap() { SUPPORTED_OPTIONS.collectEntries { [(it.id): it] } }
+	Map<String, AnalysisOption<?>> supportedOptionsAsMap() { SUPPORTED_OPTIONS.collectEntries { [(it.id): it] } }
 
 	@Override
 	void cleanDeploy() {
@@ -55,7 +55,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 		SUPPORTED_OPTIONS.find { it.name == n }
 	}
 
-	private static List<AnalysisOption> SUPPORTED_OPTIONS = [
+	private static List<AnalysisOption<?>> SUPPORTED_OPTIONS = [
 			/* Start Main options */
 			new AnalysisOption<String>(
 					id: "USER_SUPPLIED_ID",
@@ -1185,7 +1185,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 		return new TreeSet<>(platforms)
 	}
 
-    static Collection<File> getAllInputs(Map<String, AnalysisOption> options) {
+    static Collection<File> getAllInputs(Map<String, AnalysisOption<?>> options) {
         Collection<File> inputs = [] as List
         inputs += options.INPUTS.value
         inputs += options.LIBRARIES.value

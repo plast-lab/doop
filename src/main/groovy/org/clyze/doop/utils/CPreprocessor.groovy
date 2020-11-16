@@ -21,16 +21,16 @@ class CPreprocessor {
     CPreprocessor(Analysis analysis, Executor executor) {
         this(executor)
         macroCli = analysis.options.values()
-                .findAll { AnalysisOption option ->
+                .findAll { AnalysisOption<?> option ->
             option.forPreprocessor && option.value
         }
-        .collect { AnalysisOption option ->
+        .collect { AnalysisOption<?> option ->
             if (option.value instanceof Boolean)
                 "-D${option.id}" as String
             else {
                 "-D${option.id}=${option.value}" as String
             }
-        }
+        } as List<String>
         log.debug "Preprocessor: " + macroCli
     }
 
