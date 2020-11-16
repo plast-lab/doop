@@ -34,10 +34,6 @@
 #endif // USER_DEFINED_PARTITIONS
 #endif // X_SERVER_LOGIC
 
-#ifndef X_STATS_NONE
-.output Stats_Metrics(IO="file",filename="Stats_Metrics.csv",delimiter="\t")
-#endif // X_STATS_NONE
-
 .output Reachable(IO="file",filename="Reachable.csv",delimiter="\t")
 
 // It is possible to output facts in an sqlite3 db.
