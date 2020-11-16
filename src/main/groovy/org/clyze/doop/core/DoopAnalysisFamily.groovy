@@ -1,5 +1,7 @@
 package org.clyze.doop.core
 
+import org.apache.commons.io.FileUtils
+
 // import groovy.transform.TypeChecked
 import org.clyze.analysis.*
 import org.clyze.doop.common.Parameters
@@ -39,6 +41,15 @@ class DoopAnalysisFamily implements AnalysisFamily {
 
 	@Override
 	Map<String, AnalysisOption> supportedOptionsAsMap() { SUPPORTED_OPTIONS.collectEntries { [(it.id): it] } }
+
+	@Override
+	void cleanDeploy() {
+		File cacheDir = new File(Doop.doopCache)
+		if (cacheDir.exists()) {
+			println "Deleting: ${cacheDir.canonicalPath}"
+			FileUtils.deleteQuietly(cacheDir)
+		}
+	}
 
 	AnalysisOption getOptionByName(String n) {
 		SUPPORTED_OPTIONS.find { it.name == n }
