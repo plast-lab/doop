@@ -20,6 +20,7 @@
 .output VarPointsTo(IO="file",filename="VarPointsTo.csv",delimiter="\t")
 .output ReachableContext(IO="file",filename="ReachableContext.csv",delimiter="\t")
 .output InstanceFieldPointsTo(IO="file",filename="InstanceFieldPointsTo.csv",delimiter="\t")
+.output StaticFieldPointsTo(IO="file",filename="StaticFieldPointsTo.csv",delimiter="\t")
 //.output ArrayIndexPointsTo(IO="file",filename="ArrayIndexPointsTo.csv",delimiter="\t")
 #else
 .output Stats_Simple_InsensVarPointsTo(IO="file",filename="VarPointsTo.csv",delimiter="\t")
