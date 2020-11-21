@@ -71,8 +71,8 @@ Server_Type_Can_Access_Field(?class, ?fld) :-
 .decl Server_SField_Values(?fld:Field, ?value:mainAnalysis.Value)
 .decl Server_IField_Values_Count(?baseValue:mainAnalysis.Value, ?fld:Field, ?n:number)
 .output Server_Field_ShadowedBy
-.output Server_IField_Values
-.output Server_SField_Values
+// .output Server_IField_Values
+// .output Server_SField_Values
 .output Server_IField_Values_Count
 
 Server_Field_ShadowedBy(?fld, ?shadowFld) :-
