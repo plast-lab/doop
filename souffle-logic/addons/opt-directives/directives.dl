@@ -359,3 +359,246 @@ SingleInvocationToInline(?invocation, ?target) :-
   CallerSize(?invocationMethod).
 
 .output SingleInvocationToInline
+
+// Graal / Native image helpers: these are whole-program rules, since
+// the resulting native binary contains the whole program.
+
+.decl NonFinalFieldWrittenInNonConstructor(?field:Field)
+.output NonFinalFieldWrittenInNonConstructor
+
+NonFinalFieldWrittenInNonConstructor(?field) :-
+  isField(?field),
+  !Field_Modifier("final", ?field),
+  _StoreInstanceField(_, _, _, _, ?field, ?method),
+  !Method_SimpleName(?method, "<init>").
+
+NonFinalFieldWrittenInNonConstructor(?field) :-
+  isField(?field),
+  !Field_Modifier("final", ?field),
+  _StoreStaticField(_, _, _, ?field, ?method),
+  !Method_SimpleName(?method, "<clinit>").
+
+// Fields thar are candidates for static initialization.
+.decl FieldIsFinalOrInitialized(?field:Field)
+.output FieldIsFinalOrInitialized
+
+FieldIsFinalOrInitialized(?field) :-
+  isField(?field),
+  !NonFinalFieldWrittenInNonConstructor(?field).
+
+// Fields containing non-null objects.
+.decl FieldPointsTo(?field:Field)
+// .output FieldPointsTo
+FieldPointsTo(?field) :-
+  (mainAnalysis.StaticFieldPointsTo(_, ?value, ?field) ; mainAnalysis.InstanceFieldPointsTo(_, ?value, ?field, _, _)),
+  mainAnalysis.Value_Type(?value, ?t),
+  isNullType(?t).
+
+// Fields used by (app-)reachable code.
+.decl ReachableField(?field:Field)
+.output ReachableField
+ReachableField(?field) :-
+  mainAnalysis.AppReachable(?method),
+  Instruction_Method(?instruction, ?method),
+  FieldInstruction_Signature(?instruction, ?field).
+
+.decl ReachableType(?type:ReferenceType)
+.output ReachableType
+ReachableType(?type) :- ReachableField(?field), Field_DeclaringType(?field, ?type).
+ReachableType(?type) :- mainAnalysis.AppReachable(?method), Method_DeclaringType(?method, ?type).
+
+
+#ifdef REFLECTION
+// Fields written by reflection.
+.decl FieldWrittenByReflection(?field:Field)
+// .output FieldWrittenByReflection
+FieldWrittenByReflection(?field) :- mainAnalysis.ReflectiveStoreField(_, ?field, _, _).
+FieldWrittenByReflection(?field) :- mainAnalysis.ReflectiveStoreStaticField(?field, _, _).
+FieldWrittenByReflection(?field) :- mainAnalysis.ReflectiveStoreHeapInstanceField(?field, _, _, _, _).
+FieldWrittenByReflection(?field) :- mainAnalysis.ReflectiveStoreInstanceField(_, _, ?field, _, _).
+// Fields read by reflection.
+.decl FieldReadByReflection(?field:Field)
+// .output FieldReadByReflection
+FieldReadByReflection(?field) :- mainAnalysis.ReflectiveLoadField(_, _, _, ?field).
+FieldReadByReflection(?field) :- mainAnalysis.ReflectiveLoadStaticField(_, _, ?field).
+FieldReadByReflection(?field) :- mainAnalysis.ReflectiveLoadHeapInstanceField(_, _, ?field, _, _).
+FieldReadByReflection(?field) :- mainAnalysis.ReflectiveLoadInstanceField(_, _, ?field, _, _).
+
+.decl ReachableFieldAccessedByReflection(?field:Field)
+.output ReachableFieldAccessedByReflection
+ReachableFieldAccessedByReflection(?field) :-
+  (FieldWrittenByReflection(?field) ; FieldReadByReflection(?field)),
+  ReachableField(?field).
+
+// Output more tables computed by reflection analysis.
+// .output mainAnalysis.ReflectiveStoreField
+// .output mainAnalysis.ReflectiveStoreStaticField
+// .output mainAnalysis.ReflectiveStoreHeapInstanceField
+// .output mainAnalysis.ReflectiveStoreInstanceField
+// .output mainAnalysis.ReflectiveLoadField
+// .output mainAnalysis.ReflectiveLoadStaticField
+// .output mainAnalysis.ReflectiveLoadHeapInstanceField
+// .output mainAnalysis.ReflectiveLoadInstanceField
+// .output mainAnalysis.MethodNameMatchingStringConstant_Signature
+// .output mainAnalysis.FieldNameMatchingStringConstant_Signature
+// .output mainAnalysis.TypeMatchingMethod
+// .output mainAnalysis.TypeMatchingFieldName
+// .output mainAnalysis.ReflectiveCallGraphEdge
+
+// Are there "final" fields written by reflection?
+
+.decl FinalFieldWrittenByReflection(?field:Field)
+.output FinalFieldWrittenByReflection
+
+FinalFieldWrittenByReflection(?field) :-
+  FieldWrittenByReflection(?field),
+  Field_Modifier("final", ?field).
+
+.decl MethodInvokedByReflection(?method:Method)
+.output MethodInvokedByReflection
+MethodInvokedByReflection(?method) :-
+  mainAnalysis.ReflectiveCallGraphEdge(_, _, _, ?method),
+  ApplicationMethod(?method).
+
+#endif // REFLECTION
+
+// Output all application methods/fields (so that tools can calculate
+// optimization effects for the whole program).
+
+.output ApplicationMethod
+
+.decl ApplicationField(?field:Field)
+.output ApplicationField
+ApplicationField(?field) :-
+  Field_DeclaringType(?field, ?type),
+  ApplicationClass(?type).
+  
+
+// Compute configuration patterns: "allDeclaredConstructors",
+// "allPublicConstructors", "allDeclaredMethods", "allPublicMethods",
+// "allDeclaredFields", "allPublicFields".
+
+.decl UnreachableDeclaredMethod(?method:Method)
+// .output UnreachableDeclaredMethod
+UnreachableDeclaredMethod(?method) :-
+  ApplicationMethod(?method),
+  !mainAnalysis.AppReachable(?method).
+
+.decl UnreachablePublicMethod(?method:Method)
+// .output UnreachablePublicMethod
+UnreachablePublicMethod(?method) :-
+  UnreachableDeclaredMethod(?method),
+  Method_Modifier("public", ?method).
+
+.decl UnreachableDeclaredField(?field:Field, ?type:ReferenceType)
+// .output UnreachableDeclaredField
+UnreachableDeclaredField(?field, ?type) :-
+  ApplicationField(?field),
+  Field_DeclaringType(?field, ?type),
+  !ReachableField(?field).
+
+.decl UnreachablePublicField(?type:ReferenceType)
+// .output UnreachablePublicField
+UnreachablePublicField(?type) :-
+  UnreachableDeclaredField(?field, ?type),
+  Field_Modifier("public", ?field).
+
+.decl UnreachableDeclaredConstructor(?constructor:Method, ?type:ReferenceType)
+// .output UnreachableDeclaredConstructor
+UnreachableDeclaredConstructor(?constructor, ?type) :-
+  UnreachableDeclaredMethod(?constructor),
+  basic.ClassConstructor(?constructor, ?type).
+
+.decl UnreachablePublicConstructor(?type:ReferenceType)
+// .output UnreachablePublicConstructor
+UnreachablePublicConstructor(?type) :-
+  UnreachableDeclaredConstructor(?constructor, ?type),
+  Method_Modifier("public", ?constructor).
+
+.decl NI_AllDeclaredConstructors(?type:ReferenceType)
+.output NI_AllDeclaredConstructors
+NI_AllDeclaredConstructors(?type) :-
+  ApplicationClass(?type),
+  basic.ClassConstructor(_, ?type),         // ensure there is at least one constructor
+  !UnreachableDeclaredConstructor(_, ?type).
+
+.decl NI_AllPublicConstructors(?type:ReferenceType)
+.output NI_AllPublicConstructors
+NI_AllPublicConstructors(?type) :-
+  ApplicationClass(?type),
+  basic.ClassConstructor(?constructor, ?type),  // ensure there is at least one constructor
+  Method_Modifier("public", ?constructor),      // that is public  
+  !UnreachablePublicConstructor(?type).
+
+.decl NI_AllDeclaredMethods(?type:ReferenceType)
+.output NI_AllDeclaredMethods
+NI_AllDeclaredMethods(?type) :-
+  ReachableType(?type),
+  Method_DeclaringType(_, ?type),         // ensure there is at least one method
+  !UnreachableDeclaredMethod(?type).
+
+.decl NI_AllPublicMethods(?type:ReferenceType)
+.output NI_AllPublicMethods
+NI_AllPublicMethods(?type) :-
+  ReachableType(?type),
+  Method_DeclaringType(?method, ?type),   // ensure there is at least one method
+  Method_Modifier("public", ?method),     // that is public
+  !UnreachablePublicMethod(?type).
+
+.decl NI_AllDeclaredFields(?type:ReferenceType)
+.output NI_AllDeclaredFields
+NI_AllDeclaredFields(?type) :-
+  ReachableType(?type),
+  Field_DeclaringType(_, ?type),          // ensure there is at least one field
+  !UnreachableDeclaredField(_, ?type).
+
+.decl NI_AllPublicFields(?type:ReferenceType)
+.output NI_AllPublicFields
+NI_AllPublicFields(?type) :-
+  ReachableType(?type),
+  Field_DeclaringType(?field, ?type),     // ensure there is at least one field
+  Field_Modifier("public", ?field),       // that is public
+  !UnreachablePublicField(?type).
+
+.decl NI_ReachableMethod(?method:Method)
+.output NI_ReachableMethod
+// App-reachable methods are registered if all-declared-methods is not
+// set for their containing type.
+NI_ReachableMethod(?method) :-
+  mainAnalysis.AppReachable(?method),
+  Method_DeclaringType(?method, ?type),
+  !NI_AllDeclaredMethods(?type).
+// In addition (extended rule), non-public app-reachable methods are
+// registered if all-public-methods is not set for their containing type.
+NI_ReachableMethod(?method) :-
+  mainAnalysis.AppReachable(?method),
+  Method_DeclaringType(?method, ?type),
+  !NI_AllDeclaredMethods(?type),
+  !Method_Modifier("public", ?method),
+  !NI_AllPublicMethods(?type).
+
+.decl NI_ReachableField(?field:Field)
+.output NI_ReachableField
+// App-reachable fields are registered if all-declared-fields is not
+// set for their containing type.
+NI_ReachableField(?field) :-
+  ReachableField(?field),
+  Field_DeclaringType(?field, ?type),
+  !NI_AllDeclaredFields(?type).
+// In addition (extended rule), non-public app-reachable fields are registered
+// if all-public-fields is not set for their containing type.
+NI_ReachableField(?field) :-
+  ReachableField(?field),
+  Field_DeclaringType(?field, ?type),
+  !NI_AllDeclaredFields(?type),
+  !Field_Modifier("public", ?field),
+  !NI_AllPublicFields(?type).
+
+#ifdef SCAN_NATIVE_CODE
+.decl AppReachableMethodFromNativeCode(?method:Method)
+.output AppReachableMethodFromNativeCode
+
+AppReachableMethodFromNativeCode(?method) :-
+  ApplicationMethod(?method),
+  mainAnalysis.ReachableMethodFromNativeCode(?method).
+#endif // SCAN_NATIVE_CODE

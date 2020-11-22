@@ -1,10 +1,11 @@
 #!/bin/bash
 
-[[ $# != 2 ]] && echo "Usage: <File.java> <java version (e.g. 1.8)>" && exit
+[[ $# != 3 ]] && echo "Usage: <File.java> <java version (e.g. 1.8)> <Out Dir>" && exit
 
 filenameJava=$1
 filename=${filenameJava%.*}
 filenameJar=${filename}.jar
+outDir=$3
 
 tmpDir=$(mktemp -d)
 
@@ -22,5 +23,5 @@ fi
 jar cvfe $filenameJar $filename -C $tmpDir .
 rm -rf $tmpDir
 
-echo "Moving generated jar file into current directory"
-mv $filenameJar .
+echo "Moving generated jar file into $outDir"
+mv $filenameJar $outDir

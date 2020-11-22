@@ -238,6 +238,25 @@ the script (including the facts) is in
 `out/micro/<ID>/database/dump`.
 
 
+### Generating GraalVM native image configurations
+
+To generate configurations for the native image builder, set
+environment variable GRAALVM_HOME to point to the GraalVM installation
+and use one of the following commands to run a Doop analysis depending
+on the GraalVM version installed (Java 8 or Java 11):
+
+```
+./doop --platform java_8 --use-local-java-platform ${GRAALVM_HOME}/jre --gen-opt-directives ...
+```
+
+```
+./doop --platform java_11 --use-local-java-platform ${GRAALVM_HOME} --gen-opt-directives ...
+```
+
+After the analysis finishes, the resulting configurations can be found
+in `out/<ANALYSIS>/<ID>/database/configurations`.
+
+
 ### Building Doop distribution
 
 Optionally, Doop can be built as a binary distribution with the

@@ -156,9 +156,9 @@ The core API is contained in the org.clyze.doop.core Groovy package and contains
 #### AnalysisFactory
 A Factory for creating analyses. The class provides the following public methods:
 
-    newAnalysis(String id, String name, Map<String, AnalysisOption> options, List<String> jars)
+    newAnalysis(String id, String name, Map<String, AnalysisOption<?>> options, List<String> jars)
     
-    newAnalysis(String id, String name, Map<String, AnalysisOption> options, InputResolutionContext ctx)
+    newAnalysis(String id, String name, Map<String, AnalysisOption<?>> options, InputResolutionContext ctx)
 
 which create a new `Analysis` object. The methods check and verify that all provided information (id and name
 of the analysis, jar files and options) is correct, throwing an exception in case of error. The checks performed are
@@ -229,7 +229,7 @@ The class also holds a list of all the available Analysis options (in the `ANALY
 
 Finally, the `Doop` class provides the following helper methods for initializing the analysis options:
 
-* `createDefaultAnalysisOptions()`: obtains a `Map<String, AnalysisOption>` using
+* `createDefaultAnalysisOptions()`: obtains a `Map<String, AnalysisOption<?>>` using
 the default values defined in the `ANALYSIS_OPTIONS` list.
 * `overrideDefaultOptionsWithCLI(cli, filter)`: overrides the default options with the values contained in the CLI.
 * `overrideDefaultOptionsWithPropertiesAndCLI(properties, cli, filter)`: overrides the default options with the values contained in the properties and the CLI.

@@ -5,7 +5,6 @@ cache
 logs
 out
 results
-resources
 last-analysis
 checksums.properties
 doop.properties
@@ -27,6 +26,8 @@ doop-nexgen.iml
 
 #emacs files
 *~
+\#*\#
+.\#*
 
 #swp files
 *.swp

@@ -227,7 +227,7 @@ class SouffleGenericsMultiPhaseAnalysis extends SouffleAnalysis {
 	 *     <li>adding the variables/paths/tweaks to meet the lb-env-bin.sh requirements of the pa-datalog distro
 	 * </ul>
 	 */
-	protected static Map<String, String> initExternalCommandsEnvironment(Map<String, AnalysisOption> options) {
+	protected static Map<String, String> initExternalCommandsEnvironment(Map<String, AnalysisOption<?>> options) {
 		log.debug "Initializing the environment of the external commands"
 
 		Map<String, String> env = [:]

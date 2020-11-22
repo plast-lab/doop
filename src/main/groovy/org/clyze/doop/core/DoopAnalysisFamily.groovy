@@ -1,5 +1,7 @@
 package org.clyze.doop.core
 
+import org.apache.commons.io.FileUtils
+
 // import groovy.transform.TypeChecked
 import org.clyze.analysis.*
 import org.clyze.doop.common.Parameters
@@ -35,16 +37,25 @@ class DoopAnalysisFamily implements AnalysisFamily {
 	void init() {}
 
 	@Override
-	List<AnalysisOption> supportedOptions() { SUPPORTED_OPTIONS }
+	List<AnalysisOption<?>> supportedOptions() { SUPPORTED_OPTIONS }
 
 	@Override
-	Map<String, AnalysisOption> supportedOptionsAsMap() { SUPPORTED_OPTIONS.collectEntries { [(it.id): it] } }
+	Map<String, AnalysisOption<?>> supportedOptionsAsMap() { SUPPORTED_OPTIONS.collectEntries { [(it.id): it] } }
+
+	@Override
+	void cleanDeploy() {
+		File cacheDir = new File(Doop.doopCache)
+		if (cacheDir.exists()) {
+			println "Deleting: ${cacheDir.canonicalPath}"
+			FileUtils.deleteQuietly(cacheDir)
+		}
+	}
 
 	AnalysisOption getOptionByName(String n) {
 		SUPPORTED_OPTIONS.find { it.name == n }
 	}
 
-	private static List<AnalysisOption> SUPPORTED_OPTIONS = [
+	private static List<AnalysisOption<?>> SUPPORTED_OPTIONS = [
 			/* Start Main options */
 			new AnalysisOption<String>(
 					id: "USER_SUPPLIED_ID",
@@ -1174,7 +1185,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 		return new TreeSet<>(platforms)
 	}
 
-    static Collection<File> getAllInputs(Map<String, AnalysisOption> options) {
+    static Collection<File> getAllInputs(Map<String, AnalysisOption<?>> options) {
         Collection<File> inputs = [] as List
         inputs += options.INPUTS.value
         inputs += options.LIBRARIES.value

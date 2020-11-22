@@ -1,12 +1,6 @@
 // Export directives used by the native scanner benchmarks.
 
-.decl AppReachable(?method:Method)
-
-AppReachable(?method) :-
-  mainAnalysis.Reachable(?method),
-  ApplicationMethod(?method).
-
-.output AppReachable(IO="file",filename="AppReachable.csv",delimiter="\t")
+.output mainAnalysis.AppReachable(IO="file",filename="AppReachable.csv",delimiter="\t")
 
 #ifdef SCAN_NATIVE_CODE
 .output mainAnalysis.ReachableMethodFromNativeCode

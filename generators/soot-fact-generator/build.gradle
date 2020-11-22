@@ -18,7 +18,7 @@ repositories {
 }
 
 dependencies {
-    compile project(':generators:fact-generator-common')
+    compile project(path: ':generators:fact-generator-common', configuration: 'shadow')
 
     // compile "ca.mcgill.sable:soot:4.0.0"
     compile "org.soot-oss:soot:4.2.1"

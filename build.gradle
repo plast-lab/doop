@@ -113,14 +113,14 @@ compileGroovy {
 // Set dependency version so that they are available to subprojects.
 gradle.rootProject.ext.antlrVersion='4.7.2'
 gradle.rootProject.ext.groovyVersion="3.0.6"
-gradle.rootProject.ext.clueCommonVersion='3.23.3'
+gradle.rootProject.ext.clueCommonVersion='3.23.6'
 gradle.rootProject.ext.spockVersion='2.0-M3-groovy-3.0'
 // Set other variables for subprojects.
 gradle.rootProject.ext.resourcesDir='resources'
 
 dependencies {
     apktool "ext:apktool:2.4.0"                                 // needed for decoding APK inputs
-    compile project(':generators:fact-generator-common')
+    compile project(path: ':generators:fact-generator-common', configuration: 'shadow')
     compile "org.codehaus.groovy:groovy:${groovyVersion}",      // Groovy
             "org.codehaus.groovy:groovy-ant:${groovyVersion}",
             "org.codehaus.groovy:groovy-cli-commons:${groovyVersion}", // Command line processor (Groovy wrapper)
@@ -422,13 +422,18 @@ if (project.hasProperty('artifactory_user')) {
             }
 
             allGeneratorProjects.each { p ->
-                create(p.name, MavenPublication) {
-                    def taskThatGeneratesTheArtifact = p.hasProperty('fatJar') ? p.fatJar : p.jar
-                    artifact(taskThatGeneratesTheArtifact) {
+		create(p.name, MavenPublication) {
+		    // The artifact generator can be a file or a Gradle task
+		    def artifactGenerator
+		    if (p.name.indexOf('fact-generator-common') != -1)
+			artifactGenerator = project(':generators:fact-generator-common').file("build/libs/fact-generator-common-${version}-all.jar")
+		    else
+			artifactGenerator = p.hasProperty('fatJar') ? p.fatJar : p.jar
+		    artifact(artifactGenerator) {
                         groupId 'org.clyze'
                         artifactId p.name
-                    }
-                }
+		    }
+		}
             }
         }
 

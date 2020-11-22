@@ -17,6 +17,7 @@ import org.apache.log4j.Logger;
 import org.clyze.scanner.BinaryAnalysis;
 import org.clyze.scanner.NativeDatabaseConsumer;
 import org.clyze.scanner.NativeScanner;
+import org.clyze.utils.OS;
 import org.clyze.utils.TypeUtils;
 import org.jf.dexlib2.Opcodes;
 import org.jf.dexlib2.dexbacked.DexBackedDexFile;
@@ -197,19 +198,19 @@ public class ArtifactScanner {
 
     public static void scanNativeCode(Database db, Parameters parameters,
 				      Set<String> methodStrings) {
-	DatabaseConnector dbc = new DatabaseConnector(db);
-	BinaryAnalysis.AnalysisType analysisType;
-	if (parameters._nativeRadare)
-	    analysisType = RADARE;
-	else if (parameters._nativeBuiltin)
-	    analysisType = BUILTIN;
-	else if (parameters._nativeBinutils)
-	    analysisType = BINUTILS;
-	else {
-	    analysisType = BINUTILS;
-	    System.out.println("No binary analysis type given, using default: " + analysisType.name());
-	}
-	scanNativeInputs(dbc, analysisType, parameters._preciseNativeStrings, methodStrings, parameters.getInputs());
+        DatabaseConnector dbc = new DatabaseConnector(db);
+        BinaryAnalysis.AnalysisType analysisType;
+        if (parameters._nativeRadare)
+            analysisType = RADARE;
+        else if (parameters._nativeBuiltin)
+            analysisType = BUILTIN;
+        else if (parameters._nativeBinutils)
+            analysisType = BINUTILS;
+        else {
+            analysisType = BUILTIN;
+            System.out.println("No binary analysis type given, using default: " + analysisType.name());
+        }
+        scanNativeInputs(dbc, analysisType, parameters._preciseNativeStrings, methodStrings, parameters.getInputs());
     }
 
     private static void scanNativeInputs(NativeDatabaseConsumer dbc,

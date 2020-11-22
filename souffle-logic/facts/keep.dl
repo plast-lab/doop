@@ -1,10 +1,12 @@
-// Keep method/class information.
+// Keep information.
 .decl KeepMethod(?m:Method)
 .decl KeepClassMembers(?m:Method)
 .decl KeepClassesWithMembers(?m:Method)
 .decl KeepClass(?c:ClassType)
+.decl RootCodeElement(?id:symbol)
 
 .input KeepMethod(filename="KeepMethod.facts")
 .input KeepClassMembers(filename="KeepClassMembers.facts")
 .input KeepClassesWithMembers(filename="KeepClassesWithMembers.facts")
 .input KeepClass(filename="KeepClass.facts")
+.input RootCodeElement(filename="RootCodeElement.facts")

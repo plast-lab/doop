@@ -3,6 +3,7 @@ package org.clyze.doop.core
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 import groovy.util.logging.Log4j
+import org.clyze.doop.utils.ConfigurationGenerator
 import org.clyze.doop.utils.DDlog
 import org.clyze.doop.utils.SouffleScript
 import org.clyze.utils.Executor
@@ -118,6 +119,7 @@ class SouffleAnalysis extends DoopAnalysis {
 				runtimeMetricsFile.append("analysis execution time (sec)\t${script.executionTime}\n")
 				int dbSize = (sizeOfDirectory(database) / 1024).intValue()
 				runtimeMetricsFile.append("disk footprint (KB)\t${dbSize}\n")
+				postprocess()
 			}
 		} finally {
 			executorService.shutdownNow()
@@ -301,5 +303,17 @@ class SouffleAnalysis extends DoopAnalysis {
 		boolean viaDDlog = options.VIA_DDLOG.value as Boolean
 		File cacheDir = new File(Doop.souffleAnalysesCache, name)
 		return SouffleScript.newScript(executor, cacheDir, viaDDlog)
+	}
+
+	protected void postprocess() {
+		try {
+			if (options.GENERATE_OPTIMIZATION_DIRECTIVES.value) {
+				File configurationsDir = new File(database, 'configurations')
+				configurationsDir.mkdirs()
+				new ConfigurationGenerator(outDir.canonicalPath, configurationsDir.canonicalPath).generateConfigurations()
+			}
+		} catch (Throwable t) {
+			log.error "ERROR: configuration generation failed."
+		}
 	}
 }

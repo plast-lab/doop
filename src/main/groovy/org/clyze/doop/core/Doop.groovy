@@ -112,7 +112,7 @@ class Doop {
 	 * Creates the default analysis options.
 	 * @return Map < String , AnalysisOptions > .
 	 */
-	static Map<String, AnalysisOption> createDefaultAnalysisOptions() {
+	static Map<String, AnalysisOption<?>> createDefaultAnalysisOptions() {
 		DoopAnalysisFamily.instance.supportedOptions().collectEntries { [(it.id): it.clone()] }
 	}
 
@@ -124,7 +124,7 @@ class Doop {
 	 * @param filter - optional filter to apply before setting the option.
 	 * @return the default analysis options overridden by the values contained in the CLI option accessor.
 	 */
-	static Map<String, AnalysisOption> overrideDefaultOptionsWithCLI(OptionAccessor cli, Closure<Boolean> filter) {
+	static Map<String, AnalysisOption<?>> overrideDefaultOptionsWithCLI(OptionAccessor cli, Closure<Boolean> filter) {
 		def options = createDefaultAnalysisOptions()
 		overrideOptionsWithCLI(options, cli, filter)
 		return options
@@ -140,10 +140,10 @@ class Doop {
 	 * @param filter - optional filter to apply before setting the option.
 	 * @return the default analysis options overridden by the values contained in the properties.
 	 */
-	static Map<String, AnalysisOption> overrideDefaultOptionsWithPropertiesAndCLI(Properties properties,
+	static Map<String, AnalysisOption<?>> overrideDefaultOptionsWithPropertiesAndCLI(Properties properties,
 	                                                                              OptionAccessor cli,
 	                                                                              Closure<Boolean> filter) {
-		Map<String, AnalysisOption> options = createDefaultAnalysisOptions()
+		Map<String, AnalysisOption<?>> options = createDefaultAnalysisOptions()
 		overrideOptionsWithProperties(options, properties, filter)
 		overrideOptionsWithCLI(options, cli, filter)
 		return options
@@ -158,7 +158,7 @@ class Doop {
 	 * @param filter - the filter to apply.
 	 * @return the original map of options with its values overridden by the ones contained in the properties.
 	 */
-	static void overrideOptionsWithProperties(Map<String, AnalysisOption> options,
+	static void overrideOptionsWithProperties(Map<String, AnalysisOption<?>> options,
 	                                          Properties properties,
 	                                          Closure<Boolean> filter) {
 		if (properties && properties.size() > 0) {
@@ -189,7 +189,7 @@ class Doop {
 	 * @param filter - the filter to apply.
 	 * @return the original map of options with its values overridden by the ones contained in the CLI options.
 	 */
-	static void overrideOptionsWithCLI(Map<String, AnalysisOption> options, OptionAccessor cli, Closure<Boolean> filter) {
+	static void overrideOptionsWithCLI(Map<String, AnalysisOption<?>> options, OptionAccessor cli, Closure<Boolean> filter) {
 		options.values().each { AnalysisOption option ->
 			def name = option.name
 			if (name) {
