@@ -195,7 +195,8 @@ For information about JavaEE application analysis using Doop, please consult our
 
 Pythia is only available for Soufflé.
 
-For information about Python Tensorflow Shape analysis using Doop, please consult our [ECOOP'20 paper](http://yanniss.github.io/tensor-ecoop20.pdf).
+For information about Python Tensorflow Shape analysis using Doop, please consult our [ECOOP'20 paper](http://yanniss.github.io/tensor-ecoop20.pdf), or the
+[Pythia tutorial](docs/pythia.md).
 
 ### Taint Analysis Using P/Taint
     
