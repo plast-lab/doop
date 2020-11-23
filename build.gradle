@@ -42,7 +42,7 @@ mainClassName = "org.clyze.doop.Main"
 // Windows support flag.
 def onWindows = System.properties['os.name'].toLowerCase().contains('windows')
 
-def heapDLVersion = "1.1.10"
+def heapDLVersion = "1.1.11"
 if (project.hasProperty('heapDLVersion'))
     heapDLVersion = project.property('heapDLVersion')
 
