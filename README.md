@@ -338,3 +338,13 @@ example, for Java 8, these could be: `apple.laf-jdk1.8.jar`,
 Solution: Change the "maximum heap size" or "stack size" options in
 build.gradle (if running via Gradle) or in the DEFAULT_JVM_OPTS
 environment variable in bin/doop (if using a Doop distribution).
+
+*Problem:* The artifactory repository server is not reachable, causing
+failures when resolving the analysis platform.
+
+Solution: Clone doop-benchmarks
+(https://gfour@bitbucket.org/yanniss/doop-benchmarks.git) and set
+environment variable DOOP_PLATFORMS_LIB to point to the full path of
+the clone repository. For some Android applications, also set
+environment variable ANDROID_SDK to point to the local Android SDK
+directory.
