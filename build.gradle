@@ -42,7 +42,7 @@ mainClassName = "org.clyze.doop.Main"
 // Windows support flag.
 def onWindows = System.properties['os.name'].toLowerCase().contains('windows')
 
-def heapDLVersion = "1.1.9"
+def heapDLVersion = "1.1.10"
 if (project.hasProperty('heapDLVersion'))
     heapDLVersion = project.property('heapDLVersion')
 
@@ -63,7 +63,8 @@ allGeneratorProjects.each {
         repositories {
             mavenLocal()
             mavenCentral()
-            maven { url "http://centauri.di.uoa.gr:8081/artifactory/plast-public" }
+            maven { url 'https://jitpack.io' }
+            // maven { url "http://centauri.di.uoa.gr:8081/artifactory/plast-public" }
             maven { url 'https://dl.bintray.com/gfour/plast-lab' }
         }
     }
@@ -79,8 +80,10 @@ frontendGeneratorProjects.each {
 repositories {
     mavenLocal()
     mavenCentral()
-    maven { url "http://centauri.di.uoa.gr:8081/artifactory/plast-deps" }
-    maven { url "http://centauri.di.uoa.gr:8081/artifactory/plast-public" }
+    // maven { url "http://centauri.di.uoa.gr:8081/artifactory/plast-deps" }
+    // maven { url "http://centauri.di.uoa.gr:8081/artifactory/plast-public" }
+    maven { url 'https://jitpack.io' }
+    maven { url "https://dl.bintray.com/gfour/plast-lab" }
     maven {
         name "soot-snapshot"
         url "https://soot-build.cs.uni-paderborn.de/nexus/repository/soot-snapshot"
@@ -119,7 +122,8 @@ gradle.rootProject.ext.spockVersion='2.0-M3-groovy-3.0'
 gradle.rootProject.ext.resourcesDir='resources'
 
 dependencies {
-    apktool "ext:apktool:2.4.0"                                 // needed for decoding APK inputs
+    // apktool "ext:apktool:2.4.0"                                 // needed for decoding APK inputs
+    apktool 'com.github.iBotPeaches:Apktool:a2a79404b81e138a651616dd7e2a1fa8b807399b'
     compile project(path: ':generators:fact-generator-common', configuration: 'shadow')
     compile "org.codehaus.groovy:groovy:${groovyVersion}",      // Groovy
             "org.codehaus.groovy:groovy-ant:${groovyVersion}",

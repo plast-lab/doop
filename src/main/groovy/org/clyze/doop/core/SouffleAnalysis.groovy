@@ -296,7 +296,7 @@ class SouffleAnalysis extends DoopAnalysis {
 		query = query.replaceAll(":", "_")
 		def file = new File(this.outDir, "database/${query}.csv")
 		if (!file.exists()) throw new FileNotFoundException(file.canonicalPath)
-		file.eachLine { outputLineProcessor.call(it.replaceAll("\t", ", ")) }
+		file.eachLine { outputLineProcessor.call(it) }
 	}
 
 	protected SouffleScript newScriptForAnalysis(Executor executor) {
