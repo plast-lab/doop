@@ -1,5 +1,5 @@
-#include "rules-servlets-only.dl"
 #include "../../commonMacros.dl"
+#include "rules-servlets-only.dl"
 
 // Methods with these annotations are servlet entry points
 .decl ServletMethodEP(m: Method)

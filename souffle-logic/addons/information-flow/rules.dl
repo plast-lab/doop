@@ -1,4 +1,6 @@
 #include "macros.dl"
+#include "declarations.dl"
+#include "delta.dl"
 
 AnyMethodInvocation(?invocation, ?tomethod) :-
   StaticMethodInvocation(?invocation, ?tomethod, _).

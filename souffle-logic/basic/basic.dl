@@ -1,3 +1,5 @@
+#include "../commonMacros.dl"
+
 .comp Basic {
 
 #include "finalization-declarations.dl"
@@ -37,3 +39,14 @@ MainMethodDeclaration(?method) :-
 }
 
 .init basic = Basic
+
+#ifdef CFG_ANALYSIS
+#include "../addons/cfg-analysis/analysis.dl"
+#endif
+
+#ifdef X_STOP_AT_BASIC_SCC
+#include "classes-scc.dl"
+#endif
+#ifdef X_STOP_AT_BASIC_PARTITIONING
+#include "partitioning.dl"
+#endif

@@ -1,3 +1,4 @@
+#include "../../commonMacros.dl"
 #include "entry-points.dl"
 
 .decl AllConcreteImplementations(?class:ClassType, ?type:Type)
