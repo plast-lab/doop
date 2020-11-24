@@ -63,7 +63,6 @@ allGeneratorProjects.each {
         repositories {
             mavenLocal()
             mavenCentral()
-            maven { url 'https://jitpack.io' }
             // maven { url "http://centauri.di.uoa.gr:8081/artifactory/plast-public" }
             maven { url 'https://dl.bintray.com/gfour/plast-lab' }
         }
@@ -122,8 +121,8 @@ gradle.rootProject.ext.spockVersion='2.0-M3-groovy-3.0'
 gradle.rootProject.ext.resourcesDir='resources'
 
 dependencies {
-    // apktool "ext:apktool:2.4.0"                                 // needed for decoding APK inputs
-    apktool 'com.github.iBotPeaches:Apktool:a2a79404b81e138a651616dd7e2a1fa8b807399b'
+    // apktool "ext:apktool:2.4.0"                              // old artifactory dependency
+    apktool 'Apktool-fork.brut.apktool:apktool-cli:2.4.2'       // needed for decoding APK inputs
     compile project(path: ':generators:fact-generator-common', configuration: 'shadow')
     compile "org.codehaus.groovy:groovy:${groovyVersion}",      // Groovy
             "org.codehaus.groovy:groovy-ant:${groovyVersion}",
