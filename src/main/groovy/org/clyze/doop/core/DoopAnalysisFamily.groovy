@@ -1178,12 +1178,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 		scan(lbDir)
 		scan(souffleDir)
 
-		List<String> platforms =
-			(platforms_Souffle.collect {
-			it + ((it in platforms_LB) ? "" : " (Souffle-only)")
-		}) +
-			(platforms_LB.findAll { !(it in platforms_Souffle) }
-			 .collect { it + " (LB-only)" })
+		SortedSet<String> platforms = platforms_Souffle + platforms_LB
 		return new TreeSet<>(platforms)
 	}
 
