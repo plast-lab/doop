@@ -951,6 +951,12 @@ class FactWriter extends JavaFactWriter {
                 writeOperatorAt(insn, ">>");
         else if (right instanceof UshrExpr)
                 writeOperatorAt(insn, ">>>");
+        else if (right instanceof CmpExpr)
+                writeOperatorAt(insn, "cmp");
+        else if (right instanceof CmplExpr)
+                writeOperatorAt(insn, "cmpl");
+        else if (right instanceof CmpgExpr)
+                writeOperatorAt(insn, "cmpg");
 
 
         if (right.getOp1() instanceof Local) {
