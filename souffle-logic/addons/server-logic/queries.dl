@@ -354,3 +354,10 @@ Server_Metrics("#HeapAllocation", ?n) :- ?n = count:{isHeapAllocation(_)}.
 Server_Metrics("#MethodInvocation", ?n) :- ?n = count:{isMethodInvocation(_)}.
 
 // --Metrics //
+
+// Information flow //
+
+#ifdef INFORMATION_FLOW
+.output TaintSourceMethod(IO="file",filename="TaintSourceMethod.csv",delimiter="\t")
+.output LeakingSinkMethodArg(IO="file",filename="LeakingSinkMethodArg.csv",delimiter="\t")
+#endif // INFORMATION_FLOW
