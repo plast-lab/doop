@@ -69,7 +69,9 @@ public class Main {
         DoopAddons.initReflectiveAccess();
 
         Options.v().set_output_dir(outDir);
-        Options.v().setPhaseOption("jb", "use-original-names:true");
+        // Use-original-names may cause crashes on Android (Soot issue 1256).
+        if (!sootParameters._android)
+            Options.v().setPhaseOption("jb", "use-original-names:true");
         Options.v().setPhaseOption("jb", "model-lambdametafactory:false");
 
         if (sootParameters._ignoreWrongStaticness || sootParameters._ignoreFactGenErrors)
