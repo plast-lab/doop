@@ -14,6 +14,7 @@ import java.util.concurrent.Future
 
 import static org.apache.commons.io.FilenameUtils.getBaseName
 import static org.apache.commons.io.FileUtils.deleteQuietly
+import static org.apache.commons.io.FileUtils.moveFile
 import static org.apache.commons.io.FileUtils.sizeOfDirectory
 
 @CompileStatic
@@ -66,7 +67,8 @@ class SouffleAnalysis extends DoopAnalysis {
 			})
 		}
 
-		File runtimeMetricsFile = new File(database, "Stats_Runtime.csv")
+		File runtimeMetricsFile = File.createTempFile('Stats_Runtime', '.csv')
+		log.debug "Using intermediate runtime metrics file: ${runtimeMetricsFile.canonicalPath}"
 		if (!database.exists()) {
 			database.mkdirs()
 		}
@@ -120,7 +122,10 @@ class SouffleAnalysis extends DoopAnalysis {
 				int dbSize = (sizeOfDirectory(database) / 1024).intValue()
 				runtimeMetricsFile.append("disk footprint (KB)\t${dbSize}\n")
 				postprocess()
+
 			}
+
+			moveFile(runtimeMetricsFile, new File(database, "Stats_Runtime.csv"))
 		} finally {
 			executorService.shutdownNow()
 		}
