@@ -1,0 +1,33 @@
+//functor declarations need to be first
+#ifdef SOUFFLE_INCREMENTAL_OUTPUT
+#include "../addons/souffle-incremental-output/functor-declarations.dl"
+#endif
+
+#include "../commonMacros.dl"
+
+#include "flow-sensitive-schema.dl"
+#include "flow-insensitive-facts.dl"
+#include "keep.dl"
+
+#if defined(REFLECTION) || defined(LIGHT_REFLECTION_GLUE)
+#include "opaque-methods.dl"
+#endif
+
+#ifdef ANDROID
+#include "android.dl"
+#endif
+
+#if defined(HEAPDLS) || defined(IMPORT_DYNAMIC_FACTS)
+#include "import-dynamic-facts.dl"
+#endif
+
+#ifdef GENERICS_PRE_ANALYSIS
+#include "generics.dl"
+#endif
+
+#ifdef TAMIFLEX
+#include "../addons/tamiflex/fact-declarations.dl"
+#include "../addons/tamiflex/import.dl"
+#endif
+
+#include "imports.dl"

@@ -429,7 +429,8 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "CFG_ANALYSIS",
 					name: "cfg",
 					description: "Perform a CFG analysis.",
-					cli: true
+					cli: true,
+					forPreprocessor: true
 			),
 			/* End Main options */
 
@@ -724,7 +725,8 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "SOUFFLE_INCREMENTAL_OUTPUT",
 					name: "souffle-incremental-output",
 					group: GROUP_ENGINE,
-					description: "Use the functor for incremental output in Souffle."
+					description: "Use the functor for incremental output in Souffle.",
+					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
 					id: "VIA_DDLOG",
@@ -1176,12 +1178,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 		scan(lbDir)
 		scan(souffleDir)
 
-		List<String> platforms =
-			(platforms_Souffle.collect {
-			it + ((it in platforms_LB) ? "" : " (Souffle-only)")
-		}) +
-			(platforms_LB.findAll { !(it in platforms_Souffle) }
-			 .collect { it + " (LB-only)" })
+		SortedSet<String> platforms = platforms_Souffle + platforms_LB
 		return new TreeSet<>(platforms)
 	}
 

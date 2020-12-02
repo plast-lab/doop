@@ -1,3 +1,24 @@
+.decl AssignUnary(?instr:symbol, ?var:symbol, ?value:number, ?meth:symbol, ?use:number)
+.decl AssignBinary(?instr:symbol, ?var: symbol, ?left:number, ?right:number, ?meth:symbol, ?prev_use1:number, ?prev_use2:number)
+
+.decl AssignBinaryNonZeroRight(?instr:symbol, ?var:symbol, ?left:number, ?right:number, ?meth:symbol, ?prev_use1:number, ?prev_use2:number)
+
+.decl IntConstFolding(?instruction:symbol, ?variable:symbol, ?value:number, ?meth:symbol, ?use:number)
+.decl IntNonZeroConstFolding(?instruction:symbol, ?variable:symbol, ?value:number, ?meth:symbol, ?use:number)
+.decl BoolConstFolding(?instruction:symbol, ?variable:symbol, ?value:number, ?method:symbol)
+
+
+.decl IntConstant(?instr:symbol, ?var:symbol, ?value:number, ?method:symbol, ?type:symbol)
+.decl BoolConstant(?instr:symbol, ?var:symbol, ?value:number, ?meth:symbol)
+
+.output IntConstant
+.output BoolConstant
+.output IntConstFolding
+.output IntNonZeroConstFolding
+.output BoolConstFolding
+
+
+
 // Constant Folding
 
 // Special rule that is needed in order to avoid division by zero
@@ -312,3 +333,22 @@ BoolConstFolding(?instr, ?var, ?value, ?meth) :-
     _OperatorAt(?instr, "=="),
     ?left != ?right,
     ?value = 0.
+
+
+
+IntConstant(?instr, ?var, to_number(?value), ?meth, ?type) :-
+    isAssignNumConstant_Insn(?instr),
+    Instruction_Method(?instr, ?meth),    
+    AssignInstruction_To(?instr, ?var),
+    AssignNumConstant_Id(?instr, ?value),
+    _Var_Type(?var, ?type),
+    (Type_int(?type) ; Type_byte(?type) ;
+     Type_short(?type)).
+
+BoolConstant(?instr, ?var, to_number(?value), ?meth) :-
+    isAssignNumConstant_Insn(?instr),
+    Instruction_Method(?instr, ?meth),    
+    AssignInstruction_To(?instr, ?var),
+    AssignNumConstant_Id(?instr, ?value),
+    _Var_Type(?var, ?type),
+    Type_boolean(?type).

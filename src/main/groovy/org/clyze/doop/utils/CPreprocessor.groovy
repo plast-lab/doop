@@ -25,11 +25,10 @@ class CPreprocessor {
             option.forPreprocessor && option.value
         }
         .collect { AnalysisOption<?> option ->
-            if (option.value instanceof Boolean)
-                "-D${option.id}" as String
-            else {
+            if (option.value instanceof Integer || option.value instanceof String)
                 "-D${option.id}=${option.value}" as String
-            }
+            else
+                "-D${option.id}" as String
         } as List<String>
         log.debug "Preprocessor: " + macroCli
     }

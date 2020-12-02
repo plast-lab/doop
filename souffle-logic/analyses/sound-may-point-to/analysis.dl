@@ -1,3 +1,5 @@
+#include "../../main/string-constants.dl"
+
 // A sound may-point-to analysis ("shall"-point-to?
 // "True-may"-point-to?). Does not conclude anything if it is not
 // certain it over-approximates all possible points-to targets. That

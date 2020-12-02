@@ -1,3 +1,4 @@
+#include "../../commonMacros.dl"
 #include "rules-spring.dl"
 
 ServletEntryMethodName("service").

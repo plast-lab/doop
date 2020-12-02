@@ -1,3 +1,5 @@
+#pragma once
+
 #include "../../commonMacros.dl"
 
 #define DEFAULT_BREADCRUMB "ASSIGN"

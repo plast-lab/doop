@@ -1,3 +1,5 @@
+#include "../../commonMacros.dl"
+
 // The following 3 predicate declarations are needed in case that
 // statistics are enabled.
 .decl MockObjFromArray(?type:ReferenceType)

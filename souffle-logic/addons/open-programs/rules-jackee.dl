@@ -1,5 +1,5 @@
-#include "application-concrete-types.dl"
 #include "../../commonMacros.dl"
+#include "application-concrete-types.dl"
 
 // The following 3 predicate declarations are needed in case that
 // statistics are enabled.

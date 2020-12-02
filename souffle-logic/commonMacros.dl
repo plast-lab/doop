@@ -1,3 +1,5 @@
+#pragma once
+
 #define NormalHeapConsMacro(heap, type) \
    isHeapAllocation(heap), \
    isNormalHeap(heap), \

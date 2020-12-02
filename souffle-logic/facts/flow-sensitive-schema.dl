@@ -493,10 +493,6 @@
 // The definition should appear outside the include, because a few rules negatively refer to it
 .decl isOpaqueMethod(?m:Method)
 
-#if defined(REFLECTION) || defined(LIGHT_REFLECTION_GLUE)
-#include "opaque-methods.dl"
-#endif
-
 #ifndef X_STATS_NONE
 // Predicate to store analysis statistics
 .decl Stats_Metrics(order:symbol, msg:symbol, c:number)

@@ -14,6 +14,7 @@ import java.util.concurrent.Future
 
 import static org.apache.commons.io.FilenameUtils.getBaseName
 import static org.apache.commons.io.FileUtils.deleteQuietly
+import static org.apache.commons.io.FileUtils.moveFile
 import static org.apache.commons.io.FileUtils.sizeOfDirectory
 
 @CompileStatic
@@ -66,7 +67,8 @@ class SouffleAnalysis extends DoopAnalysis {
 			})
 		}
 
-		File runtimeMetricsFile = new File(database, "Stats_Runtime.csv")
+		File runtimeMetricsFile = File.createTempFile('Stats_Runtime', '.csv')
+		log.debug "Using intermediate runtime metrics file: ${runtimeMetricsFile.canonicalPath}"
 		if (!database.exists()) {
 			database.mkdirs()
 		}
@@ -120,106 +122,46 @@ class SouffleAnalysis extends DoopAnalysis {
 				int dbSize = (sizeOfDirectory(database) / 1024).intValue()
 				runtimeMetricsFile.append("disk footprint (KB)\t${dbSize}\n")
 				postprocess()
+
 			}
+
+			moveFile(runtimeMetricsFile, new File(database, "Stats_Runtime.csv"))
 		} finally {
 			executorService.shutdownNow()
 		}
 	}
 
 	void initDatabase(File analysis) {
-		//functor declarations need to be first
-		if(options.SOUFFLE_INCREMENTAL_OUTPUT.value){
-			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/souffle-incremental-output/functor-declarations.dl")
-		}
-		def commonMacros = "${Doop.souffleLogicPath}/commonMacros.dl"
-		cpp.includeAtEnd("$analysis", "${Doop.souffleFactsPath}/flow-sensitive-schema.dl")
-		cpp.includeAtEnd("$analysis", "${Doop.souffleFactsPath}/imports.dl", commonMacros)
-		cpp.includeAtEnd("$analysis", "${Doop.souffleFactsPath}/flow-insensitive-facts.dl")
-		cpp.includeAtEnd("$analysis", "${Doop.souffleFactsPath}/keep.dl")
-
+		cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/facts/facts.dl")
 		handleImportDynamicFacts()
-
-		if (options.ANDROID.value) {
-			cpp.includeAtEnd("$analysis", "${Doop.souffleFactsPath}/android.dl", commonMacros)
-		}
-		if (options.HEAPDLS.value || options.IMPORT_DYNAMIC_FACTS.value) {
-			cpp.includeAtEnd("$analysis", "${Doop.souffleFactsPath}/import-dynamic-facts.dl", commonMacros)
-		}
-		if (options.GENERICS_PRE_ANALYSIS.value) {
-			cpp.includeAtEnd("$analysis", "${Doop.souffleFactsPath}/generics.dl", commonMacros)
-		}
-		if (options.TAMIFLEX.value) {
-			def tamiflexPath = "${Doop.souffleAddonsPath}/tamiflex"
-			cpp.includeAtEnd("$analysis", "${tamiflexPath}/fact-declarations.dl")
-			cpp.includeAtEnd("$analysis", "${tamiflexPath}/import.dl")
-		}
 	}
 
 	void basicAnalysis(File analysis) {
-		def commonMacros = "${Doop.souffleLogicPath}/commonMacros.dl"
-		cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/basic/basic.dl", commonMacros)
-
-		if (options.CFG_ANALYSIS.value || name == "sound-may-point-to") {
-			def cfgAnalysisPath = "${Doop.souffleAddonsPath}/cfg-analysis"
-			cpp.includeAtEnd("$analysis", "${cfgAnalysisPath}/analysis.dl", "${cfgAnalysisPath}/declarations.dl")
+		if (options.X_STOP_AT_BASIC.value == 'classes-scc') {
+			cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/basic/classes-scc.dl")
 		}
-		if (options.X_STOP_AT_BASIC.value) {
-			if (options.X_STOP_AT_BASIC.value == 'classes-scc') {
-				cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/basic/classes-scc.dl")
-			}
-
-			if (options.X_STOP_AT_BASIC.value == 'partitioning') {
-				cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/basic/partitioning.dl")
-			}
+		if (options.X_STOP_AT_BASIC.value == 'partitioning') {
+			cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/basic/partitioning.dl")
 		}
+		cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/basic/basic.dl")
 	}
 
 	void mainAnalysis(File analysis) {
-		def commonMacros = "${Doop.souffleLogicPath}/commonMacros.dl"
-		def mainPath = "${Doop.souffleLogicPath}/main"
-		def analysisPath = "${Doop.souffleAnalysesPath}/${getBaseName(analysis.name)}"
+		cpp.includeAtEnd("$analysis", "${Doop.souffleAnalysesPath}/${getBaseName(analysis.name)}/analysis.dl")
 
-		if (name == "sound-may-point-to") {
-			cpp.includeAtEnd("$analysis", "${mainPath}/string-constants.dl")
-			cpp.includeAtEnd("$analysis", "${analysisPath}/analysis.dl")
-		} else {
-			cpp.includeAtEndIfExists("$analysis", "${analysisPath}/declarations.dl")
-			cpp.includeAtEndIfExists("$analysis", "${analysisPath}/delta.dl", commonMacros)
-			cpp.includeAtEnd("$analysis", "${analysisPath}/analysis.dl", commonMacros)
-		}
+		if (options.INFORMATION_FLOW.value)
+			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/information-flow/${options.INFORMATION_FLOW.value}${INFORMATION_FLOW_SUFFIX}.dl")
 
-		if(options.SOUFFLE_INCREMENTAL_OUTPUT.value){
-			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/souffle-incremental-output/incr-output.dl")
-		}
+		if (options.CONSTANT_FOLDING.value)
+			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/constant-folding/analysis.dl")
 
-		if (options.INFORMATION_FLOW.value) {
-			def infoFlowPath = "${Doop.souffleAddonsPath}/information-flow"
-			cpp.includeAtEnd("$analysis", "${infoFlowPath}/declarations.dl")
-			cpp.includeAtEnd("$analysis", "${infoFlowPath}/delta.dl")
-			cpp.includeAtEnd("$analysis", "${infoFlowPath}/rules.dl")
-			cpp.includeAtEnd("$analysis", "${infoFlowPath}/${options.INFORMATION_FLOW.value}${INFORMATION_FLOW_SUFFIX}.dl")
-		}
-
-		if (options.CONSTANT_FOLDING.value) {
-			def constantFoldingPath = "${Doop.souffleAddonsPath}/constant-folding"
-			cpp.includeAtEnd("$analysis", "${constantFoldingPath}/declarations.dl")
-			cpp.includeAtEnd("$analysis", "${constantFoldingPath}/const-type-infer.dl")
-			cpp.includeAtEnd("$analysis", "${constantFoldingPath}/constant-folding.dl")
-		}
-
-		if (options.SYMBOLIC_REASONING.value) {
-			def symbolicReasoningPath = "${Doop.souffleAddonsPath}/symbolic-reasoning"
-			cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/util.dl")
-			cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/expr-tree.dl")
-			cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/path-expression.dl")
-			cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/boolean-reasoning.dl")
-			cpp.includeAtEnd("$analysis", "${symbolicReasoningPath}/arithmetic-reasoning.dl")
-		}
+		if (options.SYMBOLIC_REASONING.value)
+			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/symbolic-reasoning/analysis.dl")
 
 		String openProgramsRules = options.OPEN_PROGRAMS.value
 		if (openProgramsRules) {
 			log.debug "Using open-programs rules: ${openProgramsRules}"
-			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/open-programs/rules-${openProgramsRules}.dl", commonMacros)
+			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/open-programs/rules-${openProgramsRules}.dl")
 		}
 
 		if (options.SANITY.value) {
@@ -249,7 +191,7 @@ class SouffleAnalysis extends DoopAnalysis {
 			if (extraLogic.exists()) {
 				String extraLogicPath = extraLogic.canonicalPath
 				log.info "Adding extra logic file ${extraLogicPath}"
-				cpp.includeAtEnd("${analysis}", extraLogicPath, commonMacros)
+				cpp.includeAtEnd("${analysis}", extraLogicPath)
 			} else {
 				throw new RuntimeException("Extra logic file does not exist: ${extraLogic}")
 			}

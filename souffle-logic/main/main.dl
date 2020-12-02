@@ -1,3 +1,9 @@
+#include "../commonMacros.dl"
+
+#ifdef SOUFFLE_INCREMENTAL_OUTPUT
+#include "../addons/souffle-incremental-output/incr-output.dl"
+#endif
+
 #include "main-declarations.dl"
 
 .comp AbstractContextSensitivity<Configuration> {
