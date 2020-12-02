@@ -59,4 +59,12 @@ DynamicContextToHContext(?hctx, ?dynCtx) :-
    isImmutableHContext(?hctx).
 #endif // HEAPDLS
 
+    /**
+	 * Special calling contexts
+	 */
+    PlusType("<<initial-context>>").
+    PlusType("<<jvm-startup-context>>").
+    PlusType("<<clinit-context>>").
+    PlusType("<<immutable-context>>").
+    PlusType("<<immutable-hcontext>>").
 }
