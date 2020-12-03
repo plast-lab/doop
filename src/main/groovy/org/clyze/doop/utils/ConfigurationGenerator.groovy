@@ -60,13 +60,20 @@ class ConfigurationGenerator {
                 println "| Processing reachable app-methods: ${appReachable.canonicalPath}"
                 appReachable.withReader { BufferedReader br ->
                     for (String doopId : br.readLines()) {
-                        Method m = Method.fromDoopId(doopId)
-                        // Static class initializers are not recognized by the native image builder.
-                        if (m.name.equals('<clinit>'))
+                        if (doopId.size() == 0)
                             continue
-                        types.add(m.type)
-                        rMethods.putIfAbsent(m.type, new LinkedList<Method>())
-                        rMethods.get(m.type).add(m)
+                        try {
+                            Method m = Method.fromDoopId(doopId)
+                            // Static class initializers are not recognized by the native image builder.
+                            if (m.name.equals('<clinit>'))
+                                continue
+                            types.add(m.type)
+                            rMethods.putIfAbsent(m.type, new LinkedList<Method>())
+                            rMethods.get(m.type).add(m)
+                        } catch (Exception ex) {
+                            System.err.println("ERROR: could not process line: '${doopId}'")
+                            ex.printStackTrace()
+                        }
                     }
                 }
             } else
