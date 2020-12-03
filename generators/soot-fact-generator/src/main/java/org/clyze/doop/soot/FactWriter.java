@@ -41,7 +41,7 @@ class FactWriter extends JavaFactWriter {
     private String methodSig(SootMethod m, String methodRaw) {
         if (methodRaw == null)
             methodRaw = _rep.signature(m);
-        return hashMethodNameIfLong(methodRaw);
+        return methodRaw; // hashMethodNameIfLong(methodRaw);
     }
 
     private static String getAnnotationType(AnnotationTag aTag) {
