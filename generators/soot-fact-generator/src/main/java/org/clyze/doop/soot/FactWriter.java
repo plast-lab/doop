@@ -1027,9 +1027,10 @@ class FactWriter extends JavaFactWriter {
             }
     }
 
-    public void writePreliminaryFacts(Collection<SootClass> classes, BasicJavaSupport java) {
+    public void writePreliminaryFacts(Collection<SootClass> classes,
+                                      BasicJavaSupport java, boolean debug) {
         classes.stream().filter(SootClass::isApplicationClass).forEachOrdered(this::writeApplicationClass);
-        writePreliminaryFacts(java);
+        writePreliminaryFacts(java, debug);
     }
 
     boolean checkAndRegisterPhantom(Object phantom) {

@@ -48,14 +48,13 @@ public class DexInvoker {
             java.preprocessInputs(db);
 
             DexFactWriter writer = new DexFactWriter(db, dexParams, cha);
-            writer.writePreliminaryFacts(java);
             AndroidSupport android = new DexAndroidSupport(dexParams, java);
             try {
                 Set<String> tmpDirs = new HashSet<>();
                 android.processInputs(tmpDirs);
+                writer.writePreliminaryFacts(java, dexParams._debug);
                 System.out.println("Writing components...");
                 android.writeComponents(writer);
-                android.printCollectedComponents();
                 JHelper.cleanUp(tmpDirs);
             } catch (Exception ex) {
                 ex.printStackTrace();

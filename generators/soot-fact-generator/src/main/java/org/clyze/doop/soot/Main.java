@@ -278,14 +278,11 @@ public class Main {
 
         if (writeFacts) {
 
-            writer.writePreliminaryFacts(classes, java);
+            writer.writePreliminaryFacts(classes, java, sootParameters._debug);
             db.flush();
 
-            if (android != null) {
-                android.generateFactsForXML(db);
-                if (sootParameters._legacyAndroidProcessing)
-                    android.writeComponents(writer);
-            }
+            if (android != null && sootParameters._legacyAndroidProcessing)
+                android.writeComponents(writer);
 
             scene.getOrMakeFastHierarchy();
 

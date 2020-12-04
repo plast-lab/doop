@@ -24,7 +24,6 @@ public abstract class AndroidSupport {
     private final Collection<String> appCallbackMethods = new HashSet<>();
     private final Set<LayoutControl> appUserControls = new HashSet<>();
     private final Map<String, AppResources> computedResources = new HashMap<>();
-    private final Collection<String> decodeDirs = new HashSet<>();
 
     private final Logger logger;
 
@@ -55,7 +54,7 @@ public abstract class AndroidSupport {
                 logger.info("Processing application resources in " + i);
                 if (isApk && parameters.getDecodeApk()) {
                     logger.debug("Decoding...");
-                    decodeDirs.add(decodeDir);
+                    java.xmlRoots.add(decodeDir);
                     decodeApk(new File(i), decodeDir);
                 }
                 if (parameters._legacyAndroidProcessing) {
@@ -171,21 +170,6 @@ public abstract class AndroidSupport {
                 }
             }
         }
-    }
-
-    /**
-     * Translate XML files to facts.
-     *
-     * @param db      the database object to use for output
-     */
-    public void generateFactsForXML(Database db) {
-        // The output directory (the parent of the decode directories)
-        String outDir = db.getDirectory();
-        for (String decodeDir : decodeDirs) {
-            logger.info("Processing XML files in directory: " + decodeDir);
-            XMLFactGenerator.processDir(new File(decodeDir), db, outDir, parameters._debug);
-        }
-
     }
 
     // Parses Android manifests. Supports binary and plain-text XML
