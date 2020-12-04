@@ -30,7 +30,7 @@ public class Resources {
         throws IOException {
         String resourceJar = null;
 
-        List<String> matches = new LinkedList<>();
+        List<String> matches;
         if (doopHome != null) {
             matches = getMatchingResources(doopHome, resource);
             // Also look in DOOP_HOME (to be used by client libraries, see example doop-as-lib).
@@ -74,16 +74,23 @@ public class Resources {
      * @param resourcesParentDir   the top directory containing the "resources" directory
      * @param resource             the resource name substring
      * @return                     a list of file paths
-     * @throws IOException
+     * @throws IOException         when the resource could not be located
      */
     private static List<String> getMatchingResources(String resourcesParentDir, String resource)
             throws IOException {
         List<String> matches = new LinkedList<>();
         // Remove quotes used for escaping in the command line.
         resourcesParentDir = resourcesParentDir.replaceAll("\"", "");
-        File resourcesDir = new File(resourcesParentDir, "resources");
-        if (!resourcesDir.exists())
-            throw new RuntimeException("ERROR: resources directory does not exist: " + resourcesDir.getCanonicalPath());
+        File resourcesDir;
+        File resourcesDir1 = new File(resourcesParentDir, "resources");
+        File resourcesDir2 = new File(resourcesParentDir, "build/resources");
+        if (resourcesDir1.exists())
+            resourcesDir = resourcesDir1;
+        else if (resourcesDir2.exists())
+            resourcesDir = resourcesDir2;
+        else
+            throw new IOException("ERROR: resources directory does not exist, tried: " +
+                    resourcesDir1.getCanonicalPath() + ", " + resourcesDir2.getCanonicalPath());
         File[] files = resourcesDir.listFiles();
         if (files == null)
             throw new RuntimeException("ERROR: could not list directory " + resourcesDir.getCanonicalPath());

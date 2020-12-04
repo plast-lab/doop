@@ -119,7 +119,7 @@ gradle.rootProject.ext.clueCommonVersion='3.23.6'
 gradle.rootProject.ext.log4jVersion='1.2.17'
 gradle.rootProject.ext.spockVersion='2.0-M3-groovy-3.0'
 // Set other variables for subprojects.
-gradle.rootProject.ext.resourcesDir='resources'
+gradle.rootProject.ext.resourcesDir='build/resources'
 
 dependencies {
     // apktool "ext:apktool:2.4.0"                              // old artifactory dependency
@@ -353,21 +353,6 @@ frontends.each { fg ->
     clean.dependsOn(":generators:${fg}:uninstallJar")
     testAll.dependsOn(":generators:${fg}:test")
 }
-
-// Uninstall resources on 'clean'.
-task uninstallResources {
-    doLast {
-        def resDir = "${projectDir}/${resourcesDir}"
-        file(resDir).list().each { f ->
-            (frontends + ["apktool"]).each { res ->
-                if (f.startsWith(res) && f.toLowerCase().endsWith("jar")) {
-                    delete "${resDir}/${f}"
-                }
-            }
-        }
-    }
-}
-clean.dependsOn uninstallResources
 
 task fullClean {
     description 'Clean everything, including caches and analysis results.'
