@@ -21,6 +21,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 	private static final String GROUP_HEAPDL = "HeapDL"
 	private static final String GROUP_INFORMATION_FLOW = "Information flow"
 	private static final String GROUP_NATIVE = "Native code"
+	private static final String GROUP_OPEN_PROGRAMS = "Open programs"
 	private static final String GROUP_PYTHON = "Python"
 	private static final String GROUP_REFLECTION = "Reflection"
 	private static final String GROUP_STATS = "Statistics"
@@ -788,6 +789,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new AnalysisOption(
 					id: "OPEN_PROGRAMS",
 					name: "open-programs",
+					group: GROUP_OPEN_PROGRAMS,
 					argName: "STRATEGY",
 					description: "Create analysis entry points and environment using various strategies (such as 'servlets-only' or 'concrete-types').",
 					forPreprocessor: true
@@ -795,11 +797,13 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "OPEN_PROGRAMS_IMMUTABLE_CTX",
 					name: "open-programs-context-insensitive-entrypoints",
+					group: GROUP_OPEN_PROGRAMS,
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
 					id: "OPEN_PROGRAMS_IMMUTABLE_HCTX",
 					name: "open-programs-heap-context-insensitive-entrypoints",
+					group: GROUP_OPEN_PROGRAMS,
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
