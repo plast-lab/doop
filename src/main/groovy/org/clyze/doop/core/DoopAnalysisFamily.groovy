@@ -28,7 +28,6 @@ class DoopAnalysisFamily implements AnalysisFamily {
 
 	private static final int SERVER_DEFAULT_THRESHOLD = 1000
 	private static final int DEFAULT_JOBS = 4
-	private static final int DEFAULT_STRINGS_DISTANCE = 5
 	static String USE_ANALYSIS_BINARY_NAME = 'use-analysis-binary'
 
 	@Override
@@ -332,21 +331,6 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Skip strings without enclosing function information.",
 					forCacheID: true,
 					forPreprocessor: true
-			),
-			new BooleanAnalysisOption(
-					id: "USE_STRING_LOCALITY",
-					name: "use-string-locality",
-					group: GROUP_NATIVE,
-					description: "Use string locality when pairing native target strings.",
-					forPreprocessor: true
-			),
-			new IntegerAnalysisOption(
-					id: "NATIVE_STRINGS_DISTANCE",
-					name: "native-strings-distance",
-					group: GROUP_NATIVE,
-					description: "The maximum distance to use when reasoning about string locality. Default: ${DEFAULT_STRINGS_DISTANCE}",
-					argName: "N",
-					value: DEFAULT_STRINGS_DISTANCE
 			),
 			new BooleanAnalysisOption(
 					id: "DACAPO",

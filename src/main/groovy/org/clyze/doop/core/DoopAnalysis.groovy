@@ -186,10 +186,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             File origTamFile = new File(options.TAMIFLEX.value.toString())
             gen0.writeTamiflexFacts(origTamFile)
         }
-
-        if (options.NATIVE_STRINGS_DISTANCE.value)
-            gen0.writeNativeStringsDistance(options.NATIVE_STRINGS_DISTANCE.value as String)
-
     }
 
     /**
