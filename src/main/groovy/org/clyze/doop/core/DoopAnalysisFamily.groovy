@@ -713,7 +713,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "SOUFFLE_USE_FUNCTORS",
 					name: "souffle-use-functors",
 					group: GROUP_ENGINE,
-					description: "Enale the use of user defined functors in Souffle."
+					description: "Enable the use of user-defined functors in Souffle."
 			),
 			new BooleanAnalysisOption(
 					id: "SOUFFLE_INCREMENTAL_OUTPUT",
