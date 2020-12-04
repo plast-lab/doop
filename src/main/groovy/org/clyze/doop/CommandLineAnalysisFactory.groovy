@@ -37,9 +37,18 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
 			"automatically). Permitted characters include letters, digits, " +
 			"${EXTRA_ID_CHARACTERS.collect { "'$it'" }.join(', ')}."
 	static final String USAGE = "doop -i <INPUT> -a <NAME> [OPTION]..."
-	static final int WIDTH = 120
+	static final int WIDTH = terminalWidth
 
 	static final AnalysisFamily FAMILY = DoopAnalysisFamily.instance
+
+	private static int getTerminalWidth() {
+		try {
+			int columns = Integer.valueOf(System.getenv('COLUMNS'))
+			if (columns > 40)
+				return columns
+		} catch (ignored) { }
+		return 120
+	}
 
 	/**
 	 * Processes the cli args and generates a new analysis.

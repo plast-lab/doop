@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 ARGS=""
 while [ "$1" != "" ]; do
@@ -14,4 +14,10 @@ while [ "$1" != "" ]; do
     shift
 done
 
+# Export number of terminal columns for help display.
+if command -v 'resize' &> /dev/null
+then
+    eval `resize`
+    export COLUMNS
+fi
 eval "./gradlew :run -Pargs=\"$ARGS\""
