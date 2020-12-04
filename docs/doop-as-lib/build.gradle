@@ -20,6 +20,7 @@ repositories {
 
     mavenCentral()
 
+    maven { url 'https://dl.bintray.com/gfour/plast-lab' }
     maven { url "http://centauri.di.uoa.gr:8081/artifactory/plast-deps" }
     maven { url "http://centauri.di.uoa.gr:8081/artifactory/plast-public" }
 }
@@ -36,7 +37,7 @@ dependencies {
     generators "org.clyze:soot-fact-generator:$doopVersion"
     generators "org.clyze:wala-fact-generator:$doopVersion"
     generators "org.clyze:dex-fact-generator:$doopVersion"
-    apktool "ext:apktool:2.4.0"
+    apktool 'Apktool-fork.brut.apktool:apktool-cli:2.4.2'
     compile "org.clyze:doop:$doopVersion"
 }
 
@@ -69,5 +70,5 @@ tasks.build.dependsOn resolveDoopResources
 mainClassName = "DoopRunner"
 
 wrapper {
-    gradleVersion = "5.4.1"
+    gradleVersion = "6.2"
 }
