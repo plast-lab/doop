@@ -65,7 +65,6 @@ OverloadedJNIMethod(?javaMethod, ?type, ?name, ?descriptor) :-
 // example, the "crazy linker" used on Android, registers native
 // methods: https://chromium.googlesource.com/chromium/src/+/master/docs/android_native_libraries.md
 .decl JNIMethod_NativeId(?javaMethod:Method, ?nativeId:symbol)
-.output JNIMethod_NativeId
 
 // Non-overloaded native method (default, always generated).
 JNIMethod_NativeId(?javaMethod, ?nativeId) :-
