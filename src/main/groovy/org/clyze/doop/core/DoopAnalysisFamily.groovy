@@ -25,6 +25,8 @@ class DoopAnalysisFamily implements AnalysisFamily {
 	private static final String GROUP_PYTHON = "Python"
 	private static final String GROUP_REFLECTION = "Reflection"
 	private static final String GROUP_STATS = "Statistics"
+	private static final String GROUP_ENTRY_POINTS = "Entry points"
+	private static final String EXP = "[Experimental] "
 
 	private static final int SERVER_DEFAULT_THRESHOLD = 1000
 	private static final int DEFAULT_JOBS = 4
@@ -163,6 +165,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new AnalysisOption<List<String>>(
 					id: "MAIN_CLASS",
 					name: "main",
+					group: GROUP_ENTRY_POINTS,
 					argName: "MAIN",
 					description: "Specify the main class(es) separated by spaces.",
 					value: [],
@@ -199,6 +202,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new AnalysisOption<String>(
 					id: "KEEP_SPEC",
 					name: "keep-spec",
+					group: GROUP_ENTRY_POINTS,
 					argName: "FILE",
 					argInputType: InputType.MISC,
 					forCacheID: true,
@@ -403,11 +407,13 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "LEGACY_ANDROID_PROCESSING",
 					name: "legacy-android-processing",
+					group: GROUP_FACTS,
 					description: "If true the analysis uses the legacy processor for Android resources."
 			),
 			new BooleanAnalysisOption(
 					id: "LEGACY_SOOT_INVOCATION",
 					name: "legacy-soot-invocation",
+					group: GROUP_FACTS,
 					description: "If true, Soot will be invoked using a custom classloader (may use less memory, only supported on Java < 9)."
 			),
 			new BooleanAnalysisOption(
@@ -518,6 +524,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "EXCLUDE_IMPLICITLY_REACHABLE_CODE",
 					name: "exclude-implicitly-reachable-code",
+					group: GROUP_ENTRY_POINTS,
 					description: "Don't make any method implicitly reachable.",
 					forPreprocessor: true
 			),
@@ -638,12 +645,14 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "DISCOVER_TESTS",
 					name: "discover-tests",
+					group: GROUP_ENTRY_POINTS,
 					description: "Discover and treat test code (e.g. JUnit) as entry points.",
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
 					id: "DISCOVER_MAIN_METHODS",
 					name: "discover-main-methods",
+					group: GROUP_ENTRY_POINTS,
 					description: "Discover main() methods.",
 					forPreprocessor: true
 			),
@@ -949,7 +958,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "X_CONTEXT_REMOVER",
 					name: "Xcontext-remover",
-					description: "Run the context remover for reduced memory use (only available in context-insensitive analysis).",
+					description: EXP + "Run the context remover for reduced memory use (only available in context-insensitive analysis).",
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
