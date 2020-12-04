@@ -20,7 +20,7 @@ dependencies {
     compile 'net.dongliu:apk-parser:2.6.10'          // needed for reading binary XML entries from APK inputs
     compile "org.antlr:antlr4-runtime:${antlrVersion}"
     compile 'org.clyze:native-scanner:0.6.2'
-    compile "log4j:log4j:1.2.17"                     // Logging implementation
+    compile "log4j:log4j:${log4jVersion}"            // Logging implementation
 }
 
 compileJava {
