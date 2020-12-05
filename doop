@@ -15,9 +15,8 @@ while [ "$1" != "" ]; do
 done
 
 # Export number of terminal columns for help display.
-if command -v 'resize' &> /dev/null
+if command -v 'tput' &> /dev/null
 then
-    eval `resize`
-    export COLUMNS
+    export COLUMNS=`tput cols`
 fi
 eval "./gradlew :run -Pargs=\"$ARGS\""
