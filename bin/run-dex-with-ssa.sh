@@ -2,6 +2,7 @@
 
 # Test script for running the dex front end with intermediate SSA
 # transformation.
+# Should be run from the top level; i.e. ./bin/run-dex-with-ssa.sh ...
 
 if [ "$1" == "" ] || [ "$2" == "" ]; then
     echo "Usage: run-dex-with-ssa.sh <apk> <final-facts-out>"
