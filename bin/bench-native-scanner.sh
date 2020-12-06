@@ -158,7 +158,7 @@ function runDoop() {
 	deleteFacts ${ID_HEAPDL}
     fi
     # 3. Native scanner, default mode.
-    ${DOOP} -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER} ${BASE_OPTS} --scan-native-code --native-use-binutils |& tee ${CURRENT_DIR}/${ID_SCANNER}.log
+    ${DOOP} -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER} ${BASE_OPTS} --scan-native-code --native-code-backend binutils |& tee ${CURRENT_DIR}/${ID_SCANNER}.log
     deleteFacts ${ID_SCANNER}
     popd &> /dev/null
 }
@@ -244,7 +244,7 @@ function analyzeXCorpusBenchmark() {
     deleteFacts ${ID_BASE}
     # 2. Native scanner, default mode.
     # ${DOOP} ${BASE_OPTS} --id ${ID_SCANNER} --scan-native-code |& tee ${CURRENT_DIR}/${ID_SCANNER}.log
-    ${DOOP} ${BASE_OPTS} --id ${ID_SCANNER} --scan-native-code --native-use-radare |& tee ${CURRENT_DIR}/${ID_SCANNER}.log
+    ${DOOP} ${BASE_OPTS} --id ${ID_SCANNER} --scan-native-code --native-code-backend radare |& tee ${CURRENT_DIR}/${ID_SCANNER}.log
     deleteFacts ${ID_SCANNER}
     set +x
     popd &> /dev/null

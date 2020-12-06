@@ -405,16 +405,13 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             params += ["--scan-native-code"]
         }
 
-        if (options.NATIVE_USE_RADARE.value) {
-            params += ["--native-use-radare"]
-        }
-
-        if (options.NATIVE_USE_BUILTIN.value) {
-            params += ["--native-use-builtin"]
-        }
-
-        if (options.NATIVE_USE_BINUTILS.value) {
-            params += ["--native-use-binutils"]
+        String nativeBackend = options.NATIVE_CODE_BACKEND.value
+        if (nativeBackend == DoopAnalysisFamily.NATIVE_BACKEND_BUILTIN) {
+            params += ["--native-backend-builtin"]
+        } else if (nativeBackend == DoopAnalysisFamily.NATIVE_BACKEND_RADARE) {
+            params += ["--native-backend-radare"]
+        } else if (nativeBackend == DoopAnalysisFamily.NATIVE_BACKEND_BINUTILS) {
+            params += ["--native-backend-binutils"]
         }
 
         if (options.ONLY_PRECISE_NATIVE_STRINGS.value) {

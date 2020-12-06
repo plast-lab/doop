@@ -227,13 +227,13 @@ public class Parameters {
         case "--scan-native-code":
             this._scanNativeCode = true;
             break;
-        case "--native-use-radare":
+        case "--native-backend-radare":
             this._nativeRadare = true;
             break;
-        case "--native-use-builtin":
+        case "--native-backend-builtin":
             this._nativeBuiltin = true;
             break;
-        case "--native-use-binutils":
+        case "--native-backend-binutils":
             this._nativeBinutils = true;
             break;
         case "--only-precise-native-strings":

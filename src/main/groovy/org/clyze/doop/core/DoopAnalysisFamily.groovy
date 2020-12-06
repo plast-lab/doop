@@ -30,6 +30,10 @@ class DoopAnalysisFamily implements AnalysisFamily {
 
 	private static final int SERVER_DEFAULT_THRESHOLD = 1000
 	private static final int DEFAULT_JOBS = 4
+	private static final String DEFAULT_NATIVE_BACKEND = ''
+	static final String NATIVE_BACKEND_BINUTILS = 'binutils'
+	static final String NATIVE_BACKEND_BUILTIN = 'builtin'
+	static final String NATIVE_BACKEND_RADARE = 'radare'
 	static String USE_ANALYSIS_BINARY_NAME = 'use-analysis-binary'
 
 	@Override
@@ -307,25 +311,14 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forCacheID: true,
 					forPreprocessor: true
 			),
-			new BooleanAnalysisOption(
-					id: "NATIVE_USE_RADARE",
-					name: "native-use-radare",
+			new AnalysisOption<String>(
+					id: "NATIVE_CODE_BACKEND",
+					name: "native-code-backend",
 					group: GROUP_NATIVE,
-					description: "Use Radare2 to find strings.",
-					forCacheID: true
-			),
-			new BooleanAnalysisOption(
-					id: "NATIVE_USE_BUILTIN",
-					name: "native-use-builtin",
-					group: GROUP_NATIVE,
-					description: "Use (naive/portable) built-in analysis to find strings.",
-					forCacheID: true
-			),
-			new BooleanAnalysisOption(
-					id: "NATIVE_USE_BINUTILS",
-					name: "native-use-binutils",
-					group: GROUP_NATIVE,
-					description: "Use binutils-based analysis to find strings.",
+					argName: "BACKEND",
+					description: "Use back-end to scan native code (portable built-in, system binutils, Radare2).",
+					validValues: [NATIVE_BACKEND_BUILTIN, NATIVE_BACKEND_BINUTILS, NATIVE_BACKEND_RADARE],
+					value: DEFAULT_NATIVE_BACKEND,
 					forCacheID: true
 			),
 			new BooleanAnalysisOption(
