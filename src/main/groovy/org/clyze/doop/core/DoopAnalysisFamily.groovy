@@ -156,9 +156,9 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					argName: "PATH"
 			),
 			new BooleanAnalysisOption(
-					id: "SKIP_CODE_FACTGEN",
-					name: "skip-code-factgen",
-					group: GROUP_FACTS,
+					id: "X_SKIP_CODE_FACTGEN",
+					name: "Xskip-code-factgen",
+					group: GROUP_EXPERIMENTAL,
 					description: "Don't generate facts for code."
 			),
 
