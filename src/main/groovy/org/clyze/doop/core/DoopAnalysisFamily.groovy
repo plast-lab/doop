@@ -401,7 +401,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "ANDROID",
 					name: "android",
-					description: "If true the analysis enables Android-specific logic.",
+					description: "Force Android mode for code inputs that are not in .apk format.",
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
@@ -747,7 +747,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
             new AnalysisOption<String>(
                     id: "CONSTANT_FOLDING",
                     name: "constant-folding",
-                    description: "Constant folding logic"
+                    description: "Enable constant folding logic."
             ),
 			new AnalysisOption<String>(
 					id: "SYMBOLIC_REASONING",
