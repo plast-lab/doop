@@ -481,7 +481,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			throw new RuntimeException("Error: options --" + options.CACHE.name + " and --" + options.SOUFFLE_PROFILE.name + " are not compatible when running via the DDlog converter.")
 		}
 
-		if (options.NO_SSA.value) {
+		if (options.X_NO_SSA.value) {
 			options.SSA.value = false
 		}
 

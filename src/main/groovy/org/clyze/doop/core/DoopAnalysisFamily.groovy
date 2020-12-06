@@ -254,9 +254,9 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
-					id: "NO_SSA",
-					name: "no-ssa",
-					group: GROUP_FACTS,
+					id: "X_NO_SSA",
+					name: "Xno-ssa",
+					group: GROUP_EXPERIMENTAL,
 					description: "Disable the default policy of using SSA transformation on input.",
 					forCacheID: true
 			),
