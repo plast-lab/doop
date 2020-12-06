@@ -89,7 +89,7 @@ class SouffleAnalysis extends DoopAnalysis {
 
 			if (options.X_SERVER_CHA.value) {
 				log.info "[CHA...]"
-				def methodLookupFile = new File("${Doop.doopHome}/souffle-scripts/method-lookup-script.dl")
+				def methodLookupFile = new File("${Doop.souffleAddonsPath}/server-logic/method-lookup-ext.dl")
 				def generatedFile0 = script.compile(methodLookupFile, outDir,
 						profiling,
 						options.SOUFFLE_DEBUG.value as boolean,

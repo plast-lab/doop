@@ -1,0 +1,5 @@
+#include "../../facts/facts.dl"
+#include "../../basic/type-hierarchy.dl"
+
+.decl ClassConstructor(?method:Method, ?type:Type)
+.output SupertypeOf

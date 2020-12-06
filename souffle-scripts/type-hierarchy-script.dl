@@ -1,5 +1,0 @@
-#include "../souffle-logic/facts/facts.dl"
-#include "../souffle-logic/basic/type-hierarchy.dl"
-
-.decl ClassConstructor(?method:Method, ?type:Type)
-.output SupertypeOf
