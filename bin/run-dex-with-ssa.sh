@@ -15,7 +15,7 @@ fi
 ID=${APP_NAME}-dex-facts
 FACTS_IN=${ID}
 FACTS_OUT=$(realpath $2)
-SSA_TRANSFORMER=$(realpath souffle-scripts/ssa-transform.dl)
+SSA_TRANSFORMER=$(realpath souffle-logic/addons/ssa-transform/analysis.dl)
 
 echo "APP_NAME=${APP_NAME}"
 echo "FACTS_IN=${FACTS_IN}"
