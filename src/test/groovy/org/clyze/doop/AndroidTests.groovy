@@ -187,7 +187,7 @@ class AndroidTests extends DoopSpec {
                      "--platform", "android_25_fulljars",
                      "--id", id,
                      "--Xstop-at-facts", "${id}-facts",
-                     "--dex", "--Xstats-full", "-Ldebug",
+                     "--Xdex", "--Xstats-full", "-Ldebug",
                      "--Xdry-run"] + testExports + mode
         Main.main((String[])args)
         Analysis analysis = Main.analysis
