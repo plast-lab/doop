@@ -128,11 +128,11 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		options.USER_SUPPLIED_ID.value = id ? validateUserSuppliedId(id) : generateId(options)
 
 		checkAnalysis(options)
-		if (options.LB3.value) {
+		if (options.X_LB3.value) {
 			checkLogicBlox(options)
 			if (options.ANDROID.value) {
 				log.warn "WARNING: Using legacy Android processing."
-				options.LEGACY_ANDROID_PROCESSING.value = true
+				options.X_LEGACY_ANDROID_PROCESSING.value = true
 			}
 		}
 
@@ -147,7 +147,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		}
 
 		log.debug "Created new analysis"
-		if (options.LB3.value)
+		if (options.X_LB3.value)
 			return new LB3Analysis(options, context, commandsEnv)
 		else {
 			if (options.PYTHON.value) {
@@ -221,7 +221,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 	static void checkAnalysis(Map<String, AnalysisOption<?>> options) {
 		def name = options.ANALYSIS.value
 		log.debug "Verifying analysis name: $name"
-		if (options.LB3.value)
+		if (options.X_LB3.value)
 			FileOps.findFileOrThrow("${Doop.analysesPath}/${name}/analysis.logic", "Unsupported analysis: $name")
 		else
 			FileOps.findFileOrThrow("${Doop.souffleAnalysesPath}/${name}/analysis.dl", "Unsupported analysis: $name")
@@ -729,7 +729,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		env.ANALYSIS_OUT = "${getOutputDirectory(options)}/database" as String
 		env.LC_ALL = "en_US.UTF-8"
 
-		if (options.LB3.value) {
+		if (options.X_LB3.value) {
 			def lbHome = options.LOGICBLOX_HOME.value
 			env.LOGICBLOX_HOME = lbHome
 			//We add these LB specific env vars here to make the server deployment more flexible (and the cli user's life easier)

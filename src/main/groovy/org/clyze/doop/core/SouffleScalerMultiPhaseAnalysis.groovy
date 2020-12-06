@@ -198,7 +198,7 @@ class SouffleScalerMultiPhaseAnalysis extends SouffleAnalysis {
 
 		env.LC_ALL = "en_US.UTF-8"
 
-		if (options.LB3.value) {
+		if (options.X_LB3.value) {
 			def lbHome = options.LOGICBLOX_HOME.value
 			env.LOGICBLOX_HOME = lbHome
 			//We add these LB specific env vars here to make the server deployment more flexible (and the cli user's life easier)

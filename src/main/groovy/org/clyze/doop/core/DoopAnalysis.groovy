@@ -228,7 +228,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                     runPython(tmpDirs)
                 } else if (options.WALA_FACT_GEN.value) {
                     runFrontEnd(tmpDirs, FrontEnd.WALA, null)
-                } else if (options.DEX_FACT_GEN.value) {
+                } else if (options.X_DEX_FACT_GEN.value) {
                     runFrontEnd(tmpDirs, FrontEnd.DEX, new CHA())
                     // // Step 1. Run Soot in platform-only mode for fact
                     // // generation, to fill in non .dex facts and the type
@@ -304,8 +304,8 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             Files.copy(origSpecialCSMethodsFile.toPath(), destSpecialCSMethodsFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
         }
 
-        if (options.ZIPPER.value) {
-            File origZipperFile = new File(options.ZIPPER.value.toString())
+        if (options.X_ZIPPER.value) {
+            File origZipperFile = new File(options.X_ZIPPER.value.toString())
             File destZipperFile = new File(factsDir, "ZipperPrecisionCriticalMethod.facts")
             Files.copy(origZipperFile.toPath(), destZipperFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
         }
@@ -389,7 +389,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             params += ["--decode-apk"]
         }
 
-        if (options.DEX_FACT_GEN.value) {
+        if (options.X_DEX_FACT_GEN.value) {
             params += ["--dex"]
         }
 
@@ -400,7 +400,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                 if (opt.value)
                     println "WARNING: option --${options.SCAN_NATIVE_CODE.name} is not fully compatible with --${opt.name}"
             }
-            check(options.DEX_FACT_GEN)
+            check(options.X_DEX_FACT_GEN)
             check(options.WALA_FACT_GEN)
             params += ["--scan-native-code"]
         }
@@ -425,7 +425,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             params += ["--write-artifacts-map"]
         }
 
-        if (options.LEGACY_ANDROID_PROCESSING.value) {
+        if (options.X_LEGACY_ANDROID_PROCESSING.value) {
             params += ["--legacy-android-processing"]
         }
 
@@ -510,7 +510,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                 try {
                     redo = false
                     String SOOT_MAIN = "org.clyze.doop.soot.Main"
-                    if (!JHelper.java9Plus() && options.LEGACY_SOOT_INVOCATION.value) {
+                    if (!JHelper.java9Plus() && options.X_LEGACY_SOOT_INVOCATION.value) {
                         // We invoke the Soot-based fact generator reflectively
                         // using a separate class-loader to be able to support
                         // multiple soot invocations in the same JVM

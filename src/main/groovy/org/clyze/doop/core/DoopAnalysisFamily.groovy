@@ -26,7 +26,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 	private static final String GROUP_REFLECTION = "Reflection"
 	private static final String GROUP_STATS = "Statistics"
 	private static final String GROUP_ENTRY_POINTS = "Entry points"
-	private static final String EXP = "[Experimental] "
+	private static final String GROUP_EXPERIMENTAL = "[Experimental/Unsupported] "
 
 	private static final int SERVER_DEFAULT_THRESHOLD = 1000
 	private static final int DEFAULT_JOBS = 4
@@ -356,9 +356,9 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forCacheID: true
 			),
 			new BooleanAnalysisOption(
-					id: "DEX_FACT_GEN",
-					name: "dex",
-					group: GROUP_FACTS,
+					id: "X_DEX_FACT_GEN",
+					name: "Xdex",
+					group: GROUP_EXPERIMENTAL,
 					description: "Use custom front-end to generate facts for .apk inputs, using Soot for other inputs.",
 					forCacheID: true
 			),
@@ -405,15 +405,15 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
-					id: "LEGACY_ANDROID_PROCESSING",
-					name: "legacy-android-processing",
-					group: GROUP_FACTS,
+					id: "X_LEGACY_ANDROID_PROCESSING",
+					name: "Xlegacy-android-processing",
+					group: GROUP_EXPERIMENTAL,
 					description: "If true the analysis uses the legacy processor for Android resources."
 			),
 			new BooleanAnalysisOption(
-					id: "LEGACY_SOOT_INVOCATION",
-					name: "legacy-soot-invocation",
-					group: GROUP_FACTS,
+					id: "X_LEGACY_SOOT_INVOCATION",
+					name: "Xlegacy-soot-invocation",
+					group: GROUP_EXPERIMENTAL,
 					description: "If true, Soot will be invoked using a custom classloader (may use less memory, only supported on Java < 9)."
 			),
 			new BooleanAnalysisOption(
@@ -442,14 +442,14 @@ class DoopAnalysisFamily implements AnalysisFamily {
 
 			/* Start Zipper related options */
 			new BooleanAnalysisOption(
-					id: "ZIPPER_PRE_ANALYSIS",
+					id: "X_ZIPPER_PRE_ANALYSIS",
 					name: "zipper-pre",
 					description: "Enable the analysis to be the pre-analysis of Zipper, and outputs the information required by Zipper.",
 					forPreprocessor: true
 			),
 			new AnalysisOption(
-					id: "ZIPPER",
-					name: "zipper",
+					id: "X_ZIPPER",
+					name: "Xzipper",
 					description: "Use file with precision-critical methods selected by Zipper, these methods are analyzed context-sensitively.",
 					argName: "FILE",
 					argInputType: InputType.MISC,
@@ -855,9 +855,9 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					cli: false
 			),
 			new BooleanAnalysisOption(
-					id: "LB3",
-					name: "lb",
-					group: GROUP_ENGINE,
+					id: "X_LB3",
+					name: "Xlb",
+					group: GROUP_EXPERIMENTAL,
 					description: "Use legacy LB engine."
 			),
 			/* End LogicBlox related options */
@@ -958,7 +958,8 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "X_CONTEXT_REMOVER",
 					name: "Xcontext-remover",
-					description: EXP + "Run the context remover for reduced memory use (only available in context-insensitive analysis).",
+					group: GROUP_EXPERIMENTAL,
+					description: "Run the context remover for reduced memory use (only available in context-insensitive analysis).",
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
@@ -971,19 +972,19 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "X_LOW_MEM",
 					name: "Xlow-mem",
-					group: GROUP_FACTS,
+					group: GROUP_EXPERIMENTAL,
 					description: "Use less memory. Does not support all options."
 			),
 			new BooleanAnalysisOption(
 					id: "X_ISOLATE_FACTGEN",
 					name: "Xisolate-fact-generation",
-					group: GROUP_FACTS,
+					group: GROUP_EXPERIMENTAL,
 					description: "Isolate invocations to the fact generator."
 			),
 			new BooleanAnalysisOption(
 					id: "X_SERIALIZE_FACTGEN_COMPILATION",
 					name: "Xserialize-factgen-compilation",
-					group: GROUP_FACTS,
+					group: GROUP_EXPERIMENTAL,
 					description: "Do not run fact generation and compilation in parallel.",
 					cli: false
 			),
@@ -1014,7 +1015,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "X_IGNORE_WRONG_STATICNESS",
 					name: "Xignore-wrong-staticness",
-					group: GROUP_FACTS,
+					group: GROUP_EXPERIMENTAL,
 					description: "Ignore 'wrong static-ness' errors in Soot.",
 					forCacheID: true
 			),

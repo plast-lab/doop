@@ -34,9 +34,9 @@
 #include "generics-pre-analysis.dl"
 #endif // GENERICS_PRE_ANALYSIS
 
-#ifdef ZIPPER_PRE_ANALYSIS
+#ifdef X_ZIPPER_PRE_ANALYSIS
 #include "zipper-pre-analysis.dl"
-#endif // ZIPPER_PRE_ANALYSIS
+#endif // X_ZIPPER_PRE_ANALYSIS
 
   .decl FakeInvocation_RegisterFinalize0(?heap:HeapAllocation, ?invo:MethodInvocation)
 

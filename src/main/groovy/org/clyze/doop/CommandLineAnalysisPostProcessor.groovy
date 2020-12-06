@@ -24,7 +24,7 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor<DoopAnal
 	void printStats(DoopAnalysis analysis) {
 		def lines = []
 
-		if (analysis.options.LB3.value) {
+		if (analysis.options.X_LB3.value) {
 			analysis.processRelation("Stats:Runtime") { String line ->
 				if (!filterOutLBWarn(line)) lines << line
 			}
@@ -41,7 +41,7 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor<DoopAnal
 		if (!analysis.options.get('X_STATS_NONE').value && !analysis.options.get('X_DRY_RUN').value) {
 			lines = []
 
-			if (analysis.options.LB3.value) {
+			if (analysis.options.X_LB3.value) {
 				analysis.processRelation("Stats:Metrics") { String line ->
 					if (!filterOutLBWarn(line)) lines.add(line)
 				}
