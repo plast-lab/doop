@@ -290,7 +290,6 @@ task souffleScript(type: JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
     if (project.hasProperty("args"))
         args project.property("args").split()
-
 }
 
 task createEmptyProperties {
@@ -395,7 +394,6 @@ if (project.hasProperty('artifactory_user')) {
     // Generate a jar with all the logic files
     task logicFilesJar(type: Jar) {
         into('souffle-logic') { from "souffle-logic" }
-        into('souffle-scripts') { from "souffle-scripts" }
     }
 
     publishing {
