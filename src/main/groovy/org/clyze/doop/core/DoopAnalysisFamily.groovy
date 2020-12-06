@@ -35,6 +35,9 @@ class DoopAnalysisFamily implements AnalysisFamily {
 	static final String NATIVE_BACKEND_BUILTIN = 'builtin'
 	static final String NATIVE_BACKEND_RADARE = 'radare'
 	static String USE_ANALYSIS_BINARY_NAME = 'use-analysis-binary'
+	static final String STATS_NONE = 'none'
+	static final String STATS_DEFAULT = 'default'
+	static final String STATS_FULL = 'full'
 
 	@Override
 	String getName() { "doop" }
@@ -856,26 +859,37 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			/* End LogicBlox related options */
 
 			/* Start non-standard flags */
+			new AnalysisOption<String>(
+					id: "STATS_LEVEL",
+					name: "stats",
+					group: GROUP_STATS,
+					argName: "LEVEL",
+					description: "Set statistics collection logic.",
+					validValues: [STATS_NONE, STATS_DEFAULT, STATS_FULL]
+			),
 			new BooleanAnalysisOption(
 					id: "X_STATS_FULL",
 					name: "Xstats-full",
 					group: GROUP_STATS,
 					description: "Load additional logic for collecting statistics.",
-					forPreprocessor: true
+					forPreprocessor: true,
+					cli: false
 			),
 			new BooleanAnalysisOption(
 					id: "X_STATS_NONE",
 					name: "Xstats-none",
 					group: GROUP_STATS,
 					description: "Do not load logic for collecting statistics.",
-					forPreprocessor: true
+					forPreprocessor: true,
+					cli: false
 			),
 			new BooleanAnalysisOption(
 					id: "X_STATS_DEFAULT",
 					name: "Xstats-default",
 					group: GROUP_STATS,
 					description: "Load default logic for collecting statistics.",
-					forPreprocessor: true
+					forPreprocessor: true,
+					cli: false
 			),
 			new AnalysisOption<String>(
 					id: "X_STATS_AROUND",

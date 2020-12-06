@@ -20,13 +20,13 @@ class DryRuns extends DoopSpec {
 		switch (analysisName) {
 		case 'micro':
 		case 'sound-may-point-to':
-			extraOpts = ["--Xstats-none" ]
+			extraOpts = ["--stats", "none" ]
 			break
 		case 'types-only':
-			extraOpts = ['--Xstats-full', '--Xserver-logic', '--disable-points-to' ]
+			extraOpts = ['--stats', 'full', '--Xserver-logic', '--disable-points-to' ]
 			break
 		default:
-			extraOpts = ["--Xstats-full", "--Xserver-logic" ]
+			extraOpts = ["--stats", "full", "--Xserver-logic" ]
 		}
 		Main.main((String[])(["-i", Artifacts.HELLO_JAR,
 							  "-a", analysisName,

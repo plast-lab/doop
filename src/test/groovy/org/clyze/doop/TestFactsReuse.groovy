@@ -27,7 +27,7 @@ class TestFactsReuse extends DoopSpec {
                    '--main', 'DUMMY',
                    '--skip-code-factgen',
                    '--Xserver-logic',
-                   '--Xstats-none',
+                   '--stats', 'none',
                    '--id', 'hello-facts-analyzed'])
         Analysis analysis2 = Main.analysis
 

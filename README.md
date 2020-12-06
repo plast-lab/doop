@@ -228,7 +228,7 @@ variable `DDLOG_DIR` to point to that directory. Run `stack build` and
 
 Running an analysis (non-incrementally) with id "ID":
 ```
-./doop -i program.jar -a micro --via-ddlog --Xstats-none --id <ID> ...
+./doop -i program.jar -a micro --via-ddlog --stats none --id <ID> ...
 ```
 
 For more applications of the analysis, such as incremental

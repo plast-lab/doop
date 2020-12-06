@@ -588,6 +588,16 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		   options.GENERATE_ARTIFACTS_MAP.value = true
 		}
 
+		// Process statistics option.
+		String stats = options.STATS_LEVEL.value as String
+		if (stats == DoopAnalysisFamily.STATS_NONE)
+			options.X_STATS_NONE.value = true
+		else if (stats == DoopAnalysisFamily.STATS_DEFAULT)
+			options.X_STATS_DEFAULT.value = true
+		else if (stats == DoopAnalysisFamily.STATS_FULL)
+			options.X_STATS_FULL.value = true
+		else if (stats != null)
+			throw new DoopErrorCodeException(39, "Invalid stats level: ${stats}")
 		// If no stats option is given, select default stats.
 		if (!options.X_STATS_FULL.value && !options.X_STATS_DEFAULT.value &&
 				!options.X_STATS_NONE.value && !options.X_STATS_AROUND.value) {
