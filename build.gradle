@@ -114,6 +114,7 @@ compileGroovy {
 
 // Set dependency version so that they are available to subprojects.
 gradle.rootProject.ext.antlrVersion='4.7.2'
+gradle.rootProject.ext.metadataVersion='1.0.2'
 gradle.rootProject.ext.groovyVersion="3.0.6"
 gradle.rootProject.ext.clueCommonVersion='3.23.6'
 gradle.rootProject.ext.log4jVersion='1.2.17'
@@ -124,19 +125,19 @@ gradle.rootProject.ext.resourcesDir='build/resources'
 dependencies {
     // apktool "ext:apktool:2.4.0"                              // old artifactory dependency
     apktool 'Apktool-fork.brut.apktool:apktool-cli:2.4.2'       // needed for decoding APK inputs
-    compile project(path: ':generators:fact-generator-common', configuration: 'shadow')
-    compile "org.codehaus.groovy:groovy:${groovyVersion}",      // Groovy
+    api project(path: ':generators:fact-generator-common', configuration: 'shadow')
+    implementation "org.codehaus.groovy:groovy:${groovyVersion}",      // Groovy
             "org.codehaus.groovy:groovy-ant:${groovyVersion}",
             "org.codehaus.groovy:groovy-cli-commons:${groovyVersion}", // Command line processor (Groovy wrapper)
             "commons-logging:commons-logging:1.1",              // Logging wrapper
             "log4j:log4j:${log4jVersion}",                      // Logging implementation
             "commons-cli:commons-cli:1.2",                      // Command line processor
             "commons-io:commons-io:2.4",                        // File Utils
-            "org.clyze:clue-common:${clueCommonVersion}",
-            "org.clyze:HeapDL:$heapDLVersion"
-    compile "com.google.guava:guava:27.1-jre"                   // for Scaler
+            "org.clyze:clue-common:${clueCommonVersion}"
+    api "org.clyze:HeapDL:$heapDLVersion"
+    implementation "com.google.guava:guava:27.1-jre"                   // for Scaler
 
-    runtime "org.clyze:jphantom:1.2"                            // JPhantom is a runtime dependency
+    runtimeOnly "org.clyze:jphantom:1.2"                            // JPhantom is a runtime dependency
 
     testImplementation "org.spockframework:spock-core:${spockVersion}"
 }
@@ -213,7 +214,7 @@ task writeGitCommitHash() {
 
 jar {
     manifest {
-        attributes 'Implementation-Version' : version
+        attributes 'Implementation-Version' : archiveVersion.get()
     }
 }
 

@@ -1,6 +1,7 @@
 plugins {
     id 'application'
     id 'groovy'
+    id 'java-library'
 }
 
 mainClassName = 'org.clyze.doop.soot.Main'
@@ -18,13 +19,13 @@ repositories {
 }
 
 dependencies {
-    compile project(path: ':generators:fact-generator-common', configuration: 'shadow')
+    implementation project(path: ':generators:fact-generator-common', configuration: 'shadow')
 
-    // compile "ca.mcgill.sable:soot:4.0.0"
-    compile "org.soot-oss:soot:4.2.1"
+    // implementation "ca.mcgill.sable:soot:4.0.0"
+    implementation "org.soot-oss:soot:4.2.1"
 
-    testCompile "org.codehaus.groovy:groovy-all:${groovyVersion}"  // Groovy
-    testCompile "org.spockframework:spock-core:${spockVersion}"
+    testImplementation "org.codehaus.groovy:groovy-all:${groovyVersion}"  // Groovy
+    testImplementation "org.spockframework:spock-core:${spockVersion}"
 }
 
 //fatJar already exists
@@ -32,7 +33,7 @@ fatJar {
     manifest {
         attributes 'Main-Class': mainClassName
     }
-    from { configurations.compile.collect { it.directory ? it : zipTree(it) } }
+    from { configurations.compileClasspath.collect { it.directory ? it : zipTree(it) } }
     with jar
 }
 

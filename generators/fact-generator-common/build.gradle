@@ -1,6 +1,6 @@
 plugins {
     id 'com.github.johnrengelman.shadow' version '6.1.0'
-    id 'java'
+    id 'java-library'
 }
 
 String asmVersion = '8.0.1'
@@ -8,19 +8,19 @@ String asmVersion = '8.0.1'
 // WARNING: dependencies below should be minimal, since every
 // dependency will be included as-is *in each* fact generator "fat" JAR.
 dependencies {
-    compile("org.clyze:clue-common:${clueCommonVersion}") {
+    api("org.clyze:clue-common:${clueCommonVersion}") {
         exclude group: 'com.google.code.gson', module: 'gson'
         exclude group: 'org.apache.ivy', module: 'ivy'
         exclude group: 'org.codehaus.groovy', module: 'groovy-all'
     }
-    compile 'org.clyze:metadata-model:1.0.2'
-    compile "org.ow2.asm:asm-tree:${asmVersion}",    // Java bytecode library
-            "org.ow2.asm:asm-util:${asmVersion}"
-    compile 'org.smali:dexlib2:2.4.0'                // Dexlib2: library for reading/modifying/writing Android dex files
-    compile 'net.dongliu:apk-parser:2.6.10'          // needed for reading binary XML entries from APK inputs
-    compile "org.antlr:antlr4-runtime:${antlrVersion}"
-    compile 'org.clyze:native-scanner:0.6.2'
-    compile "log4j:log4j:${log4jVersion}"            // Logging implementation
+    api "org.clyze:metadata-model:${metadataVersion}"
+    implementation "org.ow2.asm:asm-tree:${asmVersion}",    // Java bytecode library
+                   "org.ow2.asm:asm-util:${asmVersion}"
+    implementation 'org.smali:dexlib2:2.4.0'                // Dexlib2: library for reading/modifying/writing Android dex files
+    implementation 'net.dongliu:apk-parser:2.6.10'          // needed for reading binary XML entries from APK inputs
+    implementation "org.antlr:antlr4-runtime:${antlrVersion}"
+    implementation 'org.clyze:native-scanner:0.6.2'
+    api "log4j:log4j:${log4jVersion}"            // Logging implementation
 }
 
 compileJava {
@@ -32,11 +32,11 @@ compileJava {
 // pollute the namespace for the fact generators or other code using
 // Doop as a library.
 shadowJar {
-    configurations = [project.configurations.compile]
+    configurations = [project.configurations.compileClasspath]
     dependencies {
-	exclude(dependency('com.google.code.gson:gson'))
-	exclude(dependency('org.apache.ivy:ivy'))
-	exclude(dependency('org.codehaus.groovy:groovy-all'))
+        exclude(dependency('com.google.code.gson:gson'))
+        exclude(dependency('org.apache.ivy:ivy'))
+        exclude(dependency('org.codehaus.groovy:groovy-all'))
     }
     relocate 'org.jf', 'org.clyze.doop.common.org.jf'
 }

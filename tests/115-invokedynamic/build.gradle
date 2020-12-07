@@ -16,7 +16,7 @@ buildscript {
 }
 
 apply plugin: 'java'
-apply plugin: 'maven'
+apply plugin: 'maven-publish'
 apply plugin: 'application'
 
 group = 'org.clyze'
@@ -27,7 +27,7 @@ repositories {
     jcenter()
 }
 dependencies {
-    compile 'org.ow2.asm:asm:7.0', 'org.ow2.asm:asm-commons:7.0'
+    implementation 'org.ow2.asm:asm:7.0', 'org.ow2.asm:asm-commons:7.0'
 }
 
 sourceCompatibility = 1.8
@@ -42,7 +42,7 @@ jar {
     manifest {
         attributes 'Main-Class': mainClassName
     }
-    version null
+    archiveVersion.set(null)
 }
 // To generate the JAR, we must first run the program to generate the
 // missing class.
