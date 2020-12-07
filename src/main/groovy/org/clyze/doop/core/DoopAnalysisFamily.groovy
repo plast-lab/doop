@@ -449,6 +449,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new AnalysisOption(
 					id: "X_ZIPPER",
 					name: "Xzipper",
+					group: GROUP_EXPERIMENTAL,
 					description: "Use file with precision-critical methods selected by Zipper, these methods are analyzed context-sensitively.",
 					argName: "FILE",
 					argInputType: InputType.MISC,
@@ -1017,7 +1018,8 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new AnalysisOption<String>(
 					id: "X_R_OUT_DIR",
 					name: "XR-out-dir",
-					description: "When linking AAR inputs, place generated R code in R_OUT_DIR",
+					group: GROUP_EXPERIMENTAL,
+					description: "When linking .aar inputs, place generated R code in R_OUT_DIR",
 					argName: "R_OUT_DIR",
 					argInputType: InputType.MISC
 			),
