@@ -112,8 +112,8 @@ class SoufflePythonAnalysis extends SouffleAnalysis {
 //            cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/server-logic/queries.dl")
 //        }
 //
-//        if (options.X_EXTRA_LOGIC.value) {
-//            File extraLogic = new File(options.X_EXTRA_LOGIC.value as String)
+//        if (options.EXTRA_LOGIC.value) {
+//            File extraLogic = new File(options.EXTRA_LOGIC.value as String)
 //            if (extraLogic.exists()) {
 //                String extraLogicPath = extraLogic.canonicalPath
 //                log.info "Adding extra logic file ${extraLogicPath}"

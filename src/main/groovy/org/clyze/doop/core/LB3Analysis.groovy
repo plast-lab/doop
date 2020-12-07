@@ -316,7 +316,7 @@ class LB3Analysis extends DoopAnalysis {
 		}
 
 		if (options.EXTRA_LOGIC.value) {
-			for (String extraLogic : options.X_STATS_AROUND.value as Collection<String>)
+			for (String extraLogic : options.EXTRA_LOGIC.value as Collection<String>)
 				lbBuilder.include(extraLogic as String)
 		}
 	}

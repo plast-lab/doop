@@ -432,7 +432,8 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			),
 			new BooleanAnalysisOption(
 					id: "GENERICS_PRE_ANALYSIS",
-					name: "generics-pre",
+					name: "Xgenerics-pre",
+					group: GROUP_EXPERIMENTAL,
 					description: "Enable precise generics pre-analysis to infer content types for Collections and Maps.",
 					forPreprocessor: true
 			),
@@ -491,7 +492,8 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			),
 			new BooleanAnalysisOption(
 					id: "PRECISE_GENERICS",
-					name: "precise-generics",
+					name: "Xprecise-generics",
+					group: GROUP_EXPERIMENTAL,
 					description: "Precise handling for maps and collections",
 					forPreprocessor: true
 			),
