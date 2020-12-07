@@ -254,6 +254,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "SEPARATE_EXCEPTION_OBJECTS",
 					name: "disable-merge-exceptions",
+					description: "Do not merge exception objects.",
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
@@ -473,7 +474,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "FULL_TENSOR_PRECISION",
 					name: "full-tensor-precision",
 					group: GROUP_PYTHON,
-					description: "Full precision tensor shape analysis(not guaranteed to finish).",
+					description: "Full precision tensor shape analysis (not guaranteed to finish).",
 					forPreprocessor: true
 			),
 			/* End Python related options */
