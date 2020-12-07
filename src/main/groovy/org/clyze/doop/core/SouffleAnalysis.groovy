@@ -34,7 +34,7 @@ class SouffleAnalysis extends DoopAnalysis {
 			runAnalysisAndProduceStats(analysis)
 		}
 
-		def script = newScriptForAnalysis(executor)
+		SouffleScript script = newScriptForAnalysis(executor)
 
 		Future<File> compilationFuture = null
 		def executorService = Executors.newSingleThreadExecutor()
@@ -199,13 +199,14 @@ class SouffleAnalysis extends DoopAnalysis {
 		}
 
 		if (options.X_EXTRA_LOGIC.value) {
-			File extraLogic = new File(options.X_EXTRA_LOGIC.value as String)
-			if (extraLogic.exists()) {
+			Collection<String> extras = options.X_EXTRA_LOGIC.value as List<String>
+			for (String extraFile : extras) {
+				File extraLogic = new File(extraFile)
+				if (!extraLogic.exists())
+					throw new RuntimeException("Extra logic file does not exist: ${extraLogic}")
 				String extraLogicPath = extraLogic.canonicalPath
 				log.info "Adding extra logic file ${extraLogicPath}"
 				cpp.includeAtEnd("${analysis}", extraLogicPath)
-			} else {
-				throw new RuntimeException("Extra logic file does not exist: ${extraLogic}")
 			}
 		}
 	}

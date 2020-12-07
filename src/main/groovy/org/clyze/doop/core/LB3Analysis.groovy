@@ -315,20 +315,15 @@ class LB3Analysis extends DoopAnalysis {
 			}
 		}
 
-		if (options.X_EXTRA_LOGIC.value) {
-			log.warn "WARNING: the LB mode does not support --${options.X_EXTRA_LOGIC.name}"
+		if (options.EXTRA_LOGIC.value) {
+			for (String extraLogic : options.X_STATS_AROUND.value as Collection<String>)
+				lbBuilder.include(extraLogic as String)
 		}
 	}
 
 	void produceStats() {
 		if (options.X_STATS_NONE.value) return
 
-		if (options.X_STATS_AROUND.value) {
-			lbBuilder.include(options.X_STATS_AROUND.value as String)
-			return
-		}
-
-		// Special case of X_STATS_AROUND (detected automatically)
 		def specialStatsScript = new File("${Doop.analysesPath}/${name}/statistics.part.lb")
 		if (specialStatsScript.exists()) {
 			lbBuilder.include(specialStatsScript.toString())

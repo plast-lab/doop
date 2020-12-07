@@ -600,7 +600,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			throw new DoopErrorCodeException(39, "Invalid stats level: ${stats}")
 		// If no stats option is given, select default stats.
 		if (!options.X_STATS_FULL.value && !options.X_STATS_DEFAULT.value &&
-				!options.X_STATS_NONE.value && !options.X_STATS_AROUND.value) {
+				!options.X_STATS_NONE.value) {
 			options.X_STATS_DEFAULT.value = true
 		}
 

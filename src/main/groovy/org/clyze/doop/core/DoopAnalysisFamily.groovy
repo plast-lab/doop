@@ -898,14 +898,6 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					cli: false
 			),
 			new AnalysisOption<String>(
-					id: "X_STATS_AROUND",
-					name: "Xstats-around",
-					group: GROUP_STATS,
-					description: "Load custom logic for collecting statistics.",
-					argName: "FILE",
-					argInputType: InputType.MISC
-			),
-			new AnalysisOption<String>(
 					id: "X_STOP_AT_FACTS",
 					name: "Xstop-at-facts",
 					group: GROUP_FACTS,
@@ -964,12 +956,13 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forPreprocessor: false
 			),
 			new AnalysisOption<String>(
-					id: "X_EXTRA_LOGIC",
-					name: "Xextra-logic",
-					description: "Include file with extra rules.",
+					id: "EXTRA_LOGIC",
+					name: "extra-logic",
+					description: "Include files with extra rules.",
 					argName: "FILE",
 					argInputType: InputType.MISC,
-					forPreprocessor: true
+					value: [],
+					multipleValues: true
 			),
 			new BooleanAnalysisOption(
 					id: "X_CONTEXT_REMOVER",
