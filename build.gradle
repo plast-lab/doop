@@ -13,9 +13,9 @@ buildscript {
 }
 
 plugins {
-    id 'antlr'
     id 'application'
     id 'groovy'
+    id 'java-library'
     id 'maven-publish'
     //see https://github.com/researchgate/gradle-release
     id 'net.researchgate.release' version '2.6.0'
@@ -138,11 +138,7 @@ dependencies {
 
     runtime "org.clyze:jphantom:1.2"                            // JPhantom is a runtime dependency
 
-    // Jimple parser
-    antlr   "org.antlr:antlr4:${antlrVersion}"
-    compile "org.antlr:antlr4-runtime:${antlrVersion}"
-
-    testCompile "org.spockframework:spock-core:${spockVersion}"
+    testImplementation "org.spockframework:spock-core:${spockVersion}"
 }
 
 // If fact generators are linked, mark them as dependencies and set up
@@ -237,15 +233,6 @@ task printExtClasspath {
     doLast {
         println(doopCP())
     }
-}
-
-task jimple2json(type: JavaExec) {
-    description 'Generate JSON files from Jimple'
-    group = 'Doop'
-    main = 'org.clyze.jimple.Main'
-    classpath = sourceSets.main.runtimeClasspath
-    if (project.hasProperty("args"))
-        args project.property("args").split()
 }
 
 task scaler(type: JavaExec) {
