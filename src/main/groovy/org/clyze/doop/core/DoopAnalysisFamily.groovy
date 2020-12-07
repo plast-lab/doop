@@ -598,7 +598,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "GROUP_REFLECTION_STRINGS",
 					name: "Xreflection-coloring",
 					group: GROUP_EXPERIMENTAL,
-					description: "Apply graph coloring in reflection string analysis.",
+					description: "Merge strings that will not conflict in reflection resolution.",
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
