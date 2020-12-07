@@ -63,7 +63,7 @@ class Doop {
 		doopOut = outPath ?: "$doopHome/out"
 		doopCache = cachePath ?: "$doopHome/cache"
 		doopLog = logPath ?: "$doopHome/build/logs"
-		doopTmp = tmpPath ?: "$doopHome/tmp"
+		doopTmp = tmpPath ?: "$doopHome/build/tmp"
 		souffleAnalysesCache = "$doopCache/souffle-analyses"
 		logicPath = "$doopHome/logic"
 		souffleLogicPath = "$doopHome/souffle-logic"
