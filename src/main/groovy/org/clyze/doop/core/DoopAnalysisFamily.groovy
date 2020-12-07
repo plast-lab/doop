@@ -728,8 +728,8 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			),
 			new BooleanAnalysisOption(
 					id: "VIA_DDLOG",
-					name: "via-ddlog",
-					group: GROUP_ENGINE,
+					name: "Xvia-ddlog",
+					group: GROUP_EXPERIMENTAL,
 					description: "Convert and run Souffle with DDlog.",
 					forPreprocessor: true
 			),
