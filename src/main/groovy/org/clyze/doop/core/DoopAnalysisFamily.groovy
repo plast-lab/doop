@@ -570,8 +570,9 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			),
 			new BooleanAnalysisOption(
 					id: "REFLECTION_CONTEXT_SENSITIVITY",
-					name: "reflection-context-sensitivity",
-					group: GROUP_REFLECTION,
+					name: "Xreflection-context-sensitivity",
+					group: GROUP_EXPERIMENTAL,
+					description: "Enable context-sensitive handling of reflection.",
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
@@ -595,8 +596,9 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			),
 			new BooleanAnalysisOption(
 					id: "GROUP_REFLECTION_STRINGS",
-					name: "reflection-coloring",
-					group: GROUP_REFLECTION,
+					name: "Xreflection-coloring",
+					group: GROUP_EXPERIMENTAL,
+					description: "Apply graph coloring in reflection string analysis.",
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
@@ -799,6 +801,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "IGNORE_MAIN_METHOD",
 					name: "ignore-main-method",
+					group: GROUP_ENTRY_POINTS,
 					description: "If main class is not given explicitly, do not try to discover it from jar/filename info. Open-program analysis variant will be triggered in this case.",
 					forPreprocessor: true
 			),
