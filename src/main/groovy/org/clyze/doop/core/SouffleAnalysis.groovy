@@ -31,8 +31,7 @@ class SouffleAnalysis extends DoopAnalysis {
 		initDatabase(analysis)
 		basicAnalysis(analysis)
 		if (!options.X_STOP_AT_BASIC.value) {
-			mainAnalysis(analysis)
-			produceStats(analysis)
+			runAnalysisAndProduceStats(analysis)
 		}
 
 		def script = newScriptForAnalysis(executor)
@@ -146,6 +145,11 @@ class SouffleAnalysis extends DoopAnalysis {
 		cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/basic/basic.dl")
 	}
 
+	void runAnalysisAndProduceStats(File analysis) {
+		mainAnalysis(analysis)
+		produceStats(analysis)
+	}
+
 	void mainAnalysis(File analysis) {
 		cpp.includeAtEnd("$analysis", "${Doop.souffleAnalysesPath}/${getBaseName(analysis.name)}/analysis.dl")
 
@@ -186,6 +190,14 @@ class SouffleAnalysis extends DoopAnalysis {
 			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/opt-directives/directives.dl")
 		}
 
+		if (options.X_ORACULAR_HEURISTICS.value) {
+			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/oracular/oracular-heuristics.dl")
+		}
+
+		if (options.X_CONTEXT_DEPENDENCY_HEURISTIC.value) {
+			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/oracular/2-object-ctx-dependency-heuristic.dl")
+		}
+
 		if (options.X_EXTRA_LOGIC.value) {
 			File extraLogic = new File(options.X_EXTRA_LOGIC.value as String)
 			if (extraLogic.exists()) {
@@ -202,14 +214,6 @@ class SouffleAnalysis extends DoopAnalysis {
 		def statsPath = "${Doop.souffleAddonsPath}/statistics"
 		if (options.X_EXTRA_METRICS.value) {
 			cpp.includeAtEnd("$analysis", "${statsPath}/metrics.dl")
-		}
-
-		if (options.X_ORACULAR_HEURISTICS.value) {
-			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/oracular/oracular-heuristics.dl")
-		}
-
-		if (options.X_CONTEXT_DEPENDENCY_HEURISTIC.value) {
-			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/oracular/2-object-ctx-dependency-heuristic.dl")
 		}
 
 		if (options.X_STATS_NONE.value) return

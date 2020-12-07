@@ -45,8 +45,7 @@ class SouffleScalerMultiPhaseAnalysis extends SouffleAnalysis {
 		basicAnalysis(preAnalysis)
 		if (!options.X_STOP_AT_BASIC.value) {
 			log.debug("analysis: ${getBaseName(preAnalysis.name)}")
-			mainAnalysis(preAnalysis)
-			produceStats(preAnalysis)
+			runAnalysisAndProduceStats(preAnalysis)
 		}
 
 		def script = newScriptForAnalysis(executor)
@@ -126,8 +125,7 @@ class SouffleScalerMultiPhaseAnalysis extends SouffleAnalysis {
 		basicAnalysis(analysis)
 		if (!options.X_STOP_AT_BASIC.value) {
 			log.debug("analysis: ${getBaseName(analysis.name)}")
-			mainAnalysis(analysis)
-			produceStats(analysis)
+			runAnalysisAndProduceStats(analysis)
 		}
 
 		compilationFuture = null

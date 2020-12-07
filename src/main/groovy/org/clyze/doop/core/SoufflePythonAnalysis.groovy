@@ -27,8 +27,7 @@ class SoufflePythonAnalysis extends SouffleAnalysis {
         initDatabase(analysis)
         basicAnalysis(analysis)
         if (!options.X_STOP_AT_BASIC.value) {
-            mainAnalysis(analysis)
-            produceStats(analysis)
+            runAnalysisAndProduceStats(analysis)
         }
 
         def script = newScriptForAnalysis(executor)
