@@ -34,7 +34,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 	static final String NATIVE_BACKEND_BINUTILS = 'binutils'
 	static final String NATIVE_BACKEND_BUILTIN = 'builtin'
 	static final String NATIVE_BACKEND_RADARE = 'radare'
-	static String USE_ANALYSIS_BINARY_NAME = 'use-analysis-binary'
+	static final String USE_ANALYSIS_BINARY_NAME = 'use-analysis-binary'
 	static final String STATS_NONE = 'none'
 	static final String STATS_DEFAULT = 'default'
 	static final String STATS_FULL = 'full'
@@ -425,7 +425,8 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			/* Start Scaler related options */
 			new BooleanAnalysisOption(
 					id: "SCALER_PRE_ANALYSIS",
-					name: "scaler-pre",
+					name: "Xscaler-pre",
+					group: GROUP_EXPERIMENTAL,
 					description: "Enable the analysis to be the pre-analysis of Scaler, and outputs the information required by Scaler.",
 					forPreprocessor: true
 			),
@@ -440,7 +441,8 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			/* Start Zipper related options */
 			new BooleanAnalysisOption(
 					id: "X_ZIPPER_PRE_ANALYSIS",
-					name: "zipper-pre",
+					name: "Xzipper-pre",
+					group: GROUP_EXPERIMENTAL,
 					description: "Enable the analysis to be the pre-analysis of Zipper, and outputs the information required by Zipper.",
 					forPreprocessor: true
 			),
@@ -919,8 +921,8 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					argName: "PARTITIONING_STRATEGY"
 			),
 			new BooleanAnalysisOption(
-					id: "X_DONT_CACHE_FACTS",
-					name: "Xdont-cache-facts",
+					id: "DONT_CACHE_FACTS",
+					name: "dont-cache-facts",
 					group: GROUP_FACTS,
 					description: "Don't cache generated facts."
 			),
@@ -942,19 +944,22 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			),
 			new BooleanAnalysisOption(
 					id: "X_EXTRA_METRICS",
-					name: "Xextra-metrics",
+					name: "extra-metrics",
+					group: GROUP_STATS,
 					description: "Run extra metrics logic under addons/statistics.",
 					forPreprocessor: false
 			),
 			new BooleanAnalysisOption(
 					id: "X_ORACULAR_HEURISTICS",
 					name: "Xoracular-heuristics",
+					group: GROUP_EXPERIMENTAL,
 					description: "Run sensitivity heuristics logic under addons/oracular.",
 					forPreprocessor: false
 			),
 			new BooleanAnalysisOption(
 					id: "X_CONTEXT_DEPENDENCY_HEURISTIC",
 					name: "Xcontext-dependency-heuristic",
+					group: GROUP_EXPERIMENTAL,
 					description: "Run context dependency heuristics logic under addons/oracular.",
 					forPreprocessor: false
 			),
@@ -1071,8 +1076,8 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forCacheID: true
 			),
 			new BooleanAnalysisOption(
-					id: "X_UNIQUE_FACTS",
-					name: "Xunique-facts",
+					id: "UNIQUE_FACTS",
+					name: "unique-facts",
 					group: GROUP_FACTS,
 					description: "Eliminate redundancy from .facts files.",
 					forCacheID: true

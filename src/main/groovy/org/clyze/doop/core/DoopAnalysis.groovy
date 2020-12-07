@@ -265,7 +265,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                 JHelper.cleanUp(tmpDirs)
             }
 
-            if (options.X_UNIQUE_FACTS.value) {
+            if (options.UNIQUE_FACTS.value) {
                 def timing = Helper.timing {
                     factsDir.eachFileMatch(~/.*.facts/) { file ->
                         def uniqueLines = file.readLines() as SortedSet<String>
@@ -283,7 +283,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                     runHeapDL(options.HEAPDLS.value.collect { File f -> f.canonicalPath })
                 }
 
-                if (options.X_DONT_CACHE_FACTS.value)
+                if (options.DONT_CACHE_FACTS.value)
                     log.info "Facts will not be cached."
                 else {
                     log.info "Caching facts in $cacheDir"
