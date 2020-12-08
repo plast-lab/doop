@@ -5,6 +5,7 @@ plugins {
 }
 
 mainClassName = 'org.clyze.doop.soot.Main'
+version = null
 
 repositories {
     mavenCentral()

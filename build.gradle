@@ -120,7 +120,7 @@ gradle.rootProject.ext.clueCommonVersion='3.23.6'
 gradle.rootProject.ext.log4jVersion='1.2.17'
 gradle.rootProject.ext.spockVersion='2.0-M3-groovy-3.0'
 // Set other variables for subprojects.
-gradle.rootProject.ext.resourcesDir='build/resources'
+gradle.rootProject.ext.resourcesDir='src/main/resources'
 
 dependencies {
     // apktool "ext:apktool:2.4.0"                              // old artifactory dependency
@@ -208,7 +208,7 @@ task writeGitCommitHash() {
 	hash = stdout.toString().trim()
     } else
 	hash = ''
-    new File(projectDir, 'src/main/resources/git-hash.txt').withWriter { w -> w.writeLine(hash) }
+    new File(projectDir, "${resourcesDir}/git-hash.txt").withWriter { w -> w.writeLine(hash) }
 }
 [jar, run].each { it.dependsOn writeGitCommitHash }
 
@@ -396,19 +396,20 @@ if (project.hasProperty('artifactory_user')) {
                 }
             }
 
-            allGeneratorProjects.each { p ->
-		create(p.name, MavenPublication) {
-		    // The artifact generator can be a file or a Gradle task
-		    def artifactGenerator
-		    if (p.name.indexOf('fact-generator-common') != -1)
-			artifactGenerator = project(':generators:fact-generator-common').file("build/libs/fact-generator-common-${version}-all.jar")
-		    else
-			artifactGenerator = p.hasProperty('fatJar') ? p.fatJar : p.jar
-		    artifact(artifactGenerator) {
+            // Currently, only publish fact-generator-common.
+            allGeneratorProjects.findAll {it.name.indexOf('fact-generator-common') >= 0 }.each { p ->
+                create(p.name, MavenPublication) {
+                    // The artifact generator can be a file or a Gradle task
+                    def artifactGenerator
+                    if (p.name.indexOf('fact-generator-common') != -1)
+                        artifactGenerator = project(':generators:fact-generator-common').file("build/libs/fact-generator-common-${version}-all.jar")
+                    else
+                        artifactGenerator = p.hasProperty('fatJar') ? p.fatJar : p.jar
+                    artifact(artifactGenerator) {
                         groupId 'org.clyze'
                         artifactId p.name
-		    }
-		}
+                    }
+                }
             }
         }
 

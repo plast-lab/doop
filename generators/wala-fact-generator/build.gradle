@@ -1,3 +1,10 @@
+plugins {
+    id 'application'
+}
+
+mainClassName = 'org.clyze.doop.wala.Main'
+version = null
+
 dependencies {
     implementation project(path: ':generators:fact-generator-common', configuration: 'shadow')
     implementation "org.python:jython:2.7.1b3"
@@ -32,7 +39,7 @@ dependencies {
 //fatJar already exists
 fatJar {
     manifest {
-        attributes 'Main-Class': 'org.clyze.doop.wala.Main'
+        attributes 'Main-Class': mainClassName
     }
     from { configurations.compileClasspath.collect { it.directory ? it : zipTree(it) } }
     with jar

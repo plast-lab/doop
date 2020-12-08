@@ -542,7 +542,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                         }
                     } else {
                         String[] jvmArgs = [ "-Dfile.encoding=UTF-8" ] as String[]
-                        invokeFactGenerator('SOOT_FACT_GEN', 'soot-fact-generator', jvmArgs, params, SOOT_MAIN)
+                        invokeFactGenerator('SOOT_FACT_GEN', Resources.SOOT_FACT_GENERATOR, jvmArgs, params, SOOT_MAIN)
                     }
                     // Check if fact generation must be restarted due to missing classes.
                     if (missingClasses != null && missingClasses.exists()) {
@@ -640,7 +640,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
         try {
             factGenTime = Helper.timing {
-                invokeFactGenerator('WALA_FACT_GEN', 'wala-fact-generator', null, params, 'org.clyze.doop.wala.Main')
+                invokeFactGenerator('WALA_FACT_GEN', Resources.WALA_FACT_GENERATOR, null, params, 'org.clyze.doop.wala.Main')
             }
         } catch(walaError){
             walaError.printStackTrace()
@@ -656,7 +656,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         log.debug "Params of dex front-end: ${params.join(' ')}"
 
         try {
-            invokeFactGenerator('DEX_FACT_GEN', 'dex-fact-generator', null, params, 'org.clyze.doop.dex.DexInvoker')
+            invokeFactGenerator('DEX_FACT_GEN', Resources.DEX_FACT_GENERATOR, null, params, 'org.clyze.doop.dex.DexInvoker')
         } catch (Exception ex) {
             ex.printStackTrace()
         }
@@ -689,7 +689,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
         try {
             factGenTime = Helper.timing {
-                invokeFactGenerator('PYTHON_FACT_GEN', 'wala-fact-generator', null, params, 'org.clyze.doop.wala.Main')
+                invokeFactGenerator('PYTHON_FACT_GEN', Resources.WALA_FACT_GENERATOR, null, params, 'org.clyze.doop.wala.Main')
             }
         } catch(walaError){
             walaError.printStackTrace()
@@ -868,6 +868,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
         log.debug "Memory JVM args: ${jvmMemArgs}"
         String[] jvmArgs0 = (jvmArgs + jvmMemArgs) as String[]
-        Resources.invokeResourceJar(Doop.doopHome, log, TAG, jvmArgs0, resource, args)
+        Resources.invokeResourceJar(log, TAG, jvmArgs0, resource, args)
     }
 }

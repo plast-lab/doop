@@ -24,6 +24,7 @@ dependencies {
 }
 
 mainClassName = 'org.clyze.doop.dex.DexInvoker'
+version = null
 
 //fatJar already exists
 fatJar {

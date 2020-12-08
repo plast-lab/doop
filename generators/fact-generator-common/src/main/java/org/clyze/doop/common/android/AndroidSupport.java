@@ -224,8 +224,7 @@ public abstract class AndroidSupport {
                 // Only show output in debug mode.
                 JHelper.runWithOutput(cmd, parameters._debug ? TAG : null);
             } else {
-                String doopHome = Resources.findDoopHome(logger);
-                Resources.invokeResourceJar(doopHome, logger, "APKTOOL", null, "apktool", cmdArgs);
+                Resources.invokeResourceJar(logger, "APKTOOL", null, Resources.APKTOOL_JAR, cmdArgs);
             }
         } catch (IOException ex) {
             logger.error("Error: could not run apktool.");
