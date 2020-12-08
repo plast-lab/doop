@@ -10,7 +10,7 @@ import org.clyze.analysis.AnalysisOption
 import org.clyze.doop.common.CHA
 import org.clyze.doop.common.DoopErrorCodeException
 import org.clyze.doop.util.ClassPathHelper
-import org.clyze.doop.util.Resources
+import org.clyze.doop.util.Resource
 import org.clyze.doop.utils.CPreprocessor
 import org.clyze.input.InputResolutionContext
 import org.clyze.utils.*
@@ -542,7 +542,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                         }
                     } else {
                         String[] jvmArgs = [ "-Dfile.encoding=UTF-8" ] as String[]
-                        invokeFactGenerator('SOOT_FACT_GEN', Resources.SOOT_FACT_GENERATOR, jvmArgs, params, SOOT_MAIN)
+                        invokeFactGenerator('SOOT_FACT_GEN', Resource.SOOT_FACT_GENERATOR, jvmArgs, params, SOOT_MAIN)
                     }
                     // Check if fact generation must be restarted due to missing classes.
                     if (missingClasses != null && missingClasses.exists()) {
@@ -640,7 +640,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
         try {
             factGenTime = Helper.timing {
-                invokeFactGenerator('WALA_FACT_GEN', Resources.WALA_FACT_GENERATOR, null, params, 'org.clyze.doop.wala.Main')
+                invokeFactGenerator('WALA_FACT_GEN', Resource.WALA_FACT_GENERATOR, null, params, 'org.clyze.doop.wala.Main')
             }
         } catch(walaError){
             walaError.printStackTrace()
@@ -656,7 +656,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         log.debug "Params of dex front-end: ${params.join(' ')}"
 
         try {
-            invokeFactGenerator('DEX_FACT_GEN', Resources.DEX_FACT_GENERATOR, null, params, 'org.clyze.doop.dex.DexInvoker')
+            invokeFactGenerator('DEX_FACT_GEN', Resource.DEX_FACT_GENERATOR, null, params, 'org.clyze.doop.dex.DexInvoker')
         } catch (Exception ex) {
             ex.printStackTrace()
         }
@@ -689,7 +689,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
         try {
             factGenTime = Helper.timing {
-                invokeFactGenerator('PYTHON_FACT_GEN', Resources.WALA_FACT_GENERATOR, null, params, 'org.clyze.doop.wala.Main')
+                invokeFactGenerator('PYTHON_FACT_GEN', Resource.WALA_FACT_GENERATOR, null, params, 'org.clyze.doop.wala.Main')
             }
         } catch(walaError){
             walaError.printStackTrace()
@@ -793,11 +793,11 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
      *
      * @param TAG        the tag to use to mark output (if external process is used)
      * @param jvmArgs    the JVM arguments to use (memory options should be set separately, via properties)
-     * @param generator  the id of the generator when bundled as an external program
+     * @param generator  the generator when bundled as an external program
      * @param params     the fact generator parameters
      * @param mainClass  the main class of the fact generator
      */
-    void invokeFactGenerator(String TAG, String generator, String[] jvmArgs,
+    void invokeFactGenerator(String TAG, Resource generator, String[] jvmArgs,
                              Collection<String> params, String mainClass) {
         // Detect if generator main is available.
         def main = null
@@ -844,10 +844,10 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
      *
      * @param TAG          the tag to use to mark fact generator output
      * @param jvmArgs      the JVM arguments to use (memory options should be set separately, via properties)
-     * @param resource     the prefix of the fact generator JAR (should match one resource)
+     * @param resource     the fact generator JAR
      * @param args         the fact generation arguments
      */
-    void invokeExtFactGenerator(String TAG, String[] jvmArgs, String resource, String[] args) {
+    void invokeExtFactGenerator(String TAG, String[] jvmArgs, Resource resource, String[] args) {
         if (jvmArgs == null)
             jvmArgs = new String[0]
 
@@ -868,6 +868,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
         log.debug "Memory JVM args: ${jvmMemArgs}"
         String[] jvmArgs0 = (jvmArgs + jvmMemArgs) as String[]
-        Resources.invokeResourceJar(log, TAG, jvmArgs0, resource, args)
+        Resource.invokeResourceJar(log, TAG, jvmArgs0, resource, args)
     }
 }

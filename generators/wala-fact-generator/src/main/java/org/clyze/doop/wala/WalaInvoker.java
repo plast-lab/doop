@@ -68,7 +68,7 @@ class WalaInvoker {
         if(walaParameters._android)
             scope = WalaScopeReader.setUpAndroidAnalysisScope(walaParameters.getInputs(), "", walaParameters.getPlatformLibs(), walaParameters.getDependencies());
         else
-            scope = WalaScopeReader.setupJavaAnalysisScope(walaParameters.getInputs(),"", walaParameters.getPlatformLibs(), walaParameters.getDependencies());
+            scope = WalaScopeReader.setupJavaAnalysisScope(logger, walaParameters.getInputs(),"", walaParameters.getPlatformLibs(), walaParameters.getDependencies());
 
         ClassHierarchy cha = null;
         try {

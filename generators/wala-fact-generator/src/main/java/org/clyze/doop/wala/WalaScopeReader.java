@@ -7,13 +7,14 @@ import com.ibm.wala.ipa.callgraph.AnalysisScope;
 import com.ibm.wala.types.ClassLoaderReference;
 import com.ibm.wala.util.config.FileOfClasses;
 import com.ibm.wala.util.io.FileProvider;
+import java.io.*;
+import java.util.jar.JarFile;
+import org.apache.log4j.Logger;
+import org.clyze.doop.util.Resource;
 import org.jf.dexlib2.DexFileFactory;
 import org.jf.dexlib2.Opcodes;
 import org.jf.dexlib2.dexbacked.DexBackedDexFile;
 import org.jf.dexlib2.iface.MultiDexContainer;
-
-import java.io.*;
-import java.util.jar.JarFile;
 
 /*
  * This class is our alternative to WALA's com.ibm.wala.util.config.AnalysisScopeReader
@@ -21,18 +22,16 @@ import java.util.jar.JarFile;
  * We needed to be able to set the path of the Java implementation we will use
  * to produce our facts(the default for wala was to guess it --using $JAVA_HOME
  * unless specified in a specific file, not existing in the jar)
- *
  */
 class WalaScopeReader {
 
     private static final ClassLoader MY_CLASSLOADER = WalaScopeReader.class.getClassLoader();
 
-    static AnalysisScope setupJavaAnalysisScope(Iterable<String> inputJars, String exclusions, Iterable<String> javaLibs, Iterable<String> appLibs) throws IOException
+    static AnalysisScope setupJavaAnalysisScope(Logger logger, Iterable<String> inputJars, String exclusions, Iterable<String> javaLibs, Iterable<String> appLibs) throws IOException
     {
-        String myEnv = System.getenv("DOOP_HOME");
         //The location of WALAprimordial.jar.model in our resources folder -- file taken from wala's repo
         //Don't understand what this does but it is needed for some reason
-        String SCOPE_BIN_FILE = myEnv + "/src/main/resources/WALAprimordial.jar.model";
+        String SCOPE_BIN_FILE = Resource.getResource(logger, Resource.WALA_PRIMORDIAL);
         AnalysisScope scope = AnalysisScope.createJavaAnalysisScope();
 
         for(String javaLib : javaLibs) {

@@ -6,9 +6,11 @@ import java.util.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 import org.clyze.doop.common.*;
-import org.clyze.doop.util.Resources;
+import org.clyze.doop.util.Resource;
 import org.clyze.utils.AARUtils;
 import org.clyze.utils.JHelper;
+
+import static org.clyze.doop.util.Resource.APKTOOL_JAR;
 
 public abstract class AndroidSupport {
 
@@ -224,7 +226,7 @@ public abstract class AndroidSupport {
                 // Only show output in debug mode.
                 JHelper.runWithOutput(cmd, parameters._debug ? TAG : null);
             } else {
-                Resources.invokeResourceJar(logger, "APKTOOL", null, Resources.APKTOOL_JAR, cmdArgs);
+                Resource.invokeResourceJar(logger, "APKTOOL", null, APKTOOL_JAR, cmdArgs);
             }
         } catch (IOException ex) {
             logger.error("Error: could not run apktool.");
