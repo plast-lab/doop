@@ -11,7 +11,7 @@ or `--platform android_24` option). If no platform is provided by the user, it i
 
 ```
 #!bash
-$ ./doop -a micro -i docs/doop-101-examples/Example.jar --Xstats-none
+$ ./doop -a micro -i docs/doop-101-examples/Example.jar --stats none
 ```
 
 After the analysis has run, we can gather results by examining the
@@ -105,7 +105,7 @@ Then, run the analysis using the custom logic:
 
 ```
 #!bash
-$ ./doop -a context-insensitive -i docs/doop-101-examples/Example.jar --Xstats-none --Xextra-logic extra.dl
+$ ./doop -a context-insensitive -i docs/doop-101-examples/Example.jar --stats none --extra-logic extra.dl
 ```
 
 The new relation is now included in the results:
