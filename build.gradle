@@ -333,7 +333,7 @@ def frontends = frontendGeneratorProjects.collect { it.name }
 
 // Connect task dependencies against fact generator subprojects.
 frontends.each { fg ->
-    [ run, test, distTar, distZip, installDist ].each {
+    [ jar, run, test, distTar, distZip, installDist ].each {
         it.dependsOn(":generators:${fg}:installJar")
         it.dependsOn resolveApktool
     }
