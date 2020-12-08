@@ -465,7 +465,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         }
 
         if (options.X_IGNORE_WRONG_STATICNESS.value) {
-            params += ["--ignoreWrongStaticness"]
+            params += ["--ignore-wrong-staticness"]
         }
 
         if (options.GENERATE_JIMPLE.value) {

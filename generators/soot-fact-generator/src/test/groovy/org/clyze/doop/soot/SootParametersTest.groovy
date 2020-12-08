@@ -9,7 +9,7 @@ class SootParametersTest extends Specification {
             "--application-regex", "XYZ",
             "--main", "Main",
             "--fact-gen-cores", "2",
-            "--ignoreWrongStaticness",
+            "--ignore-wrong-staticness",
             "--generate-jimple",
             "-i", "a.jar",
             "-i", "b.aar",

@@ -6,15 +6,12 @@ import com.ibm.wala.classLoader.IMethod;
 import com.ibm.wala.ipa.callgraph.IAnalysisCacheView;
 import com.ibm.wala.ipa.cha.IClassHierarchy;
 import com.ibm.wala.ssa.IR;
-import org.clyze.doop.common.DoopErrorCodeException;
-import org.clyze.doop.python.utils.PythonDatabase;
-import org.clyze.doop.python.utils.PythonPredicateFile;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
-
-import static org.clyze.doop.common.Parameters.shift;
+import org.clyze.doop.common.DoopErrorCodeException;
+import org.clyze.doop.python.utils.PythonDatabase;
+import org.clyze.doop.python.utils.PythonPredicateFile;
 
 public class PythonInvoker {
 
@@ -23,7 +20,7 @@ public class PythonInvoker {
         System.out.println("Python Fact Gen!!");
         try {
             if (args.length == 0) {
-                System.err.println("usage: [options] file...");
+                System.err.println("Usage: wala-fact-generator [options] file...");
                 throw new DoopErrorCodeException(0);
             }
             parameters.initFromArgs(args);
