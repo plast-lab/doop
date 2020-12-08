@@ -320,6 +320,17 @@ test {
     }
 }
 
+// Copy resources to src/test/resources or they will not be found by tests.
+task copyResourcesForTest {
+    doLast {
+        copy {
+            from file(resourcesDir)
+            into 'src/test/resources'
+        }
+    }
+}
+test.dependsOn copyResourcesForTest
+
 task buildTests {
     description 'Build test subprojects.'
 }
