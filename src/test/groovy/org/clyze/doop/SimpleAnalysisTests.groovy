@@ -18,7 +18,7 @@ class SimpleAnalysisTests extends ServerAnalysisTests {
 		Analysis analysis = analyzeTest("011-variance",
 										["--coarse-grained-allocation-sites",
 										 "--generate-jimple", "--Xserver-logic",
-										 "--cs-library", "--Xextra-metrics",
+										 "--cs-library", "--extra-metrics",
 										 "--thorough-fact-gen", "--cfg",
 										 "--platform", "java_8"] + sanityOpts)
 
