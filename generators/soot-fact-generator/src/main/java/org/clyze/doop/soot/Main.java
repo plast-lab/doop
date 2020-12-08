@@ -53,11 +53,7 @@ public class Main {
         String outDir = sootParameters.getOutputDir();
 
         try {
-            String logDir = sootParameters.getLogDir();
-            String logLevel = sootParameters._debug ? "DEBUG" : "INFO";
-            JHelper.tryInitLogging(logLevel, logDir, true, "soot-fact-generator");
-            logger = Logger.getLogger(Main.class);
-            logger.info("Logging initialized, using directory: " + logDir);
+            logger = sootParameters.initLogging(Main.class);
         } catch (IOException ex) {
             System.err.println("WARNING: could not initialize logging");
             throw new DoopErrorCodeException(18);
