@@ -2,12 +2,12 @@ package org.clyze.doop.utils
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Log4j
-
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import org.apache.log4j.Logger
 import org.clyze.doop.common.DoopErrorCodeException
+import org.clyze.doop.core.Doop
 import org.clyze.utils.Executor
 import org.clyze.utils.Helper
 
@@ -150,19 +150,6 @@ class DDlog extends SouffleScript {
         return "${convertedLogicPrefix}_ddlog" as String
 	}
 
-    /**
-     * Read Doop home from environment variable.
-     */
-    private String getDoopHome() {
-        String doopHome = System.getenv("DOOP_HOME")
-		if (!doopHome) {
-			throw new DoopErrorCodeException(24, "Environment variable DOOP_HOME is empty.")
-		} else {
-			log.debug "Using Doop home: ${doopHome}"
-            return doopHome
-		}
-    }
-
     private String getConvertedLogicPrefix(outDir) {
 		return "${outDir}/${convertedLogicName}" as String
     }
@@ -189,7 +176,7 @@ class DDlog extends SouffleScript {
                 // Hack: use script to get away with redirection.
                 def analysisBinary = cacheFile.absolutePath
                 def cmdRun = ((profile && new File(SouffleScript.TIME_UTIL).exists()) ? [SouffleScript.TIME_UTIL] : []) as List
-                cmdRun += "${doopHome}/bin/run-with-redirection.sh ${dat} ${dump} ${analysisBinary} -w ${jobs} --no-print".split().toList()
+                cmdRun += "${Doop.doopHome}/bin/run-with-redirection.sh ${dat} ${dump} ${analysisBinary} -w ${jobs} --no-print".split().toList()
                 executeCmd(cmdRun, null)
             }
             log.info "Analysis execution time (sec): ${executionTime}"
