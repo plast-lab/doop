@@ -52,7 +52,9 @@ public enum Resource {
         // Special handling for tools via Java properties (so that Doop can
         // inform fact generators that run as external processes).
         if (res.envVarOverride != null) {
+            logger.debug("Checking environment variable for path: " + res.envVarOverride);
             String path = getProperty(res.envVarOverride);
+            logger.debug(res.envVarOverride + " = " + path);
             if (path != null) {
                 if (path.startsWith("\""))
                     path = path.substring(1);
@@ -65,6 +67,7 @@ public enum Resource {
         }
         // Generic handling of bundled resources.
         URL url = org.clyze.doop.util.Resource.class.getClassLoader().getResource(filename);
+        logger.debug("Resource URL: " + url);
         if (url == null)
             throw new RuntimeException("ERROR: cannot find resource '" + filename + "'");
         try {
