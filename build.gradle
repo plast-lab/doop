@@ -341,19 +341,19 @@ testAll.dependsOn test
 def frontends = frontendGeneratorProjects.collect { it.name }
 
 // Task that configures installing/cleaning resources.
-task configureResourceInstallation { }
-configureResourceInstallation.dependsOn resolveApktool
+task resourceInstaller { }
+resourceInstaller.dependsOn resolveApktool
 frontends.each { fg ->
-    configureResourceInstallation.dependsOn(":generators:${fg}:installJar")
+    resourceInstaller.dependsOn(":generators:${fg}:installJar")
     clean.dependsOn(":generators:${fg}:uninstallJar")
     testAll.dependsOn(":generators:${fg}:test")
 }
 [ jar, run, test, distTar, distZip, installDist ].each {
-    it.dependsOn configureResourceInstallation
+    it.dependsOn resourceInstaller
 }
 
 // Ensure that all resources have been built before trying to copy them.
-copyResourcesForTest.dependsOn configureResourceInstallation
+copyResourcesForTest.dependsOn resourceInstaller
 test.dependsOn copyResourcesForTest
 
 task fullClean {

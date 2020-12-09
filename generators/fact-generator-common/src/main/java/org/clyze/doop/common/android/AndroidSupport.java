@@ -226,7 +226,7 @@ public abstract class AndroidSupport {
                 // Only show output in debug mode.
                 JHelper.runWithOutput(cmd, parameters._debug ? TAG : null);
             } else {
-                Resource.invokeResourceJar(logger, "APKTOOL", null, APKTOOL_JAR, cmdArgs);
+                Resource.invokeResourceJar(AndroidSupport.class.getClassLoader(), logger, "APKTOOL", null, APKTOOL_JAR, cmdArgs);
             }
         } catch (IOException ex) {
             logger.error("Error: could not run apktool.");
