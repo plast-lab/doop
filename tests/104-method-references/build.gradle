@@ -21,6 +21,7 @@ apply plugin: 'application'
 
 group = 'org.clyze'
 description = """org.clyze:104-method-references-test"""
+version = null
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
