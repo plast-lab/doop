@@ -10,57 +10,54 @@
 <h2> addons/cfg-analysis/analysis.dl </h2>
 <ul>
 <li> .decl BBHeadInMethod(?insn:Instruction, ?method:Method)</li>
-<li> .decl CFGRoot(?insn:Instruction, ?method:Method)</li>
-<li> .decl DoesNotDominate(?dominatorCandidate:Instruction, ?insn:Instruction)</li>
-<li> .decl ExistsMayPredecessorBBModuloThrow(?insn:Instruction)</li>
-<li> .decl ExistsPreviousNonDomPredecessorToSameBB(?pred:Instruction, ?insn:Instruction)</li>
-<li> .decl ExistsPreviousPredecessorToSameBB(?pred:Instruction, ?insn:Instruction)</li>
-<li> .decl ExistsPreviousReturn(?insn:Instruction)</li>
-<li> .decl HigherReturnIndex(?insn:Instruction, ?indexHigher:number)</li>
-<li> .decl LargerNonDomPredecessorIndexToSameBB(?insn:Instruction, ?indexLarge:number, ?prevSmall:Instruction)</li>
-<li> .decl LargerPredecessorIndexToSameBB(?insn:Instruction, ?indexLarge:number, ?prevSmall:Instruction)</li>
-<li> .decl NextInSameBasicBlock(?insn:Instruction, ?next:Instruction)</li>
-<li> .decl NextNonDomPredecessorIndexToSameBB(?insn:Instruction, ?prev:Instruction, ?indexNext:number)</li>
-<li> .decl NextNonDomPredecessorToSameBB(?insn:Instruction, ?pred:Instruction, ?nextPred:Instruction)</li>
-<li> .decl NextPredecessorIndexToSameBB(?insn:Instruction, ?prev:Instruction, ?indexNext:number)</li>
-<li> .decl NextPredecessorToSameBB(?insn:Instruction, ?pred:Instruction, ?nextPred:Instruction)</li>
-<li> .decl NextReturnIndex(?returnInsn:Instruction, ?nextReturnIndex:number)</li>
-<li> .decl NonDomPredecessorBBsToSameBB(?insn:Instruction, ?prev1:Instruction, ?prev2:Instruction)</li>
-<li> .decl OptReturnInsn(?insn:Instruction, ?method:Method)</li>
-<li> .decl PredecessorBBsToSameBB(?insn:Instruction, ?prev1:Instruction, ?prev2:Instruction)</li>
-<li> .decl PrevInSameBasicBlock(?insn:Instruction, ?prev:Instruction)</li>
-<li> .decl PreviousNonDomPredecessorToSameBB(?insn:Instruction, ?nextPred:Instruction, ?prevPred:Instruction)</li>
-<li> .decl PreviousPredecessorToSameB(?insn:Instruction, ?nextPred:Instruction, ?prevPred:Instruction)</li>
-<li> .decl SameMethodBBHeads(?insn1:Instruction, ?insn2:Instruction)</li>
-</ul>
-<h2> addons/cfg-analysis/declarations.dl </h2>
-<ul>
 <li> .decl BasicBlockBegin(?insn:Instruction)</li>
 <li> .decl BasicBlockEnd(?insn:Instruction)</li>
 <li> .decl BasicBlockHead(?insn:Instruction, ?headInsn:Instruction)</li>
 <li> .decl BasicBlockTail(?headInsn:Instruction, ?tailInsn:Instruction)</li>
+<li> .decl CFGRoot(?insn:Instruction, ?method:Method)</li>
+<li> .decl DoesNotDominate(?dominatorCandidate:Instruction, ?insn:Instruction)</li>
 <li> .decl Dominates(?dominator:Instruction, ?insn:Instruction)</li>
 <li> .decl DominatesItsPredecessorInstruction(?prevInsn:Instruction, ?insn:Instruction)</li>
 <li> .decl DominatesItsSuccessorInstruction(?insn:Instruction, ?prevInsn:Instruction)</li>
 <li> .decl ExceptionHandlerFirstInstruction(?insn:Instruction)</li>
+<li> .decl ExistsMayPredecessorBBModuloThrow(?insn:Instruction)</li>
+<li> .decl ExistsPreviousNonDomPredecessorToSameBB(?pred:Instruction, ?insn:Instruction)</li>
+<li> .decl ExistsPreviousPredecessorToSameBB(?pred:Instruction, ?insn:Instruction)</li>
+<li> .decl ExistsPreviousReturn(?insn:Instruction)</li>
 <li> .decl FallThrough(?insn:Instruction)</li>
+<li> .decl HigherReturnIndex(?insn:Instruction, ?indexHigher:number)</li>
 <li> .decl InstructionInPhiNode(?insn:Instruction, ?headInsn:Instruction)</li>
 <li> .decl Instruction_Next(?i:Instruction, ?next:Instruction)</li>
 <li> .decl Instruction_Prev(?i:Instruction, ?prev:Instruction)</li>
 <li> .decl IsJumpTarget(?insn:Instruction)</li>
 <li> .decl JumpTarget(?insn:Instruction, ?prev:Instruction)</li>
+<li> .decl LargerNonDomPredecessorIndexToSameBB(?insn:Instruction, ?indexLarge:number, ?prevSmall:Instruction)</li>
+<li> .decl LargerPredecessorIndexToSameBB(?insn:Instruction, ?indexLarge:number, ?prevSmall:Instruction)</li>
 <li> .decl MayPredecessorBBModuloThrow(?prev:Instruction, ?next:Instruction)</li>
 <li> .decl MayPredecessorModuloThrow(?prev:Instruction, ?next:Instruction)</li>
 <li> .decl MaySuccessorBBModuloThrow(?next:Instruction, ?prev:Instruction)</li>
 <li> .decl MaySuccessorModuloThrow(?next:Instruction, ?prev:Instruction)</li>
 <li> .decl Method_FirstInstruction(?method:Method, ?insn:Instruction)</li>
+<li> .decl NextInSameBasicBlock(?insn:Instruction, ?next:Instruction)</li>
 <li> .decl NextInSamePhiNode(?insn1:Instruction, ?insn2:Instruction)</li>
+<li> .decl NextNonDomPredecessorIndexToSameBB(?insn:Instruction, ?prev:Instruction, ?indexNext:number)</li>
+<li> .decl NextNonDomPredecessorToSameBB(?insn:Instruction, ?pred:Instruction, ?nextPred:Instruction)</li>
+<li> .decl NextPredecessorIndexToSameBB(?insn:Instruction, ?prev:Instruction, ?indexNext:number)</li>
+<li> .decl NextPredecessorToSameBB(?insn:Instruction, ?pred:Instruction, ?nextPred:Instruction)</li>
 <li> .decl NextReturn(?insn1:Instruction, ?insn2:Instruction)</li>
+<li> .decl NextReturnIndex(?returnInsn:Instruction, ?nextReturnIndex:number)</li>
+<li> .decl NonDomPredecessorBBsToSameBB(?insn:Instruction, ?prev1:Instruction, ?prev2:Instruction)</li>
 <li> .decl OptInstructionFromMethodIndex(?method:Method, ?index:number, ?insn:Instruction)</li>
+<li> .decl OptReturnInsn(?insn:Instruction, ?method:Method)</li>
 <li> .decl PhiNodeHead(?insn:Instruction, ?headInsn:Instruction)</li>
+<li> .decl PredecessorBBsToSameBB(?insn:Instruction, ?prev1:Instruction, ?prev2:Instruction)</li>
+<li> .decl PrevInSameBasicBlock(?insn:Instruction, ?prev:Instruction)</li>
+<li> .decl PreviousNonDomPredecessorToSameBB(?insn:Instruction, ?nextPred:Instruction, ?prevPred:Instruction)</li>
+<li> .decl PreviousPredecessorToSameB(?insn:Instruction, ?nextPred:Instruction, ?prevPred:Instruction)</li>
+<li> .decl SameMethodBBHeads(?insn1:Instruction, ?insn2:Instruction)</li>
 <li> .decl UnconditionalControlTransfer(?insn:Instruction)</li>
 </ul>
-<h2> addons/constant-folding/declarations.dl </h2>
+<h2> addons/constant-folding/analysis.dl </h2>
 <ul>
 <li> .decl AssignBinary(?instr:symbol, ?var: symbol, ?left:number, ?right:number, ?meth:symbol, ?prev_use1:number, ?prev_use2:number)</li>
 <li> .decl AssignBinaryNonZeroRight(?instr:symbol, ?var:symbol, ?left:number, ?right:number, ?meth:symbol, ?prev_use1:number, ?prev_use2:number)</li>
@@ -287,6 +284,8 @@
 </ul>
 <h2> addons/opt-directives/directives.dl </h2>
 <ul>
+<li> .decl AppReachableMethodFromNativeCode(?method:Method)</li>
+<li> .decl ApplicationField(?field:Field)</li>
 <li> .decl ApplicationMethod_Size(?method:Method, ?size:number)</li>
 <li> .decl CallerSize(?caller:Method)</li>
 <li> .decl ClassNameWithOnlySlashes(?className:ClassType, ?classNameTransformed:symbol)</li>
@@ -298,14 +297,32 @@
 <li> .decl DeadMethodWithJVMDescriptor(?jvmFullName:symbol, ?method:symbol)</li>
 <li> .decl DoubleInvocationTarget(?invocation:MethodInvocation, ?target:Method)</li>
 <li> .decl ExceptionThrownByReachableMethod(?excType:Type, ?method:Method)</li>
+<li> .decl FieldIsFinalOrInitialized(?field:Field)</li>
+<li> .decl FieldPointsTo(?field:Field)</li>
+<li> .decl FieldReadByReflection(?field:Field)</li>
+<li> .decl FieldWrittenByReflection(?field:Field)</li>
+<li> .decl FinalFieldWrittenByReflection(?field:Field)</li>
 <li> .decl InvocationCount(?method:Method, ?n:number)</li>
 <li> .decl InvocationTarget_Count(?invocation:MethodInvocation, ?n:number)</li>
 <li> .decl InvocationToInline(?invocation:MethodInvocation, ?target:Method)</li>
 <li> .decl METHODS_INLINE_COMPATIBLE(?a:Method, ?b:Method)</li>
+<li> .decl MethodInvokedByReflection(?method:Method)</li>
 <li> .decl MethodToRemove(?method:Method)</li>
 <li> .decl MultiInvocationTarget(?invocation:MethodInvocation, ?target:Method)</li>
+<li> .decl NI_AllDeclaredConstructors(?type:ReferenceType)</li>
+<li> .decl NI_AllDeclaredFields(?type:ReferenceType)</li>
+<li> .decl NI_AllDeclaredMethods(?type:ReferenceType)</li>
+<li> .decl NI_AllPublicConstructors(?type:ReferenceType)</li>
+<li> .decl NI_AllPublicFields(?type:ReferenceType)</li>
+<li> .decl NI_AllPublicMethods(?type:ReferenceType)</li>
+<li> .decl NI_ReachableField(?field:Field)</li>
+<li> .decl NI_ReachableMethod(?method:Method)</li>
+<li> .decl NonFinalFieldWrittenInNonConstructor(?field:Field)</li>
 <li> .decl RClass(?r:symbol)</li>
+<li> .decl ReachableField(?field:Field)</li>
+<li> .decl ReachableFieldAccessedByReflection(?field:Field)</li>
 <li> .decl ReachableMethodOnlyUsedInSingleInvocationTarget(?method:Method)</li>
+<li> .decl ReachableType(?type:ReferenceType)</li>
 <li> .decl Seed(?s:symbol)</li>
 <li> .decl SeedMethod(?m:Method)</li>
 <li> .decl SeedMethodNotReachable(?m:Method)</li>
@@ -316,6 +333,12 @@
 <li> .decl SmallApplicationMethod(?method:Method)</li>
 <li> .decl SpecialMethodToKeep(?method:Method)</li>
 <li> .decl TripleInvocationTarget(?invocation:MethodInvocation, ?target:Method)</li>
+<li> .decl UnreachableDeclaredConstructor(?constructor:Method, ?type:ReferenceType)</li>
+<li> .decl UnreachableDeclaredField(?field:Field, ?type:ReferenceType)</li>
+<li> .decl UnreachableDeclaredMethod(?method:Method)</li>
+<li> .decl UnreachablePublicConstructor(?type:ReferenceType)</li>
+<li> .decl UnreachablePublicField(?type:ReferenceType)</li>
+<li> .decl UnreachablePublicMethod(?method:Method)</li>
 <li> .decl _RelevantStringPosition(?className: symbol, ?pos:number)</li>
 </ul>
 <h2> addons/opt-directives/keep.dl </h2>
@@ -377,8 +400,17 @@
 <li> .decl MethodReturnsReference(?method:Method)</li>
 <li> .decl Method_CalleeCanBenefitFromCS(?method:Method)</li>
 </ul>
+<h2> addons/server-logic/method-lookup-ext.dl </h2>
+<ul>
+<li> .decl Invocation_Parts(?invocation:MethodInvocation, ?simplename:symbol, ?descriptor:symbol, ?basetype:Type, ?isSingleDispatch:number)</li>
+<li> .decl MethodLookupExt(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:Type, ?method:Method, ?isSingleDispatch:number)</li>
+<li> .decl SingleDispatch(?method:Method)</li>
+</ul>
 <h2> addons/server-logic/queries.dl </h2>
 <ul>
+<li> .decl OutputSchema(?id:symbol, ?displayName:symbol)</li>
+<li> .decl OutputSchemaAttribute(?schemaId:symbol, ?id:symbol, ?displayName:symbol, ?type:symbol, ?pos:number)</li>
+<li> .decl OutputSchemaRelation(?schemaId:symbol, ?relation:symbol)</li>
 <li> .decl Server_Array_Values(?arrayValue:mainAnalysis.Value, ?value:mainAnalysis.Value)</li>
 <li> .decl Server_ClassCallsClass(?fromClass:ClassType, ?toClass:ClassType)</li>
 <li> .decl Server_Field_ShadowedBy(?fld:Field, ?shadowFld:Field)</li>
@@ -393,7 +425,6 @@
 <li> .decl Server_Var_Values(?class:ClassType, ?var:Var, ?value:mainAnalysis.Value)</li>
 <li> .decl _AIPT(?arrayValue:mainAnalysis.Value, ?value:mainAnalysis.Value)</li>
 <li> .decl _AIPT_Count(?arrayValue:mainAnalysis.Value, ?n:number)</li>
-<li> .decl _AppReachable(?method:Method)</li>
 <li> .decl _AppVirtual(?invo:MethodInvocation)</li>
 <li> .decl _AppVirtual_Resolved(?invo:MethodInvocation)</li>
 <li> .decl _ClassTypeUnion(?c:ReferenceType)</li>
@@ -408,6 +439,10 @@
 <li> .decl _VarDeclaringClass(?var:Var, ?class:Type)</li>
 <li> .decl _VarUnderThreshold(?var:Var)</li>
 </ul>
+<h2> addons/server-logic/type-hierarchy-ext.dl </h2>
+<ul>
+<li> .decl ClassConstructor(?method:Method, ?type:Type)</li>
+</ul>
 <h2> addons/souffle-incremental-output/incr-output.dl </h2>
 <ul>
 <li> .decl LiveOutputRelation(?relName:symbol)</li>
@@ -417,6 +452,144 @@
 <li> .decl Successfull(?maxRes:number)</li>
 <li> .decl ctxToNum(?ctx:mainAnalysis.configuration.Context, ?strCtx:number)</li>
 <li> .decl hctxToNum(?ctx:mainAnalysis.configuration.HContext, ?strCtx:number)</li>
+</ul>
+<h2> addons/ssa-transform/analysis.dl </h2>
+<ul>
+<li> .decl AbstractConstraint(?var_sub:symbol, ?var_sup:symbol)</li>
+<li> .decl ArrayLoad(?stmt:symbol, ?base:symbol, ?var:symbol)</li>
+<li> .decl ArrayStore(?stmt:symbol, ?base:symbol, ?var:symbol)</li>
+<li> .decl Assign(?stmt:symbol, ?var1:symbol, ?var2:symbol)</li>
+<li> .decl AssignArray(?stmt:symbol, ?var1:symbol, ?var2:symbol)</li>
+<li> .decl BasicBlockOutDefs(?block:symbol, ?ssa_var:symbol, ?origin:symbol)</li>
+<li> .decl CommonAncestor(?type1:symbol, ?type2:symbol, ?supertype:symbol)</li>
+<li> .decl CommonDescendant(?type1:symbol, ?type2:symbol, ?subtype:symbol)</li>
+<li> .decl ConstraintForVar(?var:symbol, ?stmt:symbol)</li>
+<li> .decl ContainsAssignment(?dBlock:symbol, ?var:symbol)</li>
+<li> .decl DFPlus(?dBlock:symbol, ?block:symbol, ?var:symbol)</li>
+<li> .decl DominanceFrontier(?dBlock:symbol, ?block:symbol)</li>
+<li> .decl ExistsDefInPhiHeader(?insn:symbol, ?ssa_var:symbol, ?origin:symbol)</li>
+<li> .decl ExistsNonGuardType(?var:symbol)</li>
+<li> .decl ExistsPhiChunkBetween(?prev:symbol, ?next:symbol)</li>
+<li> .decl ExistsPseudoAssignBetween(?prev:symbol, ?next:symbol)</li>
+<li> .decl FirstConstraintForVar(?var:symbol, ?stmt:symbol)</li>
+<li> .decl FirstLowerConstraintForVar(?var:symbol, ?stmt:symbol)</li>
+<li> .decl FirstUpperConstraintForVar(?var:symbol, ?stmt:symbol)</li>
+<li> .decl GreatestCommonDescendant(?type1:symbol, ?type2:symbol, ?subtype:symbol)</li>
+<li> .decl HasKnownType(?stmt:symbol, ?var:symbol, ?type:symbol)</li>
+<li> .decl InDefs(?insn:symbol, ?ssa_var:symbol, ?origin:symbol)</li>
+<li> .decl Index_Next(?index:number, ?nextIndex:number)</li>
+<li> .decl Integer32Constraint(?var:symbol, ?insn:symbol)</li>
+<li> .decl LaterConstraintForVar(?var:symbol, ?stmt:symbol, ?stmtLater:symbol)</li>
+<li> .decl LaterLowerConstraintForVar(?var:symbol, ?stmt:symbol, ?stmtLater:symbol)</li>
+<li> .decl LaterUpperConstraintForVar(?var:symbol, ?stmt:symbol, ?stmtLater:symbol)</li>
+<li> .decl LeastCommonAncestor(?type1:symbol, ?type2:symbol, ?supertype:symbol)</li>
+<li> .decl LowerBoundTypeForAllConstraints(?var:symbol, ?type:symbol)</li>
+<li> .decl LowerBoundTypeForConstraint(?var:symbol, ?type:symbol, ?stmt:symbol)</li>
+<li> .decl LowerBoundTypeUpToConstraint(?var:symbol, ?type:symbol, ?stmt:symbol)</li>
+<li> .decl LowerConstraintForVar(?var:symbol, ?stmt:symbol)</li>
+<li> .decl LowerGlobalConstraint(?type:symbol)</li>
+<li> .decl NewBBStart(?old:number, ?new:number, ?method:symbol)</li>
+<li> .decl NewIndexMapping(?old:number, ?new:number, ?method:symbol)</li>
+<li> .decl NextConstraintForVar(?var:symbol, ?stmt:symbol, ?stmtNext:symbol)</li>
+<li> .decl NextLowerConstraintForVar(?var:symbol, ?stmt:symbol, ?stmtNext:symbol)</li>
+<li> .decl NextUpperConstraintForVar(?var:symbol, ?stmt:symbol, ?stmtNext:symbol)</li>
+<li> .decl NonGuardCompatibleTypes(?var:symbol, ?type:symbol)</li>
+<li> .decl NotFirstConstraintForVar(?var:symbol, ?stmt:symbol)</li>
+<li> .decl NotFirstLowerConstraintForVar(?var:symbol, ?stmt:symbol)</li>
+<li> .decl NotFirstUpperConstraintForVar(?var:symbol, ?stmt:symbol)</li>
+<li> .decl NotGreatestCommonDescendant(?type1:symbol, ?type2:symbol, ?subtype:symbol)</li>
+<li> .decl NotLastConstraintForVar(?var:symbol, ?stmt:symbol)</li>
+<li> .decl NotLastLowerConstraintForVar(?var:symbol, ?stmt:symbol)</li>
+<li> .decl NotLastUpperConstraintForVar(?var:symbol, ?stmt:symbol)</li>
+<li> .decl NotLeastCommonAncestor(?type1:symbol, ?type2:symbol, ?supertype:symbol)</li>
+<li> .decl PhiAssign(?phi_var:symbol, ?block:symbol)</li>
+<li> .decl PhiChunkEnd(?phi_chunk:symbol, ?end:symbol)</li>
+<li> .decl PhiChunkNext(?prev:symbol, ?next:symbol)</li>
+<li> .decl PhiChunkStart(?phi_chunk:symbol, ?start:symbol)</li>
+<li> .decl PhiHeaderEnd(?phi_chunk:symbol, ?end:symbol)</li>
+<li> .decl PhiHeaderNext(?prev:symbol, ?next:symbol)</li>
+<li> .decl PhiHeaderStart(?phi_chunk:symbol, ?start:symbol)</li>
+<li> .decl PhiPseudoAssign(?phi_var:symbol, ?def:symbol, ?dst_block:symbol, ?pseudoname:symbol)</li>
+<li> .decl PrimOp(?insn:symbol, ?to:symbol, ?from:symbol)</li>
+<li> .decl ReachingDef(?insn:symbol, ?ssa_var:symbol, ?origin:symbol)</li>
+<li> .decl RewriteActualParam(?index:number, ?invocation:symbol, ?var:symbol)</li>
+<li> .decl RewriteArrayInitialValueFromConst(?insn:symbol, ?index:number, ?to:symbol, ?arrayIndex:number, ?const:symbol, ?baseHeap:symbol, ?inmethod:symbol)</li>
+<li> .decl RewriteArrayInitialValueFromLocal(?insn:symbol, ?index:number, ?to:symbol, ?arrayIndex:number, ?from:symbol, ?baseHeap:symbol, ?inmethod:symbol)</li>
+<li> .decl RewriteArrayInsnIndex(?insn:symbol, ?index:symbol)</li>
+<li> .decl RewriteAssignBinop(?insn:symbol, ?index:number, ?to:symbol, ?inmethod:symbol)</li>
+<li> .decl RewriteAssignCast(?insn:symbol, ?index:number, ?from:symbol, ?to:symbol, ?type:symbol, ?inmethod:symbol)</li>
+<li> .decl RewriteAssignCastNull(?insn:symbol, ?index:number, ?to:symbol, ?type:symbol, ?inmethod:symbol)</li>
+<li> .decl RewriteAssignCastNumConstant(?insn:symbol, ?index:number, ?const:symbol, ?to:symbol, ?type:symbol, ?inmethod:symbol)</li>
+<li> .decl RewriteAssignHeapAllocation(?insn:symbol, ?index:number, ?heap:symbol, ?to:symbol, ?inmethod:symbol, ?linenumber:number)</li>
+<li> .decl RewriteAssignInstanceOf(?insn:symbol, ?index:number, ?from:symbol, ?to:symbol, ?type:symbol, ?inmethod:symbol)</li>
+<li> .decl RewriteAssignLocal(?insn:symbol, ?index:number, ?to:symbol, ?from:symbol, ?inmethod:symbol)</li>
+<li> .decl RewriteAssignNull(?insn:symbol, ?index:number, ?to:symbol, ?inmethod:symbol)</li>
+<li> .decl RewriteAssignNumConstant(?insn:symbol, ?index:number, ?const:symbol, ?to:symbol, ?inmethod:symbol)</li>
+<li> .decl RewriteAssignOperFrom(?insn:symbol, ?pos:number, ?from:symbol)</li>
+<li> .decl RewriteAssignReturnValue(?invocation:symbol, ?to:symbol)</li>
+<li> .decl RewriteAssignUnop(?insn:symbol, ?index:number, ?to:symbol, ?inmethod:symbol)</li>
+<li> .decl RewriteBootstrapParam(?index:number, ?invocation:symbol, ?var:symbol)</li>
+<li> .decl RewriteDynamicMethodInvocation(?insn:symbol, ?index:number, ?bootSignature:symbol, ?dynName:symbol, ?dynRetType:symbol, ?dynArity:number, ?dynParamTypes:symbol, ?tag:number, ?method:symbol)</li>
+<li> .decl RewriteEnterMonitor(?instruction:symbol, ?index:number, ?var:symbol, ?method:symbol)</li>
+<li> .decl RewriteExceptionHandler(?handler:symbol, ?method:symbol, ?index:number, ?type:symbol, ?begin:number, ?end:number)</li>
+<li> .decl RewriteExceptionHandler_FormalParam(?handler:symbol, ?var:symbol)</li>
+<li> .decl RewriteExitMonitor(?instruction:symbol, ?index:number, ?var:symbol, ?method:symbol)</li>
+<li> .decl RewriteGoto(?insn:symbol, ?index:number, ?to:number, ?inmethod:symbol)</li>
+<li> .decl RewriteIf(?insn:symbol, ?index:number, ?to:number, ?inmethod:symbol)</li>
+<li> .decl RewriteIfVar(?insn:symbol, ?pos:number, ?var:symbol)</li>
+<li> .decl RewriteLoadArrayIndex(?insn:symbol, ?index:number, ?to:symbol, ?base:symbol, ?method:symbol)</li>
+<li> .decl RewriteLoadInstanceField(?insn:symbol, ?index:number, ?to:symbol, ?base:symbol, ?signature:symbol, ?method:symbol)</li>
+<li> .decl RewriteLoadStaticField(?insn:symbol, ?index:number, ?to:symbol, ?signature:symbol, ?method:symbol)</li>
+<li> .decl RewriteLookupSwitch(?insn:symbol, ?index:number, ?key:symbol, ?method:symbol)</li>
+<li> .decl RewriteLookupSwitch_DefaultTarget(?insn:symbol, ?target:number)</li>
+<li> .decl RewriteLookupSwitch_Target(?insn:symbol, ?value:number, ?target:number)</li>
+<li> .decl RewriteReturn(?insn:symbol, ?index:number, ?var:symbol, ?inmethod:symbol)</li>
+<li> .decl RewriteReturnVoid(?insn:symbol, ?index:number, ?inmethod:symbol)</li>
+<li> .decl RewriteSpecialMethodInvocation(?insn:symbol, ?index:number, ?signature:symbol, ?base:symbol, ?method:symbol)</li>
+<li> .decl RewriteStaticMethodInvocation(?insn:symbol, ?index:number, ?signature:symbol, ?method:symbol)</li>
+<li> .decl RewriteStoreArrayIndex(?insn:symbol, ?index:number, ?from:symbol, ?base:symbol, ?method:symbol)</li>
+<li> .decl RewriteStoreInstanceField(?insn:symbol, ?index:number, ?from:symbol, ?base:symbol, ?signature:symbol, ?method:symbol)</li>
+<li> .decl RewriteStoreStaticField(?insn:symbol, ?index:number, ?from:symbol, ?signature:symbol, ?method:symbol)</li>
+<li> .decl RewriteSuperMethodInvocation(?insn:symbol, ?index:number, ?signature:symbol, ?base:symbol, ?method:symbol)</li>
+<li> .decl RewriteTableSwitch(?insn:symbol, ?index:number, ?key:symbol, ?method:symbol)</li>
+<li> .decl RewriteTableSwitch_DefaultTarget(?insn:symbol, ?target:number)</li>
+<li> .decl RewriteTableSwitch_Target(?insn:symbol, ?value:number, ?target:number)</li>
+<li> .decl RewriteThrow(?insn:symbol, ?index:number, ?var:symbol, ?method:symbol)</li>
+<li> .decl RewriteThrowNull(?insn:symbol, ?index:number, ?method:symbol)</li>
+<li> .decl RewriteVarDeclaringMethod(?var:symbol, ?method:symbol)</li>
+<li> .decl RewriteVirtualMethodInvocation(?insn:symbol, ?index:number, ?signature:symbol, ?base:symbol, ?method:symbol)</li>
+<li> .decl SSANext(?prev:symbol, ?next:symbol)</li>
+<li> .decl SSA_Alias(?ssa_name:symbol, ?original:symbol)</li>
+<li> .decl SSA_AssignDetails(?instr:symbol, ?to:symbol, ?index:number, ?ssa_name:symbol, ?method:symbol)</li>
+<li> .decl SSA_AssignNumConstant(?insn:symbol, ?to:symbol, ?const:symbol, ?inmethod:symbol)</li>
+<li> .decl SSA_AssignToOriginal(?instr:symbol, ?original:symbol)</li>
+<li> .decl SSA_FormalParam(?index:number, ?method:symbol, ?ssa_name:symbol)</li>
+<li> .decl SSA_InstructionIndex(?insn:symbol, ?index:number)</li>
+<li> .decl SSA_ThisVar(?method:symbol, ?ssa_name:symbol)</li>
+<li> .decl SSA_Type(?var:symbol, ?type:symbol)</li>
+<li> .decl SSA_TypeOrd(?var:symbol, ?typeId:number)</li>
+<li> .decl StatementType(?insn:symbol, ?in_type:symbol, ?out_type:symbol)</li>
+<li> .decl StrictlyDominates(?dominator:symbol, ?block:symbol)</li>
+<li> .decl TypeBetween(?upper:symbol, ?lower:symbol, ?type:symbol)</li>
+<li> .decl TypeCompatibleWithAllConstraints(?var:symbol, ?type:symbol)</li>
+<li> .decl UpperBoundTypeForAllConstraints(?var:symbol, ?type:symbol)</li>
+<li> .decl UpperBoundTypeForConstraint(?var:symbol, ?type:symbol, ?stmt:symbol)</li>
+<li> .decl UpperBoundTypeUpToConstraint(?var:symbol, ?type:symbol, ?stmt:symbol)</li>
+<li> .decl UpperConstraintForVar(?var:symbol, ?stmt:symbol)</li>
+<li> .decl UpperGlobalConstraint(?type:symbol)</li>
+<li> .decl isGuardInt32(?t:symbol)</li>
+<li> .decl isGuardPrimitive(?t:symbol)</li>
+<li> .decl isGuardPrimitive32(?t:symbol)</li>
+<li> .decl isInt32Bottom(?t:symbol)</li>
+<li> .decl isInt32Primitive(?t:symbol)</li>
+<li> .decl isInt32Top(?t:symbol)</li>
+<li> .decl isPrimitive32Bottom(?t:symbol)</li>
+<li> .decl isPrimitive32Top(?t:symbol)</li>
+<li> .decl isPrimitive64Bottom(?t:symbol)</li>
+<li> .decl isPrimitive64Top(?t:symbol)</li>
+<li> .decl isZeroAssignTo(?insn:symbol, ?to:symbol)</li>
+<li> .decl mPrimitives(?t:symbol)</li>
+<li> .decl mSubtypeOf(?s:symbol, ?t:symbol)</li>
 </ul>
 <h2> addons/statistics/metrics.dl </h2>
 <ul>
@@ -645,10 +818,6 @@
 <h2> addons/testing/TestReflection.dl </h2>
 <ul>
 <li> .decl TestId(?id:symbol)</li>
-</ul>
-<h2> addons/testing/native-tests.dl </h2>
-<ul>
-<li> .decl AppReachable(?method:Method)</li>
 </ul>
 <h2> addons/testing/test-discovery.dl </h2>
 <ul>
@@ -1598,7 +1767,30 @@
 <li> .decl Unsubclassable(?type:Type)</li>
 <li> .decl _Valid_Type(?type:ReferenceType)</li>
 </ul>
-<h2> facts/flow-insensitive-schema.dl </h2>
+<h2> facts/android.dl </h2>
+<ul>
+<li> .decl Activity(?x:Type)</li>
+<li> .decl AndroidApplication(?t:ClassType)</li>
+<li> .decl AndroidEntryPoint(?m:Method)</li>
+<li> .decl AndroidId(?file:symbol, ?nodeId:symbol, ?value:symbol, ?prefix:symbol, ?id:symbol)</li>
+<li> .decl AndroidIncludeXML(?file:symbol, ?nodeId:symbol, ?value:symbol)</li>
+<li> .decl ArrayInitialValueFromConst(?instruction:symbol, ?index:number, ?to:symbol, ?arrayIndex:number, ?const:symbol, ?baseHeap:symbol, ?method:Method)</li>
+<li> .decl ArrayInitialValueFromLocal(?instruction:symbol, ?index:number, ?to:symbol, ?arrayIndex:number, ?from:symbol, ?baseHeap:symbol, ?method:Method)</li>
+<li> .decl BroadcastReceiver(?x:Type)</li>
+<li> .decl CallbackMethod(?x:Method)</li>
+<li> .decl ContentProvider(?x:Type)</li>
+<li> .decl FieldInitialValue(?fld:Field, ?valueString:symbol)</li>
+<li> .decl LayoutControl(?id:NumConstant, ?type:Type, ?parent:symbol)</li>
+<li> .decl LayoutControl0(?id:NumConstant, ?typename:symbol, ?parent:symbol)</li>
+<li> .decl NumConstantRaw(?const:symbol)</li>
+<li> .decl SensitiveLayoutControl(?id:NumConstant, ?type:Type, ?parent:symbol)</li>
+<li> .decl SensitiveLayoutControl0(?id:NumConstant, ?typename:symbol, ?parent:symbol)</li>
+<li> .decl Service(?x:Type)</li>
+<li> .decl XMLNode(?file:symbol, ?nodeId:symbol, ?parentNodeId:symbol, ?namespaceURI:symbol, ?localName:symbol, ?qName:symbol)</li>
+<li> .decl XMLNodeAttribute(?file:symbol, ?nodeId:symbol, ?index:symbol, ?localName:symbol, ?qName:symbol, ?value:symbol)</li>
+<li> .decl XMLNodeData(?file:symbol, ?nodeId:symbol, ?data:symbol)</li>
+</ul>
+<h2> facts/flow-insensitive-facts.dl </h2>
 <ul>
 <li> .decl AssignCast(?type:Type, ?from:Var, ?to:Var, ?inmethod:Method)</li>
 <li> .decl AssignHeapAllocation(?heap:HeapAllocation, ?to:Var, ?inmethod:Method)</li>
@@ -1607,6 +1799,7 @@
 <li> .decl LoadArrayIndex(?base:Var, ?to:Var, ?inmethod:Method)</li>
 <li> .decl LoadInstanceField(?base:Var, ?sig:Field, ?to:Var, ?inmethod:Method)</li>
 <li> .decl LoadStaticField(?sig:Field, ?to:Var, ?inmethod:Method)</li>
+<li> .decl MethodInvocation_SimpleName(?invocation:Instruction, ?simpleName:symbol)</li>
 <li> .decl ReturnVar(?var:Var, ?method:Method)</li>
 <li> .decl StaticMethodInvocation(?invocation:MethodInvocation, ?signature:Method, ?inmethod:Method)</li>
 <li> .decl StoreArrayIndex(?from:Var, ?base:Var, ?inmethod:Method)</li>
@@ -1618,17 +1811,14 @@
 </ul>
 <h2> facts/flow-sensitive-schema.dl </h2>
 <ul>
-<li> .decl Activity(?x:Type)</li>
 <li> .decl ActualParam(?index:number, ?invocation:MethodInvocation, ?var:Var)</li>
-<li> .decl AndroidApplication(?t:ClassType)</li>
-<li> .decl AndroidEntryPoint(?m:Method)</li>
-<li> .decl AndroidId(?file:symbol, ?nodeId:symbol, ?value:symbol, ?prefix:symbol, ?id:symbol)</li>
-<li> .decl AndroidIncludeXML(?file:symbol, ?nodeId:symbol, ?value:symbol)</li>
 <li> .decl AnnotationElement(?annotationKind:symbol, ?element:symbol, ?parentId:symbol, ?id:symbol, ?name:symbol, ?value1:symbol, ?value2:symbol)</li>
 <li> .decl ApplicationClass(?ref:ReferenceType)</li>
 <li> .decl ApplicationMethod(?method:Method)</li>
 <li> .decl ApplicationVar(?var:Var)</li>
+<li> .decl ArrayAllocation(?insn:Instruction, ?sizeVar:Var)</li>
 <li> .decl ArrayInsnIndex(?insn:Instruction, ?index:Var)</li>
+<li> .decl ArrayNumIndex(?insn:Instruction, ?index:number)</li>
 <li> .decl AssignCastNumConstant_Id(?insn:AssignCastNumConstant_Insn, ?const:NumConstant)</li>
 <li> .decl AssignCast_From(?insn:AssignCast_Insn, ?from:Var)</li>
 <li> .decl AssignCast_Type(?insn:AssignCast_Insn, ?type:Type)</li>
@@ -1642,13 +1832,10 @@
 <li> .decl AssignOper_FromConstant(?insn:AssignOper_Insn, ?pos: number, ?from:NumConstant)</li>
 <li> .decl AssignReturnValue(?invocation:MethodInvocation, ?to:Var)</li>
 <li> .decl BootstrapParam(?index:number, ?invocation:DynamicMethodInvocation_Insn, ?var:Var)</li>
-<li> .decl BroadcastReceiver(?x:Type)</li>
-<li> .decl CallbackMethod(?x:Method)</li>
 <li> .decl ClassHeap_InstanceType(?classHeap:ClassHeap, ?instanceType:Type)</li>
 <li> .decl ClassModifier(?mod:Modifier, ?class:ReferenceType)</li>
 <li> .decl ComponentType(?arrayType:ArrayType, ?componentType:Type)</li>
 <li> .decl ConcreteClass(?ref:ReferenceType)</li>
-<li> .decl ContentProvider(?x:Type)</li>
 <li> .decl DirectSuperclass(?class:ClassType, ?superclass:ClassType)</li>
 <li> .decl DirectSuperinterface(?ref:ReferenceType, ?interface:InterfaceType)</li>
 <li> .decl DummyIf_Var(?insn:If_Insn, ?Var:Var)</li>
@@ -1667,7 +1854,6 @@
 <li> .decl ExceptionHandler_Previous(?handler:ExceptionHandler, ?previous:ExceptionHandler)</li>
 <li> .decl ExceptionHandler_Type(?handler:ExceptionHandler, ?type:Type)</li>
 <li> .decl ExitMonitor_Var(?insn:ExitMonitor_Insn, ?var:Var)</li>
-<li> .decl FieldInitialValue(?fld:Field, ?valueString:symbol)</li>
 <li> .decl FieldInstruction_Signature(?insn:FieldInstruction, ?sign:Field)</li>
 <li> .decl Field_Annotation(?fld:Field, ?annotation:Annotation)</li>
 <li> .decl Field_DeclaringType(?field:Field, ?declaringClass:ReferenceType)</li>
@@ -1685,12 +1871,6 @@
 <li> .decl Instruction_Index(?insn:Instruction, ?index:number)</li>
 <li> .decl Instruction_Line(?insn:Instruction, ?index:number)</li>
 <li> .decl Instruction_Method(?insn:Instruction, ?inMethod:Method)</li>
-<li> .decl KeepClass(?c:ClassType)</li>
-<li> .decl KeepClassMembers(?m:Method)</li>
-<li> .decl KeepClassesWithMembers(?m:Method)</li>
-<li> .decl KeepMethod(?m:Method)</li>
-<li> .decl LayoutControl(?id:NumConstant, ?type:Type, ?parent:symbol)</li>
-<li> .decl LayoutControl0(?id:NumConstant, ?typename:symbol, ?parent:symbol)</li>
 <li> .decl LoadArrayIndex_Base(?insn:LoadArrayIndex_Insn, ?var:Var)</li>
 <li> .decl LoadArrayIndex_To(?insn:LoadArrayIndex_Insn, var:Var)</li>
 <li> .decl LoadInstanceField_Base(?insn:LoadInstanceField_Insn, ?var:Var)</li>
@@ -1729,9 +1909,6 @@
 <li> .decl Param_Annotation(?method:Method, ?index:number, ?annotation:Annotation)</li>
 <li> .decl Properties(?path:StringConstant, ?key:StringConstant, ?value:StringConstant)</li>
 <li> .decl ReturnNonvoid_Var(?return:ReturnNonvoid_Insn, ?var:Var)</li>
-<li> .decl SensitiveLayoutControl(?id:NumConstant, ?type:Type, ?parent:symbol)</li>
-<li> .decl SensitiveLayoutControl0(?id:NumConstant, ?typename:symbol, ?parent:symbol)</li>
-<li> .decl Service(?x:Type)</li>
 <li> .decl SpecialMethodInvocation_Base(?invocation:SpecialMethodInvocation_Insn, ?base:Var)</li>
 <li> .decl SpecialMethodInvocation_Descriptor(?invocation:MethodInvocation, ?descriptor:MethodDescriptor)</li>
 <li> .decl SpecialMethodInvocation_SimpleName(?invocation:MethodInvocation, ?simplename:symbol)</li>
@@ -1764,6 +1941,7 @@
 <li> .decl Type_short(?t:PrimitiveType)</li>
 <li> .decl Type_void(?t:PrimitiveType)</li>
 <li> .decl Var_DeclaringMethod(?var:Var, ?method:Method)</li>
+<li> .decl Var_SimpleName(?var:Var, ?simplename:symbol)</li>
 <li> .decl Var_Type(?var:Var, ?type:Type)</li>
 <li> .decl VirtualMethodInvocation_Base(?invocation:VirtualMethodInvocation_Insn, ?base:Var)</li>
 <li> .decl VirtualMethodInvocation_Descriptor(?invocation:MethodInvocation, ?descriptor:MethodDescriptor)</li>
@@ -1793,7 +1971,6 @@
 <li> .decl isExitMonitor_Insn(?insn:ExitMonitor_Insn)</li>
 <li> .decl isField(?field:Field)</li>
 <li> .decl isFieldInstruction(?insn:FieldInstruction)</li>
-<li> .decl isGenericField(?field:Field)</li>
 <li> .decl isGoto_Insn(?insn:Goto_Insn)</li>
 <li> .decl isHeapAllocation(?h:HeapAllocation)</li>
 <li> .decl isIf_Insn(?insn:If_Insn)</li>
@@ -1814,7 +1991,6 @@
 <li> .decl isNormalHeap(?h:NormalHeap)</li>
 <li> .decl isNullType(?t:NullType)</li>
 <li> .decl isNumConstant(?n:NumConstant)</li>
-<li> .decl isOpaqueInstruction(?insn:OpaqueInstruction)</li>
 <li> .decl isOpaqueMethod(?m:Method)</li>
 <li> .decl isPrimitiveType(?t:PrimitiveType)</li>
 <li> .decl isReferenceType(?t:ReferenceType)</li>
@@ -1837,6 +2013,16 @@
 <li> .decl isUnsupportedInstruction(?insn:UnsupportedInstruction)</li>
 <li> .decl isVar(v:Var)</li>
 <li> .decl isVirtualMethodInvocation_Insn(?insn:VirtualMethodInvocation_Insn)</li>
+</ul>
+<h2> facts/generics.dl </h2>
+<ul>
+<li> .decl GenericField_DeclaringType(?field:Field, ?declaringClass:ClassType)</li>
+<li> .decl GenericField_SimpleName(?field:Field, ?simpleName:symbol)</li>
+<li> .decl GenericField_Type(?field:Field, ?type:Type)</li>
+<li> .decl GenericTypeParameters(?type:symbol, ?index:number, ?genericParameter:symbol)</li>
+<li> .decl GenericType_ErasedType(?genericType:symbol, ?erasedType:Type)</li>
+<li> .decl _GenericField(?signature:symbol, ?declaringClass:symbol, ?simplename:symbol, ?type:symbol)</li>
+<li> .decl isGenericField(?field:Field)</li>
 </ul>
 <h2> facts/import-dynamic-facts.dl </h2>
 <ul>
@@ -1877,49 +2063,19 @@
 <li> .decl _UnmatchedDynamicNormalHeapAllocation1(?inMethod:Method, ?type:Type, ?representation:symbol)</li>
 <li> .decl isDynamicContext(?ctx:DynamicContext)</li>
 </ul>
-<h2> facts/import-entities.dl </h2>
+<h2> facts/imports.dl </h2>
 <ul>
-<li> .decl _ActualParam(?index:number, ?invocation:symbol, ?var:symbol)</li>
-<li> .decl _ApplicationClass(?type:symbol)</li>
-<li> .decl _ApplicationPackage(?package:symbol)</li>
-<li> .decl _ArrayType(?arrayType:symbol)</li>
-<li> .decl _AssignReturnValue(?invocation:symbol, ?to:symbol)</li>
-<li> .decl _BootstrapParam(?index:number, ?invocation:symbol, ?var:symbol)</li>
-<li> .decl _ClassModifier(?class:symbol, ?modifier:symbol)</li>
-<li> .decl _ClassType(?class:symbol)</li>
-<li> .decl _ComponentType(?arrayType:symbol, ?componentType:symbol)</li>
-<li> .decl _DirectSuperclass(?class:symbol, ?superclass:symbol)</li>
-<li> .decl _DirectSuperinterface(?class:symbol, ?interface:symbol)</li>
-<li> .decl _ExceptionHandler_Previous(?handler:symbol, ?previous:symbol)</li>
-<li> .decl _Field_Modifier(?modifier:symbol, ?field:symbol)</li>
-<li> .decl _FormalParam(?index:number, ?method:symbol, ?var:symbol)</li>
-<li> .decl _InterfaceType(?interface:symbol)</li>
-<li> .decl _Method_DeclaresException(?exceptionType:symbol, ?method:symbol)</li>
-<li> .decl _Method_Modifier(?mod:symbol, ?method:symbol)</li>
-<li> .decl _NativeReturnVar(?var:symbol, ?method:symbol)</li>
-<li> .decl _Properties(?path:symbol, ?key:symbol, ?value:symbol)</li>
-<li> .decl _ThisVar(?method:symbol, ?var:symbol)</li>
-<li> .decl _Var_DeclaringMethod(?var:symbol, ?method:symbol)</li>
-<li> .decl _Var_Type(?var:symbol, ?type:symbol)</li>
-</ul>
-<h2> facts/import-facts.dl </h2>
-<ul>
-<li> .decl ArrayInitialValueFromConst(?instruction:symbol, ?index:number, ?to:symbol, ?arrayIndex:number, ?const:symbol, ?baseHeap:symbol, ?method:Method)</li>
-<li> .decl ArrayInitialValueFromLocal(?instruction:symbol, ?index:number, ?to:symbol, ?arrayIndex:number, ?from:symbol, ?baseHeap:symbol, ?method:Method)</li>
-<li> .decl GenericField_DeclaringType(?field:Field, ?declaringClass:ClassType)</li>
-<li> .decl GenericField_SimpleName(?field:Field, ?simpleName:symbol)</li>
-<li> .decl GenericField_Type(?field:Field, ?type:Type)</li>
-<li> .decl GenericTypeParameters(?type:symbol, ?index:number, ?genericParameter:symbol)</li>
-<li> .decl GenericType_ErasedType(?genericType:symbol, ?erasedType:Type)</li>
-<li> .decl NumConstantRaw(?const:symbol)</li>
 <li> .decl PhantomBasedMethod(?m:Method)</li>
 <li> .decl PhantomMethod(?m:Method)</li>
 <li> .decl PhantomType(?t:Type)</li>
 <li> .decl String_toRaw(?id:symbol, ?rawId:symbol)</li>
-<li> .decl XMLNode(?file:symbol, ?nodeId:symbol, ?parentNodeId:symbol, ?namespaceURI:symbol, ?localName:symbol, ?qName:symbol)</li>
-<li> .decl XMLNodeAttribute(?file:symbol, ?nodeId:symbol, ?index:symbol, ?localName:symbol, ?qName:symbol, ?value:symbol)</li>
-<li> .decl XMLNodeData(?file:symbol, ?nodeId:symbol, ?data:symbol)</li>
+<li> .decl _ActualParam(?index:number, ?invocation:symbol, ?var:symbol)</li>
+<li> .decl _ApplicationClass(?type:symbol)</li>
+<li> .decl _ApplicationPackage(?package:symbol)</li>
+<li> .decl _ArrayAllocation(?instruction:symbol, ?sizeVar:symbol)</li>
 <li> .decl _ArrayInsnIndex(?instruction:symbol, ?index:symbol)</li>
+<li> .decl _ArrayNumIndex(?instruction:symbol, ?index:number)</li>
+<li> .decl _ArrayType(?arrayType:symbol)</li>
 <li> .decl _AssignBinop(?instruction:symbol, ?index:number, ?to:symbol, ?inmethod:symbol)</li>
 <li> .decl _AssignCast(?instruction:symbol, ?index:number, ?from:symbol, ?to:symbol, ?type:symbol, ?inmethod:symbol)</li>
 <li> .decl _AssignCastNull(?instruction:symbol, ?index:number, ?to:symbol, ?type:symbol, ?method:symbol)</li>
@@ -1932,40 +2088,51 @@
 <li> .decl _AssignOperFrom(?instruction:symbol, ?pos: number, ?from:symbol)</li>
 <li> .decl _AssignOperFromConstant(?instruction:symbol, ?pos: number, ?from:symbol)</li>
 <li> .decl _AssignPhantomInvoke(?instruction:symbol, ?index:number, ?method:symbol)</li>
+<li> .decl _AssignReturnValue(?invocation:symbol, ?to:symbol)</li>
 <li> .decl _AssignUnop(?instruction:symbol, ?index:number, ?to:symbol, ?inmethod:symbol)</li>
+<li> .decl _BootstrapParam(?index:number, ?invocation:symbol, ?var:symbol)</li>
 <li> .decl _BreakpointStmt(?instruction:symbol, ?index:number, ?method:symbol)</li>
 <li> .decl _ClassArtifact(?artifact:symbol, ?className:symbol, ?subArtifact:symbol, ?size:number)</li>
 <li> .decl _ClassHeap(?id:symbol, ?instanceType:symbol)</li>
+<li> .decl _ClassModifier(?class:symbol, ?modifier:symbol)</li>
+<li> .decl _ClassType(?class:symbol)</li>
+<li> .decl _ComponentType(?arrayType:symbol, ?componentType:symbol)</li>
+<li> .decl _DirectSuperclass(?class:symbol, ?superclass:symbol)</li>
+<li> .decl _DirectSuperinterface(?class:symbol, ?interface:symbol)</li>
 <li> .decl _DummyIfVar(?instruction:symbol, ?var:symbol)</li>
 <li> .decl _DynamicMethodInvocation(?instruction:symbol, ?index:number, ?bootSignature:symbol, ?dynName:symbol, ?dynRetType:symbol, ?dynArity:number, ?dynParamTypes:symbol, ?tag:number, ?method:symbol)</li>
 <li> .decl _DynamicMethodInvocation_DynParamType(?invocation:DynamicMethodInvocation_Insn, ?idx:number, ?pType:symbol)</li>
 <li> .decl _EmptyArray(?id:symbol)</li>
 <li> .decl _EnterMonitor(?instruction:symbol, ?index:number, ?var:symbol, ?method:symbol)</li>
 <li> .decl _ExceptionHandler(?handler:symbol, ?method:symbol, ?index:number, ?type:symbol, ?begin:number, ?end:number)</li>
+<li> .decl _ExceptionHandler_Previous(?handler:symbol, ?previous:symbol)</li>
 <li> .decl _ExitMonitor(?instruction:symbol, ?index:number, ?var:symbol, ?method:symbol)</li>
 <li> .decl _Field(?signature:symbol, ?declaringClass:symbol, ?simplename:symbol, ?type:symbol)</li>
-<li> .decl _GenericField(?signature:symbol, ?declaringClass:symbol, ?simplename:symbol, ?type:symbol)</li>
+<li> .decl _Field_Modifier(?modifier:symbol, ?field:symbol)</li>
+<li> .decl _FormalParam(?index:number, ?method:symbol, ?var:symbol)</li>
 <li> .decl _Goto(?instruction:symbol, ?index:number, ?to:number, ?method:symbol)</li>
 <li> .decl _If(?instruction:symbol, ?index:number, ?to:number, ?method:symbol)</li>
 <li> .decl _IfConstant(?instruction:symbol, ?pos:number, ?cons:symbol)</li>
 <li> .decl _IfVar(?instruction:symbol, ?pos:number, ?var:symbol)</li>
+<li> .decl _InterfaceType(?interface:symbol)</li>
 <li> .decl _LoadArrayIndex(?instruction:symbol, ?index:number, ?to:symbol, ?base:symbol, ?method:symbol)</li>
 <li> .decl _LoadInstanceField(?instruction:symbol, ?index:number, ?to:symbol, ?base:symbol, ?signature:symbol, ?method:symbol)</li>
 <li> .decl _LoadStaticField(?instruction:symbol, ?index:number, ?to:symbol, ?signature:symbol, ?method:symbol)</li>
 <li> .decl _LookupSwitch(?instruction:symbol, ?index:number, ?key:symbol, ?method:symbol)</li>
 <li> .decl _LookupSwitch_DefaultTarget(?instruction:symbol, ?target:number)</li>
 <li> .decl _LookupSwitch_Target(?instruction:symbol, ?value:number, ?target:number)</li>
-<li> .decl _MainClass(?class:symbol)</li>
 <li> .decl _Method(?method:symbol, ?simplename:symbol, ?descriptor:symbol, ?declaringType:symbol, ?returnType:symbol, ?jvmDescriptor:symbol, ?arity:number)</li>
 <li> .decl _MethodHandleConstant(?id:symbol, ?method:symbol, ?retType:symbol, ?paramTypes:symbol, ?arity:number)</li>
 <li> .decl _MethodInvocation_Line(?instruction:symbol, line:number)</li>
 <li> .decl _MethodTypeConstant(?id:symbol, ?arity:number, ?retType:symbol, ?paramTypes:symbol)</li>
 <li> .decl _MethodTypeConstantParam(?id:symbol, ?idx:number, ?type:symbol)</li>
+<li> .decl _Method_DeclaresException(?exceptionType:symbol, ?method:symbol)</li>
+<li> .decl _Method_Modifier(?mod:symbol, ?method:symbol)</li>
 <li> .decl _NativeLibEntryPoint(?lib:symbol, ?function:symbol, ?addr:symbol)</li>
 <li> .decl _NativeMethodId(?javaMethod:symbol, ?nativeId:symbol)</li>
 <li> .decl _NativeMethodTypeCandidate(?lib:symbol, ?function:symbol, ?descriptor:symbol, ?offset2:number)</li>
 <li> .decl _NativeNameCandidate(?lib:symbol, ?function:symbol, ?name:symbol, ?offset1:number)</li>
-<li> .decl _NativeStringsDistance(?n:number)</li>
+<li> .decl _NativeReturnVar(?var:symbol, ?method:symbol)</li>
 <li> .decl _NativeXRef(?string:symbol, ?lib:symbol, ?function:symbol, ?dataAddr:number)</li>
 <li> .decl _NormalHeap(?id:symbol, ?type:symbol)</li>
 <li> .decl _OperatorAt(?instruction:symbol, ?operator:symbol)</li>
@@ -1983,19 +2150,28 @@
 <li> .decl _TableSwitch(?instruction:symbol, ?index:number, ?key:symbol, ?method:symbol)</li>
 <li> .decl _TableSwitch_DefaultTarget(?instruction:symbol, ?target:number)</li>
 <li> .decl _TableSwitch_Target(?instruction:symbol, ?value:number, ?target:number)</li>
+<li> .decl _ThisVar(?method:symbol, ?var:symbol)</li>
 <li> .decl _Throw(?instruction:symbol, ?index:number, ?var:symbol, ?method:symbol)</li>
 <li> .decl _ThrowNull(?instruction:symbol, ?index:number, ?method:symbol)</li>
 <li> .decl _UnsupportedInstruction(?instruction:symbol, ?index:number, ?method:symbol)</li>
+<li> .decl _Var_DeclaringMethod(?var:symbol, ?method:symbol)</li>
+<li> .decl _Var_SimpleName(?var:symbol, ?simplename:symbol)</li>
+<li> .decl _Var_Type(?var:symbol, ?type:symbol)</li>
 <li> .decl _VirtualMethodInvocation(?instruction:symbol, ?index:number, ?signature:symbol, ?base:symbol, ?method:symbol)</li>
+</ul>
+<h2> facts/keep.dl </h2>
+<ul>
+<li> .decl KeepClass(?c:ClassType)</li>
+<li> .decl KeepClassMembers(?m:Method)</li>
+<li> .decl KeepClassesWithMembers(?m:Method)</li>
+<li> .decl KeepMethod(?m:Method)</li>
+<li> .decl RootCodeElement(?id:symbol)</li>
 </ul>
 <h2> facts/opaque-methods.dl </h2>
 <ul>
 <li> .decl ClassLoaderMethod(?method:Method, ?argIdx:number)</li>
 <li> .decl MTEntryPoint(?id:number, ?invo:MethodInvocation, ?sig:Method)</li>
-</ul>
-<h2> facts/to-flow-sensitive.dl </h2>
-<ul>
-<li> .decl MethodInvocation_SimpleName(?invocation:Instruction, ?simpleName:symbol)</li>
+<li> .decl isOpaqueInstruction(?insn:OpaqueInstruction)</li>
 </ul>
 <h2> main/android-declarations.dl </h2>
 <ul>
@@ -2173,6 +2349,7 @@
 </ul>
 <h2> main/context-sensitivity.dl </h2>
 <ul>
+<li> .decl AppReachable(?method:Method)</li>
 <li> .decl ConstructorVar(?var:Var)</li>
 <li> .decl DuplicateContextRequest(?callerCtx:configuration.Context, ?hctx:configuration.HContext, ?invo:MethodInvocation, ?obj:Value, ?meth1:Method, ?meth2:Method)</li>
 <li> .decl DuplicateContextResponse(?callerCtx:configuration.Context, ?hctx:configuration.HContext, ?invo:MethodInvocation, ?obj:Value, ?calleeCtx1:configuration.Context, ?calleeCtx2:configuration.Context)</li>
@@ -2622,12 +2799,19 @@
 <li> .decl CallSiteIn(?invo:MethodInvocation, ?method:Method)</li>
 <li> .decl DataStructureClass(?class:Type)</li>
 <li> .decl DataStructureMethod(?method:Method)</li>
+<li> .decl DoubleDispatchInvocation(?invo:MethodInvocation)</li>
 <li> .decl EntryContextMethod(?method:Method)</li>
 <li> .decl EntryDataStructureMethod(?method:Method)</li>
 <li> .decl EntryNonDataStructureMethod(?method:Method)</li>
 <li> .decl ExteriorFVar_Method(?var:Var, ?method: Method)</li>
 <li> .decl Instance_Method(?method:Method)</li>
 <li> .decl InteriorVar_Method(?var:Var, ?method:Method)</li>
+<li> .decl InvocationActualParam(?invo:MethodInvocation, ?var:Var)</li>
+<li> .decl InvocationHasMethodArgumentAsReceiver(?invo:MethodInvocation)</li>
+<li> .decl InvocationHasMethodReceiverAsArgument(?invo:MethodInvocation)</li>
+<li> .decl InvocationHasMethodReceiverasArgument(?invo)</li>
+<li> .decl InvocationReceiver(?invo:MethodInvocation, ?method:Method, ?var:Var)</li>
+<li> .decl InvokedMethod(method:Method)</li>
 <li> .decl MethodCallsOthers(?method:Method)</li>
 <li> .decl MethodCanBenefitFromCS(?method:Method)</li>
 <li> .decl MethodCannotBenefitFromCS(?method:Method)</li>
@@ -2638,6 +2822,7 @@
 <li> .decl MethodDoesntPassReferences(?method:Method)</li>
 <li> .decl MethodDoesntReturnReference(?method:Method)</li>
 <li> .decl MethodDoesntThrowException(?method:Method)</li>
+<li> .decl MethodFormalParam(?method:Method, ?var:Var)</li>
 <li> .decl MethodPassesReferences(?method:Method)</li>
 <li> .decl MethodReturnsReference(?method:Method)</li>
 <li> .decl MethodThrowsException(?method:Method)</li>
@@ -2651,12 +2836,16 @@
 <li> .decl Method_NumberOfContexts(?method:Method, ?n:number)</li>
 <li> .decl Method_NumberOfNeighbors(?method:Method, ?n:number)</li>
 <li> .decl Method_TotalVPT(?method:Method, Y:number)</li>
+<li> .decl MonomorphicallyInvokedMethod(?method:Method)</li>
 <li> .decl Object_In(?object:Value, ?method:Method)</li>
+<li> .decl PolymorphicallyInvokedMethod(?method:Method)</li>
 <li> .decl Prephase_ReceiverOfAllocatingMethod_Object(?receiver:mainAnalysis.Value, ?allocatedObject:mainAnalysis.Value)</li>
 <li> .decl ReceiverOfAllocatingMethod_Object(?receiver:mainAnalysis.Value, ?allocatedObject:mainAnalysis.Value)</li>
 <li> .decl ReceiverOfAllocatingMethod_Object(?receiver:mainAnalysis.Value, ?allocatedObject:mainAnalysis.Value)</li>
 <li> .decl ReceiverOfMethod(?method:Method, ?value:mainAnalysis.Value)</li>
 <li> .decl ReceiverOfMethod(?method:Method, ?value:mainAnalysis.Value)</li>
+<li> .decl Stats_Simple_InsensStaticFieldPointsToCount(?field:Field, ?n:number)</li>
+<li> .decl Stats_Simple_SensStaticFieldPointsToCount(?field:Field, ?n:number)</li>
 <li> .decl StickyContextMethod(?method:Method)</li>
 <li> .decl This_Var(?method:Method, ?var:Var)</li>
 <li> .decl VPTCountPerMethodVariable(?method:Method, ?var:Var, ?n:number)</li>
@@ -2664,6 +2853,8 @@
 <li> .decl Var_In(?var:Var, ?method:Method)</li>
 <li> .decl VariableCantBenefitFromCS(?var:Var)</li>
 <li> .decl VariableValueEscapesMethod(?var:Var)</li>
+<li> .decl VarsInSameMethodHaveSamePointsToSet(?var1:Var, ?var2:Var)</li>
+<li> .decl VarsInSameMethodPointToDifferentObjects(?var1:Var, ?var2:Var)</li>
 </ul>
 <h2> main/special-library.dl </h2>
 <ul>
@@ -3394,4 +3585,4 @@
 <li> .decl isUnboundMethodOrFunctionObjectAllocation(?h: FunctionObjectAllocation)</li>
 <li> .decl isValue(?value:Value)</li>
 </ul>
-<p>Timestamp: 2020-07-24 13:01:35.939821</p></body></html>
+<p>Timestamp: 2020-12-09 14:19:18.398849</p></body></html>
