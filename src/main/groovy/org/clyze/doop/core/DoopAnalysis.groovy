@@ -868,6 +868,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
         log.debug "Memory JVM args: ${jvmMemArgs}"
         String[] jvmArgs0 = (jvmArgs + jvmMemArgs) as String[]
-        Resource.invokeResourceJar(DoopAnalysis.classLoader, log, TAG, jvmArgs0, resource, args)
+        Resource.invokeResourceJar(DoopAnalysis.class, log, TAG, jvmArgs0, resource, args)
     }
 }

@@ -31,7 +31,7 @@ class WalaScopeReader {
     {
         //The location of WALAprimordial.jar.model in our resources folder -- file taken from wala's repo
         //Don't understand what this does but it is needed for some reason
-        String SCOPE_BIN_FILE = Resource.getResource(WalaScopeReader.class.getClassLoader(), logger, Resource.WALA_PRIMORDIAL);
+        String SCOPE_BIN_FILE = Resource.getResource(WalaScopeReader.class, logger, Resource.WALA_PRIMORDIAL);
         AnalysisScope scope = AnalysisScope.createJavaAnalysisScope();
 
         for(String javaLib : javaLibs) {

@@ -38,18 +38,19 @@ public enum Resource {
     /**
      * Returns the resource file that corresponds to a resource id. This
      * method lazily extracts files from the bundled Java "resources".
-     * @param loader   the class loader to use for locating resources
+     * @param c        use class to retrieve class loader for locating resources
      * @param logger   a logger object to use
      * @param res      the resource
      * @return         the resource path
      */
-    public static String getResource(ClassLoader loader, Logger logger, Resource res) {
+    public static String getResource(Class<?> c, Logger logger, Resource res) {
         String ret = resources.get(res);
         if (ret != null)
             return ret;
 
         String filename = res.filename;
-        logger.debug("Initializing resource: " + filename);
+        logger.debug("Initializing resource: " + filename + " with class: " + c.getName());
+        ClassLoader loader = c.getClassLoader();
         // Special handling for tools via Java properties (so that Doop can
         // inform fact generators that run as external processes).
         if (res.envVarOverride != null) {
@@ -92,26 +93,26 @@ public enum Resource {
     /**
      * Run a program bundled as a JAR in the resources.
      *
-     * @param loader       the class loader to use for locating resources
+     * @param c            use class to retrieve class loader for locating resources
      * @param logger       the log4j logger to use
      * @param TAG          the tag to use to mark program output
      * @param jvmArgs      the JVM arguments (may be null)
      * @param resource     the resource object
      * @param args         the arguments to pass to the program
      */
-    public static void invokeResourceJar(ClassLoader loader, Logger logger,
+    public static void invokeResourceJar(Class<?> c, Logger logger,
                                          String TAG, String[] jvmArgs,
                                          Resource resource, String[] args)
         throws IOException {
 
-        String resourceJar = getResource(loader, logger, resource);
+        String resourceJar = getResource(c, logger, resource);
         if (resourceJar == null)
             throw new RuntimeException("ERROR: cannot find resource '" + resource + "'");
 
         logger.debug("Running resource: " + resourceJar);
 
         // Add extra flags.
-        jvmArgs = extraJvmArgs(jvmArgs, getResource(loader, logger, APKTOOL_JAR));
+        jvmArgs = extraJvmArgs(jvmArgs, getResource(c, logger, APKTOOL_JAR));
 
         OutputConsumer proc = new OutputConsumer();
         JHelper.runJar(new String[0], jvmArgs, resourceJar, args, TAG, logger.isDebugEnabled(), proc);
