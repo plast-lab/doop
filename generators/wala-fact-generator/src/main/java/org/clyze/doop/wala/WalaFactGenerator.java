@@ -453,7 +453,7 @@ class WalaFactGenerator implements Runnable {
         int brachTarget = instruction.getTarget();
 
         if(m instanceof DexIMethod) {
-            IBytecodeMethod bm = (IBytecodeMethod)m;
+            IBytecodeMethod<?> bm = (IBytecodeMethod<?>)m;
             try {
                 brachTarget = bm.getInstructionIndex(brachTarget);
             } catch (InvalidClassFileException e) {

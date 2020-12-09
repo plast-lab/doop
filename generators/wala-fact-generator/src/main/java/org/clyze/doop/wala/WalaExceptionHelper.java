@@ -25,15 +25,15 @@ import java.util.Map;
  */
 
 class WalaExceptionHelper {
-    private int[][] exceArrays;
-    private String[][] exceTypeArrays; //We do not currently use this information but we may do so in the future.
-    private SSAInstruction[] instructions;
-    private Map<Integer,Integer[]> walaHandlerScopes;
+    private final int[][] exceArrays;
+    private final String[][] exceTypeArrays; //We do not currently use this information but we may do so in the future.
+    private final SSAInstruction[] instructions;
+    private final Map<Integer,Integer[]> walaHandlerScopes;
     private ExceptionHandler[][] walaExceptionHandlers;
 
     WalaExceptionHelper(SSAInstruction[] instrs, IMethod m, SSACFG cfg)
     {
-        IBytecodeMethod bytecodeMethod = (IBytecodeMethod) m;
+        IBytecodeMethod<?> bytecodeMethod = (IBytecodeMethod<?>) m;
         walaExceptionHandlers = null;
         try {
             walaExceptionHandlers = bytecodeMethod.getHandlers();

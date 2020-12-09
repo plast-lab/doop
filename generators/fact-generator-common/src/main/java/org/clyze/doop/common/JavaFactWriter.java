@@ -59,6 +59,7 @@ public abstract class JavaFactWriter {
         return result;
     }
 
+    @SuppressWarnings("unused")
     protected String hashMethodNameIfLong(String methodRaw) {
         if (methodRaw.length() <= 1024)
             return methodRaw;

@@ -292,7 +292,7 @@ public class Main {
                 // must run again with these classes added.
                 String outFile = sootParameters._missingClassesOut;
                 if (outFile != null) {
-                    try (FileWriter fWriter = new FileWriter(new File(outFile))) {
+                    try (FileWriter fWriter = new FileWriter(outFile)) {
                         unrecorded.forEach(s -> {
                                 try {
                                     fWriter.write(s + '\n');

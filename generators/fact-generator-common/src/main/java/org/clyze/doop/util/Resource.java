@@ -133,8 +133,6 @@ public enum Resource {
             Collections.addAll(l, jvmArgs);
         if (apktoolPath != null)
             l.add("-DAPKTOOL_PATH=\"" + apktoolPath + "\"");
-//        if (walaPrimordialPath != null)
-//            l.add("-DWALA_PRIMORDIAL_PATH=\"" + walaPrimordialPath + "\"");
         return l.toArray(new String[0]);
     }
 

@@ -369,11 +369,11 @@ class FactGenerator implements Runnable {
         }
         else if(right instanceof NewExpr)
         {
-            _writer.writeAssignHeapAllocation(inMethod, stmt, left, (NewExpr) right, session);
+            _writer.writeAssignHeapAllocation(inMethod, stmt, left, right, session);
         }
         else if(right instanceof NewArrayExpr)
         {
-            _writer.writeAssignHeapAllocation(inMethod, stmt, left, (NewArrayExpr) right, session);
+            _writer.writeAssignHeapAllocation(inMethod, stmt, left, right, session);
         }
         else if(right instanceof NewMultiArrayExpr)
         {
