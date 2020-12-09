@@ -392,6 +392,11 @@ artifacts {
     archives javadocJar
 }
 
+// Make publishing tasks trigger shadow JAR generation.
+Closure shadowDep = { Task it -> it.dependsOn(':generators:fact-generator-common:shadowJar') }
+tasks.withType(PublishToMavenRepository) { shadowDep(it) }
+tasks.withType(PublishToMavenLocal) { shadowDep(it) }
+
 if (project.hasProperty('artifactory_user')) {
 
     // Generate a jar with all the logic files
