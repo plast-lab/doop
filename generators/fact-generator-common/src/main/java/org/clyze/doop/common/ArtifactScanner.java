@@ -17,19 +17,18 @@ import org.apache.log4j.Logger;
 import org.clyze.scanner.BinaryAnalysis;
 import org.clyze.scanner.NativeDatabaseConsumer;
 import org.clyze.scanner.NativeScanner;
-import org.clyze.utils.OS;
 import org.clyze.utils.TypeUtils;
 import org.jf.dexlib2.Opcodes;
 import org.jf.dexlib2.dexbacked.DexBackedDexFile;
 import org.jf.dexlib2.iface.MultiDexContainer;
 import org.jf.dexlib2.dexbacked.DexBackedClassDef;
 import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.tree.ClassNode;
+//import org.objectweb.asm.ClassVisitor;
+//import org.objectweb.asm.tree.ClassNode;
 
 import static org.clyze.scanner.BinaryAnalysis.AnalysisType.*;
 import static org.jf.dexlib2.DexFileFactory.loadDexContainer;
-import static org.objectweb.asm.Opcodes.*;
+//import static org.objectweb.asm.Opcodes.*;
 
 /**
  * This class scans input artifacts (.jar, .aar, or .apk files) and

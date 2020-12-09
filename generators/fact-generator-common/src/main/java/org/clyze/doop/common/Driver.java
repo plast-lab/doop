@@ -1,7 +1,6 @@
 package org.clyze.doop.common;
 
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.*;
 import java.util.function.Consumer;

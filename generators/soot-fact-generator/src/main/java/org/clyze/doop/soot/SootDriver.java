@@ -1,11 +1,8 @@
 package org.clyze.doop.soot;
 
-import java.util.HashSet;
-import java.util.Set;
 import org.clyze.doop.common.Driver;
 import org.clyze.doop.common.Phantoms;
 import soot.SootClass;
-import soot.SootMethod;
 
 class SootDriver extends Driver<SootClass> {
     private final FactWriter factWriter;

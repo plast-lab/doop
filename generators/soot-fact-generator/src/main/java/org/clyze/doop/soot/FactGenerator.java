@@ -5,8 +5,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import org.clyze.doop.common.Driver;
 import org.clyze.doop.common.Phantoms;
 import soot.*;
 import soot.jimple.*;
