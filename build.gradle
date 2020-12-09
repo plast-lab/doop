@@ -407,19 +407,14 @@ if (project.hasProperty('artifactory_user')) {
                 }
             }
 
-            // Currently, only publish fact-generator-common.
-            allGeneratorProjects.findAll {it.name.indexOf('fact-generator-common') >= 0 }.each { p ->
-                create(p.name, MavenPublication) {
-                    // The artifact generator can be a file or a Gradle task
-                    def artifactGenerator
-                    if (p.name.indexOf('fact-generator-common') != -1)
-                        artifactGenerator = project(':generators:fact-generator-common').file("build/libs/fact-generator-common-${version}-all.jar")
-                    else
-                        artifactGenerator = p.hasProperty('fatJar') ? p.fatJar : p.jar
-                    artifact(artifactGenerator) {
-                        groupId 'org.clyze'
-                        artifactId p.name
-                    }
+            // Publish fact-generator-common.
+            def p = project(':generators:fact-generator-common')
+            create(p.name, MavenPublication) {
+                // The artifact generator can be a file or a Gradle task
+                def artifactGenerator = project(':generators:fact-generator-common').file("build/libs/fact-generator-common-${version}-all.jar")
+                artifact(artifactGenerator) {
+                    groupId 'org.clyze'
+                    artifactId p.name
                 }
             }
         }
