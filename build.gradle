@@ -338,19 +338,15 @@ test.dependsOn buildTests
 task testAll(type: Test) { }
 testAll.dependsOn test
 
-def frontends = frontendGeneratorProjects.collect { it.name }
-
 // Task that configures installing/cleaning resources.
 task resourceInstaller { }
 resourceInstaller.dependsOn resolveApktool
-frontends.each { fg ->
+frontendGeneratorProjects.collect { it.name }.each { fg ->
     resourceInstaller.dependsOn(":generators:${fg}:installJar")
     clean.dependsOn(":generators:${fg}:uninstallJar")
     testAll.dependsOn(":generators:${fg}:test")
 }
-[ jar, run, test, distTar, distZip, installDist ].each {
-    it.dependsOn resourceInstaller
-}
+processResources.dependsOn resourceInstaller
 
 // Ensure that all resources have been built before trying to copy them.
 copyResourcesForTest.dependsOn resourceInstaller
