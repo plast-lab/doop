@@ -329,8 +329,6 @@ task copyResourcesForTest {
         }
     }
 }
-test.dependsOn copyResourcesForTest
-
 task buildTests {
     description 'Build test subprojects.'
 }
@@ -342,15 +340,21 @@ testAll.dependsOn test
 
 def frontends = frontendGeneratorProjects.collect { it.name }
 
-// Connect task dependencies against fact generator subprojects.
+// Task that configures installing/cleaning resources.
+task configureResourceInstallation { }
+configureResourceInstallation.dependsOn resolveApktool
 frontends.each { fg ->
-    [ jar, run, test, distTar, distZip, installDist ].each {
-        it.dependsOn(":generators:${fg}:installJar")
-        it.dependsOn resolveApktool
-    }
+    configureResourceInstallation.dependsOn(":generators:${fg}:installJar")
     clean.dependsOn(":generators:${fg}:uninstallJar")
     testAll.dependsOn(":generators:${fg}:test")
 }
+[ jar, run, test, distTar, distZip, installDist ].each {
+    it.dependsOn configureResourceInstallation
+}
+
+// Ensure that all resources have been built before trying to copy them.
+copyResourcesForTest.dependsOn configureResourceInstallation
+test.dependsOn copyResourcesForTest
 
 task fullClean {
     description 'Clean everything, including caches and analysis results.'
