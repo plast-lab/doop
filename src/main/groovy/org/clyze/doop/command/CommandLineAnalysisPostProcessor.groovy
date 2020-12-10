@@ -1,4 +1,4 @@
-package org.clyze.doop
+package org.clyze.doop.command
 
 import groovy.util.logging.Log4j
 import java.nio.file.Files

@@ -2,18 +2,21 @@ package org.clyze.doop
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Log4j
+import org.clyze.doop.command.Help
+
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
 import org.apache.log4j.Level
 import org.apache.log4j.Logger
+import org.clyze.doop.command.CommandLineAnalysisFactory
+import org.clyze.doop.command.CommandLineAnalysisPostProcessor
 import org.clyze.doop.common.DoopErrorCodeException
 import org.clyze.doop.core.Doop
 import org.clyze.doop.core.DoopAnalysis
 import org.clyze.utils.FileOps
 import org.clyze.utils.VersionInfo
 import org.codehaus.groovy.runtime.StackTraceUtils
-
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.TimeoutException
 
 /**
  * The entry point for the standalone doop app.
@@ -30,7 +33,7 @@ class Main {
 			main2(args)
 		} catch (e) {
 			if (!(e instanceof DoopErrorCodeException))
-				CommandLineAnalysisFactory.createCliBuilder().usage()
+				Help.usage(null, CommandLineAnalysisFactory.createCliBuilder())
 		}
 	}
 
@@ -50,7 +53,7 @@ class Main {
 			def clidBuilder = CommandLineAnalysisFactory.createCliBuilder()
 
 			if (!args) {
-				clidBuilder.usage()
+				Help.usage(null, clidBuilder)
 				return
 			}
 
@@ -72,10 +75,10 @@ class Main {
 			} else if (cli.arguments().size() != 0) {
 				def msg = "Invalid argument specified: " + cli.arguments()[0]
 				log.error msg
-				clidBuilder.usage()
+				Help.usage(cli, clidBuilder)
 				throw new DoopErrorCodeException(31, msg)
 			} else if (cli['h']) {
-				clidBuilder.usage()
+				Help.usage(cli, clidBuilder)
 				return
 			} else if (cli['v']) {
 				println VersionInfo.getVersionInfo(Main.class)

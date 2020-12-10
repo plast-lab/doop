@@ -1,12 +1,11 @@
-package org.clyze.doop
+package org.clyze.doop.command
 
 import groovy.cli.commons.CliBuilder
 import groovy.cli.commons.OptionAccessor
+import groovy.transform.CompileStatic
 import groovy.util.logging.Log4j
 import org.apache.commons.cli.GnuParser
-import org.apache.commons.cli.HelpFormatter
 import org.apache.commons.cli.Option
-import org.apache.commons.cli.Options
 import org.clyze.analysis.AnalysisFamily
 import org.clyze.analysis.AnalysisOption
 import org.clyze.analysis.BooleanAnalysisOption
@@ -19,6 +18,7 @@ import org.clyze.doop.core.DoopAnalysisFamily
 /**
  * A factory for creating Analysis objects from the command line.
  */
+@CompileStatic
 @Log4j
 class CommandLineAnalysisFactory extends DoopAnalysisFactory {
 
@@ -56,19 +56,19 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
 	DoopAnalysis newAnalysis(OptionAccessor cli) {
 		def options = Doop.overrideDefaultOptionsWithCLI(cli) { it.cli }
 		// Get the id of the analysis (short option: id)
-		options.USER_SUPPLIED_ID.value = cli.id ?: null
+		options.USER_SUPPLIED_ID.value = cli['id'] ?: null
 		// Get the name of the analysis (short option: a)
-		options.ANALYSIS.value = cli.a
+		options.ANALYSIS.value = cli['a']
 		// Get the inputFiles of the analysis (short option: i)
-		if (options.X_START_AFTER_FACTS.value && cli.is) {
+		if (options.X_START_AFTER_FACTS.value && cli['is']) {
 			log.warn "WARNING: Ignoring inputs (--${options.X_START_AFTER_FACTS.name})."
 		}
-		options.INPUTS.value = (!options.X_START_AFTER_FACTS.value && cli.is) ? cli.is : []
+		options.INPUTS.value = (!options.X_START_AFTER_FACTS.value && cli['is']) ? cli['is'] : []
 		// Get the libraryFiles of the analysis (short option: l)
-		if (options.X_START_AFTER_FACTS.value && cli.ls) {
+		if (options.X_START_AFTER_FACTS.value && cli['ls']) {
 			log.warn "WARNING: ignoring libraries (--${options.X_START_AFTER_FACTS.name})."
 		}
-		options.LIBRARIES.value = (!options.X_START_AFTER_FACTS.value && cli.ls) ? cli.ls : []
+		options.LIBRARIES.value = (!options.X_START_AFTER_FACTS.value && cli['ls']) ? cli['ls'] : []
 
 		newAnalysis(FAMILY, options)
 	}
@@ -77,17 +77,17 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
 	 * Processes the properties and the cli and generates a new analysis.
 	 */
 	DoopAnalysis newAnalysis(File propsBaseDir, Properties props, OptionAccessor cli) {
-		def options = Doop.overrideDefaultOptionsWithPropertiesAndCLI(props, cli) { it.cli }
+		def options = Doop.overrideDefaultOptionsWithPropertiesAndCLI(props, cli) { AnalysisOption it -> it.cli }
 		// Get the id of the analysis (short option: id)
-		options.USER_SUPPLIED_ID.value = cli.id ?: ["id", "USER_SUPPLIED_ID"].findResult { props.getProperty(it) }
+		options.USER_SUPPLIED_ID.value = cli['id'] ?: ["id", "USER_SUPPLIED_ID"].findResult { props.getProperty(it) }
 		// Get the name of the analysis (short option: a)
-		options.ANALYSIS.value = cli.a ?: ["analysis", "ANALYSIS"].findResult { props.getProperty(it) }
+		options.ANALYSIS.value = cli['a'] ?: ["analysis", "ANALYSIS"].findResult { props.getProperty(it) }
 		// Get the inputFiles of the analysis (short option: i)
-		options.INPUTS.value = cli.is ?: filesFromProperty(propsBaseDir, props, ["inputFiles", "INPUTS"])
+		options.INPUTS.value = cli['is'] ?: filesFromProperty(propsBaseDir, props, ["inputFiles", "INPUTS"])
 		// Get the libraryFiles of the analysis (short option: l)
-		options.LIBRARIES.value = cli.ls ?: filesFromProperty(propsBaseDir, props, ["libraryFiles", "LIBRARIES"])
+		options.LIBRARIES.value = cli['ls'] ?: filesFromProperty(propsBaseDir, props, ["libraryFiles", "LIBRARIES"])
 		// Get the heapFiles of the analysis (long option: heapdl)
-		options.HEAPDLS.value = cli.heapdls ?: filesFromProperty(propsBaseDir, props, ["heapFiles", "HEAPDLS"])
+		options.HEAPDLS.value = cli['heapdls'] ?: filesFromProperty(propsBaseDir, props, ["heapFiles", "HEAPDLS"])
 
 		newAnalysis(FAMILY, options)
 	}
@@ -122,13 +122,17 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
 				width: WIDTH,
 		)
 
-		cli.with {
-			h(longOpt: 'help', 'Display help and exit.')
-			L(longOpt: 'level', LOGLEVEL, args: 1, argName: 'LOG_LEVEL')
-			p(longOpt: 'properties', PROPS, args: 1, argName: "PROPERTIES")
-			t(longOpt: 'timeout', TIMEOUT, args: 1, argName: 'TIMEOUT')
-			v(longOpt: 'version', 'Display version and exit.')
+		([	new Tuple5('h', 'help', 'SECTION', 'Display help and exit.', true),
+			new Tuple5('L', 'level', 'LOG_LEVEL', LOGLEVEL, false),
+			new Tuple5('p', 'properties', 'PROPERTIES', PROPS, false),
+			new Tuple5('t', 'timeout', 'TIMEOUT', TIMEOUT, false)
+		] as List<Tuple5<String, String, String, String, Boolean>>).each {
+			Option opt = new Option(it.v1, it.v2, true, it.v4)
+			opt.argName = it.v3
+			opt.optionalArg = it.v5
+			cli.options.addOption(opt)
 		}
+		cli.options.addOption(new Option('v', 'version', false, 'Display version and exit.'))
 
 		addAnalysisOptionsToCliBuilder(cliOptions, cli)
 
@@ -224,11 +228,15 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
 	}
 
 	private static void addAnalysisOptionsToCliBuilder(List<AnalysisOption<?>> options, CliBuilder cli) {
-		convertAnalysisOptionsToCliOptions(options).each { cli << it }
+		convertAnalysisOptionsToCliOptions(options).each { cli.options.addOption(it) }
 	}
 
 	private static String desc(AnalysisOption option) {
-		option.validValues ? "$option.description Valid values: ${option.validValues.join(", ")}" : option.description
+		option.validValues ? validValues(option.description, option.validValues as Collection<String>) : option.description
+	}
+
+	static String validValues(String description, Collection<String> validValues) {
+		return "$description Valid values: ${validValues.join(", ")}"
 	}
 
 	/**
@@ -250,60 +258,4 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
 			}
 		}
 	}
-}
-
-/**
- * An option that may mention a containing group.
- */
-class GOption extends Option {
-    String group
-
-    GOption(String opt, String longOpt, boolean hasArg, String description, String group) {
-        super(opt, longOpt, hasArg, description)
-        this.group = group
-    }
-}
-
-/**
- * A CliBuilder formatter that groups options per group when printing
- * the usage message. Assumes long options exist for all options.
- */
-class HelpGroupFormatter extends HelpFormatter {
-    @Override
-    void printOptions(PrintWriter pw, int width, Options options, int leftPad, int descPad) {
-        // This set gathers "null" Doop options and miscellaneous CliBuilder options.
-        Options nullGroupOpts = new Options()
-        def otherGroupOpts = [] as List
-        options.options.each { opt ->
-            if ((opt instanceof GOption) && (opt.group != null)) {
-                otherGroupOpts << opt
-            } else {
-                nullGroupOpts.addOption(opt)
-            }
-        }
-
-        // Measure widths per group to fix them when calling the printer on each.
-        def groups = [:]
-        groups.put("General options", new Tuple(nullGroupOpts, calcMaxWidth(nullGroupOpts)))
-        otherGroupOpts.groupBy { it.group }.sort().each { group, optsList ->
-            def opts = new Options()
-            optsList.each { opts.addOption(it) }
-            groups.put(group, new Tuple(opts, calcMaxWidth(opts)))
-        }
-
-        int maxWidth = groups.collect { group, optsInfo -> optsInfo[1] }.max()
-
-        groups.each { group, optsInfo ->
-            pw.println "\n== ${group} =="
-            int gWidth = maxWidth - optsInfo[1]
-            def opts = optsInfo[0]
-            super.printOptions(pw, width, opts, leftPad, descPad + gWidth)
-        }
-    }
-
-    int calcMaxWidth(Options opts) {
-        opts.options.collect { opt ->
-            opt.longOpt.size() + (opt.hasArg() ? (opt.argName ?: argName).size() + 3 : 0)
-        }.max()
-    }
 }
