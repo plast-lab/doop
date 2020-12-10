@@ -106,7 +106,7 @@ class Help {
     private static void printHelpFooter(Map<String, ?> groupMap) {
         List<String> groups = getGroups(groupMap)
         println()
-        println "Use --help <SECTION> for more information, available sections: " + String.join(', ', groups)
+        println block("Use --help <SECTION> for more information, available sections: " + String.join(', ', groups))
     }
 
     private static void showBasicUsage(CliBuilder builder) {
@@ -118,8 +118,7 @@ class Help {
 
         println 'usage: ' + CommandLineAnalysisFactory.USAGE
         println ''
-        println 'Run an analysis on a program (given as a combinvation of code inputs, code libraries, and a platform).'
-        println ''
+        println block('Run an analysis on a program (given as a combination of code inputs, code libraries, and a platform).')
         printGroup('Basic options', optList)
     }
 
@@ -129,5 +128,37 @@ class Help {
         else if (opt.longOpt == 'platform')
             opt.description = 'The platform on which to perform the analysis. Examples: java_8, android_25_fulljars, python_2'
         return opt
+    }
+
+    /**
+     * Make a paragraph from a line of text, according to the terminal width.
+     * @param text    the input text, assumed to not contain newlines
+     * @return        the text in paragraph form
+     */
+    private static String block(String text) {
+        int width = CommandLineAnalysisFactory.WIDTH
+        String[] words = text.tokenize(' ') as String[]
+        StringBuilder sb = new StringBuilder()
+        int lineLength = 0
+        boolean lastEol = false
+        for (int i = 0; i < words.length; i++) {
+            String word = words[i]
+            int wordSize = word.length() + 1
+            if (lineLength + wordSize > width) {
+                (width - lineLength - 1).times { sb.append(' ') }
+                sb.append('\n')
+                lastEol = true
+                lineLength = 0
+            }
+            if (lineLength + wordSize <= width) {
+                sb.append(word)
+                sb.append(' ')
+                lastEol = false
+                lineLength += wordSize
+            }
+        }
+        if (!lastEol)
+            sb.append('\n')
+        return sb.toString()
     }
 }
