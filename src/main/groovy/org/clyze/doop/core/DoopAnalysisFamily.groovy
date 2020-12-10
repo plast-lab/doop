@@ -18,7 +18,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 	private static final String DEFAULT_JAVA_PLATFORM = "java_8"
 	private static final String GROUP_ENGINE = "Datalog engine"
 	private static final String GROUP_FACTS = "Fact generation"
-	private static final String GROUP_HEAPDL = "HeapDL"
+	private static final String GROUP_HEAP_SNAPSHOTS = "Heap snapshots"
 	private static final String GROUP_INFORMATION_FLOW = "Information flow"
 	private static final String GROUP_NATIVE = "Native code"
 	private static final String GROUP_OPEN_PROGRAMS = "Open programs"
@@ -131,7 +131,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new AnalysisOption<List<String>>(
 					id: "HEAPDLS",
 					name: "heapdl-file",
-					group: GROUP_HEAPDL,
+					group: GROUP_HEAP_SNAPSHOTS,
 					description: "Use dynamic information from memory dump, using HeapDL. Takes one or more files (`.hprof` format or stack traces).",
 					value: [],
 					multipleValues: true,
@@ -816,7 +816,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new AnalysisOption<String>(
 					id: "HEAPDL_NOSTRINGS",
 					name: "heapdl-nostrings",
-					group: GROUP_HEAPDL,
+					group: GROUP_HEAP_SNAPSHOTS,
 					forCacheID: true,
 					description: "Do not model string values uniquely in a memory dump.",
 					forPreprocessor: true
@@ -824,7 +824,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "HEAPDL_DYNAMICVARPOINTSTO",
 					name: "heapdl-dvpt",
-					group: GROUP_HEAPDL,
+					group: GROUP_HEAP_SNAPSHOTS,
 					forCacheID: true,
 					description: "Import dynamic var-points-to information.",
 					forPreprocessor: true
@@ -832,7 +832,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new AnalysisOption<String>(
 					id: "IMPORT_DYNAMIC_FACTS",
 					name: "import-dynamic-facts",
-					group: GROUP_HEAPDL,
+					group: GROUP_HEAP_SNAPSHOTS,
 					argName: "FACTS_FILE",
 					argInputType: InputType.MISC,
 					description: "Use dynamic information from file.",
