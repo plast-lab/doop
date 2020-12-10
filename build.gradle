@@ -121,6 +121,7 @@ gradle.rootProject.ext.log4jVersion='1.2.17'
 gradle.rootProject.ext.spockVersion='2.0-M3-groovy-3.0'
 // Set other variables for subprojects.
 gradle.rootProject.ext.resourcesDir='src/main/resources'
+gradle.rootProject.ext.testResourcesDir='src/test/resources'
 
 dependencies {
     // apktool "ext:apktool:2.4.0"                              // old artifactory dependency
@@ -325,7 +326,7 @@ task copyResourcesForTest {
     doLast {
         copy {
             from file(resourcesDir)
-            into 'src/test/resources'
+            into testResourcesDir
         }
     }
 }
@@ -351,6 +352,19 @@ processResources.dependsOn resourceInstaller
 // Ensure that all resources have been built before trying to copy them.
 copyResourcesForTest.dependsOn resourceInstaller
 test.dependsOn copyResourcesForTest
+
+task cleanTestResources {
+    doLast {
+        file(resourcesDir).eachFileRecurse { File f ->
+            if (f.file) {
+                File testResource = new File(file(testResourcesDir), f.name)
+                if (testResource.exists())
+                    org.apache.commons.io.FileUtils.deleteQuietly(testResource)
+            }
+        }
+    }
+}
+clean.dependsOn cleanTestResources
 
 task fullClean {
     description 'Clean everything, including caches and analysis results.'
