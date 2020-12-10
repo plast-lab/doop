@@ -32,7 +32,7 @@ class Help {
         Option updatedHelp = builder.options.getOption('help')
         updatedHelp.description = CommandLineAnalysisFactory.validValues(updatedHelp.description, getGroups(groupMap))
 
-        if (cli == null || cli['h'] == null || cli['h'] == true) {
+        if (cli == null || cli['h'] == null || cli['h'] == true || cli['h'] == false) { // both true/false checks needed
             showBasicUsage(builder)
         } else if (cli['h'] == GROUP_ALL) {
             // Show detailed help for all options.
