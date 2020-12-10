@@ -27,7 +27,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 	private static final String GROUP_STATS = "Statistics"
 	private static final String GROUP_ENTRY_POINTS = "Entry points"
 	private static final String GROUP_SERVER = "Server logic"
-	private static final String GROUP_EXPERIMENTAL = "[Experimental/Unsupported]"
+	private static final String GROUP_EXPERIMENTAL = "Xtras"
 
 	private static final int SERVER_DEFAULT_THRESHOLD = 1000
 	private static final int DEFAULT_JOBS = 4
