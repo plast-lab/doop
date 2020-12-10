@@ -14,6 +14,8 @@ import org.clyze.doop.core.Doop
 import org.clyze.doop.core.DoopAnalysis
 import org.clyze.doop.core.DoopAnalysisFactory
 import org.clyze.doop.core.DoopAnalysisFamily
+import org.clyze.utils.JHelper
+import org.clyze.utils.OS
 
 /**
  * A factory for creating Analysis objects from the command line.
@@ -42,12 +44,33 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
 	static final AnalysisFamily FAMILY = DoopAnalysisFamily.instance
 
 	private static int getTerminalWidth() {
-		try {
-			int columns = Integer.valueOf(System.getenv('COLUMNS'))
-			if (columns > 40)
-				return columns
-		} catch (ignored) { }
+		// Check environment variable.
+		Integer w1 = processTerminalWidth(System.getenv('COLUMNS'))
+		if (w1 != null)
+			return w1
+		// Check tput on Linux/macOS.
+		if (!OS.win) {
+			try {
+				String tputCols = null
+				JHelper.runCommand('tput cols', null, { tputCols = it })
+				Integer w2 = processTerminalWidth(tputCols)
+				if (w2 != null)
+					return w2
+			} catch (ignored) { }
+		}
+		// Default value.
 		return 120
+	}
+
+	private static Integer processTerminalWidth(String s) {
+		if (s != null) {
+			try {
+				int columns = Integer.valueOf(s)
+				if (columns > 40)
+					return columns
+			} catch (ignored) { }
+		}
+		return null
 	}
 
 	/**
