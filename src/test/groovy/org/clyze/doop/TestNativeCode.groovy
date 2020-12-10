@@ -17,8 +17,8 @@ class TestNativeCode extends ServerAnalysisTests {
 		Analysis analysis = analyzeTest("009-native", args)
 
 		then:
-		varPointsToQ(analysis, '<HelloJNI: void main(java.lang.String[])>/obj#_50', '<native java.lang.Object value allocated in <HelloJNI: java.lang.Object newJNIObj()>>')
-		varPointsToQ(analysis, '<HelloJNI: void main(java.lang.String[])>/list#_59', '<java.io.UnixFileSystem: java.lang.String[] list(java.io.File)>/new java.lang.String[]/0')
 		methodIsReachable(analysis, '<HelloJNI: int helloMethod(java.lang.Object,java.lang.Object)>')
+		varPointsToQ(analysis, '<HelloJNI: void main(java.lang.String[])>/obj#_52', '<native java.lang.Object value allocated in <HelloJNI: java.lang.Object newJNIObj()>>')
+		varPointsToQ(analysis, '<HelloJNI: void main(java.lang.String[])>/list#_61', '<java.io.UnixFileSystem: java.lang.String[] list(java.io.File)>/new java.lang.String[]/0')
 	}
 }
