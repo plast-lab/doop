@@ -9,18 +9,19 @@ import static org.clyze.doop.TestUtils.*
 // should reuse this class, if they read Doop paths.
 abstract class DoopSpec extends Specification {
     def setupSpec() {
-	    Doop.initDoopWithLoggingFromEnv()
+        Doop.initDoopWithLoggingFromEnv()
     }
 
     Analysis analyzeTest(String test, String input, List<String> extraArgs, String analysisName = "context-insensitive", String id = null) {
-	String analysisId = id ?: "test-${test}"
-	    List args = ["-i", input,
-			 "-a", analysisName,
-			 "--id", analysisId,
-			 "-Ldebug",
-			 "--stats", "full"] + extraArgs
-	    Main.main2((String[])args)
-	    return Main.analysis
+    String analysisId = id ?: "test-${test}"
+        List<String> args = ["-i", input,
+                             "-a", analysisName,
+                             "--id", analysisId,
+                             "-Ldebug"] + extraArgs
+        if (!extraArgs.contains("stats"))
+            args.addAll(['--stats', 'full'])
+        Main.main2(args as String[])
+        return Main.analysis
     }
 
     Analysis analyzeBuiltinTest(String test, List<String> extraArgs, String analysisName = "context-insensitive", String id = null) {
