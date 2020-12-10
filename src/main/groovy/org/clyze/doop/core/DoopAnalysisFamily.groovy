@@ -925,7 +925,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "DRY_RUN",
 					name: "dry-run",
-					description: "Do a dry run of the analysis."
+					description: "Do a dry run of the analysis (generate facts and compile but don't run analysis logic)."
 			),
 			new BooleanAnalysisOption(
 					id: "X_SERVER_LOGIC",
