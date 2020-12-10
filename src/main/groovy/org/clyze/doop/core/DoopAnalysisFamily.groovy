@@ -189,8 +189,9 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forPreprocessor: true
 			),
 			new AnalysisOption<String>(
-					id: "IMPORT_PARTITIONS",
-					name: "import-partitions",
+					id: "X_IMPORT_PARTITIONS",
+					name: "Ximport-partitions",
+					group: GROUP_EXPERIMENTAL,
 					argName: "FILE",
 					description: "Specify the partitions.",
 					argInputType: InputType.MISC,

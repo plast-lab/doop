@@ -237,8 +237,8 @@ class LB3Analysis extends DoopAnalysis {
 					.transaction()
 		}
 
-		if (options.IMPORT_PARTITIONS.value) {
-			cpp.preprocess("${outDir}/addons.logic", options.IMPORT_PARTITIONS.value.toString())
+		if (options.X_IMPORT_PARTITIONS.value) {
+			cpp.preprocess("${outDir}/addons.logic", options.X_IMPORT_PARTITIONS.value.toString())
 		}
 
 		String openProgramsRules = options.OPEN_PROGRAMS.value
