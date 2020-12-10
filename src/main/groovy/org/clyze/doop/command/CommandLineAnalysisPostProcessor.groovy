@@ -16,7 +16,7 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor<DoopAnal
 	void process(DoopAnalysis analysis) {
 		if (!analysis.options.get('X_STOP_AT_FACTS').value && !analysis.options.get('X_STOP_AT_BASIC').value)
 			printStats(analysis)
-		if (analysis.options.get('SANITY').value && !analysis.options.get('X_DRY_RUN').value)
+		if (analysis.options.get('SANITY').value && !analysis.options.get('DRY_RUN').value)
 			printSanityResults(analysis)
 		linkResult(analysis)
 	}
@@ -38,7 +38,7 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor<DoopAnal
 			printf("%-80s %,d\n", it[0], it[1] as long)
 		}
 
-		if (!analysis.options.get('X_STATS_NONE').value && !analysis.options.get('X_DRY_RUN').value) {
+		if (!analysis.options.get('X_STATS_NONE').value && !analysis.options.get('DRY_RUN').value) {
 			lines = []
 
 			if (analysis.options.X_LB3.value) {

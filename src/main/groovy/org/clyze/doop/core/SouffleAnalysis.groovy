@@ -111,7 +111,7 @@ class SouffleAnalysis extends DoopAnalysis {
 				runtimeMetricsFile.append("analysis compilation time (sec)\t${script.compilationTime}\n")
 			}
 
-			if (!options.X_DRY_RUN.value) {
+			if (!options.DRY_RUN.value) {
 				File analysisBinary = analysisBinaryPath ? new File(analysisBinaryPath) : generatedFile
 				script.run(analysisBinary, factsDir, outDir, options.SOUFFLE_JOBS.value as int,
 						(options.X_MONITORING_INTERVAL.value as long) * 1000, monitorClosure,

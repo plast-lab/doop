@@ -923,8 +923,8 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Don't cache generated facts."
 			),
 			new BooleanAnalysisOption(
-					id: "X_DRY_RUN",
-					name: "Xdry-run",
+					id: "DRY_RUN",
+					name: "dry-run",
 					description: "Do a dry run of the analysis."
 			),
 			new BooleanAnalysisOption(
@@ -1063,9 +1063,11 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new IntegerAnalysisOption(
 					id: "X_MONITORING_INTERVAL",
 					name: "Xmonitoring-interval",
+					group: GROUP_EXPERIMENTAL,
 					argName: "INTERVAL",
 					description: "Monitoring interval for sampling memory and cpu usage. default: 5sec",
-					value: 5
+					value: 5,
+					cli: false
 			),
 			new AnalysisOption<String>(
 					id: "X_FACTS_SUBSET",

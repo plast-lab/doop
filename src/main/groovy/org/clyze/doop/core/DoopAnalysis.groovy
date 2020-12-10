@@ -377,7 +377,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             params += ["--extract-more-strings"]
         }
 
-        if (options.X_DRY_RUN.value) {
+        if (options.DRY_RUN.value) {
             params += ["--no-facts"]
         }
 

@@ -31,7 +31,7 @@ class DryRuns extends DoopSpec {
 		Main.main((String[])(["-i", Artifacts.HELLO_JAR,
 							  "-a", analysisName,
 							  "--id", "dry-run-${analysisName}", "--cache",
-							  "--Xdry-run", "--souffle-force-recompile"] +
+							  "--dry-run", "--souffle-force-recompile"] +
 							  extraOpts + "-Ldebug"))
 		Analysis analysis = Main.analysis
 
