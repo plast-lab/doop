@@ -13,7 +13,7 @@ import org.apache.commons.cli.Options
 class Help {
 
     /** The "group" of options not belonging to groups. */
-    private static final String GENERAL_GROUP = 'general'
+    private static final String CONFIGURATION_GROUP = 'configuration'
 
     /** The "group" of all options. */
     private static final String GROUP_ALL = 'all'
@@ -37,10 +37,10 @@ class Help {
         } else if (cli['h'] == GROUP_ALL) {
             // Show detailed help for all options.
             builder.usage()
-        } else if (cli['h'] == GENERAL_GROUP) {
+        } else if (cli['h'] == CONFIGURATION_GROUP) {
             // Show detailed help for options that do not belong to special groups.
             Collection<Option> opts = builder.options.options.findAll { !(it instanceof GOption) || ((it as GOption).group == null) }
-            printGroup(HelpGroupFormatter.GENERAL_OPTIONS, opts)
+            printGroup(HelpGroupFormatter.CONFIGURATION_OPTIONS, opts)
         } else {
             // Show help for specific options group.
             String groupId = cli['h']
@@ -73,7 +73,7 @@ class Help {
     }
 
     private static List<String> getGroups(Map<String, ?> groupMap) {
-        return ([GENERAL_GROUP] + groupMap.keySet().toList() + [GROUP_ALL]).sort()
+        return ([CONFIGURATION_GROUP] + groupMap.keySet().toList() + [GROUP_ALL]).sort()
     }
 
     /**

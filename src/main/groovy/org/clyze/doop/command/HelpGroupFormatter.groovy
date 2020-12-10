@@ -12,7 +12,7 @@ import org.apache.commons.cli.Options
 @CompileStatic
 class HelpGroupFormatter extends HelpFormatter {
 
-    static final String GENERAL_OPTIONS = "General options"
+    static final String CONFIGURATION_OPTIONS = "Configuration options"
 
     @Override
     void printOptions(PrintWriter pw, int width, Options options, int leftPad, int descPad) {
@@ -30,7 +30,7 @@ class HelpGroupFormatter extends HelpFormatter {
         // Measure widths per group to fix them when calling the printer on each.
         Map<String, Tuple2<Options, Integer>> groups = [:]
         if (nullGroupOpts.options.size() > 0)
-            groups.put(GENERAL_OPTIONS, getOptionsInfo(nullGroupOpts))
+            groups.put(CONFIGURATION_OPTIONS, getOptionsInfo(nullGroupOpts))
         otherGroupOpts.groupBy { it.group }.sort().each { group, optsList ->
             def opts = new Options()
             optsList.each { opts.addOption(it) }
