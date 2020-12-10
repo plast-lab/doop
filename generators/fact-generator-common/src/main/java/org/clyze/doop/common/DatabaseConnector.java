@@ -15,7 +15,7 @@ public class DatabaseConnector implements NativeDatabaseConsumer {
         if (pfName != null) {
             db.add(predicates.computeIfAbsent(pfName, PredicateFile::valueOf), arg, args);
         } else
-            System.err.println("Error: no output predicate '" + pfName + "' is available.");
+            System.err.println("ERROR: no output predicate is available.");
     }
 
 }

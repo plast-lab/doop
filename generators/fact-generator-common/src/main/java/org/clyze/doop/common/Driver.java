@@ -30,7 +30,7 @@ public abstract class Driver<C> {
     }
 
     protected void initTmpClassGroup() {
-        this._tmpClassGroup = Collections.newSetFromMap(new ConcurrentHashMap<C, Boolean>());
+        this._tmpClassGroup = Collections.newSetFromMap(new ConcurrentHashMap<>());
     }
 
     public synchronized void markError() {

@@ -1,12 +1,13 @@
 plugins {
     id 'application'
+    id 'java-library'
 }
 
 mainClassName = 'org.clyze.doop.wala.Main'
 version = null
 
 dependencies {
-    implementation project(path: ':generators:fact-generator-common', configuration: 'shadow')
+    api project(path: ':generators:fact-generator-common', configuration: 'shadow')
     implementation "org.python:jython:2.7.1b3"
     /// https://mvnrepository.com/artifact/com.ibm.wala/com.ibm.wala.util
     // implementation "com.ibm.wala:com.ibm.wala.util:1.4.3"

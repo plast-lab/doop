@@ -164,8 +164,10 @@ public class WalaUtils {
         }
         if(isArrayType)
         {
-            for(int i=0 ; i< arrayTimes ; i++)
-                ret = ret + "[]";
+            StringBuilder retBuilder = new StringBuilder(ret);
+            for(int i = 0; i < arrayTimes ; i++)
+                retBuilder.append("[]");
+            ret = retBuilder.toString();
         }
         //if(! ret.equals(fixTypeStringOld(original)) && ! original.contains("["))
         //System.out.println(original + " | " + ret + " | " + fixTypeStringOld(original));

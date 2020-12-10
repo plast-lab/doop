@@ -5,7 +5,7 @@ import com.ibm.wala.classLoader.Module;
 import com.ibm.wala.dalvik.classLoader.DexFileModule;
 import com.ibm.wala.ipa.callgraph.AnalysisScope;
 import com.ibm.wala.types.ClassLoaderReference;
-import com.ibm.wala.util.config.FileOfClasses;
+//import com.ibm.wala.util.config.FileOfClasses;
 import com.ibm.wala.util.io.FileProvider;
 import java.io.*;
 import java.util.jar.JarFile;
@@ -99,7 +99,7 @@ class WalaScopeReader {
 
     private static void addAPKtoScope(ClassLoaderReference loader, AnalysisScope scope, String fileName){
         File apkFile = new File(fileName);
-        MultiDexContainer<? extends DexBackedDexFile> multiDex = null;
+        MultiDexContainer<? extends DexBackedDexFile> multiDex;
         final int API = 24;
         try {
             multiDex = DexFileFactory.loadDexContainer(apkFile, Opcodes.forApi(API));

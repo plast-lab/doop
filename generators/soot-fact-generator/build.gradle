@@ -20,7 +20,7 @@ repositories {
 }
 
 dependencies {
-    implementation project(path: ':generators:fact-generator-common', configuration: 'shadow')
+    api project(path: ':generators:fact-generator-common', configuration: 'shadow')
 
     // implementation "ca.mcgill.sable:soot:4.0.0"
     implementation "org.soot-oss:soot:4.2.1"

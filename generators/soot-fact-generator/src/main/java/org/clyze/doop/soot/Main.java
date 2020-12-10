@@ -1,6 +1,5 @@
 package org.clyze.doop.soot;
 
-import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
