@@ -67,7 +67,7 @@ Example:
 
     $ ./doop -a context-insensitive
 
-#### Input files  (-i, --inputs)
+#### Input files  (-i, --input-file)
 Mandatory. The input file(s) to analyse.
 
 The inputs option accepts multiple values and/or can be repeated multiple times.
@@ -96,7 +96,7 @@ Optional --- default: java_8. The platform to use for the analysis. The possible
 Example:
 
     $ ./doop -a context-insensitive -i com.example.some.jar --platform java_7
-    $ ./doop -a context-insensitive -i some-app.apk --platform android_24
+    $ ./doop -a context-insensitive -i some-app.apk --platform android_25_fulljars
 
 To use a custom Java platform, you can use option `--use-local-java-platform`, for example:
 
@@ -165,9 +165,9 @@ You can then inspect the analysis results by using `souffle-profile` and providi
 
 ### Using LogicBlox as the Datalog engine of choice 
 
-In order to use LogicBlox instead of the Soufflé engine you can provide the --lb argument. Be warned that this will use older analysis logic and thus some Java features (such as lambdas, dynamic proxies, or Android-specific behavior) may not be handled successfully.
+In order to use LogicBlox instead of the Soufflé engine you can provide the --Xlb argument. Be warned that this will use older analysis logic and thus some Java features (such as lambdas, dynamic proxies, or Android-specific behavior) may not be handled successfully.
 
-    $ ./doop -i ../doop-benchmarks/dacapo-2006/antlr.jar -a context-insensitive --dacapo --id lb-antlr --lb
+    $ ./doop -i ../doop-benchmarks/dacapo-2006/antlr.jar -a context-insensitive --dacapo --id lb-antlr --Xlb
 ##### Warning: For the latest features we recommend using Souffle    
     
 ### Android Analysis
@@ -205,7 +205,7 @@ P/Taint is activated using the `--information-flow` flag, is fully integrated in
 
 In the case of Android, additional sensitive layout controls can be defined using the `--information-flow-extra-controls` flag.
 
-    $ ./doop -i ../doop-benchmarks/android-benchmarks/Camera2Basic-debug.apk -a context-insensitive --android --information-flow --platform android_25_fulljars
+    $ ./doop -i ../doop-benchmarks/android-benchmarks/Camera2Basic-debug.apk -a context-insensitive --information-flow --platform android_25_fulljars
     
 For information about Taint Analysis using Doop, please consult our [P/Taint paper](https://yanniss.github.io/ptaint-oopsla17.pdf), or [P/Taint tutorial](docs/ptaint.md). 
     
@@ -325,7 +325,7 @@ dependency injection, test framework code), Doop fails to handle these
 features.
 
 Solution: Ensure that you do not use the legacy LogicΒlox mode
-(`--lb`) and appropriate options are set (check `doop --help`).
+(`--Xlb`) and appropriate options are set (check `doop --help`).
 
 *Problem:* Analyzing a program targeting Java on an Apple platform
  shows missing ("phantom") classes.
