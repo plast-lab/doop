@@ -45,9 +45,11 @@ class SimpleAnalysisTests extends ServerAnalysisTests {
 
 	// @spock.lang.Ignore
 	@Unroll
-	def "Server analysis test 013-enums (reflection, jphantom)"() {
+	def "Server analysis test 013-enums (reflection, jphantom, default stats)"() {
 		when:
-		Analysis analysis = analyzeTest("013-enums", ["--reflection-classic", "--generate-jimple", "--no-standard-exports", "--run-jphantom"] + testExports)
+		Analysis analysis = analyzeTest("013-enums", ["--reflection-classic", "--generate-jimple",
+													  "--stats", "default", "--no-standard-exports",
+													  "--run-jphantom"] + testExports)
 
 		then:
 		varPointsToQ(analysis, '<Main: void main(java.lang.String[])>/enumConsts#_93', '<Enums array for Main$UndeletablePrefKey>')
