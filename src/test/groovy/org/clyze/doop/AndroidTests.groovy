@@ -13,7 +13,7 @@ class AndroidTests extends DoopSpec {
 
 	static List defaultArgs = [
 		"--timeout", "30",
-		"--Xserver-logic", "--gen-opt-directives",
+		"--server-logic", "--gen-opt-directives",
 		"--generate-jimple",
 		"--thorough-fact-gen"
 	]

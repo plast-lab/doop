@@ -30,7 +30,7 @@ class Help {
 
         // Update "valid values" in "help" command-line option.
         Option updatedHelp = builder.options.getOption('help')
-        updatedHelp.description = CommandLineAnalysisFactory.validValues(updatedHelp.description, groupMap.keySet())
+        updatedHelp.description = CommandLineAnalysisFactory.validValues(updatedHelp.description, getGroups(groupMap))
 
         if (cli == null || cli['h'] == null || cli['h'] == true) {
             showBasicUsage(builder)
@@ -52,9 +52,14 @@ class Help {
                 printGroup(group, opts)
             }
         }
-        showHelpFooter(groupMap)
+        printHelpFooter(groupMap)
     }
 
+    /**
+     * Print help for an options group.
+     * @param group             the group name (printed in the header)
+     * @param optCollection     the options to print
+     */
     static void printGroup(String group, Collection<Option> optCollection) {
         Options groupOptions = new Options()
         for (Option opt : optCollection)
@@ -67,11 +72,16 @@ class Help {
         pw.flush()
     }
 
-    static List<String> getGroups(Map<String, ?> groupMap) {
-        return [GENERAL_GROUP] + groupMap.keySet().toList() + [GROUP_ALL]
+    private static List<String> getGroups(Map<String, ?> groupMap) {
+        return ([GENERAL_GROUP] + groupMap.keySet().toList() + [GROUP_ALL]).sort()
     }
 
-    static String textToId(String s) {
+    /**
+     * Translate group descriptions to ids to be used in the command line.
+     * @param s    the original group description
+     * @return     the resulting group id
+     */
+    private static String textToId(String s) {
         StringBuilder sb = new StringBuilder()
         for (char c : s.toCharArray())
             if (c != '[' && c != ']')
@@ -79,7 +89,7 @@ class Help {
         return sb.toString()
     }
 
-    static Map<String, String> genIdToGroup(CliBuilder builder) {
+    private static Map<String, String> genIdToGroup(CliBuilder builder) {
         Collection<Option> options = builder.options.options as Collection<Option>
         Map<String, String> map = new HashMap<>()
         for (Option opt : options) {
@@ -93,7 +103,7 @@ class Help {
         return map
     }
 
-    static void showHelpFooter(Map<String, ?> groupMap) {
+    private static void printHelpFooter(Map<String, ?> groupMap) {
         List<String> groups = getGroups(groupMap)
         println()
         println "Use --help <SECTION> for more information, available sections: " + String.join(', ', groups)
@@ -101,7 +111,7 @@ class Help {
 
     private static void showBasicUsage(CliBuilder builder) {
         Set<String> basicOptions = new HashSet<>()
-        basicOptions.addAll(['analysis', 'input-file', 'library-file', 'platform', 'id'])
+        basicOptions.addAll(['analysis', 'input-file', 'library-file', 'platform', 'id', 'timeout'])
         List<Option> optList = (builder.options.options as Collection<Option>)
                 .findAll { Option opt -> basicOptions.contains(opt.longOpt) }
                 .collect { Option opt -> simplifyBasicOption(opt) } as List<Option>

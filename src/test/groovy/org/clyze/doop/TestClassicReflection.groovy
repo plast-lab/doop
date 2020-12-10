@@ -12,7 +12,7 @@ class TestClassicReflection extends DoopSpec {
 	def "Server analysis test 016 (reflection)"() {
 		when:
 		List options = ["--reflection-classic", "--reflection-dynamic-proxies",
-						"--gen-opt-directives", "--Xserver-logic", "--generate-jimple",
+						"--gen-opt-directives", "--server-logic", "--generate-jimple",
 						"--extra-logic", "${Doop.souffleAddonsPath}/testing/TestReflection.dl",
 						"--thorough-fact-gen", "--no-standard-exports",
 						"--platform", "java_8"] + sanityOpts

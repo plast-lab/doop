@@ -17,7 +17,7 @@ class SimpleAnalysisTests extends ServerAnalysisTests {
 		// Test additional command-line options.
 		Analysis analysis = analyzeTest("011-variance",
 										["--coarse-grained-allocation-sites",
-										 "--generate-jimple", "--Xserver-logic",
+										 "--generate-jimple", "--server-logic",
 										 "--cs-library", "--extra-metrics",
 										 "--thorough-fact-gen", "--cfg",
 										 "--platform", "java_8"] + sanityOpts)

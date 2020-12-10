@@ -23,10 +23,10 @@ class DryRuns extends DoopSpec {
 			extraOpts = ["--stats", "none" ]
 			break
 		case 'types-only':
-			extraOpts = ['--stats', 'full', '--Xserver-logic', '--disable-points-to' ]
+			extraOpts = ['--stats', 'full', '--server-logic', '--disable-points-to' ]
 			break
 		default:
-			extraOpts = ["--stats", "full", "--Xserver-logic" ]
+			extraOpts = ["--stats", "full", "--server-logic" ]
 		}
 		Main.main((String[])(["-i", Artifacts.HELLO_JAR,
 							  "-a", analysisName,

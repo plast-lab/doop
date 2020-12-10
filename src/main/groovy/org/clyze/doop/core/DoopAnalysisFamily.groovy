@@ -26,6 +26,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 	private static final String GROUP_REFLECTION = "Reflection"
 	private static final String GROUP_STATS = "Statistics"
 	private static final String GROUP_ENTRY_POINTS = "Entry points"
+	private static final String GROUP_SERVER = "Server logic"
 	private static final String GROUP_EXPERIMENTAL = "[Experimental/Unsupported]"
 
 	private static final int SERVER_DEFAULT_THRESHOLD = 1000
@@ -928,13 +929,15 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			),
 			new BooleanAnalysisOption(
 					id: "X_SERVER_LOGIC",
-					name: "Xserver-logic",
+					name: "server-logic",
+					group: GROUP_SERVER,
 					description: "Run server queries under addons/server-logic.",
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
 					id: "X_SERVER_CHA",
-					name: "Xserver-cha",
+					name: "server-cha",
+					group: GROUP_SERVER,
 					description: "Run server queries related to CHA."
 			),
 			new BooleanAnalysisOption(
@@ -1011,7 +1014,8 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			),
 			new IntegerAnalysisOption(
 					id: "X_SERVER_LOGIC_THRESHOLD",
-					name: "Xserver-logic-threshold",
+					name: "server-logic-threshold",
+					group: GROUP_SERVER,
 					argName: "THRESHOLD",
 					description: "Threshold when reporting points-to information in server logic (per points-to set). default: ${SERVER_DEFAULT_THRESHOLD}",
 					value: SERVER_DEFAULT_THRESHOLD,
