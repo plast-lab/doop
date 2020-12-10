@@ -699,22 +699,24 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
     }
 
     protected void runJPhantom() {
-        log.info "-- Running jphantom to generate complement jar --"
+        log.info "-- Running jphantom to generate complement JAR --"
 
         String jar = inputFiles[0].toString()
         String jarName = FilenameUtils.getBaseName(jar)
         String jarExt = FilenameUtils.getExtension(jar)
-        if (jarExt.toLowerCase() == 'apk') {
-            log.info "Error: jphantom does not support .apk inputs"
+        if (!['jar', 'zip'].contains(jarExt.toLowerCase())) {
+            log.error "ERROR: jphantom does not support ${jarExt} inputs"
             throw new DoopErrorCodeException(23)
         }
+        if (inputFiles.size() > 1)
+            log.warn "WARNING: jphantom will only run on first input JAR."
         String newJar = "${jarName}-complemented.${jarExt}"
         String[] params = [jar, "-o", "${outDir}/$newJar", "-d", "${outDir}/phantoms", "-v", "0"]
         log.debug "Params of jphantom: ${params.join(' ')}"
 
         // We invoke the main method reflectively to avoid adding jphantom as a compile-time dependency.
         ClassLoader loader = ClassPathHelper.copyOfCurrentClasspath(log, this)
-        Helper.execJava(loader, "org.clyze.jphantom.Driver", params)
+        Helper.execJavaNoCatch(loader, "org.clyze.jphantom.Driver", params)
 
         //set the jar of the analysis to the complemented one
         inputFiles[0] = FileOps.findFileOrThrow("$outDir/$newJar", "jphantom invocation failed")

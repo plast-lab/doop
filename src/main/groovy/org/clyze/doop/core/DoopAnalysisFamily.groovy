@@ -276,7 +276,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "RUN_JPHANTOM",
 					name: "run-jphantom",
-					description: "Run jphantom for non-existent referenced jars.",
+					description: "Run jphantom for non-existent referenced code.",
 					forCacheID: true
 			),
 			new BooleanAnalysisOption(
