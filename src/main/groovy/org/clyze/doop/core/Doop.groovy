@@ -98,9 +98,9 @@ class Doop {
 		initDoopFromEnv()
 
 		try {
-			String logLevel = Logger.rootLogger.level.toString()
-			log.debug "logLevel=${logLevel}"
+			String logLevel = 'INFO' // Logger.rootLogger.level.toString()
 			JHelper.tryInitLogging(logLevel, doopLog, true, LOG_NAME)
+			log.debug "logLevel=${logLevel}"
 		} catch (IOException ex) {
 			System.err.println("WARNING: could not initialize logging")
 			throw new DoopErrorCodeException(15)
