@@ -76,7 +76,7 @@ class Main {
 				def msg = "Invalid argument specified: " + cli.arguments()[0]
 				log.error msg
 				Help.usage(cli, clidBuilder)
-				throw new DoopErrorCodeException(31, msg)
+				return
 			} else if (cli['h']) {
 				Help.usage(cli, clidBuilder)
 				return
