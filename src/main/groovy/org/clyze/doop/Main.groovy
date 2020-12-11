@@ -32,8 +32,9 @@ class Main {
 		try {
 			main2(args)
 		} catch (e) {
-			if (!(e instanceof DoopErrorCodeException))
-				Help.usage(null, CommandLineAnalysisFactory.createCliBuilder())
+			log.error "ERROR: ${describeError(e)}"
+//			if (!(e instanceof DoopErrorCodeException))
+//				Help.usage(null, CommandLineAnalysisFactory.createCliBuilder())
 		}
 	}
 
@@ -179,5 +180,9 @@ class Main {
 			log.info "Invalid user supplied timeout: `${userTimeout}` - fallback to default (${defaultTimeout})."
 			return defaultTimeout
 		}
+	}
+
+	private static String describeError(Throwable t) {
+		return (t.message != null) ? t.message : (t.cause != null) ? describeError(t.cause) : "unknown"
 	}
 }
