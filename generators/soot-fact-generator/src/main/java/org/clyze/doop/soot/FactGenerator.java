@@ -5,8 +5,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import org.clyze.doop.common.Driver;
 import org.clyze.doop.common.Phantoms;
 import soot.*;
 import soot.jimple.*;
@@ -371,11 +369,11 @@ class FactGenerator implements Runnable {
         }
         else if(right instanceof NewExpr)
         {
-            _writer.writeAssignHeapAllocation(inMethod, stmt, left, (NewExpr) right, session);
+            _writer.writeAssignHeapAllocation(inMethod, stmt, left, right, session);
         }
         else if(right instanceof NewArrayExpr)
         {
-            _writer.writeAssignHeapAllocation(inMethod, stmt, left, (NewArrayExpr) right, session);
+            _writer.writeAssignHeapAllocation(inMethod, stmt, left, right, session);
         }
         else if(right instanceof NewMultiArrayExpr)
         {

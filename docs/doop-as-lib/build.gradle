@@ -12,32 +12,30 @@
 
 plugins {
     id 'application'
+    id 'groovy'
 }
 
 repositories {
     // Uncomment to be able to use Doop's "publishToMavenLocal" task.
-    // mavenLocal()
+    mavenLocal()
 
     mavenCentral()
 
+    maven { url 'https://dl.bintray.com/gfour/plast-lab' }
     maven { url "http://centauri.di.uoa.gr:8081/artifactory/plast-deps" }
     maven { url "http://centauri.di.uoa.gr:8081/artifactory/plast-public" }
 }
 
 configurations {
     logic      { transitive = false }
-    generators { transitive = false }
-    apktool    { transitive = false }
 }
 
-def doopVersion = "4.+"
+def groovyVersion='3.0.6'
+def doopVersion = '4.+'
 dependencies {
-    logic   "org.clyze:doop:$doopVersion:logic-files"
-    generators "org.clyze:soot-fact-generator:$doopVersion"
-    generators "org.clyze:wala-fact-generator:$doopVersion"
-    generators "org.clyze:dex-fact-generator:$doopVersion"
-    apktool "ext:apktool:2.4.0"
-    compile "org.clyze:doop:$doopVersion"
+    logic          "org.clyze:doop:${doopVersion}:logic-files"
+    implementation "org.clyze:doop:${doopVersion}"
+    implementation "org.codehaus.groovy:groovy-all:${groovyVersion}"
 }
 
 // Extract logic/generators/apktool dependencies to local "Doop home"
@@ -50,17 +48,6 @@ task resolveDoopResources {
             from zipTree(configurations.logic.files[0])
             into baseDir
         }
-        copy {
-            from configurations.apktool.files[0]
-            into "${baseDir}/resources"
-        }
-        def gen = configurations.generators.files
-        if (gen) {
-            copy {
-                from gen
-                into "${baseDir}/resources"
-            }
-        } else { println "WARNING: no fact generator found." }
         println "Doop resources installed, set environment variable: DOOP_HOME=${baseDir}"
     }
 }
@@ -69,5 +56,5 @@ tasks.build.dependsOn resolveDoopResources
 mainClassName = "DoopRunner"
 
 wrapper {
-    gradleVersion = "5.4.1"
+    gradleVersion = "6.2"
 }

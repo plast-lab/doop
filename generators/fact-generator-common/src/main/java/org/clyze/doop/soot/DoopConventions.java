@@ -44,6 +44,7 @@ public class DoopConventions {
      * Clients of Doop can read the separator to be able to reason
      * about local names in generated Jimple.
      */
+    @SuppressWarnings("unused")
     public static String getSeparator() {
         return LOCAL_SEPARATOR;
     }

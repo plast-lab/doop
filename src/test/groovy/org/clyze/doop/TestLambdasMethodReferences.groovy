@@ -18,7 +18,7 @@ class TestLambdasMethodReferences extends DoopSpec {
 		when:
 		String id = "test-107-lambdas" + (wala ? "-wala" : "")
 		List<String> walaOpts = wala ? ["--wala-fact-gen"] : []
-		List<String> opts = ["--platform", "java_8", "--Xserver-logic",
+		List<String> opts = ["--platform", "java_8", "--server-logic",
 							 "--thorough-fact-gen",
 							 "--generate-jimple"] +
 							 sanityOpts + walaOpts

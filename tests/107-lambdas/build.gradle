@@ -16,11 +16,12 @@ buildscript {
 }
 
 apply plugin: 'java'
-apply plugin: 'maven'
+apply plugin: 'maven-publish'
 apply plugin: 'application'
 
 group = 'org.clyze'
 description = """org.clyze:107-lambdas-test"""
+version = null
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
@@ -34,7 +35,7 @@ jar {
     manifest {
         attributes 'Main-Class': mainClassName
     }
-    version null
+    archiveVersion.set(null)
 }
 
 // Use 'gradle run' to record the lambdas.

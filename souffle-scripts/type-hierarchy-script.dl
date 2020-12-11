@@ -1,7 +1,0 @@
-#include "../souffle-logic/facts/flow-sensitive-schema.dl"
-#include "../souffle-logic/facts/flow-insensitive-facts.dl"
-#include "../souffle-logic/facts/imports.dl"
-#include "../souffle-logic/basic/type-hierarchy.dl"
-
-.decl ClassConstructor(?method:Method, ?type:Type)
-.output SupertypeOf

@@ -7,8 +7,10 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.log4j.Logger;
 import org.clyze.doop.util.filter.ClassFilter;
 import org.clyze.doop.util.filter.GlobClassFilter;
+import org.clyze.utils.JHelper;
 
 /**
  * This class handles common parameters for Doop Java front-ends.
@@ -227,13 +229,13 @@ public class Parameters {
         case "--scan-native-code":
             this._scanNativeCode = true;
             break;
-        case "--native-use-radare":
+        case "--native-backend-radare":
             this._nativeRadare = true;
             break;
-        case "--native-use-builtin":
+        case "--native-backend-builtin":
             this._nativeBuiltin = true;
             break;
-        case "--native-use-binutils":
+        case "--native-backend-binutils":
             this._nativeBinutils = true;
             break;
         case "--only-precise-native-strings":
@@ -278,5 +280,14 @@ public class Parameters {
 
         String[] params = lines.toArray(new String[0]);
         processArgs(params);
+    }
+
+    public Logger initLogging(Class<?> c) throws IOException {
+        String logDir = getLogDir();
+        String logLevel = this._debug ? "DEBUG" : "INFO";
+        JHelper.tryInitLogging(logLevel, logDir, true, "soot-fact-generator");
+        Logger logger = Logger.getLogger(c);
+        logger.info("Logging initialized, using directory: " + logDir);
+        return logger;
     }
 }

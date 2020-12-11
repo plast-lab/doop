@@ -1,6 +1,5 @@
 package org.clyze.doop.soot;
 
-import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
@@ -32,7 +31,6 @@ public class Main {
 
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
-            System.err.println("usage: [options] file...");
             SootParameters.showHelp();
             return;
         }
@@ -54,11 +52,7 @@ public class Main {
         String outDir = sootParameters.getOutputDir();
 
         try {
-            String logDir = sootParameters.getLogDir();
-            String logLevel = sootParameters._debug ? "DEBUG" : "INFO";
-            JHelper.tryInitLogging(logLevel, logDir, true, "soot-fact-generator");
-            logger = Logger.getLogger(Main.class);
-            logger.info("Logging initialized, using directory: " + logDir);
+            logger = sootParameters.initLogging(Main.class);
         } catch (IOException ex) {
             System.err.println("WARNING: could not initialize logging");
             throw new DoopErrorCodeException(18);
@@ -278,14 +272,11 @@ public class Main {
 
         if (writeFacts) {
 
-            writer.writePreliminaryFacts(classes, java);
+            writer.writePreliminaryFacts(classes, java, sootParameters._debug);
             db.flush();
 
-            if (android != null) {
-                android.generateFactsForXML(db);
-                if (sootParameters._legacyAndroidProcessing)
-                    android.writeComponents(writer);
-            }
+            if (android != null && sootParameters._legacyAndroidProcessing)
+                android.writeComponents(writer);
 
             scene.getOrMakeFastHierarchy();
 
@@ -300,7 +291,7 @@ public class Main {
                 // must run again with these classes added.
                 String outFile = sootParameters._missingClassesOut;
                 if (outFile != null) {
-                    try (FileWriter fWriter = new FileWriter(new File(outFile))) {
+                    try (FileWriter fWriter = new FileWriter(outFile)) {
                         unrecorded.forEach(s -> {
                                 try {
                                     fWriter.write(s + '\n');

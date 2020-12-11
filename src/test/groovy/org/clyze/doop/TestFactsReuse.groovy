@@ -17,7 +17,7 @@ class TestFactsReuse extends DoopSpec {
                   ['-i', Artifacts.HELLO_JAR,
                    '--id', 'hello-facts-run',
                    '--Xstop-at-facts', helloFacts,
-                   '--Xserver-cha', '--generate-jimple'])
+                   '--server-cha', '--generate-jimple'])
         Analysis analysis1 = Main.analysis
         // Reuse facts from previous step.
         Main.main((String[])
@@ -26,8 +26,8 @@ class TestFactsReuse extends DoopSpec {
                    '--regex', 'Main',
                    '--main', 'DUMMY',
                    '--skip-code-factgen',
-                   '--Xserver-logic',
-                   '--Xstats-none',
+                   '--server-logic',
+                   '--stats', 'none',
                    '--id', 'hello-facts-analyzed'])
         Analysis analysis2 = Main.analysis
 

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 ARGS=""
 while [ "$1" != "" ]; do
@@ -14,4 +14,9 @@ while [ "$1" != "" ]; do
     shift
 done
 
+# Export number of terminal columns for help display.
+if command -v 'tput' &> /dev/null
+then
+    export COLUMNS=`tput cols`
+fi
 eval "./gradlew :run -Pargs=\"$ARGS\""

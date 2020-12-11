@@ -29,7 +29,7 @@ class WalaIRPrinter {
     void printIR(IClass cl)
     {
 //        PrintWriter writerOut = new PrintWriter(new EscapedWriter(new OutputStreamWriter((OutputStream)streamOut)));
-        BytecodeClass bytecodeClass = (BytecodeClass) cl;
+        BytecodeClass<?> bytecodeClass = (BytecodeClass<?>) cl;
         String fileName = _outputDir + "/IR/" + cl.getReference().getName().toString().replaceAll("/",".").replaceFirst("L","");
         File file = new File(fileName);
         if (file.getParentFile().mkdirs())

@@ -1,9 +1,7 @@
-#include "../souffle-logic/commonMacros.dl"
-#include "../souffle-logic/facts/flow-sensitive-schema.dl"
-#include "../souffle-logic/facts/flow-insensitive-facts.dl"
-#include "../souffle-logic/facts/imports.dl"
-#include "../souffle-logic/basic/type-hierarchy.dl"
-#include "../souffle-logic/basic/method-lookup.dl"
+#include "../../commonMacros.dl"
+#include "../../facts/facts.dl"
+#include "../../basic/type-hierarchy.dl"
+#include "../../basic/method-lookup.dl"
 
 .output MethodOverridesOther
 .output Class_InterestingSubtype

@@ -14,7 +14,7 @@ class CrudeScalerTest extends Specification {
 	@Unroll
 	def "Crude testing scaler analysis"() {
 		when:
-		Main.main((String[])["-i", Artifacts.ANTLR_JAR, "-a", "fully-guided-context-sensitive", "--id", "antlr-scaler", "--dacapo", "--scaler-pre", "--fact-gen-cores", "1", "--platform", "java_8"])
+		Main.main((String[])["-i", Artifacts.ANTLR_JAR, "-a", "fully-guided-context-sensitive", "--id", "antlr-scaler", "--dacapo", "--Xscaler-pre", "--fact-gen-cores", "1", "--platform", "java_8"])
 		Analysis analysis = Main.analysis
 
 		then:

@@ -24,7 +24,7 @@ ANALYSIS=context-insensitive
 TIMEOUT=600
 STRING_DISTANCE1=40
 STRING_DISTANCE2=2000
-BASE_GLOBAL_OPTS="--timeout ${TIMEOUT} --no-standard-exports --Xlow-mem --Xstats-none --Xextra-logic ${DOOP_HOME}/souffle-logic/addons/testing/native-tests.dl --Xdont-cache-facts"
+BASE_GLOBAL_OPTS="--timeout ${TIMEOUT} --no-standard-exports --Xlow-mem --stats none --extra-logic ${DOOP_HOME}/souffle-logic/addons/testing/native-tests.dl --Xdont-cache-facts"
 
 if [ "${DOOP}" == "" ]; then
     DOOP='./doop'
@@ -158,7 +158,7 @@ function runDoop() {
 	deleteFacts ${ID_HEAPDL}
     fi
     # 3. Native scanner, default mode.
-    ${DOOP} -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER} ${BASE_OPTS} --scan-native-code --native-use-binutils |& tee ${CURRENT_DIR}/${ID_SCANNER}.log
+    ${DOOP} -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER} ${BASE_OPTS} --scan-native-code --native-code-backend binutils |& tee ${CURRENT_DIR}/${ID_SCANNER}.log
     deleteFacts ${ID_SCANNER}
     popd &> /dev/null
 }
@@ -244,7 +244,7 @@ function analyzeXCorpusBenchmark() {
     deleteFacts ${ID_BASE}
     # 2. Native scanner, default mode.
     # ${DOOP} ${BASE_OPTS} --id ${ID_SCANNER} --scan-native-code |& tee ${CURRENT_DIR}/${ID_SCANNER}.log
-    ${DOOP} ${BASE_OPTS} --id ${ID_SCANNER} --scan-native-code --native-use-radare |& tee ${CURRENT_DIR}/${ID_SCANNER}.log
+    ${DOOP} ${BASE_OPTS} --id ${ID_SCANNER} --scan-native-code --native-code-backend radare |& tee ${CURRENT_DIR}/${ID_SCANNER}.log
     deleteFacts ${ID_SCANNER}
     set +x
     popd &> /dev/null

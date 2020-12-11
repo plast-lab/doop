@@ -14,7 +14,7 @@ class CrudeMicroTest extends Specification {
 	@Unroll
 	def "Crude testing micro analysis"() {
 		when:
-		Main.main((String[])["-i", Artifacts.ANTLR_JAR, "-a", "micro", "--id", "antlr-micro", "--dacapo", "--Xstats-none", "--fact-gen-cores", "1", "--platform", "java_7"])
+		Main.main((String[])["-i", Artifacts.ANTLR_JAR, "-a", "micro", "--id", "antlr-micro", "--dacapo", "--stats", "none", "--fact-gen-cores", "1", "--platform", "java_7"])
 		Analysis analysis = Main.analysis
 
 		then:

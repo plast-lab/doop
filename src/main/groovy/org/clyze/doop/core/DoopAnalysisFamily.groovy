@@ -18,17 +18,27 @@ class DoopAnalysisFamily implements AnalysisFamily {
 	private static final String DEFAULT_JAVA_PLATFORM = "java_8"
 	private static final String GROUP_ENGINE = "Datalog engine"
 	private static final String GROUP_FACTS = "Fact generation"
-	private static final String GROUP_HEAPDL = "HeapDL"
+	private static final String GROUP_HEAP_SNAPSHOTS = "Heap snapshots"
 	private static final String GROUP_INFORMATION_FLOW = "Information flow"
 	private static final String GROUP_NATIVE = "Native code"
+	private static final String GROUP_OPEN_PROGRAMS = "Open programs"
 	private static final String GROUP_PYTHON = "Python"
 	private static final String GROUP_REFLECTION = "Reflection"
 	private static final String GROUP_STATS = "Statistics"
+	private static final String GROUP_ENTRY_POINTS = "Entry points"
+	private static final String GROUP_SERVER = "Server logic"
+	private static final String GROUP_EXPERIMENTAL = "Xtras"
 
 	private static final int SERVER_DEFAULT_THRESHOLD = 1000
 	private static final int DEFAULT_JOBS = 4
-	private static final int DEFAULT_STRINGS_DISTANCE = 5
-	static String USE_ANALYSIS_BINARY_NAME = 'use-analysis-binary'
+	private static final String DEFAULT_NATIVE_BACKEND = ''
+	static final String NATIVE_BACKEND_BINUTILS = 'binutils'
+	static final String NATIVE_BACKEND_BUILTIN = 'builtin'
+	static final String NATIVE_BACKEND_RADARE = 'radare'
+	static final String USE_ANALYSIS_BINARY_NAME = 'use-analysis-binary'
+	static final String STATS_NONE = 'none'
+	static final String STATS_DEFAULT = 'default'
+	static final String STATS_FULL = 'full'
 
 	@Override
 	String getName() { "doop" }
@@ -121,7 +131,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new AnalysisOption<List<String>>(
 					id: "HEAPDLS",
 					name: "heapdl-file",
-					group: GROUP_HEAPDL,
+					group: GROUP_HEAP_SNAPSHOTS,
 					description: "Use dynamic information from memory dump, using HeapDL. Takes one or more files (`.hprof` format or stack traces).",
 					value: [],
 					multipleValues: true,
@@ -154,15 +164,16 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					argName: "PATH"
 			),
 			new BooleanAnalysisOption(
-					id: "SKIP_CODE_FACTGEN",
-					name: "skip-code-factgen",
-					group: GROUP_FACTS,
+					id: "X_SKIP_CODE_FACTGEN",
+					name: "Xskip-code-factgen",
+					group: GROUP_EXPERIMENTAL,
 					description: "Don't generate facts for code."
 			),
 
 			new AnalysisOption<List<String>>(
 					id: "MAIN_CLASS",
 					name: "main",
+					group: GROUP_ENTRY_POINTS,
 					argName: "MAIN",
 					description: "Specify the main class(es) separated by spaces.",
 					value: [],
@@ -178,8 +189,9 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forPreprocessor: true
 			),
 			new AnalysisOption<String>(
-					id: "IMPORT_PARTITIONS",
-					name: "import-partitions",
+					id: "X_IMPORT_PARTITIONS",
+					name: "Ximport-partitions",
+					group: GROUP_EXPERIMENTAL,
 					argName: "FILE",
 					description: "Specify the partitions.",
 					argInputType: InputType.MISC,
@@ -199,6 +211,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new AnalysisOption<String>(
 					id: "KEEP_SPEC",
 					name: "keep-spec",
+					group: GROUP_ENTRY_POINTS,
 					argName: "FILE",
 					argInputType: InputType.MISC,
 					forCacheID: true,
@@ -243,12 +256,13 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "SEPARATE_EXCEPTION_OBJECTS",
 					name: "disable-merge-exceptions",
+					description: "Do not merge exception objects.",
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
-					id: "NO_SSA",
-					name: "no-ssa",
-					group: GROUP_FACTS,
+					id: "X_NO_SSA",
+					name: "Xno-ssa",
+					group: GROUP_EXPERIMENTAL,
 					description: "Disable the default policy of using SSA transformation on input.",
 					forCacheID: true
 			),
@@ -263,7 +277,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "RUN_JPHANTOM",
 					name: "run-jphantom",
-					description: "Run jphantom for non-existent referenced jars.",
+					description: "Run jphantom for non-existent referenced code.",
 					forCacheID: true
 			),
 			new BooleanAnalysisOption(
@@ -303,25 +317,14 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forCacheID: true,
 					forPreprocessor: true
 			),
-			new BooleanAnalysisOption(
-					id: "NATIVE_USE_RADARE",
-					name: "native-use-radare",
+			new AnalysisOption<String>(
+					id: "NATIVE_CODE_BACKEND",
+					name: "native-code-backend",
 					group: GROUP_NATIVE,
-					description: "Use Radare2 to find strings.",
-					forCacheID: true
-			),
-			new BooleanAnalysisOption(
-					id: "NATIVE_USE_BUILTIN",
-					name: "native-use-builtin",
-					group: GROUP_NATIVE,
-					description: "Use (naive/portable) built-in analysis to find strings.",
-					forCacheID: true
-			),
-			new BooleanAnalysisOption(
-					id: "NATIVE_USE_BINUTILS",
-					name: "native-use-binutils",
-					group: GROUP_NATIVE,
-					description: "Use binutils-based analysis to find strings.",
+					argName: "BACKEND",
+					description: "Use back-end to scan native code (portable built-in, system binutils, Radare2).",
+					validValues: [NATIVE_BACKEND_BUILTIN, NATIVE_BACKEND_BINUTILS, NATIVE_BACKEND_RADARE],
+					value: DEFAULT_NATIVE_BACKEND,
 					forCacheID: true
 			),
 			new BooleanAnalysisOption(
@@ -331,21 +334,6 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Skip strings without enclosing function information.",
 					forCacheID: true,
 					forPreprocessor: true
-			),
-			new BooleanAnalysisOption(
-					id: "USE_STRING_LOCALITY",
-					name: "use-string-locality",
-					group: GROUP_NATIVE,
-					description: "Use string locality when pairing native target strings.",
-					forPreprocessor: true
-			),
-			new IntegerAnalysisOption(
-					id: "NATIVE_STRINGS_DISTANCE",
-					name: "native-strings-distance",
-					group: GROUP_NATIVE,
-					description: "The maximum distance to use when reasoning about string locality. Default: ${DEFAULT_STRINGS_DISTANCE}",
-					argName: "N",
-					value: DEFAULT_STRINGS_DISTANCE
 			),
 			new BooleanAnalysisOption(
 					id: "DACAPO",
@@ -367,9 +355,9 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forCacheID: true
 			),
 			new BooleanAnalysisOption(
-					id: "DEX_FACT_GEN",
-					name: "dex",
-					group: GROUP_FACTS,
+					id: "X_DEX_FACT_GEN",
+					name: "Xdex",
+					group: GROUP_EXPERIMENTAL,
 					description: "Use custom front-end to generate facts for .apk inputs, using Soot for other inputs.",
 					forCacheID: true
 			),
@@ -412,17 +400,19 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "ANDROID",
 					name: "android",
-					description: "If true the analysis enables Android-specific logic.",
+					description: "Force Android mode for code inputs that are not in .apk format.",
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
-					id: "LEGACY_ANDROID_PROCESSING",
-					name: "legacy-android-processing",
+					id: "X_LEGACY_ANDROID_PROCESSING",
+					name: "Xlegacy-android-processing",
+					group: GROUP_EXPERIMENTAL,
 					description: "If true the analysis uses the legacy processor for Android resources."
 			),
 			new BooleanAnalysisOption(
-					id: "LEGACY_SOOT_INVOCATION",
-					name: "legacy-soot-invocation",
+					id: "X_LEGACY_SOOT_INVOCATION",
+					name: "Xlegacy-soot-invocation",
+					group: GROUP_EXPERIMENTAL,
 					description: "If true, Soot will be invoked using a custom classloader (may use less memory, only supported on Java < 9)."
 			),
 			new BooleanAnalysisOption(
@@ -437,13 +427,15 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			/* Start Scaler related options */
 			new BooleanAnalysisOption(
 					id: "SCALER_PRE_ANALYSIS",
-					name: "scaler-pre",
+					name: "Xscaler-pre",
+					group: GROUP_EXPERIMENTAL,
 					description: "Enable the analysis to be the pre-analysis of Scaler, and outputs the information required by Scaler.",
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
 					id: "GENERICS_PRE_ANALYSIS",
-					name: "generics-pre",
+					name: "Xgenerics-pre",
+					group: GROUP_EXPERIMENTAL,
 					description: "Enable precise generics pre-analysis to infer content types for Collections and Maps.",
 					forPreprocessor: true
 			),
@@ -451,14 +443,16 @@ class DoopAnalysisFamily implements AnalysisFamily {
 
 			/* Start Zipper related options */
 			new BooleanAnalysisOption(
-					id: "ZIPPER_PRE_ANALYSIS",
-					name: "zipper-pre",
+					id: "X_ZIPPER_PRE_ANALYSIS",
+					name: "Xzipper-pre",
+					group: GROUP_EXPERIMENTAL,
 					description: "Enable the analysis to be the pre-analysis of Zipper, and outputs the information required by Zipper.",
 					forPreprocessor: true
 			),
 			new AnalysisOption(
-					id: "ZIPPER",
-					name: "zipper",
+					id: "X_ZIPPER",
+					name: "Xzipper",
+					group: GROUP_EXPERIMENTAL,
 					description: "Use file with precision-critical methods selected by Zipper, these methods are analyzed context-sensitively.",
 					argName: "FILE",
 					argInputType: InputType.MISC,
@@ -486,7 +480,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "FULL_TENSOR_PRECISION",
 					name: "full-tensor-precision",
 					group: GROUP_PYTHON,
-					description: "Full precision tensor shape analysis(not guaranteed to finish).",
+					description: "Full precision tensor shape analysis (not guaranteed to finish).",
 					forPreprocessor: true
 			),
 			/* End Python related options */
@@ -500,7 +494,8 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			),
 			new BooleanAnalysisOption(
 					id: "PRECISE_GENERICS",
-					name: "precise-generics",
+					name: "Xprecise-generics",
+					group: GROUP_EXPERIMENTAL,
 					description: "Precise handling for maps and collections",
 					forPreprocessor: true
 			),
@@ -533,6 +528,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "EXCLUDE_IMPLICITLY_REACHABLE_CODE",
 					name: "exclude-implicitly-reachable-code",
+					group: GROUP_ENTRY_POINTS,
 					description: "Don't make any method implicitly reachable.",
 					forPreprocessor: true
 			),
@@ -581,8 +577,9 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			),
 			new BooleanAnalysisOption(
 					id: "REFLECTION_CONTEXT_SENSITIVITY",
-					name: "reflection-context-sensitivity",
-					group: GROUP_REFLECTION,
+					name: "Xreflection-context-sensitivity",
+					group: GROUP_EXPERIMENTAL,
+					description: "Enable context-sensitive handling of reflection.",
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
@@ -606,8 +603,9 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			),
 			new BooleanAnalysisOption(
 					id: "GROUP_REFLECTION_STRINGS",
-					name: "reflection-coloring",
-					group: GROUP_REFLECTION,
+					name: "Xreflection-coloring",
+					group: GROUP_EXPERIMENTAL,
+					description: "Merge strings that will not conflict in reflection resolution.",
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
@@ -653,12 +651,14 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "DISCOVER_TESTS",
 					name: "discover-tests",
+					group: GROUP_ENTRY_POINTS,
 					description: "Discover and treat test code (e.g. JUnit) as entry points.",
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
 					id: "DISCOVER_MAIN_METHODS",
 					name: "discover-main-methods",
+					group: GROUP_ENTRY_POINTS,
 					description: "Discover main() methods.",
 					forPreprocessor: true
 			),
@@ -719,7 +719,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "SOUFFLE_USE_FUNCTORS",
 					name: "souffle-use-functors",
 					group: GROUP_ENGINE,
-					description: "Enale the use of user defined functors in Souffle."
+					description: "Enable the use of user-defined functors in Souffle."
 			),
 			new BooleanAnalysisOption(
 					id: "SOUFFLE_INCREMENTAL_OUTPUT",
@@ -730,8 +730,8 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			),
 			new BooleanAnalysisOption(
 					id: "VIA_DDLOG",
-					name: "via-ddlog",
-					group: GROUP_ENGINE,
+					name: "Xvia-ddlog",
+					group: GROUP_EXPERIMENTAL,
 					description: "Convert and run Souffle with DDlog.",
 					forPreprocessor: true
 			),
@@ -753,7 +753,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
             new AnalysisOption<String>(
                     id: "CONSTANT_FOLDING",
                     name: "constant-folding",
-                    description: "Constant folding logic"
+                    description: "Enable constant folding logic."
             ),
 			new AnalysisOption<String>(
 					id: "SYMBOLIC_REASONING",
@@ -788,6 +788,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new AnalysisOption(
 					id: "OPEN_PROGRAMS",
 					name: "open-programs",
+					group: GROUP_OPEN_PROGRAMS,
 					argName: "STRATEGY",
 					description: "Create analysis entry points and environment using various strategies (such as 'servlets-only' or 'concrete-types').",
 					forPreprocessor: true
@@ -795,16 +796,19 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "OPEN_PROGRAMS_IMMUTABLE_CTX",
 					name: "open-programs-context-insensitive-entrypoints",
+					group: GROUP_OPEN_PROGRAMS,
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
 					id: "OPEN_PROGRAMS_IMMUTABLE_HCTX",
 					name: "open-programs-heap-context-insensitive-entrypoints",
+					group: GROUP_OPEN_PROGRAMS,
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
 					id: "IGNORE_MAIN_METHOD",
 					name: "ignore-main-method",
+					group: GROUP_ENTRY_POINTS,
 					description: "If main class is not given explicitly, do not try to discover it from jar/filename info. Open-program analysis variant will be triggered in this case.",
 					forPreprocessor: true
 			),
@@ -812,7 +816,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new AnalysisOption<String>(
 					id: "HEAPDL_NOSTRINGS",
 					name: "heapdl-nostrings",
-					group: GROUP_HEAPDL,
+					group: GROUP_HEAP_SNAPSHOTS,
 					forCacheID: true,
 					description: "Do not model string values uniquely in a memory dump.",
 					forPreprocessor: true
@@ -820,7 +824,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "HEAPDL_DYNAMICVARPOINTSTO",
 					name: "heapdl-dvpt",
-					group: GROUP_HEAPDL,
+					group: GROUP_HEAP_SNAPSHOTS,
 					forCacheID: true,
 					description: "Import dynamic var-points-to information.",
 					forPreprocessor: true
@@ -828,7 +832,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new AnalysisOption<String>(
 					id: "IMPORT_DYNAMIC_FACTS",
 					name: "import-dynamic-facts",
-					group: GROUP_HEAPDL,
+					group: GROUP_HEAP_SNAPSHOTS,
 					argName: "FACTS_FILE",
 					argInputType: InputType.MISC,
 					description: "Use dynamic information from file.",
@@ -858,42 +862,45 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					cli: false
 			),
 			new BooleanAnalysisOption(
-					id: "LB3",
-					name: "lb",
-					group: GROUP_ENGINE,
+					id: "X_LB3",
+					name: "Xlb",
+					group: GROUP_EXPERIMENTAL,
 					description: "Use legacy LB engine."
 			),
 			/* End LogicBlox related options */
 
 			/* Start non-standard flags */
+			new AnalysisOption<String>(
+					id: "STATS_LEVEL",
+					name: "stats",
+					group: GROUP_STATS,
+					argName: "LEVEL",
+					description: "Set statistics collection logic.",
+					validValues: [STATS_NONE, STATS_DEFAULT, STATS_FULL]
+			),
 			new BooleanAnalysisOption(
 					id: "X_STATS_FULL",
 					name: "Xstats-full",
 					group: GROUP_STATS,
 					description: "Load additional logic for collecting statistics.",
-					forPreprocessor: true
+					forPreprocessor: true,
+					cli: false
 			),
 			new BooleanAnalysisOption(
 					id: "X_STATS_NONE",
 					name: "Xstats-none",
 					group: GROUP_STATS,
 					description: "Do not load logic for collecting statistics.",
-					forPreprocessor: true
+					forPreprocessor: true,
+					cli: false
 			),
 			new BooleanAnalysisOption(
 					id: "X_STATS_DEFAULT",
 					name: "Xstats-default",
 					group: GROUP_STATS,
 					description: "Load default logic for collecting statistics.",
-					forPreprocessor: true
-			),
-			new AnalysisOption<String>(
-					id: "X_STATS_AROUND",
-					name: "Xstats-around",
-					group: GROUP_STATS,
-					description: "Load custom logic for collecting statistics.",
-					argName: "FILE",
-					argInputType: InputType.MISC
+					forPreprocessor: true,
+					cli: false
 			),
 			new AnalysisOption<String>(
 					id: "X_STOP_AT_FACTS",
@@ -911,56 +918,63 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					argName: "PARTITIONING_STRATEGY"
 			),
 			new BooleanAnalysisOption(
-					id: "X_DONT_CACHE_FACTS",
-					name: "Xdont-cache-facts",
+					id: "DONT_CACHE_FACTS",
+					name: "dont-cache-facts",
 					group: GROUP_FACTS,
 					description: "Don't cache generated facts."
 			),
 			new BooleanAnalysisOption(
-					id: "X_DRY_RUN",
-					name: "Xdry-run",
-					description: "Do a dry run of the analysis."
+					id: "DRY_RUN",
+					name: "dry-run",
+					description: "Do a dry run of the analysis (generate facts and compile but don't run analysis logic)."
 			),
 			new BooleanAnalysisOption(
 					id: "X_SERVER_LOGIC",
-					name: "Xserver-logic",
+					name: "server-logic",
+					group: GROUP_SERVER,
 					description: "Run server queries under addons/server-logic.",
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
 					id: "X_SERVER_CHA",
-					name: "Xserver-cha",
+					name: "server-cha",
+					group: GROUP_SERVER,
 					description: "Run server queries related to CHA."
 			),
 			new BooleanAnalysisOption(
 					id: "X_EXTRA_METRICS",
-					name: "Xextra-metrics",
+					name: "extra-metrics",
+					group: GROUP_STATS,
 					description: "Run extra metrics logic under addons/statistics.",
 					forPreprocessor: false
 			),
 			new BooleanAnalysisOption(
 					id: "X_ORACULAR_HEURISTICS",
 					name: "Xoracular-heuristics",
+					group: GROUP_EXPERIMENTAL,
 					description: "Run sensitivity heuristics logic under addons/oracular.",
 					forPreprocessor: false
 			),
 			new BooleanAnalysisOption(
 					id: "X_CONTEXT_DEPENDENCY_HEURISTIC",
 					name: "Xcontext-dependency-heuristic",
+					group: GROUP_EXPERIMENTAL,
 					description: "Run context dependency heuristics logic under addons/oracular.",
 					forPreprocessor: false
 			),
 			new AnalysisOption<String>(
-					id: "X_EXTRA_LOGIC",
-					name: "Xextra-logic",
-					description: "Include file with extra rules.",
+					id: "EXTRA_LOGIC",
+					name: "extra-logic",
+					description: "Include files with extra rules.",
 					argName: "FILE",
 					argInputType: InputType.MISC,
-					forPreprocessor: true
+					value: [],
+					multipleValues: true
 			),
 			new BooleanAnalysisOption(
 					id: "X_CONTEXT_REMOVER",
 					name: "Xcontext-remover",
+					group: GROUP_EXPERIMENTAL,
 					description: "Run the context remover for reduced memory use (only available in context-insensitive analysis).",
 					forPreprocessor: true
 			),
@@ -974,19 +988,19 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "X_LOW_MEM",
 					name: "Xlow-mem",
-					group: GROUP_FACTS,
+					group: GROUP_EXPERIMENTAL,
 					description: "Use less memory. Does not support all options."
 			),
 			new BooleanAnalysisOption(
 					id: "X_ISOLATE_FACTGEN",
 					name: "Xisolate-fact-generation",
-					group: GROUP_FACTS,
+					group: GROUP_EXPERIMENTAL,
 					description: "Isolate invocations to the fact generator."
 			),
 			new BooleanAnalysisOption(
 					id: "X_SERIALIZE_FACTGEN_COMPILATION",
 					name: "Xserialize-factgen-compilation",
-					group: GROUP_FACTS,
+					group: GROUP_EXPERIMENTAL,
 					description: "Do not run fact generation and compilation in parallel.",
 					cli: false
 			),
@@ -1001,7 +1015,8 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			),
 			new IntegerAnalysisOption(
 					id: "X_SERVER_LOGIC_THRESHOLD",
-					name: "Xserver-logic-threshold",
+					name: "server-logic-threshold",
+					group: GROUP_SERVER,
 					argName: "THRESHOLD",
 					description: "Threshold when reporting points-to information in server logic (per points-to set). default: ${SERVER_DEFAULT_THRESHOLD}",
 					value: SERVER_DEFAULT_THRESHOLD,
@@ -1010,14 +1025,15 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new AnalysisOption<String>(
 					id: "X_R_OUT_DIR",
 					name: "XR-out-dir",
-					description: "When linking AAR inputs, place generated R code in R_OUT_DIR",
+					group: GROUP_EXPERIMENTAL,
+					description: "When linking .aar inputs, place generated R code in R_OUT_DIR",
 					argName: "R_OUT_DIR",
 					argInputType: InputType.MISC
 			),
 			new BooleanAnalysisOption(
 					id: "X_IGNORE_WRONG_STATICNESS",
 					name: "Xignore-wrong-staticness",
-					group: GROUP_FACTS,
+					group: GROUP_EXPERIMENTAL,
 					description: "Ignore 'wrong static-ness' errors in Soot.",
 					forCacheID: true
 			),
@@ -1048,9 +1064,11 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new IntegerAnalysisOption(
 					id: "X_MONITORING_INTERVAL",
 					name: "Xmonitoring-interval",
+					group: GROUP_EXPERIMENTAL,
 					argName: "INTERVAL",
 					description: "Monitoring interval for sampling memory and cpu usage. default: 5sec",
-					value: 5
+					value: 5,
+					cli: false
 			),
 			new AnalysisOption<String>(
 					id: "X_FACTS_SUBSET",
@@ -1062,8 +1080,8 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forCacheID: true
 			),
 			new BooleanAnalysisOption(
-					id: "X_UNIQUE_FACTS",
-					name: "Xunique-facts",
+					id: "UNIQUE_FACTS",
+					name: "unique-facts",
 					group: GROUP_FACTS,
 					description: "Eliminate redundancy from .facts files.",
 					forCacheID: true

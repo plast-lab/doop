@@ -3,6 +3,7 @@ package org.clyze.doop.core
 import groovy.cli.commons.OptionAccessor
 import groovy.transform.CompileStatic
 import groovy.util.logging.Log4j
+import java.util.function.Predicate
 import org.apache.log4j.Logger
 import org.clyze.analysis.AnalysisOption
 import org.clyze.analysis.BooleanAnalysisOption
@@ -63,7 +64,7 @@ class Doop {
 		doopOut = outPath ?: "$doopHome/out"
 		doopCache = cachePath ?: "$doopHome/cache"
 		doopLog = logPath ?: "$doopHome/build/logs"
-		doopTmp = tmpPath ?: "$doopHome/tmp"
+		doopTmp = tmpPath ?: "$doopHome/build/tmp"
 		souffleAnalysesCache = "$doopCache/souffle-analyses"
 		logicPath = "$doopHome/logic"
 		souffleLogicPath = "$doopHome/souffle-logic"
@@ -124,7 +125,7 @@ class Doop {
 	 * @param filter - optional filter to apply before setting the option.
 	 * @return the default analysis options overridden by the values contained in the CLI option accessor.
 	 */
-	static Map<String, AnalysisOption<?>> overrideDefaultOptionsWithCLI(OptionAccessor cli, Closure<Boolean> filter) {
+	static Map<String, AnalysisOption<?>> overrideDefaultOptionsWithCLI(OptionAccessor cli, Predicate<AnalysisOption> filter) {
 		def options = createDefaultAnalysisOptions()
 		overrideOptionsWithCLI(options, cli, filter)
 		return options
@@ -189,7 +190,8 @@ class Doop {
 	 * @param filter - the filter to apply.
 	 * @return the original map of options with its values overridden by the ones contained in the CLI options.
 	 */
-	static void overrideOptionsWithCLI(Map<String, AnalysisOption<?>> options, OptionAccessor cli, Closure<Boolean> filter) {
+	static void overrideOptionsWithCLI(Map<String, AnalysisOption<?>> options, OptionAccessor cli,
+									   Predicate<AnalysisOption> filter) {
 		options.values().each { AnalysisOption option ->
 			def name = option.name
 			if (name) {
@@ -198,7 +200,7 @@ class Doop {
 				// as a List, you need to append an s to its short name
 				def optionValue = option.multipleValues ? cli[("${name}s")] : cli[(name)]
 				if (optionValue) { //Only true-ish values are of interest (false or null values are ignored)
-					if (filter ? filter.call(option) : true) {
+					if (filter ? filter.test(option) : true) {
 						// If the cl option has an argument, its value defines the value of the
 						// respective analysis option
 						if (option.argName) {

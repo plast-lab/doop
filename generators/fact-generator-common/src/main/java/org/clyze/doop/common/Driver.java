@@ -1,6 +1,6 @@
 package org.clyze.doop.common;
 
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
@@ -23,10 +23,14 @@ public abstract class Driver<C> {
         this._totalClasses = totalClasses;
         this._cores = cores == null? Runtime.getRuntime().availableProcessors() : cores;
         this._classCounter = 0;
-        this._tmpClassGroup = new HashSet<>();
+        initTmpClassGroup();
         this._ignoreFactGenErrors = ignoreFactGenErrors;
 
         System.out.println("Fact generation cores: " + _cores);
+    }
+
+    protected void initTmpClassGroup() {
+        this._tmpClassGroup = Collections.newSetFromMap(new ConcurrentHashMap<>());
     }
 
     public synchronized void markError() {
@@ -39,7 +43,7 @@ public abstract class Driver<C> {
 
     private void initExecutor() {
         _classCounter = 0;
-        _tmpClassGroup = new HashSet<>();
+        initTmpClassGroup();
         errors = 0;
 
         if (_cores > 2) {
@@ -92,7 +96,7 @@ public abstract class Driver<C> {
 
         if ((_classCounter % _classSplit == 0) || (_classCounter == _totalClasses)) {
             _executor.execute(getFactGenRunnable());
-            _tmpClassGroup = new HashSet<>();
+            initTmpClassGroup();
         }
     }
 
@@ -102,7 +106,7 @@ public abstract class Driver<C> {
 
         if ((_classCounter % _classSplit == 0) || (_classCounter == _totalClasses)) {
             _executor.execute(getIRGenRunnable());
-            _tmpClassGroup = new HashSet<>();
+            initTmpClassGroup();
         }
     }
 

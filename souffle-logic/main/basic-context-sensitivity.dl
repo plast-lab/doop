@@ -7,7 +7,7 @@ configuration.StaticContextRequest(?callerCtx, ?invocation) :-
 // The main analysis is merely looking up the previously created
 // context objects.
 
-#ifdef ZIPPER
+#ifdef X_ZIPPER
 
 .decl ZipperPrecisionCriticalMethod(?method:Method)
 .input ZipperPrecisionCriticalMethod(IO="file",filename="ZipperPrecisionCriticalMethod.facts",delimiter="\t")
@@ -61,5 +61,5 @@ CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod) :-
   configuration.StaticContextResponse(?callerCtx, ?invocation, ?calleeCtx),
   MethodInvocation_Method(?invocation, ?tomethod).
 
-#endif // ZIPPER
+#endif // X_ZIPPER
 }

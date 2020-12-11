@@ -1,4 +1,4 @@
-package org.clyze.doop
+package org.clyze.doop.command
 
 import groovy.util.logging.Log4j
 import java.nio.file.Files
@@ -16,7 +16,7 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor<DoopAnal
 	void process(DoopAnalysis analysis) {
 		if (!analysis.options.get('X_STOP_AT_FACTS').value && !analysis.options.get('X_STOP_AT_BASIC').value)
 			printStats(analysis)
-		if (analysis.options.get('SANITY').value && !analysis.options.get('X_DRY_RUN').value)
+		if (analysis.options.get('SANITY').value && !analysis.options.get('DRY_RUN').value)
 			printSanityResults(analysis)
 		linkResult(analysis)
 	}
@@ -24,7 +24,7 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor<DoopAnal
 	void printStats(DoopAnalysis analysis) {
 		def lines = []
 
-		if (analysis.options.LB3.value) {
+		if (analysis.options.X_LB3.value) {
 			analysis.processRelation("Stats:Runtime") { String line ->
 				if (!filterOutLBWarn(line)) lines << line
 			}
@@ -38,10 +38,10 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor<DoopAnal
 			printf("%-80s %,d\n", it[0], it[1] as long)
 		}
 
-		if (!analysis.options.get('X_STATS_NONE').value && !analysis.options.get('X_DRY_RUN').value) {
+		if (!analysis.options.get('X_STATS_NONE').value && !analysis.options.get('DRY_RUN').value) {
 			lines = []
 
-			if (analysis.options.LB3.value) {
+			if (analysis.options.X_LB3.value) {
 				analysis.processRelation("Stats:Metrics") { String line ->
 					if (!filterOutLBWarn(line)) lines.add(line)
 				}

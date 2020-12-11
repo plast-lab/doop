@@ -2,6 +2,7 @@
 
 # Test script for running the dex front end with intermediate SSA
 # transformation.
+# Should be run from the top level; i.e. ./bin/run-dex-with-ssa.sh ...
 
 if [ "$1" == "" ] || [ "$2" == "" ]; then
     echo "Usage: run-dex-with-ssa.sh <apk> <final-facts-out>"
@@ -14,7 +15,7 @@ fi
 ID=${APP_NAME}-dex-facts
 FACTS_IN=${ID}
 FACTS_OUT=$(realpath $2)
-SSA_TRANSFORMER=$(realpath souffle-scripts/ssa-transform.dl)
+SSA_TRANSFORMER=$(realpath souffle-logic/addons/ssa-transform/analysis.dl)
 
 echo "APP_NAME=${APP_NAME}"
 echo "FACTS_IN=${FACTS_IN}"

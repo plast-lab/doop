@@ -20,8 +20,8 @@ class TestInvokedynamic extends DoopSpec {
 							  ["--light-reflection-glue", "--distinguish-all-string-constants"]
 		List options = ["--platform", "java_8",
 						"--generate-jimple",
-						// "--Xserver-logic",
-						"--Xextra-logic", "${Doop.souffleAddonsPath}/testing/TestInvokedynamic.dl",
+						// "--server-logic",
+						"--extra-logic", "${Doop.souffleAddonsPath}/testing/TestInvokedynamic.dl",
 						"--thorough-fact-gen", "--sanity", "--no-standard-exports",
 						"--reflection-method-handles"] + reflectionOpts
 		String analysisId = "test-115-invokedynamic" + (fullReflection ? "" : "-light-refl")

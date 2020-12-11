@@ -6,9 +6,11 @@ import java.util.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 import org.clyze.doop.common.*;
-import org.clyze.doop.util.Resources;
+import org.clyze.doop.util.Resource;
 import org.clyze.utils.AARUtils;
 import org.clyze.utils.JHelper;
+
+import static org.clyze.doop.util.Resource.APKTOOL_JAR;
 
 public abstract class AndroidSupport {
 
@@ -24,7 +26,6 @@ public abstract class AndroidSupport {
     private final Collection<String> appCallbackMethods = new HashSet<>();
     private final Set<LayoutControl> appUserControls = new HashSet<>();
     private final Map<String, AppResources> computedResources = new HashMap<>();
-    private final Collection<String> decodeDirs = new HashSet<>();
 
     private final Logger logger;
 
@@ -55,7 +56,7 @@ public abstract class AndroidSupport {
                 logger.info("Processing application resources in " + i);
                 if (isApk && parameters.getDecodeApk()) {
                     logger.debug("Decoding...");
-                    decodeDirs.add(decodeDir);
+                    java.xmlRoots.add(decodeDir);
                     decodeApk(new File(i), decodeDir);
                 }
                 if (parameters._legacyAndroidProcessing) {
@@ -173,21 +174,6 @@ public abstract class AndroidSupport {
         }
     }
 
-    /**
-     * Translate XML files to facts.
-     *
-     * @param db      the database object to use for output
-     */
-    public void generateFactsForXML(Database db) {
-        // The output directory (the parent of the decode directories)
-        String outDir = db.getDirectory();
-        for (String decodeDir : decodeDirs) {
-            logger.info("Processing XML files in directory: " + decodeDir);
-            XMLFactGenerator.processDir(new File(decodeDir), db, outDir, parameters._debug);
-        }
-
-    }
-
     // Parses Android manifests. Supports binary and plain-text XML
     // files (found in .apk and .aar files respectively).
     protected AppResources processAppResources(String archiveLocation) throws Exception {
@@ -240,8 +226,7 @@ public abstract class AndroidSupport {
                 // Only show output in debug mode.
                 JHelper.runWithOutput(cmd, parameters._debug ? TAG : null);
             } else {
-                String doopHome = Resources.findDoopHome(logger);
-                Resources.invokeResourceJar(doopHome, logger, "APKTOOL", null, "apktool", cmdArgs);
+                Resource.invokeResourceJar(AndroidSupport.class, logger, "APKTOOL", null, APKTOOL_JAR, cmdArgs);
             }
         } catch (IOException ex) {
             logger.error("Error: could not run apktool.");

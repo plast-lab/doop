@@ -1,7 +1,4 @@
-#include "../../addons/cfg-analysis/declarations.dl"
-
 /* Methods for instruction-by-instruction analysis */
-
 
 /**
  * AllCtxDependentStoreHeapFld(?fld, ?value)
@@ -60,7 +57,7 @@
 .output DependentInstruction
 
 /**
- * Instructions that can be considered secure 
+ * Instructions that can be considered secure
  * Therefore, these will never be considered dependent
  *
  * ?insn        The secure instruction

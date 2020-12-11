@@ -17,19 +17,18 @@ import org.apache.log4j.Logger;
 import org.clyze.scanner.BinaryAnalysis;
 import org.clyze.scanner.NativeDatabaseConsumer;
 import org.clyze.scanner.NativeScanner;
-import org.clyze.utils.OS;
 import org.clyze.utils.TypeUtils;
 import org.jf.dexlib2.Opcodes;
 import org.jf.dexlib2.dexbacked.DexBackedDexFile;
 import org.jf.dexlib2.iface.MultiDexContainer;
 import org.jf.dexlib2.dexbacked.DexBackedClassDef;
 import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.tree.ClassNode;
+//import org.objectweb.asm.ClassVisitor;
+//import org.objectweb.asm.tree.ClassNode;
 
 import static org.clyze.scanner.BinaryAnalysis.AnalysisType.*;
 import static org.jf.dexlib2.DexFileFactory.loadDexContainer;
-import static org.objectweb.asm.Opcodes.*;
+//import static org.objectweb.asm.Opcodes.*;
 
 /**
  * This class scans input artifacts (.jar, .aar, or .apk files) and
@@ -59,29 +58,6 @@ public class ArtifactScanner {
         ArtifactEntry ae = new ArtifactEntry(className, subArtifact, size);
         artifactToClassMap.computeIfAbsent(artifact, x -> new CopyOnWriteArraySet<>()).add(ae);
     }
-
-    // // Soot-based method.
-    // public void processAPKClasses(String inputApk, Consumer<String> classProc) {
-    //     File apk = new File(inputApk);
-    //     String artifact = apk.getName();
-    //     try {
-    //         List<DexContainer> listContainers = DexFileProvider.v().getDexFromSource(apk);
-    //         int dexClassesCount = 0;
-    //         for (DexContainer dexContainer : listContainers) {
-    //             Set<? extends DexBackedClassDef> dexClasses = dexContainer.getBase().getClasses();
-    //             dexClassesCount += dexClasses.size();
-    //             for (DexBackedClassDef dexBackedClassDef : dexClasses) {
-    //                 String className = TypeUtils.raiseTypeId(dexBackedClassDef.getType());
-    //                 classProc.accept(className);
-    //                 registerArtifactClass(artifact, className, dexContainer.getDexName(), dexBackedClassDef.getSize());
-    //             }
-    //         }
-    //         System.out.println("Classes found in apk: " + dexClassesCount);
-    //     } catch (IOException ex) {
-    //         System.err.println("Could not read dex classes in " + apk);
-    //         ex.printStackTrace();
-    //     }
-    // }
 
     /**
      * Register .dex entries and perform actions over .dex entries (if
@@ -198,7 +174,7 @@ public class ArtifactScanner {
 
     public static void scanNativeCode(Database db, Parameters parameters,
 				      Set<String> methodStrings) {
-        DatabaseConnector dbc = new DatabaseConnector(db);
+        NativeDatabaseConsumer dbc = new DatabaseConnector(db);
         BinaryAnalysis.AnalysisType analysisType;
         if (parameters._nativeRadare)
             analysisType = RADARE;

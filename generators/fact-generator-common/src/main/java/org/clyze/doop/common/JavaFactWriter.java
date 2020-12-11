@@ -3,15 +3,14 @@ package org.clyze.doop.common;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
+import org.apache.log4j.Logger;
 import org.clyze.doop.common.scanner.antlr.GenericTypeLexer;
 import org.clyze.doop.common.scanner.antlr.GenericTypeParser;
 import org.clyze.doop.common.scanner.antlr.PrintVisitor;
 
-import java.io.InputStream;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
+import java.io.File;
+import java.util.*;
+
 import static org.clyze.doop.common.PredicateFile.*;
 
 /**
@@ -26,6 +25,7 @@ public abstract class JavaFactWriter {
     private final boolean _writeArtifactsMap;
     private final boolean _regMethods;
     private final Set<String> methodStrings;
+    private final Logger logger = Logger.getLogger(getClass());
 
     protected JavaFactWriter(Database db, Parameters params,
                              boolean writeArtifactsMap) {
@@ -59,6 +59,7 @@ public abstract class JavaFactWriter {
         return result;
     }
 
+    @SuppressWarnings("unused")
     protected String hashMethodNameIfLong(String methodRaw) {
         if (methodRaw.length() <= 1024)
             return methodRaw;
@@ -125,7 +126,13 @@ public abstract class JavaFactWriter {
         _db.add(SENSITIVE_LAYOUT_CONTROL, id.toString(), viewClassName, parentID.toString());
     }
 
-    public void writePreliminaryFacts(BasicJavaSupport java) {
+    /**
+     * Writes preliminary facts (properties, XML data), which do not need
+     * parsing code inputs.
+     * @param java     the Java support object
+     * @param debug    debug flag
+     */
+    public void writePreliminaryFacts(BasicJavaSupport java, boolean debug) {
         PropertyProvider propertyProvider = java.getPropertyProvider();
 
         // Read all stored properties files
@@ -137,6 +144,25 @@ public abstract class JavaFactWriter {
                 String propertyValue = properties.getProperty(propertyName);
                 writeProperty(path, propertyName, propertyValue);
             }
+        }
+
+        generateFactsForXML(_db, java.xmlRoots, debug);
+    }
+
+    /**
+     * Translate XML files to facts.
+     *
+     * @param db        the database object to use for output
+     * @param xmlRoots  the root directories containing XML files
+     * @param debug     debug flag
+     */
+    private void generateFactsForXML(Database db, Iterable<String> xmlRoots,
+                                     boolean debug) {
+        // The output directory (the parent of the decode directories)
+        String outDir = db.getDirectory();
+        for (String xmlRoot : xmlRoots) {
+            logger.info("Processing XML files in directory: " + xmlRoot);
+            XMLFactGenerator.processDir(new File(xmlRoot), db, outDir, debug);
         }
     }
 

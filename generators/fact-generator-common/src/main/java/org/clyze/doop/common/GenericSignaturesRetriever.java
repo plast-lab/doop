@@ -54,11 +54,7 @@ public class GenericSignaturesRetriever extends ClassVisitor {
 		return super.visitMethod(access, name, desc, signature, exceptions);
 	}
 
-	@Override
-	public void visitEnd() {
-		super.visitEnd();
-	}
-/*
+	/*
 	class MethodEntryAdapter extends AdviceAdapter {
 		MethodEntryAdapter(int api, MethodVisitor mv, int access, String name, String desc) {
 			super(api, mv, access, name, desc);

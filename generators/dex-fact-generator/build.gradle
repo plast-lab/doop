@@ -1,6 +1,8 @@
-// plugins {
+ plugins {
+     id 'application'
+     id 'java-library'
 //     id 'org.checkerframework' version '0.3.31'
-// }
+ }
 // apply plugin: 'org.checkerframework'
 
 repositories {
@@ -16,17 +18,20 @@ repositories {
 // }
 
 dependencies {
-    compile project(path: ':generators:fact-generator-common', configuration: 'shadow')
-    compile 'org.smali:dexlib2:2.4.0'
+    api project(path: ':generators:fact-generator-common', configuration: 'shadow')
+    implementation 'org.smali:dexlib2:2.4.0'
     implementation 'org.checkerframework:checker-qual:2.11.0'   // needed when the Checker plugin is disabled
 }
+
+mainClassName = 'org.clyze.doop.dex.DexInvoker'
+version = null
 
 //fatJar already exists
 fatJar {
     manifest {
-        attributes 'Main-Class': 'org.clyze.doop.dex.DexInvoker'
+        attributes 'Main-Class': mainClassName
     }
-    from { configurations.compile.collect { it.directory ? it : zipTree(it) } }
+    from { configurations.compileClasspath.collect { it.directory ? it : zipTree(it) } }
     with jar
 }
 

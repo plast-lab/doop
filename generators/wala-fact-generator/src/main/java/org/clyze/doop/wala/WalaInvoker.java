@@ -12,6 +12,7 @@ import com.ibm.wala.ipa.cha.ClassHierarchyFactory;
 import com.ibm.wala.shrikeCT.InvalidClassFileException;
 import com.ibm.wala.types.TypeReference;
 import com.ibm.wala.types.annotations.Annotation;
+import org.apache.log4j.Logger;
 import org.clyze.doop.common.ArtifactScanner;
 import org.clyze.doop.common.BasicJavaSupport;
 import org.clyze.doop.common.Database;
@@ -24,6 +25,8 @@ import java.util.*;
 
 class WalaInvoker {
 
+    Logger logger;
+
     private static boolean isApplicationClass(Parameters walaParameters, IClass klass) {
         // Change package delimiter from "/" to "."
         return walaParameters.isApplicationClass(WalaUtils.fixTypeString(klass.getName().toString()));
@@ -31,11 +34,12 @@ class WalaInvoker {
 
     public void main(String[] args) throws IOException, DoopErrorCodeException {
         if (args.length == 0) {
-            System.err.println("usage: [options] file...");
+            System.err.println("Usage: wala-fact-generator [options] file...");
             throw new DoopErrorCodeException(0);
         }
         Parameters walaParameters = new Parameters();
         walaParameters.initFromArgs(args);
+        logger = walaParameters.initLogging(WalaInvoker.class);
         run(walaParameters);
     }
 
@@ -64,7 +68,7 @@ class WalaInvoker {
         if(walaParameters._android)
             scope = WalaScopeReader.setUpAndroidAnalysisScope(walaParameters.getInputs(), "", walaParameters.getPlatformLibs(), walaParameters.getDependencies());
         else
-            scope = WalaScopeReader.setupJavaAnalysisScope(walaParameters.getInputs(),"", walaParameters.getPlatformLibs(), walaParameters.getDependencies());
+            scope = WalaScopeReader.setupJavaAnalysisScope(logger, walaParameters.getInputs(),"", walaParameters.getPlatformLibs(), walaParameters.getDependencies());
 
         ClassHierarchy cha = null;
         try {
@@ -95,7 +99,7 @@ class WalaInvoker {
                 cache = new AnalysisCacheImpl();
 
             java.preprocessInputs(db);
-            walaFactWriter.writePreliminaryFacts(java);
+            walaFactWriter.writePreliminaryFacts(java, walaParameters._debug);
             db.flush();
 
             IClass klass;
@@ -124,14 +128,14 @@ class WalaInvoker {
             driver.generateInParallel(classesSet);
 
             if (walaFactWriter.getNumberOfPhantomTypes() > 0)
-                System.out.println("WARNING: Input contains phantom types. \nNumber of phantom types: " + walaFactWriter.getNumberOfPhantomTypes());
+                logger.warn("WARNING: Input contains phantom types. \nNumber of phantom types: " + walaFactWriter.getNumberOfPhantomTypes());
             if (walaFactWriter.getNumberOfPhantomMethods() > 0)
-                System.out.println("WARNING: Input contains phantom methods. \nNumber of phantom methods: " + walaFactWriter.getNumberOfPhantomMethods());
+                logger.warn("WARNING: Input contains phantom methods. \nNumber of phantom methods: " + walaFactWriter.getNumberOfPhantomMethods());
             if (walaFactWriter.getNumberOfPhantomBasedMethods() > 0)
-                System.out.println("WARNING: Input contains phantom based methods. \nNumber of phantom based methods: " + walaFactWriter.getNumberOfPhantomBasedMethods());
+                logger.warn("WARNING: Input contains phantom based methods. \nNumber of phantom based methods: " + walaFactWriter.getNumberOfPhantomBasedMethods());
 
             if (walaParameters._scanNativeCode)
-		ArtifactScanner.scanNativeCode(db, walaParameters, null);
+		        ArtifactScanner.scanNativeCode(db, walaParameters, null);
 
             walaFactWriter.writeLastFacts(java);
 

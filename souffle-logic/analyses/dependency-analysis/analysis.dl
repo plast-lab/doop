@@ -1,5 +1,5 @@
-#include "../../addons/cfg-analysis/analysis.dl"
 #include "../2-object-sensitive+heap/analysis.dl"
+#include "declarations.dl"
 
 /* Made for optimizing TaintedLoad */
 AllCtxDependentStoreHeapFld(?fld, ?hctx, ?value) :-
@@ -203,3 +203,7 @@ IntraProceduralDependency(?prev, ?next) :-
 IntraProceduralDependency(?prev, ?next) :-
     IntraProceduralDependency(?prev, ?inter),
     IntraProceduralDependencyBase(?next, ?inter).
+
+
+// Dependency source instructions
+DependencySourceInstruction("<java.lang.Object: boolean equals(java.lang.Object)>/return/instruction9").

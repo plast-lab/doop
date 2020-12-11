@@ -19,8 +19,8 @@ import org.xml.sax.SAXException;
  */
 public class AppResourcesXML implements AppResources {
     private static final String MANIFEST = "AndroidManifest.xml";
-    private File archive;
-    private boolean isApk;
+    private final File archive;
+    private final boolean isApk;
     private String applicationName, packageName;
     private final Set<String> activities = new HashSet<>();
     private final Set<String> providers  = new HashSet<>();

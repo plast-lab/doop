@@ -13,9 +13,9 @@ buildscript {
 }
 
 plugins {
-    id 'antlr'
     id 'application'
     id 'groovy'
+    id 'java-library'
     id 'maven-publish'
     //see https://github.com/researchgate/gradle-release
     id 'net.researchgate.release' version '2.6.0'
@@ -114,34 +114,33 @@ compileGroovy {
 
 // Set dependency version so that they are available to subprojects.
 gradle.rootProject.ext.antlrVersion='4.7.2'
+gradle.rootProject.ext.metadataVersion='1.0.2'
 gradle.rootProject.ext.groovyVersion="3.0.6"
-gradle.rootProject.ext.clueCommonVersion='3.23.6'
+gradle.rootProject.ext.clueCommonVersion='3.23.7'
+gradle.rootProject.ext.log4jVersion='1.2.17'
 gradle.rootProject.ext.spockVersion='2.0-M3-groovy-3.0'
 // Set other variables for subprojects.
-gradle.rootProject.ext.resourcesDir='resources'
+gradle.rootProject.ext.resourcesDir='src/main/resources'
+gradle.rootProject.ext.testResourcesDir='src/test/resources'
 
 dependencies {
     // apktool "ext:apktool:2.4.0"                              // old artifactory dependency
     apktool 'Apktool-fork.brut.apktool:apktool-cli:2.4.2'       // needed for decoding APK inputs
-    compile project(path: ':generators:fact-generator-common', configuration: 'shadow')
-    compile "org.codehaus.groovy:groovy:${groovyVersion}",      // Groovy
+    api project(path: ':generators:fact-generator-common', configuration: 'shadow')
+    implementation "org.codehaus.groovy:groovy:${groovyVersion}",      // Groovy
             "org.codehaus.groovy:groovy-ant:${groovyVersion}",
             "org.codehaus.groovy:groovy-cli-commons:${groovyVersion}", // Command line processor (Groovy wrapper)
             "commons-logging:commons-logging:1.1",              // Logging wrapper
-            "log4j:log4j:1.2.17",                               // Logging implementation
+            "log4j:log4j:${log4jVersion}",                      // Logging implementation
             "commons-cli:commons-cli:1.2",                      // Command line processor
             "commons-io:commons-io:2.4",                        // File Utils
-            "org.clyze:clue-common:${clueCommonVersion}",
-            "org.clyze:HeapDL:$heapDLVersion"
-    compile "com.google.guava:guava:27.1-jre"                   // for Scaler
+            "org.clyze:clue-common:${clueCommonVersion}"
+    api "org.clyze:HeapDL:$heapDLVersion"
+    implementation "com.google.guava:guava:27.1-jre"                   // for Scaler
 
-    runtime "org.clyze:jphantom:1.2"                            // JPhantom is a runtime dependency
+    runtimeOnly "org.clyze:jphantom:1.2"                            // JPhantom is a runtime dependency
 
-    // Jimple parser
-    antlr   "org.antlr:antlr4:${antlrVersion}"
-    compile "org.antlr:antlr4-runtime:${antlrVersion}"
-
-    testCompile "org.spockframework:spock-core:${spockVersion}"
+    testImplementation "org.spockframework:spock-core:${spockVersion}"
 }
 
 // If fact generators are linked, mark them as dependencies and set up
@@ -210,13 +209,13 @@ task writeGitCommitHash() {
 	hash = stdout.toString().trim()
     } else
 	hash = ''
-    new File('src/main/resources/git-hash.txt').withWriter { w -> w.writeLine(hash) }
+    new File(projectDir, "${resourcesDir}/git-hash.txt").withWriter { w -> w.writeLine(hash) }
 }
 [jar, run].each { it.dependsOn writeGitCommitHash }
 
 jar {
     manifest {
-        attributes 'Implementation-Version' : version
+        attributes 'Implementation-Version' : archiveVersion.get()
     }
 }
 
@@ -236,15 +235,6 @@ task printExtClasspath {
     doLast {
         println(doopCP())
     }
-}
-
-task jimple2json(type: JavaExec) {
-    description 'Generate JSON files from Jimple'
-    group = 'Doop'
-    main = 'org.clyze.jimple.Main'
-    classpath = sourceSets.main.runtimeClasspath
-    if (project.hasProperty("args"))
-        args project.property("args").split()
 }
 
 task scaler(type: JavaExec) {
@@ -289,7 +279,6 @@ task souffleScript(type: JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
     if (project.hasProperty("args"))
         args project.property("args").split()
-
 }
 
 task createEmptyProperties {
@@ -332,6 +321,15 @@ test {
     }
 }
 
+// Copy resources to src/test/resources or they will not be found by tests.
+task copyResourcesForTest {
+    doLast {
+        copy {
+            from file(resourcesDir)
+            into testResourcesDir
+        }
+    }
+}
 task buildTests {
     description 'Build test subprojects.'
 }
@@ -341,32 +339,32 @@ test.dependsOn buildTests
 task testAll(type: Test) { }
 testAll.dependsOn test
 
-def frontends = frontendGeneratorProjects.collect { it.name }
-
-// Connect task dependencies against fact generator subprojects.
-frontends.each { fg ->
-    [ run, test, distTar, distZip, installDist ].each {
-        it.dependsOn(":generators:${fg}:installJar")
-        it.dependsOn resolveApktool
-    }
+// Task that configures installing/cleaning resources.
+task resourceInstaller { }
+resourceInstaller.dependsOn resolveApktool
+frontendGeneratorProjects.collect { it.name }.each { fg ->
+    resourceInstaller.dependsOn(":generators:${fg}:installJar")
     clean.dependsOn(":generators:${fg}:uninstallJar")
     testAll.dependsOn(":generators:${fg}:test")
 }
+processResources.dependsOn resourceInstaller
 
-// Uninstall resources on 'clean'.
-task uninstallResources {
+// Ensure that all resources have been built before trying to copy them.
+copyResourcesForTest.dependsOn resourceInstaller
+test.dependsOn copyResourcesForTest
+
+task cleanTestResources {
     doLast {
-        def resDir = "${projectDir}/${resourcesDir}"
-        file(resDir).list().each { f ->
-            (frontends + ["apktool"]).each { res ->
-                if (f.startsWith(res) && f.toLowerCase().endsWith("jar")) {
-                    delete "${resDir}/${f}"
-                }
+        file(resourcesDir).eachFileRecurse { File f ->
+            if (f.file) {
+                File testResource = new File(file(testResourcesDir), f.name)
+                if (testResource.exists())
+                    org.apache.commons.io.FileUtils.deleteQuietly(testResource)
             }
         }
     }
 }
-clean.dependsOn uninstallResources
+clean.dependsOn cleanTestResources
 
 task fullClean {
     description 'Clean everything, including caches and analysis results.'
@@ -404,12 +402,16 @@ artifacts {
     archives javadocJar
 }
 
+// Make publishing tasks trigger shadow JAR generation.
+Closure shadowDep = { Task it -> it.dependsOn(':generators:fact-generator-common:shadowJar') }
+tasks.withType(PublishToMavenRepository) { shadowDep(it) }
+tasks.withType(PublishToMavenLocal) { shadowDep(it) }
+
 if (project.hasProperty('artifactory_user')) {
 
     // Generate a jar with all the logic files
     task logicFilesJar(type: Jar) {
         into('souffle-logic') { from "souffle-logic" }
-        into('souffle-scripts') { from "souffle-scripts" }
     }
 
     publishing {
@@ -424,19 +426,15 @@ if (project.hasProperty('artifactory_user')) {
                 }
             }
 
-            allGeneratorProjects.each { p ->
-		create(p.name, MavenPublication) {
-		    // The artifact generator can be a file or a Gradle task
-		    def artifactGenerator
-		    if (p.name.indexOf('fact-generator-common') != -1)
-			artifactGenerator = project(':generators:fact-generator-common').file("build/libs/fact-generator-common-${version}-all.jar")
-		    else
-			artifactGenerator = p.hasProperty('fatJar') ? p.fatJar : p.jar
-		    artifact(artifactGenerator) {
-                        groupId 'org.clyze'
-                        artifactId p.name
-		    }
-		}
+            // Publish fact-generator-common.
+            def p = project(':generators:fact-generator-common')
+            create(p.name, MavenPublication) {
+                // The artifact generator can be a file or a Gradle task
+                def artifactGenerator = project(':generators:fact-generator-common').file("build/libs/fact-generator-common-${version}-all.jar")
+                artifact(artifactGenerator) {
+                    groupId 'org.clyze'
+                    artifactId p.name
+                }
             }
         }
 

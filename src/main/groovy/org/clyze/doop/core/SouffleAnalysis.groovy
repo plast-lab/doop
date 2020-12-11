@@ -31,11 +31,10 @@ class SouffleAnalysis extends DoopAnalysis {
 		initDatabase(analysis)
 		basicAnalysis(analysis)
 		if (!options.X_STOP_AT_BASIC.value) {
-			mainAnalysis(analysis)
-			produceStats(analysis)
+			runAnalysisAndProduceStats(analysis)
 		}
 
-		def script = newScriptForAnalysis(executor)
+		SouffleScript script = newScriptForAnalysis(executor)
 
 		Future<File> compilationFuture = null
 		def executorService = Executors.newSingleThreadExecutor()
@@ -89,7 +88,7 @@ class SouffleAnalysis extends DoopAnalysis {
 
 			if (options.X_SERVER_CHA.value) {
 				log.info "[CHA...]"
-				def methodLookupFile = new File("${Doop.doopHome}/souffle-scripts/method-lookup-script.dl")
+				def methodLookupFile = new File("${Doop.souffleAddonsPath}/server-logic/method-lookup-ext.dl")
 				def generatedFile0 = script.compile(methodLookupFile, outDir,
 						profiling,
 						options.SOUFFLE_DEBUG.value as boolean,
@@ -112,7 +111,7 @@ class SouffleAnalysis extends DoopAnalysis {
 				runtimeMetricsFile.append("analysis compilation time (sec)\t${script.compilationTime}\n")
 			}
 
-			if (!options.X_DRY_RUN.value) {
+			if (!options.DRY_RUN.value) {
 				File analysisBinary = analysisBinaryPath ? new File(analysisBinaryPath) : generatedFile
 				script.run(analysisBinary, factsDir, outDir, options.SOUFFLE_JOBS.value as int,
 						(options.X_MONITORING_INTERVAL.value as long) * 1000, monitorClosure,
@@ -144,6 +143,11 @@ class SouffleAnalysis extends DoopAnalysis {
 			cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/basic/partitioning.dl")
 		}
 		cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/basic/basic.dl")
+	}
+
+	void runAnalysisAndProduceStats(File analysis) {
+		mainAnalysis(analysis)
+		produceStats(analysis)
 	}
 
 	void mainAnalysis(File analysis) {
@@ -186,14 +190,23 @@ class SouffleAnalysis extends DoopAnalysis {
 			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/opt-directives/directives.dl")
 		}
 
-		if (options.X_EXTRA_LOGIC.value) {
-			File extraLogic = new File(options.X_EXTRA_LOGIC.value as String)
-			if (extraLogic.exists()) {
+		if (options.X_ORACULAR_HEURISTICS.value) {
+			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/oracular/oracular-heuristics.dl")
+		}
+
+		if (options.X_CONTEXT_DEPENDENCY_HEURISTIC.value) {
+			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/oracular/2-object-ctx-dependency-heuristic.dl")
+		}
+
+		if (options.EXTRA_LOGIC.value) {
+			Collection<String> extras = options.EXTRA_LOGIC.value as List<String>
+			for (String extraFile : extras) {
+				File extraLogic = new File(extraFile)
+				if (!extraLogic.exists())
+					throw new RuntimeException("Extra logic file does not exist: ${extraLogic}")
 				String extraLogicPath = extraLogic.canonicalPath
 				log.info "Adding extra logic file ${extraLogicPath}"
 				cpp.includeAtEnd("${analysis}", extraLogicPath)
-			} else {
-				throw new RuntimeException("Extra logic file does not exist: ${extraLogic}")
 			}
 		}
 	}
@@ -204,22 +217,8 @@ class SouffleAnalysis extends DoopAnalysis {
 			cpp.includeAtEnd("$analysis", "${statsPath}/metrics.dl")
 		}
 
-		if (options.X_ORACULAR_HEURISTICS.value) {
-			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/oracular/oracular-heuristics.dl")
-		}
-
-		if (options.X_CONTEXT_DEPENDENCY_HEURISTIC.value) {
-			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/oracular/2-object-ctx-dependency-heuristic.dl")
-		}
-
 		if (options.X_STATS_NONE.value) return
 
-		if (options.X_STATS_AROUND.value) {
-			cpp.includeAtEnd("$analysis", options.X_STATS_AROUND.value as String)
-			return
-		}
-
-		// Special case of X_STATS_AROUND (detected automatically)
 		def specialStats = new File("${Doop.souffleAnalysesPath}/${name}/statistics.dl")
 		if (specialStats.exists()) {
 			cpp.includeAtEnd("$analysis", specialStats.toString())

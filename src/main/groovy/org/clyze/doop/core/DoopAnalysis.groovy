@@ -10,7 +10,7 @@ import org.clyze.analysis.AnalysisOption
 import org.clyze.doop.common.CHA
 import org.clyze.doop.common.DoopErrorCodeException
 import org.clyze.doop.util.ClassPathHelper
-import org.clyze.doop.util.Resources
+import org.clyze.doop.util.Resource
 import org.clyze.doop.utils.CPreprocessor
 import org.clyze.input.InputResolutionContext
 import org.clyze.utils.*
@@ -186,10 +186,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             File origTamFile = new File(options.TAMIFLEX.value.toString())
             gen0.writeTamiflexFacts(origTamFile)
         }
-
-        if (options.NATIVE_STRINGS_DISTANCE.value)
-            gen0.writeNativeStringsDistance(options.NATIVE_STRINGS_DISTANCE.value as String)
-
     }
 
     /**
@@ -232,7 +228,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                     runPython(tmpDirs)
                 } else if (options.WALA_FACT_GEN.value) {
                     runFrontEnd(tmpDirs, FrontEnd.WALA, null)
-                } else if (options.DEX_FACT_GEN.value) {
+                } else if (options.X_DEX_FACT_GEN.value) {
                     runFrontEnd(tmpDirs, FrontEnd.DEX, new CHA())
                     // // Step 1. Run Soot in platform-only mode for fact
                     // // generation, to fill in non .dex facts and the type
@@ -269,7 +265,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                 JHelper.cleanUp(tmpDirs)
             }
 
-            if (options.X_UNIQUE_FACTS.value) {
+            if (options.UNIQUE_FACTS.value) {
                 def timing = Helper.timing {
                     factsDir.eachFileMatch(~/.*.facts/) { file ->
                         def uniqueLines = file.readLines() as SortedSet<String>
@@ -287,7 +283,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                     runHeapDL(options.HEAPDLS.value.collect { File f -> f.canonicalPath })
                 }
 
-                if (options.X_DONT_CACHE_FACTS.value)
+                if (options.DONT_CACHE_FACTS.value)
                     log.info "Facts will not be cached."
                 else {
                     log.info "Caching facts in $cacheDir"
@@ -308,8 +304,8 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             Files.copy(origSpecialCSMethodsFile.toPath(), destSpecialCSMethodsFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
         }
 
-        if (options.ZIPPER.value) {
-            File origZipperFile = new File(options.ZIPPER.value.toString())
+        if (options.X_ZIPPER.value) {
+            File origZipperFile = new File(options.X_ZIPPER.value.toString())
             File destZipperFile = new File(factsDir, "ZipperPrecisionCriticalMethod.facts")
             Files.copy(origZipperFile.toPath(), destZipperFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
         }
@@ -333,7 +329,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
     }
 
     protected void runFrontEnd(Set<String> tmpDirs, FrontEnd frontEnd, CHA cha) {
-        if (options.SKIP_CODE_FACTGEN.value) {
+        if (options.X_SKIP_CODE_FACTGEN.value) {
             log.info "Skipping facts generation for code inputs."
             return
         }
@@ -381,7 +377,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             params += ["--extract-more-strings"]
         }
 
-        if (options.X_DRY_RUN.value) {
+        if (options.DRY_RUN.value) {
             params += ["--no-facts"]
         }
 
@@ -393,7 +389,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             params += ["--decode-apk"]
         }
 
-        if (options.DEX_FACT_GEN.value) {
+        if (options.X_DEX_FACT_GEN.value) {
             params += ["--dex"]
         }
 
@@ -404,21 +400,18 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                 if (opt.value)
                     println "WARNING: option --${options.SCAN_NATIVE_CODE.name} is not fully compatible with --${opt.name}"
             }
-            check(options.DEX_FACT_GEN)
+            check(options.X_DEX_FACT_GEN)
             check(options.WALA_FACT_GEN)
             params += ["--scan-native-code"]
         }
 
-        if (options.NATIVE_USE_RADARE.value) {
-            params += ["--native-use-radare"]
-        }
-
-        if (options.NATIVE_USE_BUILTIN.value) {
-            params += ["--native-use-builtin"]
-        }
-
-        if (options.NATIVE_USE_BINUTILS.value) {
-            params += ["--native-use-binutils"]
+        String nativeBackend = options.NATIVE_CODE_BACKEND.value
+        if (nativeBackend == DoopAnalysisFamily.NATIVE_BACKEND_BUILTIN) {
+            params += ["--native-backend-builtin"]
+        } else if (nativeBackend == DoopAnalysisFamily.NATIVE_BACKEND_RADARE) {
+            params += ["--native-backend-radare"]
+        } else if (nativeBackend == DoopAnalysisFamily.NATIVE_BACKEND_BINUTILS) {
+            params += ["--native-backend-binutils"]
         }
 
         if (options.ONLY_PRECISE_NATIVE_STRINGS.value) {
@@ -429,7 +422,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             params += ["--write-artifacts-map"]
         }
 
-        if (options.LEGACY_ANDROID_PROCESSING.value) {
+        if (options.X_LEGACY_ANDROID_PROCESSING.value) {
             params += ["--legacy-android-processing"]
         }
 
@@ -472,7 +465,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         }
 
         if (options.X_IGNORE_WRONG_STATICNESS.value) {
-            params += ["--ignoreWrongStaticness"]
+            params += ["--ignore-wrong-staticness"]
         }
 
         if (options.GENERATE_JIMPLE.value) {
@@ -514,7 +507,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                 try {
                     redo = false
                     String SOOT_MAIN = "org.clyze.doop.soot.Main"
-                    if (!JHelper.java9Plus() && options.LEGACY_SOOT_INVOCATION.value) {
+                    if (!JHelper.java9Plus() && options.X_LEGACY_SOOT_INVOCATION.value) {
                         // We invoke the Soot-based fact generator reflectively
                         // using a separate class-loader to be able to support
                         // multiple soot invocations in the same JVM
@@ -549,7 +542,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                         }
                     } else {
                         String[] jvmArgs = [ "-Dfile.encoding=UTF-8" ] as String[]
-                        invokeFactGenerator('SOOT_FACT_GEN', 'soot-fact-generator', jvmArgs, params, SOOT_MAIN)
+                        invokeFactGenerator('SOOT_FACT_GEN', Resource.SOOT_FACT_GENERATOR, jvmArgs, params, SOOT_MAIN)
                     }
                     // Check if fact generation must be restarted due to missing classes.
                     if (missingClasses != null && missingClasses.exists()) {
@@ -647,7 +640,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
         try {
             factGenTime = Helper.timing {
-                invokeFactGenerator('WALA_FACT_GEN', 'wala-fact-generator', null, params, 'org.clyze.doop.wala.Main')
+                invokeFactGenerator('WALA_FACT_GEN', Resource.WALA_FACT_GENERATOR, null, params, 'org.clyze.doop.wala.Main')
             }
         } catch(walaError){
             walaError.printStackTrace()
@@ -663,7 +656,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         log.debug "Params of dex front-end: ${params.join(' ')}"
 
         try {
-            invokeFactGenerator('DEX_FACT_GEN', 'dex-fact-generator', null, params, 'org.clyze.doop.dex.DexInvoker')
+            invokeFactGenerator('DEX_FACT_GEN', Resource.DEX_FACT_GENERATOR, null, params, 'org.clyze.doop.dex.DexInvoker')
         } catch (Exception ex) {
             ex.printStackTrace()
         }
@@ -696,7 +689,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
         try {
             factGenTime = Helper.timing {
-                invokeFactGenerator('PYTHON_FACT_GEN', 'wala-fact-generator', null, params, 'org.clyze.doop.wala.Main')
+                invokeFactGenerator('PYTHON_FACT_GEN', Resource.WALA_FACT_GENERATOR, null, params, 'org.clyze.doop.wala.Main')
             }
         } catch(walaError){
             walaError.printStackTrace()
@@ -706,22 +699,24 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
     }
 
     protected void runJPhantom() {
-        log.info "-- Running jphantom to generate complement jar --"
+        log.info "-- Running jphantom to generate complement JAR --"
 
         String jar = inputFiles[0].toString()
         String jarName = FilenameUtils.getBaseName(jar)
         String jarExt = FilenameUtils.getExtension(jar)
-        if (jarExt.toLowerCase() == 'apk') {
-            log.info "Error: jphantom does not support .apk inputs"
+        if (!['jar', 'zip'].contains(jarExt.toLowerCase())) {
+            log.error "ERROR: jphantom does not support ${jarExt} inputs"
             throw new DoopErrorCodeException(23)
         }
+        if (inputFiles.size() > 1)
+            log.warn "WARNING: jphantom will only run on first input JAR."
         String newJar = "${jarName}-complemented.${jarExt}"
         String[] params = [jar, "-o", "${outDir}/$newJar", "-d", "${outDir}/phantoms", "-v", "0"]
         log.debug "Params of jphantom: ${params.join(' ')}"
 
         // We invoke the main method reflectively to avoid adding jphantom as a compile-time dependency.
         ClassLoader loader = ClassPathHelper.copyOfCurrentClasspath(log, this)
-        Helper.execJava(loader, "org.clyze.jphantom.Driver", params)
+        Helper.execJavaNoCatch(loader, "org.clyze.jphantom.Driver", params)
 
         //set the jar of the analysis to the complemented one
         inputFiles[0] = FileOps.findFileOrThrow("$outDir/$newJar", "jphantom invocation failed")
@@ -800,11 +795,11 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
      *
      * @param TAG        the tag to use to mark output (if external process is used)
      * @param jvmArgs    the JVM arguments to use (memory options should be set separately, via properties)
-     * @param generator  the id of the generator when bundled as an external program
+     * @param generator  the generator when bundled as an external program
      * @param params     the fact generator parameters
      * @param mainClass  the main class of the fact generator
      */
-    void invokeFactGenerator(String TAG, String generator, String[] jvmArgs,
+    void invokeFactGenerator(String TAG, Resource generator, String[] jvmArgs,
                              Collection<String> params, String mainClass) {
         // Detect if generator main is available.
         def main = null
@@ -851,10 +846,10 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
      *
      * @param TAG          the tag to use to mark fact generator output
      * @param jvmArgs      the JVM arguments to use (memory options should be set separately, via properties)
-     * @param resource     the prefix of the fact generator JAR (should match one resource)
+     * @param resource     the fact generator JAR
      * @param args         the fact generation arguments
      */
-    void invokeExtFactGenerator(String TAG, String[] jvmArgs, String resource, String[] args) {
+    void invokeExtFactGenerator(String TAG, String[] jvmArgs, Resource resource, String[] args) {
         if (jvmArgs == null)
             jvmArgs = new String[0]
 
@@ -875,6 +870,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
         log.debug "Memory JVM args: ${jvmMemArgs}"
         String[] jvmArgs0 = (jvmArgs + jvmMemArgs) as String[]
-        Resources.invokeResourceJar(Doop.doopHome, log, TAG, jvmArgs0, resource, args)
+        Resource.invokeResourceJar(DoopAnalysis.class, log, TAG, jvmArgs0, resource, args)
     }
 }

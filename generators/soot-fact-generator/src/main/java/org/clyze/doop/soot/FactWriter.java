@@ -41,7 +41,7 @@ class FactWriter extends JavaFactWriter {
     private String methodSig(SootMethod m, String methodRaw) {
         if (methodRaw == null)
             methodRaw = _rep.signature(m);
-        return hashMethodNameIfLong(methodRaw);
+        return methodRaw; // hashMethodNameIfLong(methodRaw);
     }
 
     private static String getAnnotationType(AnnotationTag aTag) {
@@ -957,7 +957,8 @@ class FactWriter extends JavaFactWriter {
                 writeOperatorAt(insn, "cmpl");
         else if (right instanceof CmpgExpr)
                 writeOperatorAt(insn, "cmpg");
-
+        else
+                writeOperatorAt(insn, "??");
 
         if (right.getOp1() instanceof Local) {
             Local op1 = (Local) right.getOp1();
@@ -978,13 +979,22 @@ class FactWriter extends JavaFactWriter {
 
     void writeAssignUnop(SootMethod m, AssignStmt stmt, Local left, UnopExpr right, Session session) {
         InstrInfo ii = calcInstrInfo(m, stmt, session);
+        String insn = ii.insn;
+        writeAssignUnop(insn, ii.index, _rep.local(m, left), ii.methodId);
 
-        writeAssignUnop(ii.insn, ii.index, _rep.local(m, left), ii.methodId);
-        writeOperatorAt(ii.insn, "-");
+        if (right instanceof LengthExpr)
+                writeOperatorAt(insn, "len");
+        else if (right instanceof NegExpr)
+                writeOperatorAt(insn, "~");
+        else
+                writeOperatorAt(insn, "??");
 
         if (right.getOp() instanceof Local) {
             Local op = (Local) right.getOp();
-            writeAssignOperFrom(ii.insn, L_OP, _rep.local(m, op));
+            writeAssignOperFrom(insn, L_OP, _rep.local(m, op));
+        } else if (right.getOp() instanceof NumericConstant) {
+            NumericConstant cons = (NumericConstant) right.getOp();
+            writeAssignOperFromConstant(insn, L_OP, cons.toString());
         }
     }
 
@@ -1027,9 +1037,10 @@ class FactWriter extends JavaFactWriter {
             }
     }
 
-    public void writePreliminaryFacts(Collection<SootClass> classes, BasicJavaSupport java) {
+    public void writePreliminaryFacts(Collection<SootClass> classes,
+                                      BasicJavaSupport java, boolean debug) {
         classes.stream().filter(SootClass::isApplicationClass).forEachOrdered(this::writeApplicationClass);
-        writePreliminaryFacts(java);
+        writePreliminaryFacts(java, debug);
     }
 
     boolean checkAndRegisterPhantom(Object phantom) {

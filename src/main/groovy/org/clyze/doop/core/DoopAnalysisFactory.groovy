@@ -128,11 +128,11 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		options.USER_SUPPLIED_ID.value = id ? validateUserSuppliedId(id) : generateId(options)
 
 		checkAnalysis(options)
-		if (options.LB3.value) {
+		if (options.X_LB3.value) {
 			checkLogicBlox(options)
 			if (options.ANDROID.value) {
 				log.warn "WARNING: Using legacy Android processing."
-				options.LEGACY_ANDROID_PROCESSING.value = true
+				options.X_LEGACY_ANDROID_PROCESSING.value = true
 			}
 		}
 
@@ -147,7 +147,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		}
 
 		log.debug "Created new analysis"
-		if (options.LB3.value)
+		if (options.X_LB3.value)
 			return new LB3Analysis(options, context, commandsEnv)
 		else {
 			if (options.PYTHON.value) {
@@ -221,7 +221,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 	static void checkAnalysis(Map<String, AnalysisOption<?>> options) {
 		def name = options.ANALYSIS.value
 		log.debug "Verifying analysis name: $name"
-		if (options.LB3.value)
+		if (options.X_LB3.value)
 			FileOps.findFileOrThrow("${Doop.analysesPath}/${name}/analysis.logic", "Unsupported analysis: $name")
 		else
 			FileOps.findFileOrThrow("${Doop.souffleAnalysesPath}/${name}/analysis.dl", "Unsupported analysis: $name")
@@ -362,7 +362,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			log.debug "HeapDL file paths: ${context.heapDLs()} -> ${options.HEAPDLS.value}"
 		}
 
-		if (options.ANALYSIS.value == "sound-may-point-to" || options.SYMBOLIC_REASONING.value)
+		if (options.ANALYSIS.value == "sound-may-point-to" || options.ANALYSIS.value == "dependency-analysis" || options.SYMBOLIC_REASONING.value)
 			options.CFG_ANALYSIS.value = true
 
 		try {
@@ -402,10 +402,10 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		if (options.X_SERVER_CHA.value && !options.X_STOP_AT_FACTS.value)
 			throw new RuntimeException("Option --${options.X_SERVER_CHA.name} should only be used together with --${options.X_STOP_AT_FACTS.name}.")
 
-		if (options.SKIP_CODE_FACTGEN.value && !options.X_EXTEND_FACTS.value) {
-			throw new RuntimeException("Option --${options.SKIP_CODE_FACTGEN.name} should only be used together with --${options.X_EXTEND_FACTS.name}.")
+		if (options.X_SKIP_CODE_FACTGEN.value && !options.X_EXTEND_FACTS.value) {
+			throw new RuntimeException("Option --${options.X_SKIP_CODE_FACTGEN.name} should only be used together with --${options.X_EXTEND_FACTS.name}.")
 		} else if (options.X_START_AFTER_FACTS.value) {
-			options.SKIP_CODE_FACTGEN.value = true
+			options.X_SKIP_CODE_FACTGEN.value = true
 		}
 
 		if (options.TAMIFLEX.value && options.TAMIFLEX.value != "dummy") {
@@ -481,7 +481,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			throw new RuntimeException("Error: options --" + options.CACHE.name + " and --" + options.SOUFFLE_PROFILE.name + " are not compatible when running via the DDlog converter.")
 		}
 
-		if (options.NO_SSA.value) {
+		if (options.X_NO_SSA.value) {
 			options.SSA.value = false
 		}
 
@@ -570,7 +570,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		if (options.OPEN_PROGRAMS.value && options.ANALYSIS.value == 'micro')
 			throw new DoopErrorCodeException(30, "Open-program analysis is not compatible with the 'micro' analysis.")
 
-		if (options.X_DRY_RUN.value && options.CACHE.value) {
+		if (options.DRY_RUN.value && options.CACHE.value) {
 			log.warn "WARNING: Doing a dry run of the analysis while using cached facts might be problematic!"
 		}
 
@@ -588,9 +588,19 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		   options.GENERATE_ARTIFACTS_MAP.value = true
 		}
 
+		// Process statistics option.
+		String stats = options.STATS_LEVEL.value as String
+		if (stats == DoopAnalysisFamily.STATS_NONE)
+			options.X_STATS_NONE.value = true
+		else if (stats == DoopAnalysisFamily.STATS_DEFAULT)
+			options.X_STATS_DEFAULT.value = true
+		else if (stats == DoopAnalysisFamily.STATS_FULL)
+			options.X_STATS_FULL.value = true
+		else if (stats != null)
+			throw new DoopErrorCodeException(39, "Invalid stats level: ${stats}")
 		// If no stats option is given, select default stats.
 		if (!options.X_STATS_FULL.value && !options.X_STATS_DEFAULT.value &&
-				!options.X_STATS_NONE.value && !options.X_STATS_AROUND.value) {
+				!options.X_STATS_NONE.value) {
 			options.X_STATS_DEFAULT.value = true
 		}
 
@@ -729,7 +739,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		env.ANALYSIS_OUT = "${getOutputDirectory(options)}/database" as String
 		env.LC_ALL = "en_US.UTF-8"
 
-		if (options.LB3.value) {
+		if (options.X_LB3.value) {
 			def lbHome = options.LOGICBLOX_HOME.value
 			env.LOGICBLOX_HOME = lbHome
 			//We add these LB specific env vars here to make the server deployment more flexible (and the cli user's life easier)

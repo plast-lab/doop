@@ -22,6 +22,7 @@ public class BasicJavaSupport {
     private final ArtifactScanner artScanner;
     // Executor for async big tasks such as apk decoding or library scanning.
     private final ExecutorService exec = Executors.newFixedThreadPool(3);
+    public final Collection<String> xmlRoots = new HashSet<>();
 
     public BasicJavaSupport(Parameters parameters, ArtifactScanner artScanner) {
         this.parameters = parameters;

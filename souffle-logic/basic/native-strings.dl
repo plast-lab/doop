@@ -1,20 +1,6 @@
 // A cross-product of method name candidates and method signature candidates.
 .decl PossibleNativeCodeTargetMethod(?method:Method, ?function:symbol, ?file:symbol)
 
-#ifdef USE_STRING_LOCALITY
-
-// Pair strings that are "close" in the strings symbol table.
-PossibleNativeCodeTargetMethod(?method, ?function, ?file) :-
-  _NativeMethodTypeCandidate(?file, ?function, ?descriptor, ?offset1),
-  _NativeNameCandidate(?file, ?function, ?name, ?offset2),
-  Method_SimpleName(?method, ?name),
-  Method_JVMDescriptor(?method, ?descriptor),
-  _NativeStringsDistance(?nativeStringsDistance),
-  (?offset1 - ?offset2) <= ?nativeStringsDistance,
-  (?offset2 - ?offset1) <= ?nativeStringsDistance.
-
-#else
-
 // Pair all strings (or only strings in known functions in precise mode).
 PossibleNativeCodeTargetMethod(?method, ?function, ?file) :-
   _NativeMethodTypeCandidate(?file, ?function, ?descriptor, _),
@@ -24,8 +10,6 @@ PossibleNativeCodeTargetMethod(?method, ?function, ?file) :-
 #endif // ONLY_PRECISE_NATIVE_STRINGS
   Method_SimpleName(?method, ?name),
   Method_JVMDescriptor(?method, ?descriptor).
-
-#endif // USE_STRING_LOCALITY
 
 // The distance between string xrefs in the code. This should be big
 // enough to catch strings used together in major calling conventions.
@@ -65,7 +49,6 @@ OverloadedJNIMethod(?javaMethod, ?type, ?name, ?descriptor) :-
 // example, the "crazy linker" used on Android, registers native
 // methods: https://chromium.googlesource.com/chromium/src/+/master/docs/android_native_libraries.md
 .decl JNIMethod_NativeId(?javaMethod:Method, ?nativeId:symbol)
-.output JNIMethod_NativeId
 
 // Non-overloaded native method (default, always generated).
 JNIMethod_NativeId(?javaMethod, ?nativeId) :-

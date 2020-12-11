@@ -272,7 +272,7 @@ class WalaFactWriter extends JavaFactWriter {
     private static int getLineNumberFromInstruction(IR ir, SSAInstruction instruction) {
         if(instruction.iindex == -1)
             return 0;
-        IBytecodeMethod method = (IBytecodeMethod)ir.getMethod();
+        IBytecodeMethod<?> method = (IBytecodeMethod<?>)ir.getMethod();
         int sourceLineNum;
         int bytecodeIndex;
         try {
@@ -718,7 +718,7 @@ class WalaFactWriter extends JavaFactWriter {
         int instrIndex = session.getInstructionNumber(instruction);
         int targetIndex, targetWALAIndex;
         int defaultIndex, defaultWALAIndex;
-        IBytecodeMethod bm = (IBytecodeMethod) inMethod;
+        IBytecodeMethod<?> bm = (IBytecodeMethod<?>) inMethod;
         //Value v = writeImmediate(inMethod, instruction, instruction.getUse(0), session);
         String insn = _rep.instruction(inMethod, instruction, instrIndex);
         String methodId = _rep.signature(inMethod);
@@ -1044,9 +1044,9 @@ class WalaFactWriter extends JavaFactWriter {
     private String writeInvokeHelper(IMethod inMethod, IR ir, SSAInvokeInstruction instruction, Session session, TypeInference typeInference) {
         String methodId = _rep.signature(inMethod);
 
-        IBytecodeMethod method = (IBytecodeMethod)ir.getMethod();
+        IBytecodeMethod<?> method = (IBytecodeMethod<?>)ir.getMethod();
         int sourceLineNum;
-        int bytecodeIndex = 0;
+        int bytecodeIndex;
         try {
             bytecodeIndex = method.getBytecodeIndex(instruction.iindex);
             sourceLineNum = method.getLineNumber(bytecodeIndex);
