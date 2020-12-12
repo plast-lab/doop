@@ -69,11 +69,31 @@ allGeneratorProjects.each {
     }
 }
 
+// Set variables for subprojects.
+gradle.rootProject.ext.resourcesDir='src/main/resources'
+gradle.rootProject.ext.testResourcesDir='src/test/resources'
+
 def frontendGeneratorProjects = allGeneratorProjects.findAll { it.name.indexOf('common') == -1 }
 //all frontends have a fatJar task, which we explicitly (re)define it here, so we can reference it without issues in
 //the publishing spec
-frontendGeneratorProjects.each {
-    it.tasks.create('fatJar', Jar)
+frontendGeneratorProjects.each { Project p ->
+    // fatJar
+    p.tasks.create('fatJar', Jar)
+    // installJar
+    p.tasks.create('installJar', Copy)
+    p.tasks.installJar {
+	from p.tasks.fatJar.outputs.files.singleFile
+	into p.file("../../${resourcesDir}")
+    }
+    p.tasks.installJar.dependsOn p.tasks.fatJar
+    // uninstallJar
+    p.tasks.create('uninstallJar')
+    p.tasks.uninstallJar() {
+	doLast {
+            def jar = p.tasks.fatJar.outputs.files.singleFile
+            if (jar && jar.name) { delete p.file("../../${resourcesDir}/${jar.name}") }
+	}
+    }
 }
 
 repositories {
@@ -119,9 +139,6 @@ gradle.rootProject.ext.groovyVersion="3.0.6"
 gradle.rootProject.ext.clueCommonVersion='3.23.7'
 gradle.rootProject.ext.log4jVersion='1.2.17'
 gradle.rootProject.ext.spockVersion='2.0-M3-groovy-3.0'
-// Set other variables for subprojects.
-gradle.rootProject.ext.resourcesDir='src/main/resources'
-gradle.rootProject.ext.testResourcesDir='src/test/resources'
 
 dependencies {
     // apktool "ext:apktool:2.4.0"                              // old artifactory dependency

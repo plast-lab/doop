@@ -38,19 +38,6 @@ fatJar {
     with jar
 }
 
-task installJar(type: Copy) {
-    from fatJar.outputs.files.singleFile
-    into("../../${resourcesDir}")
-}
-installJar.dependsOn fatJar
-
-task uninstallJar() {
-    doLast {
-        def jar = fatJar.outputs.files.singleFile
-        if (jar && jar.name) { delete "../../${resourcesDir}/${jar.name}" }
-    }
-}
-
 test {
     useJUnitPlatform()
 }
