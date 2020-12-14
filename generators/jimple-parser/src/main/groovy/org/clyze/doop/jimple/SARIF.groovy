@@ -117,11 +117,13 @@ abstract class MapGen {
 }
 
 @CompileStatic @TupleConstructor class Driver extends MapGen {
-    String name, semanticVersion
+    String name, fullName, version, semanticVersion
     List<Rule> rules
     @Override Map<String, Object> toMap() {
         return ['name' : name,
+                'fullName' : fullName,
                 'rules' : fromList(rules),
+                'version' : version,
                 'semanticVersion' : semanticVersion
         ] as Map<String, Object>
     }
@@ -133,7 +135,7 @@ abstract class MapGen {
         return ['id'               : id,
                 'name'             : name,
                 'shortDescription' : ['text' : shortDescription] as Map<String, Object>,
-                'longDescription'  : ['text' : fullDescription] as Map<String, Object>
+                'fullDescription'  : ['text' : fullDescription] as Map<String, Object>
         ] as Map<String, Object>
     }
 }

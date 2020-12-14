@@ -58,7 +58,7 @@ class Main {
 			String jimplePath = cl.getOptionValue('j')
 			String dbPath = cl.getOptionValue('d')
 			String outDir = cl.getOptionValue('o')
-			new JimpleProcessor(jimplePath, dbPath ? new File(dbPath) : null, outDir ? new File(outDir) : null).process()
+			new JimpleProcessor(jimplePath, dbPath ? new File(dbPath) : null, outDir ? new File(outDir) : null, "STANDALONE").process()
 		} catch (Throwable t) {
 			println("ERROR: ${t.message}")
 			t.printStackTrace()

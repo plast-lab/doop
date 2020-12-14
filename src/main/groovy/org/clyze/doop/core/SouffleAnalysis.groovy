@@ -9,6 +9,7 @@ import org.clyze.doop.utils.ConfigurationGenerator
 import org.clyze.doop.utils.DDlog
 import org.clyze.doop.utils.SouffleScript
 import org.clyze.utils.Executor
+import org.clyze.utils.VersionInfo
 
 import java.util.concurrent.Callable
 import java.util.concurrent.Executors
@@ -123,7 +124,6 @@ class SouffleAnalysis extends DoopAnalysis {
 				int dbSize = (sizeOfDirectory(database) / 1024).intValue()
 				runtimeMetricsFile.append("disk footprint (KB)\t${dbSize}\n")
 				postprocess()
-
 			}
 
 			moveFile(runtimeMetricsFile, new File(database, "Stats_Runtime.csv"))
@@ -265,7 +265,8 @@ class SouffleAnalysis extends DoopAnalysis {
 
 		try {
 			if (options.SARIF.value && options.GENERATE_JIMPLE.value) {
-				new JimpleProcessor(DoopConventions.jimpleDir(factsDir.canonicalPath), database, database).process()
+				String version = VersionInfo.getVersionInfo(Doop.class)
+				new JimpleProcessor(DoopConventions.jimpleDir(factsDir.canonicalPath), database, database, version).process()
 			}
 		} catch (Throwable t) {
 			log.error "ERROR: SARIF generation failed: ${t.message}"

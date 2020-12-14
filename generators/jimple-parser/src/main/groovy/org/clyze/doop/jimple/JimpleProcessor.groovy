@@ -31,6 +31,8 @@ class JimpleProcessor {
     private final String jimplePath
     /** The output directory. */
     private final File out
+    /** The version of Doop. */
+    private final String version
     /** Dictionary of doop id connections to interesting relations. Used to quickly look up
      *  Doop ids for parsed elements. */
     private final Map<String, Set<RMetadata>> doopIds = new HashMap<>()
@@ -39,7 +41,7 @@ class JimpleProcessor {
     /** List of all metadata, to be used to generate the rules list for SARIF. */
     private final List<RMetadata> allMetadata = new LinkedList<>()
 
-    JimpleProcessor(String jimplePath, File db, File out) {
+    JimpleProcessor(String jimplePath, File db, File out, String version) {
         if (db == null || out == null) {
             this.parseOnly = true
             println "WARNING: running parsing check only, see usage help for more options."
@@ -47,6 +49,7 @@ class JimpleProcessor {
         this.jimplePath = jimplePath
         this.db = db
         this.out = out
+        this.version = version
     }
 
     /**
@@ -134,7 +137,8 @@ class JimpleProcessor {
     private void generateSARIF(List<Result> results) {
         int counter = 0
         List<Rule> rules = allMetadata.collect {new Rule(id: "rule-${counter++}", name: "rule-${it.name}", shortDescription: it.ruleDescription, fullDescription: it.ruleDescription, level: 'error')} as List<Rule>
-        Run run = new Run(results: results, artifacts: [] as List<Artifact>, tool: new Tool(driver: new Driver(name: 'doop', semanticVersion: '1.0', rules: rules)))
+        Driver driver = new Driver(name: 'doop', fullName: 'Doop ' + version, version: version, semanticVersion: '1.0', rules: rules)
+        Run run = new Run(results: results, artifacts: [] as List<Artifact>, tool: new Tool(driver: driver))
         SARIF sarif = new SARIF(runs: [run] as List<Run>)
         File sarifOut = new File(out, SARIF_OUT)
         sarifOut.withWriter { BufferedWriter bw ->
