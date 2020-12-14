@@ -40,8 +40,10 @@ class JimpleProcessor {
     private final Map<String, Map<String, String[]>> relationLines = new HashMap<>()
     /** List of all metadata, to be used to generate the rules list for SARIF. */
     private final List<RMetadata> allMetadata = new LinkedList<>()
+    /** True when the processor is called from the main() method. */
+    private final boolean standalone
 
-    JimpleProcessor(String jimplePath, File db, File out, String version) {
+    JimpleProcessor(String jimplePath, File db, File out, String version, boolean standalone) {
         if (db == null || out == null) {
             this.parseOnly = true
             println "WARNING: running parsing check only, see usage help for more options."
@@ -50,6 +52,7 @@ class JimpleProcessor {
         this.db = db
         this.out = out
         this.version = version
+        this.standalone = standalone
     }
 
     /**
@@ -61,7 +64,7 @@ class JimpleProcessor {
         if (!parseOnly) {
             readDatabase()
             boolean mkdir = out.mkdirs()
-            if (!mkdir)
+            if (standalone && !mkdir)
                 println "WARNING: directory ${out} already exists."
         }
 

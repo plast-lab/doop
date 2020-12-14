@@ -266,7 +266,7 @@ class SouffleAnalysis extends DoopAnalysis {
 		try {
 			if (options.SARIF.value && options.GENERATE_JIMPLE.value) {
 				String version = VersionInfo.getVersionInfo(Doop.class)
-				new JimpleProcessor(DoopConventions.jimpleDir(factsDir.canonicalPath), database, database, version).process()
+				new JimpleProcessor(DoopConventions.jimpleDir(factsDir.canonicalPath), database, database, version, false).process()
 			}
 		} catch (Throwable t) {
 			log.error "ERROR: SARIF generation failed: ${t.message}"
