@@ -645,7 +645,13 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "GENERATE_OPTIMIZATION_DIRECTIVES",
 					name: "gen-opt-directives",
-					description: "Generates additional relations for code optimization uses.",
+					description: "Generate additional relations for code optimization uses.",
+					forPreprocessor: true
+			),
+			new BooleanAnalysisOption(
+					id: "SARIF",
+					name: "sarif",
+					description: "Output SARIF results for specific relations.",
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(

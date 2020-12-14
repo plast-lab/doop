@@ -588,6 +588,13 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		   options.GENERATE_ARTIFACTS_MAP.value = true
 		}
 
+		if (options.SARIF.value) {
+			if (options.WALA_FACT_GEN.value || options.X_DEX_FACT_GEN.value)
+				log.warn "WARNING: SARIF mode is only supported for the Soot-based fact generator"
+			else
+				options.GENERATE_JIMPLE.value = true
+		}
+
 		// Process statistics option.
 		String stats = options.STATS_LEVEL.value as String
 		if (stats == DoopAnalysisFamily.STATS_NONE)

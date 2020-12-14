@@ -1,0 +1,7 @@
+.decl SARIF_InterestingRelation(?name:symbol, ?doopIdPosition:number, ?contentType:symbol, ?resultMessage:symbol, ?ruleDescription:symbol)
+.output SARIF_InterestingRelation
+
+#ifdef GENERATE_OPTIMIZATION_DIRECTIVES
+SARIF_InterestingRelation("MethodToRemove", 0, "Method", "Method seems to be unused and can be removed.", "Method seems to be unused and can be removed.").
+SARIF_InterestingRelation("SingleInvocationToInline", 0, "MethodInvocation", "Invoked method can be inlined: @@1", "Invoked method can be inlined.").
+#endif // GENERATE_OPTIMIZATION_DIRECTIVES

@@ -3,6 +3,8 @@ package org.clyze.doop.core
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 import groovy.util.logging.Log4j
+import org.clyze.doop.jimple.JimpleProcessor
+import org.clyze.doop.soot.DoopConventions
 import org.clyze.doop.utils.ConfigurationGenerator
 import org.clyze.doop.utils.DDlog
 import org.clyze.doop.utils.SouffleScript
@@ -190,6 +192,10 @@ class SouffleAnalysis extends DoopAnalysis {
 			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/opt-directives/directives.dl")
 		}
 
+		if (options.SARIF.value) {
+			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/sarif/sarif.dl")
+		}
+
 		if (options.X_ORACULAR_HEURISTICS.value) {
 			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/oracular/oracular-heuristics.dl")
 		}
@@ -255,6 +261,14 @@ class SouffleAnalysis extends DoopAnalysis {
 			}
 		} catch (Throwable t) {
 			log.error "ERROR: configuration generation failed."
+		}
+
+		try {
+			if (options.SARIF.value && options.GENERATE_JIMPLE.value) {
+				new JimpleProcessor(DoopConventions.jimpleDir(factsDir.canonicalPath), database, database).process()
+			}
+		} catch (Throwable t) {
+			log.error "ERROR: SARIF generation failed: ${t.message}"
 		}
 	}
 }
