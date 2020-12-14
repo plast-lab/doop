@@ -70,6 +70,7 @@ class SouffleAnalysis extends DoopAnalysis {
 		}
 
 		File runtimeMetricsFile = File.createTempFile('Stats_Runtime', '.csv')
+		runtimeMetricsFile.deleteOnExit()
 		log.debug "Using intermediate runtime metrics file: ${runtimeMetricsFile.canonicalPath}"
 		if (!database.exists()) {
 			database.mkdirs()
