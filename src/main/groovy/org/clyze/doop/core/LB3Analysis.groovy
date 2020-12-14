@@ -49,6 +49,7 @@ class LB3Analysis extends DoopAnalysis {
 			}
 
 			produceStats()
+			cleanUp()
 		}
 
 		log.info "\nAnalysis START"
@@ -346,6 +347,18 @@ class LB3Analysis extends DoopAnalysis {
 		lbBuilder
 				.commit()
 				.elapsedTime()
+	}
+
+	void cleanUp() {
+		String home = System.getenv('HOME')
+		if (home) {
+			File f = new File(home)
+			// Delete test home directory.
+			if (f.name.contains('lb-test-home-dir')) {
+				log.debug "Deleting temporary home directory: ${f.canonicalPath}"
+				f.delete()
+			}
+		}
 	}
 
 	void runTransformInput() {
