@@ -159,12 +159,6 @@ class SouffleAnalysis extends DoopAnalysis {
 		if (options.INFORMATION_FLOW.value)
 			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/information-flow/${options.INFORMATION_FLOW.value}${INFORMATION_FLOW_SUFFIX}.dl")
 
-		if (options.CONSTANT_FOLDING.value)
-			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/constant-folding/analysis.dl")
-
-		if (options.SYMBOLIC_REASONING.value)
-			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/symbolic-reasoning/analysis.dl")
-
 		String openProgramsRules = options.OPEN_PROGRAMS.value
 		if (openProgramsRules) {
 			log.debug "Using open-programs rules: ${openProgramsRules}"
@@ -182,27 +176,6 @@ class SouffleAnalysis extends DoopAnalysis {
 			if (options.NO_MERGES.value) {
 				log.warn("WARNING: the sanity check is not fully compatible with --" + options.NO_MERGES.name)
 			}
-		}
-
-		if (!options.X_STOP_AT_FACTS.value && options.X_SERVER_LOGIC.value) {
-			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/server-logic/queries.dl")
-		}
-
-		if (!options.X_STOP_AT_FACTS.value && options.GENERATE_OPTIMIZATION_DIRECTIVES.value) {
-			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/opt-directives/keep.dl")
-			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/opt-directives/directives.dl")
-		}
-
-		if (options.SARIF.value) {
-			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/sarif/sarif.dl")
-		}
-
-		if (options.X_ORACULAR_HEURISTICS.value) {
-			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/oracular/oracular-heuristics.dl")
-		}
-
-		if (options.X_CONTEXT_DEPENDENCY_HEURISTIC.value) {
-			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/oracular/2-object-ctx-dependency-heuristic.dl")
 		}
 
 		if (options.EXTRA_LOGIC.value) {
