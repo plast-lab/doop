@@ -3,10 +3,13 @@ package org.clyze.doop.jimple
 import groovy.json.JsonBuilder
 import groovy.transform.CompileStatic
 import org.clyze.persistent.model.Element
+import org.clyze.persistent.model.Field
 import org.clyze.persistent.model.Method
 import org.clyze.persistent.model.MethodInvocation
 import org.clyze.persistent.model.Position
 import org.clyze.persistent.model.SymbolWithDoopId
+import org.clyze.persistent.model.Usage
+import org.clyze.persistent.model.Variable
 
 import static groovy.io.FileType.FILES
 
@@ -85,16 +88,28 @@ class JimpleProcessor {
                             for (RMetadata metadata : metadataTable) {
                                 switch (metadata.contentType) {
                                     case 'Method':
-                                        if (sym instanceof Method) {
+                                        if (sym instanceof Method)
                                             results.add resultForSymbol(doopId, sym, metadata)
-                                        } else
-                                            println "ERROR: wrong content type for element"
+                                        else
+                                            println "ERROR: wrong content type for element ${metadata.contentType}"
                                         break
                                     case 'MethodInvocation':
-                                        if (sym instanceof MethodInvocation) {
+                                        if (sym instanceof MethodInvocation)
                                             results.add resultForSymbol(doopId, sym, metadata)
-                                        } else
-                                            println "ERROR: wrong content type for element"
+                                        else
+                                            println "ERROR: wrong content type for element ${metadata.contentType}"
+                                        break
+                                    case 'Variable':
+                                        if (sym instanceof Variable)
+                                            results.add resultForSymbol(doopId, sym, metadata)
+                                        else if (!(sym instanceof Usage))
+                                            println "ERROR: wrong content type for element ${metadata.contentType}"
+                                        break
+                                    case 'Field':
+                                        if (sym instanceof Field)
+                                            results.add resultForSymbol(doopId, sym, metadata)
+                                        else if (!(sym instanceof Usage))
+                                            println "ERROR: wrong content type for element ${metadata.contentType}"
                                         break
                                 }
                             }
