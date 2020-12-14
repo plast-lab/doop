@@ -57,6 +57,7 @@ allGeneratorProjects.each {
         apply(plugin: 'java')
 
         group = gradle.rootProject.group
+        version = null
         sourceCompatibility = gradle.rootProject.sourceCompatibility
         targetCompatibility = gradle.rootProject.targetCompatibility
 
@@ -82,17 +83,17 @@ frontendGeneratorProjects.each { Project p ->
     // installJar
     p.tasks.create('installJar', Copy)
     p.tasks.installJar {
-	from p.tasks.fatJar.outputs.files.singleFile
-	into p.file("../../${resourcesDir}")
+	    from p.tasks.fatJar.outputs.files.singleFile
+	    into p.file("../../${resourcesDir}")
     }
     p.tasks.installJar.dependsOn p.tasks.fatJar
     // uninstallJar
     p.tasks.create('uninstallJar')
     p.tasks.uninstallJar() {
-	doLast {
+	    doLast {
             def jar = p.tasks.fatJar.outputs.files.singleFile
             if (jar && jar.name) { delete p.file("../../${resourcesDir}/${jar.name}") }
-	}
+	    }
     }
 }
 

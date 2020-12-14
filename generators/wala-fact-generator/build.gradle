@@ -4,7 +4,6 @@ plugins {
 }
 
 mainClassName = 'org.clyze.doop.wala.Main'
-version = null
 
 dependencies {
     api project(path: ':generators:fact-generator-common', configuration: 'shadow')
