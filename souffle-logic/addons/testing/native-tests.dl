@@ -4,7 +4,7 @@
 
 #ifdef SCAN_NATIVE_CODE
 .output mainAnalysis.ReachableMethodFromNativeCode
-.output mainAnalysis. ReachableAppMethodFromNativeCode
+.output mainAnalysis.ReachableAppMethodFromNativeCode
 .output basic.PossibleNativeCodeTargetMethod
 .output basic.PossibleNativeCodeTargetMethodLocalized
 .output mainAnalysis.NativeAllocation
