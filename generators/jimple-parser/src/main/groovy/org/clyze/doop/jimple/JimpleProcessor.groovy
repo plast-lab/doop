@@ -24,7 +24,7 @@ class JimpleProcessor {
     private static final String PLACEHOLDER_PRE = '@@'
 
     /** If true, the processor only parses the input (used for debugging). */
-    private boolean parseOnly = false
+    private final boolean parseOnly = false
     /** A Doop analysis database. */
     private final File db
     /** A directory containing Jimple code (in text form). */
@@ -61,8 +61,9 @@ class JimpleProcessor {
     void process() {
         File jimpleDir = new File(jimplePath)
 
+        boolean metadataExist = false
         if (!parseOnly) {
-            readDatabase()
+            metadataExist = readDatabase()
             boolean mkdir = out.mkdirs()
             if (standalone && !mkdir)
                 println "WARNING: directory ${out} already exists."
@@ -74,7 +75,7 @@ class JimpleProcessor {
             jimpleDir.eachFileRecurse(FILES) { JimpleListenerImpl.parseJimple(it as String, jimplePath, {
                 Element e ->
                     elements++
-                    if (parseOnly)
+                    if (parseOnly || !metadataExist)
                         return
                     if (e instanceof SymbolWithDoopId) {
                         SymbolWithDoopId sym = e as SymbolWithDoopId
@@ -110,7 +111,11 @@ class JimpleProcessor {
             println "ERROR: ${jimplePath} is not a directory."
     }
 
-    private void readDatabase() {
+    /**
+     * Reads the analysis output database to gather relation data and metadata.
+     * @return   true if interesting relations were found
+     */
+    private boolean readDatabase() {
         int ruleIndex = 0
         for (String line : new File(db, SARIF_DESC).readLines()) {
             String[] parts = line.tokenize('\t')
@@ -131,10 +136,7 @@ class JimpleProcessor {
             }
             relationLines.put(relationName, relLines)
         }
-        if (allMetadata.empty) {
-            println "WARNING: no relation metadata declared in the analysis, no SARIF output will be computed."
-            this.parseOnly = true
-        }
+        return !(allMetadata.empty)
     }
 
     private void generateSARIF(List<Result> results) {
