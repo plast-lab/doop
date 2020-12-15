@@ -17,7 +17,7 @@ class InformationFlowTest extends DoopSpec {
 		List args = ["-i", Artifacts.ANDROIDTERM_APK,
 					 "-a", "context-insensitive",
 					 "--platform", "android_25_fulljars",
-					 "--information-flow", "android",
+					 "--information-flow", "android", "--sarif",
 					 "--information-flow-extra-controls", "7878787878,android.widget.EditText,2131296798",
 					 "--id", "test-android-androidterm-information-flow",
 					 "--generate-jimple", "--stats", "full", "-Ldebug"] + testExports
