@@ -302,6 +302,28 @@ You can use one of the [published Doop images on docker
 hub](https://hub.docker.com/r/gfour/doop) or build a new
 image/container by following the [instructions](docs/docker/README.md).
 
+### Using Doop with Visual Studio Code
+
+Doop supports
+[SARIF](http://docs.oasis-open.org/sarif/sarif/v2.0/csprd01/sarif-v2.0-csprd01.html)
+output for specific relations and can be integrated with Visual Studio
+Code (with the Sarif Viewer extension installed).
+
+For example, to analyze `app.jar` and visualize information for optimizers:
+
+1. Analyze the program as follows:
+
+```
+./doop -i app.jar -a context-insensitive --id app --discover-main-methods --gen-opt-directives --sarif
+```
+
+2. Start Visual Studio code to view the intermediate code annotated
+   with the analysis results:
+
+```
+code out/context-insensitive/app/facts/jimple out/context-insensitive/app/database/doop.sarif
+```
+
 ## License
 UPL (see [LICENSE](LICENSE)).
 
