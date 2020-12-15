@@ -140,8 +140,13 @@ class JimpleProcessor {
             allMetadata.add rm
             String relationName = parts[0]
             println "Reading relation: ${relationName}"
+            File rel = new File(db, "${relationName}.csv")
+            if (!rel.exists()) {
+                println "ERROR: relation does not exist and will not be included in SARIF output: ${rel.canonicalPath}"
+                continue
+            }
             Map<String, String[]> relLines = new HashMap<>()
-            for (String relLine : new File(db, "${relationName}.csv").readLines()) {
+            for (String relLine : rel.readLines()) {
                 String[] relParts = relLine.tokenize('\t')
                 String doopId = relParts[rm.doopIdPosition]
                 relLines.put(doopId, relParts)
