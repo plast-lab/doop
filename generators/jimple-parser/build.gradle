@@ -24,7 +24,6 @@ dependencies {
 }
 
 mainClassName = 'org.clyze.doop.jimple.Main'
-version = null
 
 // This task is for standalone execution, for integrations or debugging.
 // Doop uses this subproject as a compile-time depdency/library instead.
