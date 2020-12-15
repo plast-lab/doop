@@ -2,6 +2,7 @@ package org.clyze.doop.jimple
 
 import groovy.json.JsonBuilder
 import groovy.transform.CompileStatic
+import org.clyze.persistent.model.Class as Klass
 import org.clyze.persistent.model.Element
 import org.clyze.persistent.model.Field
 import org.clyze.persistent.model.Method
@@ -107,6 +108,12 @@ class JimpleProcessor {
                                         break
                                     case 'Field':
                                         if (sym instanceof Field)
+                                            results.add resultForSymbol(doopId, sym, metadata)
+                                        else if (!(sym instanceof Usage))
+                                            println "ERROR: wrong content type for element ${metadata.contentType}"
+                                        break
+                                    case 'Class':
+                                        if (sym instanceof Klass)
                                             results.add resultForSymbol(doopId, sym, metadata)
                                         else if (!(sym instanceof Usage))
                                             println "ERROR: wrong content type for element ${metadata.contentType}"

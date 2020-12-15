@@ -14,6 +14,11 @@
 .decl SARIF_InterestingRelation(?name:symbol, ?doopIdPosition:number, ?contentType:symbol, ?resultMessage:symbol, ?ruleDescription:symbol)
 .output SARIF_InterestingRelation
 
+.output PhantomType
+SARIF_InterestingRelation("PhantomType", 0, "Class", "Type is phantom.", "Type is phantom, this could be an indication of missing code.").
+.output mainAnalysis.PhantomInvoke(IO="file",filename="PhantomInvoke.csv",delimiter="\t")
+SARIF_InterestingRelation("PhantomInvoke", 0, "MethodInvocation", "Invoked method is phantom.", "Invoked method is phantom, this could be an indication of missing code.").
+
 #ifdef GENERATE_OPTIMIZATION_DIRECTIVES
 SARIF_InterestingRelation("MethodToRemove", 0, "Method", "Method seems to be unused and can be removed.", "Method seems to be unused and can be removed.").
 SARIF_InterestingRelation("SingleInvocationToInline", 0, "MethodInvocation", "Invoked method can be inlined: @@1", "Invoked method can be inlined.").
