@@ -20,7 +20,8 @@ SARIF_InterestingRelation("SingleInvocationToInline", 0, "MethodInvocation", "In
 #endif // GENERATE_OPTIMIZATION_DIRECTIVES
 
 #ifdef INFORMATION_FLOW
-SARIF_InterestingRelation("AppTaintedVar", 0, "Variable", "Variable is tainted.", "Variable is tainted.").
+.output AppTaintedVarPointsTo
+SARIF_InterestingRelation("AppTaintedVarPointsTo", 1, "Variable", "Variable is tainted, points to @@0.", "Variable is tainted.").
 #endif // INFORMATION_FLOW
 
 #ifdef X_SERVER_LOGIC
