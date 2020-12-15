@@ -132,10 +132,11 @@ abstract class MapGen {
 @CompileStatic @TupleConstructor class Rule extends MapGen {
     String id, name, shortDescription, fullDescription, level
     @Override Map<String, Object> toMap() {
-        return ['id'               : id,
-                'name'             : name,
+        return ['id' : id,
+                'name' : name,
                 'shortDescription' : ['text' : shortDescription] as Map<String, Object>,
-                'fullDescription'  : ['text' : fullDescription] as Map<String, Object>
+                'fullDescription' : ['text' : fullDescription] as Map<String, Object>,
+                'defaultConfiguration' : ['level' : level ] as Map<String, Object>
         ] as Map<String, Object>
     }
 }

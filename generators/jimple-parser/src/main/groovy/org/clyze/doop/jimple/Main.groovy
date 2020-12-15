@@ -74,4 +74,5 @@ class RMetadata {
 	String resultMessage
 	String ruleDescription
 	int ruleIndex
+	String level
 }
