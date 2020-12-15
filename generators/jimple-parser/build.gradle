@@ -1,0 +1,38 @@
+plugins {
+    id 'application'
+    id 'groovy'
+    id 'java-library'
+    id 'antlr'
+}
+
+// Define custom configuration to include dependencies only in the standalone JAR.
+configurations {
+    forStandalone {
+        transitive = false
+    }
+}
+
+def antlrVersion = '4.7.2'
+dependencies {
+    antlr   "org.antlr:antlr4:${antlrVersion}"
+    implementation "org.antlr:antlr4-runtime:${antlrVersion}"
+    api "org.clyze:metadata-model:${metadataVersion}"                // The source metadata model
+    api "org.codehaus.groovy:groovy-cli-commons:${groovyVersion}"    // Command line processor (Groovy wrapper)
+    api "commons-cli:commons-cli:${commonsCliVersion}"               // Command line processor
+    api "org.codehaus.groovy:groovy-json:${groovyVersion}"           // JSON generator
+    forStandalone "org.codehaus.groovy:groovy-all:${groovyVersion}"  // Groovy (for standalone)
+}
+
+mainClassName = 'org.clyze.doop.jimple.Main'
+version = null
+
+// This task is for standalone execution, for integrations or debugging.
+// Doop uses this subproject as a compile-time depdency/library instead.
+task fatJar(type: Jar) {
+    manifest {
+        attributes 'Main-Class': mainClassName
+    }
+    from { (configurations.compileClasspath + configurations.forStandalone).collect { it.directory ? it : zipTree(it) } }
+    with jar
+    archiveClassifier.set('all')
+}

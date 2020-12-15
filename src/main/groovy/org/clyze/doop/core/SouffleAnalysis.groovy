@@ -3,10 +3,13 @@ package org.clyze.doop.core
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 import groovy.util.logging.Log4j
+import org.clyze.doop.jimple.JimpleProcessor
+import org.clyze.doop.soot.DoopConventions
 import org.clyze.doop.utils.ConfigurationGenerator
 import org.clyze.doop.utils.DDlog
 import org.clyze.doop.utils.SouffleScript
 import org.clyze.utils.Executor
+import org.clyze.utils.VersionInfo
 
 import java.util.concurrent.Callable
 import java.util.concurrent.Executors
@@ -67,6 +70,7 @@ class SouffleAnalysis extends DoopAnalysis {
 		}
 
 		File runtimeMetricsFile = File.createTempFile('Stats_Runtime', '.csv')
+		runtimeMetricsFile.deleteOnExit()
 		log.debug "Using intermediate runtime metrics file: ${runtimeMetricsFile.canonicalPath}"
 		if (!database.exists()) {
 			database.mkdirs()
@@ -121,7 +125,6 @@ class SouffleAnalysis extends DoopAnalysis {
 				int dbSize = (sizeOfDirectory(database) / 1024).intValue()
 				runtimeMetricsFile.append("disk footprint (KB)\t${dbSize}\n")
 				postprocess()
-
 			}
 
 			moveFile(runtimeMetricsFile, new File(database, "Stats_Runtime.csv"))
@@ -156,12 +159,6 @@ class SouffleAnalysis extends DoopAnalysis {
 		if (options.INFORMATION_FLOW.value)
 			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/information-flow/${options.INFORMATION_FLOW.value}${INFORMATION_FLOW_SUFFIX}.dl")
 
-		if (options.CONSTANT_FOLDING.value)
-			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/constant-folding/analysis.dl")
-
-		if (options.SYMBOLIC_REASONING.value)
-			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/symbolic-reasoning/analysis.dl")
-
 		String openProgramsRules = options.OPEN_PROGRAMS.value
 		if (openProgramsRules) {
 			log.debug "Using open-programs rules: ${openProgramsRules}"
@@ -179,23 +176,6 @@ class SouffleAnalysis extends DoopAnalysis {
 			if (options.NO_MERGES.value) {
 				log.warn("WARNING: the sanity check is not fully compatible with --" + options.NO_MERGES.name)
 			}
-		}
-
-		if (!options.X_STOP_AT_FACTS.value && options.X_SERVER_LOGIC.value) {
-			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/server-logic/queries.dl")
-		}
-
-		if (!options.X_STOP_AT_FACTS.value && options.GENERATE_OPTIMIZATION_DIRECTIVES.value) {
-			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/opt-directives/keep.dl")
-			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/opt-directives/directives.dl")
-		}
-
-		if (options.X_ORACULAR_HEURISTICS.value) {
-			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/oracular/oracular-heuristics.dl")
-		}
-
-		if (options.X_CONTEXT_DEPENDENCY_HEURISTIC.value) {
-			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/oracular/2-object-ctx-dependency-heuristic.dl")
 		}
 
 		if (options.EXTRA_LOGIC.value) {
@@ -255,6 +235,15 @@ class SouffleAnalysis extends DoopAnalysis {
 			}
 		} catch (Throwable t) {
 			log.error "ERROR: configuration generation failed."
+		}
+
+		try {
+			if (options.SARIF.value && options.GENERATE_JIMPLE.value) {
+				String version = VersionInfo.getVersionInfo(Doop.class)
+				new JimpleProcessor(DoopConventions.jimpleDir(factsDir.canonicalPath), database, database, version, false).process()
+			}
+		} catch (Throwable t) {
+			log.error "ERROR: SARIF generation failed: ${t.message}"
 		}
 	}
 }

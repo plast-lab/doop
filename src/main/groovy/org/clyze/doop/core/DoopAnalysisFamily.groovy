@@ -645,7 +645,13 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "GENERATE_OPTIMIZATION_DIRECTIVES",
 					name: "gen-opt-directives",
-					description: "Generates additional relations for code optimization uses.",
+					description: "Generate additional relations for code optimization uses.",
+					forPreprocessor: true
+			),
+			new BooleanAnalysisOption(
+					id: "SARIF",
+					name: "sarif",
+					description: "Output SARIF results for specific relations.",
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
@@ -753,12 +759,14 @@ class DoopAnalysisFamily implements AnalysisFamily {
             new AnalysisOption<String>(
                     id: "CONSTANT_FOLDING",
                     name: "constant-folding",
-                    description: "Enable constant folding logic."
+                    description: "Enable constant folding logic.",
+					forPreprocessor: true
             ),
 			new AnalysisOption<String>(
 					id: "SYMBOLIC_REASONING",
 					name: "symbolic-reasoning",
-					description: "Symbolic reasoning for expressions."
+					description: "Symbolic reasoning for expressions.",
+					forPreprocessor: true
 			),
 			new AnalysisOption<String>(
 					id: "INFORMATION_FLOW",
@@ -953,14 +961,14 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "Xoracular-heuristics",
 					group: GROUP_EXPERIMENTAL,
 					description: "Run sensitivity heuristics logic under addons/oracular.",
-					forPreprocessor: false
+					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
 					id: "X_CONTEXT_DEPENDENCY_HEURISTIC",
 					name: "Xcontext-dependency-heuristic",
 					group: GROUP_EXPERIMENTAL,
 					description: "Run context dependency heuristics logic under addons/oracular.",
-					forPreprocessor: false
+					forPreprocessor: true
 			),
 			new AnalysisOption<String>(
 					id: "EXTRA_LOGIC",

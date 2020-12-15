@@ -50,13 +50,15 @@ wrapper {
     gradleVersion = "6.2"
 }
 
-def allGeneratorProjects = subprojects.findAll { it.name.indexOf('fact-generator') >= 0 }
-allGeneratorProjects.each {
+def allGeneratorProjects = subprojects.findAll { it.name.contains('fact-generator') }
+def jimpleParserProject = project(':generators:jimple-parser')
+(allGeneratorProjects + jimpleParserProject).each {
     //common configuration for all generator sub-projects
     it.with {
         apply(plugin: 'java')
 
         group = gradle.rootProject.group
+        version = null
         sourceCompatibility = gradle.rootProject.sourceCompatibility
         targetCompatibility = gradle.rootProject.targetCompatibility
 
@@ -69,11 +71,31 @@ allGeneratorProjects.each {
     }
 }
 
-def frontendGeneratorProjects = allGeneratorProjects.findAll { it.name.indexOf('common') == -1 }
+// Set variables for subprojects.
+gradle.rootProject.ext.resourcesDir='src/main/resources'
+gradle.rootProject.ext.testResourcesDir='src/test/resources'
+
+def frontendGeneratorProjects = allGeneratorProjects.findAll { it.name.contains('-fact-generator') }
 //all frontends have a fatJar task, which we explicitly (re)define it here, so we can reference it without issues in
 //the publishing spec
-frontendGeneratorProjects.each {
-    it.tasks.create('fatJar', Jar)
+frontendGeneratorProjects.each { Project p ->
+    // fatJar
+    p.tasks.create('fatJar', Jar)
+    // installJar
+    p.tasks.create('installJar', Copy)
+    p.tasks.installJar {
+	    from p.tasks.fatJar.outputs.files.singleFile
+	    into p.file("../../${resourcesDir}")
+    }
+    p.tasks.installJar.dependsOn p.tasks.fatJar
+    // uninstallJar
+    p.tasks.create('uninstallJar')
+    p.tasks.uninstallJar() {
+	    doLast {
+            def jar = p.tasks.fatJar.outputs.files.singleFile
+            if (jar && jar.name) { delete p.file("../../${resourcesDir}/${jar.name}") }
+	    }
+    }
 }
 
 repositories {
@@ -114,31 +136,30 @@ compileGroovy {
 
 // Set dependency version so that they are available to subprojects.
 gradle.rootProject.ext.antlrVersion='4.7.2'
+gradle.rootProject.ext.commonsCliVersion='1.2'
 gradle.rootProject.ext.metadataVersion='1.0.2'
 gradle.rootProject.ext.groovyVersion="3.0.6"
 gradle.rootProject.ext.clueCommonVersion='3.23.7'
 gradle.rootProject.ext.log4jVersion='1.2.17'
 gradle.rootProject.ext.spockVersion='2.0-M3-groovy-3.0'
-// Set other variables for subprojects.
-gradle.rootProject.ext.resourcesDir='src/main/resources'
-gradle.rootProject.ext.testResourcesDir='src/test/resources'
 
 dependencies {
     // apktool "ext:apktool:2.4.0"                              // old artifactory dependency
     apktool 'Apktool-fork.brut.apktool:apktool-cli:2.4.2'       // needed for decoding APK inputs
     api project(path: ':generators:fact-generator-common', configuration: 'shadow')
+    api jimpleParserProject
     implementation "org.codehaus.groovy:groovy:${groovyVersion}",      // Groovy
             "org.codehaus.groovy:groovy-ant:${groovyVersion}",
             "org.codehaus.groovy:groovy-cli-commons:${groovyVersion}", // Command line processor (Groovy wrapper)
             "commons-logging:commons-logging:1.1",              // Logging wrapper
             "log4j:log4j:${log4jVersion}",                      // Logging implementation
-            "commons-cli:commons-cli:1.2",                      // Command line processor
+            "commons-cli:commons-cli:${commonsCliVersion}",     // Command line processor
             "commons-io:commons-io:2.4",                        // File Utils
             "org.clyze:clue-common:${clueCommonVersion}"
     api "org.clyze:HeapDL:$heapDLVersion"
     implementation "com.google.guava:guava:27.1-jre"                   // for Scaler
 
-    runtimeOnly "org.clyze:jphantom:1.2"                            // JPhantom is a runtime dependency
+    runtimeOnly "org.clyze:jphantom:1.3"                            // JPhantom is a runtime dependency
 
     testImplementation "org.spockframework:spock-core:${spockVersion}"
 }

@@ -111,3 +111,32 @@
 
   .init configuration = Configuration
 }
+
+#ifdef X_ORACULAR_HEURISTICS
+#include "../addons/oracular/oracular-heuristics.dl"
+#endif // X_ORACULAR_HEURISTICS
+
+#ifdef X_CONTEXT_DEPENDENCY_HEURISTIC
+#include "../addons/oracular/2-object-ctx-dependency-heuristic.dl"
+#endif // X_CONTEXT_DEPENDENCY_HEURISTIC
+
+#ifdef X_SERVER_LOGIC
+#include "../addons/server-logic/queries.dl"
+#endif // X_SERVER_LOGIC
+
+#ifdef CONSTANT_FOLDING
+#include "../addons/constant-folding/analysis.dl"
+#endif // CONSTANT_FOLDING
+
+#ifdef SYMBOLIC_REASONING
+#include "../addons/symbolic-reasoning/analysis.dl"
+#endif // SYMBOLIC_REASONING
+
+#ifdef GENERATE_OPTIMIZATION_DIRECTIVES
+#include "../addons/opt-directives/keep.dl"
+#include "../addons/opt-directives/directives.dl"
+#endif // GENERATE_OPTIMIZATION_DIRECTIVES
+
+#ifdef SARIF
+#include "../addons/sarif/sarif.dl"
+#endif // SARIF
