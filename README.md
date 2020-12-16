@@ -309,16 +309,15 @@ Doop supports
 output for specific relations and can be integrated with Visual Studio
 Code (with the Sarif Viewer extension installed).
 
-For example, to analyze `app.jar` and visualize information for optimizers:
-
-1. Analyze the program as follows:
+For example, to analyze `app.jar` and visualize information for optimizers, first
+analyze the program as follows:
 
 ```
-./doop -i app.jar -a context-insensitive --id app --discover-main-methods --gen-opt-directives --sarif
+./doop -i app.jar -a context-insensitive --id app --gen-opt-directives --sarif
 ```
 
-2. Start Visual Studio code to view the intermediate code annotated
-   with the analysis results:
+Then start Visual Studio Code to view the intermediate code annotated
+with the analysis results:
 
 ```
 code out/context-insensitive/app/facts/jimple out/context-insensitive/app/database/doop.sarif
