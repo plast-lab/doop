@@ -2,6 +2,7 @@ package org.clyze.doop.jimple
 
 import groovy.json.JsonBuilder
 import groovy.transform.CompileStatic
+import org.clyze.persistent.model.Class as Klass
 import org.clyze.persistent.model.Element
 import org.clyze.persistent.model.Field
 import org.clyze.persistent.model.Method
@@ -111,6 +112,12 @@ class JimpleProcessor {
                                         else if (!(sym instanceof Usage))
                                             println "ERROR: wrong content type for element ${metadata.contentType}"
                                         break
+                                    case 'Class':
+                                        if (sym instanceof Klass)
+                                            results.add resultForSymbol(doopId, sym, metadata)
+                                        else if (!(sym instanceof Usage))
+                                            println "ERROR: wrong content type for element ${metadata.contentType}"
+                                        break
                                 }
                             }
                         }
@@ -134,14 +141,19 @@ class JimpleProcessor {
         int ruleIndex = 0
         for (String line : new File(db, SARIF_DESC).readLines()) {
             String[] parts = line.tokenize('\t')
-            if (parts.length != 5)
-                throw new RuntimeException("ERROR: bad relation in ${SARIF_DESC}")
-            RMetadata rm = new RMetadata(name: parts[0], doopIdPosition: parts[1] as int, contentType: parts[2], resultMessage: parts[3], ruleDescription: parts[4], ruleIndex: ruleIndex++)
+            if (parts.length != 6)
+                throw new RuntimeException("ERROR: bad relation arity in ${SARIF_DESC}")
+            RMetadata rm = new RMetadata(name: parts[0], doopIdPosition: parts[1] as int, contentType: parts[2], resultMessage: parts[3], ruleDescription: parts[4], ruleIndex: ruleIndex++, level: parts[5])
             allMetadata.add rm
             String relationName = parts[0]
             println "Reading relation: ${relationName}"
+            File rel = new File(db, "${relationName}.csv")
+            if (!rel.exists()) {
+                println "ERROR: relation does not exist and will not be included in SARIF output: ${rel.canonicalPath}"
+                continue
+            }
             Map<String, String[]> relLines = new HashMap<>()
-            for (String relLine : new File(db, "${relationName}.csv").readLines()) {
+            for (String relLine : rel.readLines()) {
                 String[] relParts = relLine.tokenize('\t')
                 String doopId = relParts[rm.doopIdPosition]
                 relLines.put(doopId, relParts)
@@ -156,7 +168,7 @@ class JimpleProcessor {
 
     private void generateSARIF(List<Result> results) {
         int counter = 0
-        List<Rule> rules = allMetadata.collect {new Rule(id: "rule-${counter++}", name: "rule-${it.name}", shortDescription: it.ruleDescription, fullDescription: it.ruleDescription, level: 'error')} as List<Rule>
+        List<Rule> rules = allMetadata.collect {new Rule(id: "rule-${counter++}", name: "rule-${it.name}", shortDescription: it.ruleDescription, fullDescription: it.ruleDescription, level: it.level)} as List<Rule>
         Driver driver = new Driver(name: 'doop', fullName: 'Doop ' + version, version: version, semanticVersion: '1.0', rules: rules)
         Run run = new Run(results: results, artifacts: [] as List<Artifact>, tool: new Tool(driver: driver))
         SARIF sarif = new SARIF(runs: [run] as List<Run>)

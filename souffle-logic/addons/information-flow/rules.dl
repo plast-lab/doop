@@ -430,11 +430,13 @@ MaybeDeserializedValue(?value) :-
    TaintedVarPointsTo(?value, _, ?ret),
    SerializableValue(?value).
 
+.decl AppTaintedVarPointsTo(?value:mainAnalysis.Value, ?var:Var)
+AppTaintedVarPointsTo(?value, ?var) :-
+  TaintedVarPointsTo(?value, _, ?var), ApplicationVar(?var).
+
 .decl AppTaintedVar(?var:Var)
 .output AppTaintedVar
-
-AppTaintedVar(?var) :-
-  TaintedVarPointsTo(_, _, ?var), ApplicationVar(?var).
+AppTaintedVar(?var) :- AppTaintedVarPointsTo(_, ?var).
 
 // Rules for tracking taint object flow (from/to var and context)
 TaintObjTransfer(?callerCtx, ?actual, ?calleeCtx, ?formal) :-

@@ -58,7 +58,6 @@ def jimpleParserProject = project(':generators:jimple-parser')
         apply(plugin: 'java')
 
         group = gradle.rootProject.group
-        version = null
         sourceCompatibility = gradle.rootProject.sourceCompatibility
         targetCompatibility = gradle.rootProject.targetCompatibility
 
@@ -79,6 +78,9 @@ def frontendGeneratorProjects = allGeneratorProjects.findAll { it.name.contains(
 //all frontends have a fatJar task, which we explicitly (re)define it here, so we can reference it without issues in
 //the publishing spec
 frontendGeneratorProjects.each { Project p ->
+    p.with {
+        version = null
+    }
     // fatJar
     p.tasks.create('fatJar', Jar)
     // installJar
@@ -447,14 +449,18 @@ if (project.hasProperty('artifactory_user')) {
                 }
             }
 
-            // Publish fact-generator-common.
-            def p = project(':generators:fact-generator-common')
-            create(p.name, MavenPublication) {
-                // The artifact generator can be a file or a Gradle task
-                def artifactGenerator = project(':generators:fact-generator-common').file("build/libs/fact-generator-common-${version}-all.jar")
-                artifact(artifactGenerator) {
-                    groupId 'org.clyze'
-                    artifactId p.name
+            // Publish fact-generator-common and jimple-parser.
+            [[project(':generators:fact-generator-common'), "fact-generator-common-${version}-all.jar"],
+	         [jimpleParserProject, "jimple-parser-${version}.jar"]]
+            .forEach { List l ->
+                Project p = l[0]
+                create(p.name, MavenPublication) {
+                    // The artifact generator can be a file or a Gradle task
+                    def artifactGenerator = p.file('build/libs/' + l[1])
+                    artifact(artifactGenerator) {
+                        groupId 'org.clyze'
+                        artifactId p.name
+                    }
                 }
             }
         }

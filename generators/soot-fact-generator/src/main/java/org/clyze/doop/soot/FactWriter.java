@@ -84,12 +84,11 @@ class FactWriter extends JavaFactWriter {
 
     void writeClassOrInterfaceType(SootClass c) {
         String classStr = c.getName();
-        boolean isInterface = c.isInterface();
-        if (isInterface && c.isPhantom()) {
+        if (c.isPhantom()) {
             phantoms.reportPhantom("Interface", classStr);
             writePhantomType(c);
         }
-        _db.add(isInterface ? INTERFACE_TYPE : CLASS_TYPE, classStr);
+        _db.add(c.isInterface() ? INTERFACE_TYPE : CLASS_TYPE, classStr);
         writeClassHeap(Representation.classConstant(c), classStr);
         if (c.getTag("VisibilityAnnotationTag") != null) {
             VisibilityAnnotationTag vTag = (VisibilityAnnotationTag) c.getTag("VisibilityAnnotationTag");
