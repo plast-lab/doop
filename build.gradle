@@ -426,8 +426,11 @@ artifacts {
     archives javadocJar
 }
 
-// Make publishing tasks trigger shadow JAR generation.
-Closure shadowDep = { Task it -> it.dependsOn(':generators:fact-generator-common:shadowJar') }
+// Make publishing tasks trigger subproject builds.
+Closure shadowDep = { Task it ->
+    it.dependsOn(':generators:fact-generator-common:shadowJar')
+    it.dependsOn(':generators:jimple-parser:jar')
+}
 tasks.withType(PublishToMavenRepository) { shadowDep(it) }
 tasks.withType(PublishToMavenLocal) { shadowDep(it) }
 
