@@ -15,15 +15,15 @@ class Main {
 	private static final String RELATION_TYPE_ARG = 'TYPE'
 
 	private static String getUsage() {
-		return "Usage: jimple-parser [OPTION]..."
+		return "Usage: code-processor [OPTION]..."
 	}
 
 	private static void printHelpText() {
 		println """\nExamples:
 * Check that Jimple output can be parsed
-  jimple-parser -j /path/to/jimple/directory
+  code-processor -j /path/to/jimple/directory
 * Generate SARIF results for Doop output, relative to Jimple code:
-  jimple-parser -j /path/to/jimple/directory -d /path/to/database -o output-dir
+  code-processor -j /path/to/jimple/directory -d /path/to/database -o output-dir
 """
 	}
 
@@ -66,13 +66,3 @@ class Main {
 	}
 }
 
-@CompileStatic @TupleConstructor
-class RMetadata {
-	String name
-	String contentType
-	int doopIdPosition
-	String resultMessage
-	String ruleDescription
-	int ruleIndex
-	String level
-}

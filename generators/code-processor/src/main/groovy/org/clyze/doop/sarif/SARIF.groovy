@@ -1,4 +1,4 @@
-package org.clyze.doop.jimple
+package org.clyze.doop.sarif
 
 import groovy.transform.CompileStatic
 import groovy.transform.TupleConstructor
