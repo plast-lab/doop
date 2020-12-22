@@ -9,7 +9,7 @@ import org.clyze.doop.utils.ConfigurationGenerator
 import org.clyze.doop.utils.DDlog
 import org.clyze.doop.utils.SouffleScript
 import org.clyze.utils.Executor
-import org.clyze.utils.VersionInfo
+import org.clyze.utils.JHelper
 
 import java.util.concurrent.Callable
 import java.util.concurrent.Executors
@@ -239,7 +239,7 @@ class SouffleAnalysis extends DoopAnalysis {
 
 		try {
 			if (options.SARIF.value && options.GENERATE_JIMPLE.value) {
-				String version = VersionInfo.getVersionInfo(Doop.class)
+				String version = JHelper.getVersionInfo(Doop.class)
 				new JimpleProcessor(DoopConventions.jimpleDir(factsDir.canonicalPath), database, database, version, false).process()
 			}
 		} catch (Throwable t) {

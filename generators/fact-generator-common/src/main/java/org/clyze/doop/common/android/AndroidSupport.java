@@ -7,7 +7,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 import org.clyze.doop.common.*;
 import org.clyze.doop.util.Resource;
-import org.clyze.utils.AARUtils;
+import org.clyze.utils.ContainerUtils;
 import org.clyze.utils.JHelper;
 
 import static org.clyze.doop.util.Resource.APKTOOL_JAR;
@@ -83,8 +83,8 @@ public abstract class AndroidSupport {
         }
 
         // If inputs are in AAR format, extract and use their JAR entries.
-        parameters.setInputs(AARUtils.toJars(parameters.getInputs(), false, tmpDirs));
-        parameters.setDependencies(AARUtils.toJars(parameters.getDependencies(), false, tmpDirs));
+        parameters.setInputs(ContainerUtils.toJars(parameters.getInputs(), false, tmpDirs));
+        parameters.setDependencies(ContainerUtils.toJars(parameters.getDependencies(), false, tmpDirs));
 
         List<String> inputs = parameters.getInputs();
         int inputsSize = inputs.size();

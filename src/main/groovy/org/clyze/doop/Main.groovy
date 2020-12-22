@@ -15,7 +15,7 @@ import org.clyze.doop.common.DoopErrorCodeException
 import org.clyze.doop.core.Doop
 import org.clyze.doop.core.DoopAnalysis
 import org.clyze.utils.FileOps
-import org.clyze.utils.VersionInfo
+import org.clyze.utils.JHelper
 import org.codehaus.groovy.runtime.StackTraceUtils
 
 /**
@@ -82,7 +82,7 @@ class Main {
 				Help.usage(cli, clidBuilder)
 				return
 			} else if (cli['v']) {
-				println VersionInfo.getVersionInfo(Main.class)
+				println JHelper.getVersionInfo(Main.class)
 				return
 			}
 

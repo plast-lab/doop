@@ -2,7 +2,7 @@ package org.clyze.doop.common.android;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.clyze.utils.AARUtils;
+import org.clyze.utils.ContainerUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -80,7 +80,7 @@ public class RLinker {
         if ((rDir == null) || rs.isEmpty()) {
             return null;
         } else {
-            final String tmpDir = AARUtils.createTmpDir(tmpDirs);
+            final String tmpDir = ContainerUtils.createTmpDir(tmpDirs);
             rs.forEach ((k, v) -> runProcess("javac " + genR(tmpDir, k, v)));
 
             // Compile JAR and optionally copy to output directory.

@@ -15,7 +15,7 @@ import org.clyze.doop.common.Database;
 import org.clyze.doop.common.DoopErrorCodeException;
 import org.clyze.doop.common.Phantoms;
 import org.clyze.doop.soot.android.AndroidSupport_Soot;
-import org.clyze.utils.AARUtils;
+import org.clyze.utils.ContainerUtils;
 import org.clyze.utils.JHelper;
 import soot.Scene;
 import soot.SootClass;
@@ -178,7 +178,7 @@ public class Main {
         }
 
         List<String> allLibs = sootParameters.getDependenciesAndPlatformLibs();
-        for (String lib : AARUtils.toJars(allLibs, false, tmpDirs)) {
+        for (String lib : ContainerUtils.toJars(allLibs, false, tmpDirs)) {
             System.out.println("Adding archive for resolving: " + lib);
             addToSootClassPath(scene, lib);
         }

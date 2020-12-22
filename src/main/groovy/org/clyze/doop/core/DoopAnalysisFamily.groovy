@@ -44,6 +44,9 @@ class DoopAnalysisFamily implements AnalysisFamily {
 	String getName() { "doop" }
 
 	@Override
+	boolean requiresSources() { return false }
+
+	@Override
 	void init() {}
 
 	@Override

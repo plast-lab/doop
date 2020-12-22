@@ -7,7 +7,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import org.apache.commons.io.FilenameUtils;
 import org.clyze.doop.common.BytecodeUtil;
-import org.clyze.utils.AARUtils;
+import org.clyze.utils.ContainerUtils;
 import org.clyze.utils.JHelper;
 import org.jf.dexlib2.dexbacked.DexBackedClassDef;
 import org.jf.dexlib2.dexbacked.DexBackedDexFile;
@@ -71,7 +71,7 @@ public class PackageUtil {
 	public static Set<String> getPackagesForAAR(File aar) throws IOException {
 		Set<String> ret = new HashSet<>();
 		Set<String> tmpDirs = new HashSet<>();
-		for (String jar : AARUtils.toJars(Collections.singletonList(aar.getCanonicalPath()), true, tmpDirs))
+		for (String jar : ContainerUtils.toJars(Collections.singletonList(aar.getCanonicalPath()), true, tmpDirs))
 			ret.addAll(getPackagesForJAR(new File(jar)));
 		JHelper.cleanUp(tmpDirs);
 		return ret;
