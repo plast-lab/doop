@@ -103,7 +103,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "INPUTS",
 					name: "input-file",
 					optName: "i",
-					description: "The (application) input files of the analysis. Accepted formats: .jar, .apk, .aar",
+					description: "The (application) input files of the analysis. Accepted formats: .jar, .apk, .aar, maven-id",
 					value: [],
 					multipleValues: true,
 					argName: "INPUT",
