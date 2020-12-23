@@ -320,12 +320,12 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
     private List<String> getInputArgsJars(Set<String> tmpDirs) {
         def inputArgs = inputFiles.collect() { File f -> ["-i", f.toString()] }.flatten() as Collection<String>
-        return AARUtils.toJars(inputArgs as List<String>, false, tmpDirs)
+        return ContainerUtils.toJars(inputArgs as List<String>, false, tmpDirs)
     }
 
     private List<String> getDepsJars(Set<String> tmpDirs) {
         def deps = libraryFiles.collect { File f -> ["-ld", f.toString()] }.flatten() as Collection<String>
-        return AARUtils.toJars(deps as List<String>, false, tmpDirs)
+        return ContainerUtils.toJars(deps as List<String>, false, tmpDirs)
     }
 
     protected void runFrontEnd(Set<String> tmpDirs, FrontEnd frontEnd, CHA cha) {

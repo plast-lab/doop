@@ -51,8 +51,8 @@ wrapper {
 }
 
 def allGeneratorProjects = subprojects.findAll { it.name.contains('fact-generator') }
-def jimpleParserProject = project(':generators:jimple-parser')
-(allGeneratorProjects + jimpleParserProject).each {
+def codeProcessorProject = project(':generators:code-processor')
+(allGeneratorProjects + codeProcessorProject).each {
     //common configuration for all generator sub-projects
     it.with {
         apply(plugin: 'java')
@@ -141,7 +141,7 @@ gradle.rootProject.ext.antlrVersion='4.7.2'
 gradle.rootProject.ext.commonsCliVersion='1.2'
 gradle.rootProject.ext.metadataVersion='1.0.2'
 gradle.rootProject.ext.groovyVersion="3.0.6"
-gradle.rootProject.ext.clueCommonVersion='3.23.7'
+gradle.rootProject.ext.clueCommonVersion='3.24.0'
 gradle.rootProject.ext.log4jVersion='1.2.17'
 gradle.rootProject.ext.spockVersion='2.0-M3-groovy-3.0'
 
@@ -149,7 +149,7 @@ dependencies {
     // apktool "ext:apktool:2.4.0"                              // old artifactory dependency
     apktool 'Apktool-fork.brut.apktool:apktool-cli:2.4.2'       // needed for decoding APK inputs
     api project(path: ':generators:fact-generator-common', configuration: 'shadow')
-    api jimpleParserProject
+    api codeProcessorProject
     implementation "org.codehaus.groovy:groovy:${groovyVersion}",      // Groovy
             "org.codehaus.groovy:groovy-ant:${groovyVersion}",
             "org.codehaus.groovy:groovy-cli-commons:${groovyVersion}", // Command line processor (Groovy wrapper)
@@ -413,6 +413,7 @@ task printClasspath {
 task sourcesJar(type: Jar, dependsOn: classes) {
     archiveClassifier.set('sources')
     from sourceSets.main.allSource
+    exclude("*.jar")
 }
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
@@ -425,8 +426,11 @@ artifacts {
     archives javadocJar
 }
 
-// Make publishing tasks trigger shadow JAR generation.
-Closure shadowDep = { Task it -> it.dependsOn(':generators:fact-generator-common:shadowJar') }
+// Make publishing tasks trigger subproject builds.
+Closure shadowDep = { Task it ->
+    it.dependsOn(':generators:fact-generator-common:shadowJar')
+    it.dependsOn(':generators:code-processor:jar')
+}
 tasks.withType(PublishToMavenRepository) { shadowDep(it) }
 tasks.withType(PublishToMavenLocal) { shadowDep(it) }
 
@@ -449,9 +453,9 @@ if (project.hasProperty('artifactory_user')) {
                 }
             }
 
-            // Publish fact-generator-common and jimple-parser.
+            // Publish fact-generator-common and code-processor.
             [[project(':generators:fact-generator-common'), "fact-generator-common-${version}-all.jar"],
-	         [jimpleParserProject, "jimple-parser-${version}.jar"]]
+	         [codeProcessorProject, "code-processor-${version}.jar"]]
             .forEach { List l ->
                 Project p = l[0]
                 create(p.name, MavenPublication) {
