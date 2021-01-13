@@ -340,7 +340,7 @@ test {
     java.nio.file.Path lbTestHomeDir = Files.createTempDirectory("lb-test-home-dir", onWindows ? ([] as java.nio.file.attribute.FileAttribute[]) : asFileAttribute(fromString("rwxrwxrwx")))
     environment.HOME = lbTestHomeDir.toString()
     doLast {
-        lbTestHomeDir.toFile().delete()
+        Files.walk(lbTestHomeDir).sorted(Comparator.reverseOrder()).map { Path p -> p.toFile() }.forEach { File f -> f.delete() };
     }
 }
 
