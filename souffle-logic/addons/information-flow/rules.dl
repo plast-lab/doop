@@ -1,3 +1,4 @@
+#pragma once
 #include "macros.dl"
 #include "declarations.dl"
 #include "delta.dl"
