@@ -466,13 +466,7 @@ MethodInvokedByReflection(?method) :-
 // optimization effects for the whole program).
 
 .output ApplicationMethod
-
-.decl ApplicationField(?field:Field)
 .output ApplicationField
-ApplicationField(?field) :-
-  Field_DeclaringType(?field, ?type),
-  ApplicationClass(?type).
-  
 
 // Compute configuration patterns: "allDeclaredConstructors",
 // "allPublicConstructors", "allDeclaredMethods", "allPublicMethods",
