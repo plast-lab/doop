@@ -597,6 +597,10 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
 		// Process statistics option.
 		String stats = options.STATS_LEVEL.value as String
+		if (options.ANALYSIS.value == 'micro' && stats != DoopAnalysisFamily.STATS_NONE) {
+			log.info "Disabling statistics for micro analysis."
+			stats = DoopAnalysisFamily.STATS_NONE
+		}
 		if (stats == DoopAnalysisFamily.STATS_NONE)
 			options.X_STATS_NONE.value = true
 		else if (stats == DoopAnalysisFamily.STATS_DEFAULT)
