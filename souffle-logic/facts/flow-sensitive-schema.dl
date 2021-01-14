@@ -59,6 +59,7 @@
 
 .type Field
 .decl isField(?field:Field)
+.decl ApplicationField(?field:Field)
 
 .decl Field_DeclaringType(?field:Field, ?declaringClass:ReferenceType)
 .decl Field_SimpleName(?field:Field, ?simpleName:symbol)

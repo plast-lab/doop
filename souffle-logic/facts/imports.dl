@@ -1074,6 +1074,10 @@ MainMethodArgArrayContent(?heap) :-
   ?heap = "<<main method array content>>",
   ?type = "java.lang.String".
 
+ApplicationField(?field) :-
+  Field_DeclaringType(?field, ?type),
+  ApplicationClass(?type).
+
 ApplicationMethod(?method) :-
   Method_DeclaringType(?method, ?class),
   ApplicationClass(?class).
