@@ -1,3 +1,5 @@
+#pragma once
+
 //ParamToBaseTaintTransferMethod(0, "<java.lang.StringBuilder: java.lang.StringBuilder append(java.lang.Object)>").
 ParamToBaseTaintTransferMethod(0, "<java.lang.StringBuffer: java.lang.StringBuffer append(java.lang.Object)>").
 ParamToBaseTaintTransferMethod(0, "<java.lang.StringBuffer: java.lang.StringBuffer append(java.lang.String)>").

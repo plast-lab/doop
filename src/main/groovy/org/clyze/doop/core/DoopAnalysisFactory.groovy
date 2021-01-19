@@ -435,6 +435,10 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		throwIfBothSet(options.DISABLE_POINTS_TO, options.INFORMATION_FLOW)
 		throwIfBothSet(options.SOUFFLE_PROVENANCE, options.SOUFFLE_LIVE_PROFILE)
 
+		if (options.INFORMATION_FLOW.value == 'android' && !options.ANDROID.value) {
+			log.warn "WARNING: This information flow setting should run in Android mode."
+		}
+
 		if (options.SOUFFLE_INCREMENTAL_OUTPUT.value){
 			options.SOUFFLE_USE_FUNCTORS.value = true
 		}
