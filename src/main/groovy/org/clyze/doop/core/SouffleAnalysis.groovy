@@ -37,6 +37,14 @@ class SouffleAnalysis extends DoopAnalysis {
 			runAnalysisAndProduceStats(analysis)
 		}
 
+		File runtimeMetricsFile = File.createTempFile('Stats_Runtime', '.csv')
+		runtimeMetricsFile.deleteOnExit()
+		log.debug "Using intermediate runtime metrics file: ${runtimeMetricsFile.canonicalPath}"
+		if (!database.exists()) {
+			database.mkdirs()
+		}
+		runtimeMetricsFile.createNewFile()
+
 		SouffleScript script = newScriptForAnalysis(executor)
 
 		Future<File> compilationFuture = null
@@ -45,37 +53,33 @@ class SouffleAnalysis extends DoopAnalysis {
 		boolean profiling = options.SOUFFLE_PROFILE.value as boolean
 		boolean liveProf = options.SOUFFLE_LIVE_PROFILE.value as boolean
 		String analysisBinaryPath = options.USE_ANALYSIS_BINARY.value
+		boolean runInterpreted = options.SOUFFLE_RUN_INTERPRETED.value as boolean
+		boolean debug = options.SOUFFLE_DEBUG.value as boolean
+		int jobs = options.SOUFFLE_JOBS.value as int
+		boolean removeContexts = options.X_CONTEXT_REMOVER.value as boolean
+		boolean forceRecompile = options.SOUFFLE_FORCE_RECOMPILE.value as boolean
+		long monitorInterval = (options.X_MONITORING_INTERVAL.value as long) * 1000
+
 		if (!options.X_STOP_AT_FACTS.value && !analysisBinaryPath) {
 			if (options.VIA_DDLOG.value) {
 				// Copy the DDlog converter, needed both for logic
 				// compilation and fact post-processing.
 				DDlog.copyDDlogConverter(log, outDir)
+			} else if (!runInterpreted) {
+				compilationFuture = executorService.submit(new Callable<File>() {
+					@Override
+					File call() {
+						log.info "[Task COMPILE...]"
+						def generatedFile = script.compile(analysis, outDir, profiling,
+														   debug, provenance, liveProf, forceRecompile,
+														   removeContexts,
+														   options.SOUFFLE_USE_FUNCTORS.value as boolean)
+						log.info "[Task COMPILE Done]"
+						return generatedFile
+					}
+				})
 			}
-			compilationFuture = executorService.submit(new Callable<File>() {
-				@Override
-				File call() {
-					log.info "[Task COMPILE...]"
-					def generatedFile = script.compile(analysis, outDir,
-							profiling,
-							options.SOUFFLE_DEBUG.value as boolean,
-							provenance,
-							liveProf,
-							options.SOUFFLE_FORCE_RECOMPILE.value as boolean,
-							options.X_CONTEXT_REMOVER.value as boolean,
-							options.SOUFFLE_USE_FUNCTORS.value as boolean)
-					log.info "[Task COMPILE Done]"
-					return generatedFile
-				}
-			})
 		}
-
-		File runtimeMetricsFile = File.createTempFile('Stats_Runtime', '.csv')
-		runtimeMetricsFile.deleteOnExit()
-		log.debug "Using intermediate runtime metrics file: ${runtimeMetricsFile.canonicalPath}"
-		if (!database.exists()) {
-			database.mkdirs()
-		}
-		runtimeMetricsFile.createNewFile()
 
 		File generatedFile
 		if (options.X_SERIALIZE_FACTGEN_COMPILATION.value) {
@@ -93,22 +97,23 @@ class SouffleAnalysis extends DoopAnalysis {
 			if (options.X_SERVER_CHA.value) {
 				log.info "[CHA...]"
 				def methodLookupFile = new File("${Doop.souffleAddonsPath}/server-logic/method-lookup-ext.dl")
-				def generatedFile0 = script.compile(methodLookupFile, outDir,
-						profiling,
-						options.SOUFFLE_DEBUG.value as boolean,
-						provenance,
-						liveProf,
-						options.SOUFFLE_FORCE_RECOMPILE.value as boolean,
-						options.X_CONTEXT_REMOVER.value as boolean)
-				script.run(generatedFile0, factsDir, outDir, options.SOUFFLE_JOBS.value as int,
-						   (options.X_MONITORING_INTERVAL.value as long) * 1000, monitorClosure,
-						   provenance, liveProf, profiling)
+                if (runInterpreted) {
+                    script.interpretScript(methodLookupFile, outDir, factsDir,
+                                           jobs, profiling, debug, removeContexts)
+                } else {
+				    def generatedFile0 = script.compile(methodLookupFile, outDir,
+						                                profiling, debug, provenance, liveProf, forceRecompile,
+						                                removeContexts)
+				    script.run(generatedFile0, factsDir, outDir, jobs,
+						       monitorInterval, monitorClosure,
+						       provenance, liveProf, profiling)
+                }
 				log.info "[CHA Done]"
 			}
 
 			if (options.X_STOP_AT_FACTS.value) return
 
-			if (!analysisBinaryPath) {
+			if (!analysisBinaryPath && !runInterpreted) {
 				if (!options.X_SERIALIZE_FACTGEN_COMPILATION.value) {
 					generatedFile = compilationFuture.get()
 				}
@@ -116,10 +121,15 @@ class SouffleAnalysis extends DoopAnalysis {
 			}
 
 			if (!options.DRY_RUN.value) {
-				File analysisBinary = analysisBinaryPath ? new File(analysisBinaryPath) : generatedFile
-				script.run(analysisBinary, factsDir, outDir, options.SOUFFLE_JOBS.value as int,
-						(options.X_MONITORING_INTERVAL.value as long) * 1000, monitorClosure,
-						provenance, liveProf, profiling)
+				if (runInterpreted) {
+					script.interpretScript(analysis, outDir, factsDir, jobs,
+										   profiling, debug, removeContexts)
+				} else {
+				    File analysisBinary = analysisBinaryPath ? new File(analysisBinaryPath) : generatedFile
+				    script.run(analysisBinary, factsDir, outDir, jobs, 
+						       monitorInterval, monitorClosure, provenance,
+                               liveProf, profiling)
+				}
 
 				runtimeMetricsFile.append("analysis execution time (sec)\t${script.executionTime}\n")
 				int dbSize = (sizeOfDirectory(database) / 1024).intValue()
