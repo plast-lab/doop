@@ -317,8 +317,14 @@ class LB3Analysis extends DoopAnalysis {
 		}
 
 		if (options.EXTRA_LOGIC.value) {
-			for (String extraLogic : options.EXTRA_LOGIC.value as Collection<String>)
-				lbBuilder.include(extraLogic as String)
+			for (String extraLogic : options.EXTRA_LOGIC.value as Collection<String>) {
+				// Safety: check file extension to avoid using this mechanism
+				// to read files from anywhere in the system.
+				if (extraLogic.endsWith(".logic"))
+					lbBuilder.include(extraLogic as String)
+				else
+					log.warn "WARNING: ignoring file not ending in .logic: ${extraLogic}"
+			}
 		}
 	}
 

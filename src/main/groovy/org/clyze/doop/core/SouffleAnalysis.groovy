@@ -185,8 +185,13 @@ class SouffleAnalysis extends DoopAnalysis {
 				if (!extraLogic.exists())
 					throw new RuntimeException("Extra logic file does not exist: ${extraLogic}")
 				String extraLogicPath = extraLogic.canonicalPath
-				log.info "Adding extra logic file ${extraLogicPath}"
-				cpp.includeAtEnd("${analysis}", extraLogicPath)
+				// Safety: check file extension to avoid using this mechanism
+				// to read files from anywhere in the system.
+				if (extraLogicPath.endsWith('.dl')) {
+					log.info "Adding extra logic file ${extraLogicPath}"
+					cpp.includeAtEnd("${analysis}", extraLogicPath)
+				} else
+					log.warn "WARNING: ignoring file not ending in .dl: ${extraLogicPath}"
 			}
 		}
 	}
