@@ -60,25 +60,24 @@ class SouffleAnalysis extends DoopAnalysis {
 		boolean forceRecompile = options.SOUFFLE_FORCE_RECOMPILE.value as boolean
 		long monitorInterval = (options.X_MONITORING_INTERVAL.value as long) * 1000
 
-		if (!options.X_STOP_AT_FACTS.value && !analysisBinaryPath) {
+		if (!options.X_STOP_AT_FACTS.value && !analysisBinaryPath && !runInterpreted) {
 			if (options.VIA_DDLOG.value) {
 				// Copy the DDlog converter, needed both for logic
 				// compilation and fact post-processing.
 				DDlog.copyDDlogConverter(log, outDir)
-			} else if (!runInterpreted) {
-				compilationFuture = executorService.submit(new Callable<File>() {
-					@Override
-					File call() {
-						log.info "[Task COMPILE...]"
-						def generatedFile = script.compile(analysis, outDir, profiling,
-														   debug, provenance, liveProf, forceRecompile,
-														   removeContexts,
-														   options.SOUFFLE_USE_FUNCTORS.value as boolean)
-						log.info "[Task COMPILE Done]"
-						return generatedFile
-					}
-				})
 			}
+			compilationFuture = executorService.submit(new Callable<File>() {
+				@Override
+				File call() {
+					log.info "[Task COMPILE...]"
+					def generatedFile = script.compile(analysis, outDir, profiling,
+													   debug, provenance, liveProf, forceRecompile,
+													   removeContexts,
+													   options.SOUFFLE_USE_FUNCTORS.value as boolean)
+					log.info "[Task COMPILE Done]"
+					return generatedFile
+				}
+			})
 		}
 
 		File generatedFile
