@@ -2,7 +2,6 @@ package org.clyze.doop.utils
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Log4j
-import org.apache.commons.io.FileUtils
 import org.clyze.doop.common.DoopErrorCodeException
 import org.clyze.doop.core.DoopAnalysisFactory
 import org.clyze.doop.core.DoopAnalysisFamily
@@ -48,10 +47,13 @@ class SouffleScript {
 		return viaDDlog ? new DDlog(executor, new File(cacheDir, "ddlog")) : new SouffleScript(executor, cacheDir)
 	}
 
-	void preprocess(File output, File input) {
+	protected void setScriptFileViaCPP(File input, File outDir) {
+		File output = File.createTempFile("gen_", ".dl", outDir)
+		scriptFile.deleteOnExit()
 		CPreprocessor cpp = new CPreprocessor(executor)
 		cpp.disableLineMarkers().enableLogOutput()
 		cpp.preprocessIfExists(output.canonicalPath, input.canonicalPath)
+		this.scriptFile = output
 	}
 
 	/**
@@ -75,9 +77,7 @@ class SouffleScript {
                  boolean provenance = false, boolean liveProf = false,
                  boolean forceRecompile = true, boolean removeContext = false, boolean useFunctors = false) {
 
-		scriptFile = File.createTempFile("gen_", ".dl", outDir)
-		scriptFile.deleteOnExit()
-		preprocess(scriptFile, origScriptFile)
+		setScriptFileViaCPP(origScriptFile, outDir)
 
 		if (useFunctors) {
 			detectFunctors(outDir)
@@ -212,15 +212,12 @@ class SouffleScript {
                         int jobs, boolean profile = false, boolean debug = false,
                         boolean removeContext = false) {
 
-		File scriptFile = File.createTempFile("gen_", ".dl", outDir)
-		scriptFile.deleteOnExit()
-		preprocess(scriptFile, origScriptFile)
+		setScriptFileViaCPP(origScriptFile, outDir)
 
 		def db = makeDatabase(outDir)
 
-        if (removeContext) {
+        if (removeContext)
             removeContexts(scriptFile)
-        }
 
         def interpretationCommand = "souffle ${scriptFile} -j${jobs} -F${factsDir.canonicalPath} -D${db.canonicalPath}".split().toList()
         if (profile)

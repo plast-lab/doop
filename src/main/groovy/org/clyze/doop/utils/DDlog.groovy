@@ -89,9 +89,7 @@ class DDlog extends SouffleScript {
 
         checkOptions(debug, provenance, liveProf, removeContext, useFunctors)
 
-        scriptFile = File.createTempFile("gen_", ".dl", outDir)
-        scriptFile.deleteOnExit()
-		preprocess(scriptFile, origScriptFile)
+        setScriptFileViaCPP(origScriptFile, outDir)
 
         def checksum = calcChecksum(profile, provenance, liveProf)
 		def cacheFile = new File(cacheDir, checksum)
