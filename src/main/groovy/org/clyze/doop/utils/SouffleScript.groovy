@@ -47,9 +47,9 @@ class SouffleScript {
 		return viaDDlog ? new DDlog(executor, new File(cacheDir, "ddlog")) : new SouffleScript(executor, cacheDir)
 	}
 
-	protected void setScriptFileViaCPP(File input, File outDir) {
+	void setScriptFileViaCPP(File input, File outDir) {
 		File output = File.createTempFile("gen_", ".dl", outDir)
-		scriptFile.deleteOnExit()
+		output.deleteOnExit()
 		CPreprocessor cpp = new CPreprocessor(executor)
 		cpp.disableLineMarkers().enableLogOutput()
 		cpp.preprocessIfExists(output.canonicalPath, input.canonicalPath)

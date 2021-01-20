@@ -52,7 +52,7 @@ class SouffleAnalysis extends DoopAnalysis {
 		boolean provenance = options.SOUFFLE_PROVENANCE.value as boolean
 		boolean profiling = options.SOUFFLE_PROFILE.value as boolean
 		boolean liveProf = options.SOUFFLE_LIVE_PROFILE.value as boolean
-		String analysisBinaryPath = options.USE_ANALYSIS_BINARY.value
+		String analysisBinaryPath = options.USE_ANALYSIS_BINARY.value as String
 		boolean runInterpreted = options.SOUFFLE_RUN_INTERPRETED.value as boolean
 		boolean debug = options.SOUFFLE_DEBUG.value as boolean
 		int jobs = options.SOUFFLE_JOBS.value as int
