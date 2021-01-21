@@ -339,9 +339,7 @@ test {
     environment.DOOP_HOME = projectDir
     java.nio.file.Path lbTestHomeDir = Files.createTempDirectory("lb-test-home-dir", onWindows ? ([] as java.nio.file.attribute.FileAttribute[]) : asFileAttribute(fromString("rwxrwxrwx")))
     environment.HOME = lbTestHomeDir.toString()
-    doLast {
-        Files.walk(lbTestHomeDir).sorted(Comparator.reverseOrder()).map { Path p -> p.toFile() }.forEach { File f -> f.delete() };
-    }
+    lbTestHomeDir.toFile().deleteDir()
 }
 
 // Copy resources to src/test/resources or they will not be found by tests.
