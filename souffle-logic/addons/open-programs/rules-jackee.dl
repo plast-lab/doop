@@ -55,6 +55,9 @@ mainAnalysis.ReachableContext(?ctx, ?method) :-
   mainAnalysis.isImmutableContext(?ctx),
   EntryPointMethod(?method).
 
+// Set flag to enable statistics print logic.
+#define OPEN_PROGRAM_MOCK_OBJS
+
 /**
  *  Mock receivers for entry points
  **/

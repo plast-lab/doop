@@ -19,6 +19,8 @@ AllConcreteImplementations(?type, ?type) :-
 ConcreteType(?type) :-
   AllConcreteImplementations(?type, _).
 
+// Set flag to enable statistics print logic.
+#define OPEN_PROGRAM_MOCK_OBJS
 .decl ObjToMock(?class:ReferenceType)
 .decl MockObjFromOpenProgramEntryPoint(?class:ReferenceType)
 .decl MockObjFromOpenProgramEntryPointReceiver(?value:mainAnalysis.Value)
