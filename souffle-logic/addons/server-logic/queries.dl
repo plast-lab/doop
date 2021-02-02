@@ -352,6 +352,7 @@ Server_Metrics("#Field", ?n) :- ?n = count:{isField(_)}.
 Server_Metrics("#Var", ?n) :- ?n = count:{isVar(_)}.
 Server_Metrics("#HeapAllocation", ?n) :- ?n = count:{isHeapAllocation(_)}.
 Server_Metrics("#MethodInvocation", ?n) :- ?n = count:{isMethodInvocation(_)}.
+Server_Metrics("Results threshold", X_SERVER_LOGIC_THRESHOLD).
 
 // --Metrics //
 
