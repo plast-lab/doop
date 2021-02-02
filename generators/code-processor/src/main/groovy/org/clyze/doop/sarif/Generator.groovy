@@ -22,8 +22,8 @@ class Generator {
     private static final String SARIF_OUT = 'doop.sarif'
     /** The prefix to use for placeholders in messages. */
     private static final String PLACEHOLDER_PRE = '@@'
-
-    /** If true, the processor only parses the input (used for debugging). */
+    /** If true, the processor only parses the input (used for debugging or
+     *  by clients using this code as a library). */
     protected final boolean parseOnly = false
     /** The output directory. */
     protected final File out
@@ -44,7 +44,8 @@ class Generator {
     Generator(File db, File out, String version, boolean standalone) {
         if (db == null || out == null) {
             this.parseOnly = true
-            println "WARNING: running parsing check only, see usage help for more options."
+            if (standalone)
+                println "WARNING: running parsing check only, see usage help for more options."
         }
         this.db = db
         this.out = out
