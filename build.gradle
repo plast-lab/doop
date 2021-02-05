@@ -137,7 +137,7 @@ compileGroovy {
 }
 
 // Set dependency version so that they are available to subprojects.
-gradle.rootProject.ext.antlrVersion='4.7.2'
+gradle.rootProject.ext.antlrVersion='4.9.1'
 gradle.rootProject.ext.commonsCliVersion='1.2'
 gradle.rootProject.ext.metadataVersion='1.0.2'
 gradle.rootProject.ext.groovyVersion="3.0.6"

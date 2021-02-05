@@ -90,7 +90,8 @@ Server_Field_ShadowedBy(?fld, ?shadowFld) :-
 
 #ifndef DISABLE_POINTS_TO
 _IFPT(?baseValue, ?fld, ?value) :-
-  mainAnalysis.InstanceFieldPointsTo(_, ?value, ?fld, _, ?baseValue).
+  mainAnalysis.InstanceFieldPointsTo(_, ?value, ?fld, _, ?baseValue),
+  !isNumConstant(?value).
 #endif // DISABLE_POINTS_TO
 
 Server_IField_Values_Count(?baseValue, ?fld, ?n) :-
@@ -98,7 +99,8 @@ Server_IField_Values_Count(?baseValue, ?fld, ?n) :-
   ?n = count:{_IFPT(?baseValue, ?fld, _)}.
 
 _SFPT(?fld, ?value) :-
-  mainAnalysis.StaticFieldPointsTo(_, ?value, ?fld).
+  mainAnalysis.StaticFieldPointsTo(_, ?value, ?fld),
+  !isNumConstant(?value).
 
 _SFPT_Count(?fld, ?n) :-
   _SFPT(?fld, _),
@@ -158,7 +160,8 @@ Server_SField_Values(?fld, "<<XL-pt-set>>") :-
 .decl _InterestingVar(?var:Var)
 
 _VPT(?var, ?value) :-
-  mainAnalysis.VarPointsTo(_, ?value, _, ?var).
+  mainAnalysis.VarPointsTo(_, ?value, _, ?var),
+  !isNumConstant(?value).
 
 _InterestingVar(?var) :-
   _VPT(?var, _).
@@ -352,6 +355,7 @@ Server_Metrics("#Field", ?n) :- ?n = count:{isField(_)}.
 Server_Metrics("#Var", ?n) :- ?n = count:{isVar(_)}.
 Server_Metrics("#HeapAllocation", ?n) :- ?n = count:{isHeapAllocation(_)}.
 Server_Metrics("#MethodInvocation", ?n) :- ?n = count:{isMethodInvocation(_)}.
+Server_Metrics("Results threshold", X_SERVER_LOGIC_THRESHOLD).
 
 // --Metrics //
 
