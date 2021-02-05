@@ -1,8 +1,8 @@
 package org.clyze.doop.jimple
 
 import groovy.transform.CompileStatic
-import org.clyze.doop.sarif.Generator
-import org.clyze.doop.sarif.Result
+import org.clyze.doop.sarif.SARIFGenerator
+import org.clyze.sarif.model.Result
 import org.clyze.persistent.model.Element
 
 import java.util.concurrent.atomic.AtomicInteger
@@ -14,7 +14,7 @@ import static groovy.io.FileType.FILES
  * generate SARIF metadata that relate Jimple to existing Doop results.
  */
 @CompileStatic
-class JimpleProcessor extends Generator {
+class JimpleProcessor extends SARIFGenerator {
 
     /** A directory containing Jimple code (in text form). */
     private final String jimplePath

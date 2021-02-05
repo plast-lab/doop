@@ -1,7 +1,7 @@
 package org.clyze.doop.sarif
 
-import groovy.json.JsonBuilder
 import groovy.transform.CompileStatic
+import java.util.concurrent.atomic.AtomicInteger
 import org.clyze.persistent.model.Class as Klass
 import org.clyze.persistent.model.Element
 import org.clyze.persistent.model.Field
@@ -11,11 +11,18 @@ import org.clyze.persistent.model.Position
 import org.clyze.persistent.model.SymbolWithDoopId
 import org.clyze.persistent.model.Usage
 import org.clyze.persistent.model.Variable
+import org.clyze.sarif.model.ArtifactLocation
+import org.clyze.sarif.model.Location
+import org.clyze.sarif.model.Message
+import org.clyze.sarif.model.Result
+import org.clyze.sarif.model.Rule
+import org.clyze.sarif.SARIFWriter
 
-import java.util.concurrent.atomic.AtomicInteger
-
+/**
+ * This class writes analysis results in the SARIF format.
+ */
 @CompileStatic
-class Generator {
+class SARIFGenerator {
     /** The name of the Doop relation that informs the processor. */
     private static final String SARIF_DESC = 'SARIF_InterestingRelation.csv'
     /** The name of the output file. */
@@ -33,7 +40,7 @@ class Generator {
     protected final boolean standalone
     /** The version of the generator. */
     protected final String version
-    /** Dictionary of doop id connections to interesting relations. Used to quickly look up
+    /** Dictionary of Doop id connections to interesting relations. Used to quickly look up
      *  Doop ids for parsed elements. */
     protected final Map<String, Set<RMetadata>> doopIds = new HashMap<>()
     /** Interesting relations stored as relation-name -> doop-id -> line. Used in message reporting. */
@@ -41,7 +48,7 @@ class Generator {
     /** List of all metadata, to be used to generate the rules list for SARIF. */
     private final List<RMetadata> allMetadata = new LinkedList<>()
 
-    Generator(File db, File out, String version, boolean standalone) {
+    SARIFGenerator(File db, File out, String version, boolean standalone) {
         if (db == null || out == null) {
             this.parseOnly = true
             if (standalone)
@@ -53,7 +60,11 @@ class Generator {
         this.standalone = standalone
     }
 
-    protected boolean metadataExist() {
+    /**
+     * Checks if analysis metadata exist.
+     * @return true when the analysis database (containing the metadata) exists
+     */
+    boolean metadataExist() {
         boolean metadataExist = false
         if (!parseOnly) {
             metadataExist = readDatabase()
@@ -97,28 +108,24 @@ class Generator {
         return !(allMetadata.empty)
     }
 
+    /**
+     * Generates the SARIF file.
+     * @param results   the list of analysis results
+     */
     void generateSARIF(List<Result> results) {
-        int counter = 0
-        List<Rule> rules = allMetadata.collect {new Rule(id: "rule-${counter++}", name: "rule-${it.name}", shortDescription: it.ruleDescription, fullDescription: it.ruleDescription, level: it.level)} as List<Rule>
-        Driver driver = new Driver(name: 'doop', fullName: 'Doop ' + version, version: version, semanticVersion: '1.0', rules: rules)
-        Run run = new Run(results: results, artifacts: [] as List<Artifact>, tool: new Tool(driver: driver))
-        SARIF sarif = new SARIF(runs: [run] as List<Run>)
         File sarifOut = new File(out, SARIF_OUT)
-        sarifOut.withWriter { BufferedWriter bw ->
-            bw.write(new JsonBuilder(sarif.toMap()).toPrettyString())
-        }
+        int counter = 0
+        List<Rule> rules = allMetadata.collect {new Rule("rule-${counter++}", "rule-${it.name}", it.ruleDescription, it.ruleDescription, it.level)} as List<Rule>
+        SARIFWriter.write('doop', 'Doop ' + version, version, sarifOut, rules, results)
         println "SARIF results written to file: ${sarifOut.canonicalPath}"
     }
 
-    Result resultForSymbol(String doopId, SymbolWithDoopId sym, RMetadata metadata) {
-        ArtifactLocation artLoc = new ArtifactLocation(uri: sym.sourceFileName)
+    private Result resultForSymbol(String doopId, SymbolWithDoopId sym, RMetadata metadata) {
+        ArtifactLocation artLoc = new ArtifactLocation(sym.sourceFileName)
         Position pos = sym.position
-        Location loc = new Location(artifactLocation: artLoc,
-                startLine: pos.startLine, startColumn: pos.startColumn,
-                endLine: pos.endLine, endColumn: pos.endColumn)
-        return new Result(ruleId: "rule-${metadata.ruleIndex}", ruleIndex: metadata.ruleIndex,
-                message: new Message(text: formatMessage(doopId, metadata)),
-                locations: [loc] as List<Location>)
+        Location loc = new Location(artLoc, pos.startLine, pos.startColumn, pos.endLine, pos.endColumn)
+        return new Result("rule-${metadata.ruleIndex}", metadata.ruleIndex,
+                new Message(formatMessage(doopId, metadata)), [loc] as List<Location>)
     }
 
     private String formatMessage(String doopId, RMetadata metadata) {
@@ -134,6 +141,13 @@ class Generator {
         return msg
     }
 
+    /**
+     * Processes one code element to find relevant analysis results for this symbol.
+     * @param metadataExist    if false, this method only counts elements, without processing them
+     * @param results          a list to used for adding analysis results
+     * @param e                the code element to process
+     * @param elements         a mutable counter for reporting the total number of elements processed
+     */
     void processElement(boolean metadataExist, List<Result> results, Element e, AtomicInteger elements) {
         elements.incrementAndGet()
         if (parseOnly || !metadataExist)
