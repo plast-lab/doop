@@ -1,13 +1,12 @@
 package org.clyze.doop.soot;
 
-import org.clyze.doop.common.JavaRepresentation;
-import org.clyze.doop.common.SessionCounter;
-import org.clyze.persistent.model.DynamicMethodInvocation;
-import soot.*;
-import soot.jimple.*;
-
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import org.clyze.doop.common.JavaRepresentation;
+import org.clyze.doop.common.SessionCounter;
+import org.clyze.persistent.model.jvm.JvmDynamicMethodInvocation;
+import soot.*;
+import soot.jimple.*;
 
 class Representation extends JavaRepresentation {
     private final Map<SootMethod, String> _methodSigRepr = new ConcurrentHashMap<>();
@@ -164,7 +163,7 @@ class Representation extends JavaRepresentation {
         if (expr instanceof DynamicInvokeExpr) {
             SootMethodRef bootRef = ((DynamicInvokeExpr)expr).getBootstrapMethodRef();
             String bootName = simpleName(bootRef);
-            midPart = DynamicMethodInvocation.genericId(bootName, name);
+            midPart = JvmDynamicMethodInvocation.genericId(bootName, name);
         } else
             midPart = exprMethodRef.getDeclaringClass() + "." + name;
         return numberedInstructionId(signature(inMethod), midPart, counter);

@@ -12,12 +12,11 @@ import com.ibm.wala.ssa.*;
 import com.ibm.wala.types.FieldReference;
 import com.ibm.wala.types.MethodReference;
 import com.ibm.wala.types.TypeReference;
-import org.clyze.doop.common.JavaRepresentation;
-import org.clyze.doop.common.SessionCounter;
-import org.clyze.persistent.model.DynamicMethodInvocation;
-
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import org.clyze.doop.common.JavaRepresentation;
+import org.clyze.doop.common.SessionCounter;
+import org.clyze.persistent.model.jvm.JvmDynamicMethodInvocation;
 
 import static org.clyze.doop.wala.WalaUtils.fixTypeString;
 
@@ -238,7 +237,7 @@ class WalaRepresentation extends JavaRepresentation {
         }
         String bootName = bootMethRef.methodName();
         String dynName = instruction.getCallSite().getDeclaredTarget().getName().toString();
-        return DynamicMethodInvocation.genericId(bootName, dynName);
+        return JvmDynamicMethodInvocation.genericId(bootName, dynName);
     }
 
     String heapAlloc(IMethod inMethod, SSANewInstruction instruction, SessionCounter counter) {
