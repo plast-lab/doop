@@ -8,18 +8,18 @@ import org.antlr.v4.runtime.ParserRuleContext
 import org.antlr.v4.runtime.tree.ErrorNode
 import org.antlr.v4.runtime.tree.ParseTreeWalker
 import org.antlr.v4.runtime.tree.TerminalNode
-import org.clyze.persistent.model.BasicMetadata
-import org.clyze.persistent.model.Class as Klass
-import org.clyze.persistent.model.DynamicMethodInvocation
+import org.clyze.persistent.metadata.jvm.JvmMetadata
 import org.clyze.persistent.model.Element
-import org.clyze.persistent.model.Field
-import org.clyze.persistent.model.HeapAllocation
-import org.clyze.persistent.model.Method
-import org.clyze.persistent.model.MethodInvocation
 import org.clyze.persistent.model.Position
 import org.clyze.persistent.model.Usage
 import org.clyze.persistent.model.UsageKind
-import org.clyze.persistent.model.Variable
+import org.clyze.persistent.model.jvm.JvmClass
+import org.clyze.persistent.model.jvm.JvmDynamicMethodInvocation
+import org.clyze.persistent.model.jvm.JvmField
+import org.clyze.persistent.model.jvm.JvmHeapAllocation
+import org.clyze.persistent.model.jvm.JvmMethod
+import org.clyze.persistent.model.jvm.JvmMethodInvocation
+import org.clyze.persistent.model.jvm.JvmVariable
 import org.codehaus.groovy.runtime.StackTraceUtils
 
 import java.util.function.Consumer
@@ -32,17 +32,17 @@ import static org.clyze.doop.jimple.JimpleParser.*
 class JimpleListenerImpl extends JimpleBaseListener {
 
 	String filename
-	List<Variable> pending
+	List<JvmVariable> pending
 	Map varTypes = [:]
 	Map heapCounters
-	Klass klass
-	Method method
+	JvmClass klass
+	JvmMethod method
 	Map methodInvoCounters
 	Map values = [:]
 	boolean inDecl
 	boolean inInterface
 
-	BasicMetadata metadata = new BasicMetadata()
+	JvmMetadata metadata = new JvmMetadata()
 
 	Consumer<Element> processor
 
@@ -52,13 +52,13 @@ class JimpleListenerImpl extends JimpleBaseListener {
 			this.processor = processor
 		else
 			this.processor = { Element e ->
-				if (e instanceof Klass) metadata.classes << (e as Klass)
-				else if (e instanceof Field) metadata.fields << (e as Field)
-				else if (e instanceof Method) metadata.methods << (e as Method)
-				else if (e instanceof Variable) metadata.variables << (e as Variable)
+				if (e instanceof JvmClass) metadata.jvmClasses << (e as JvmClass)
+				else if (e instanceof JvmField) metadata.jvmFields << (e as JvmField)
+				else if (e instanceof JvmMethod) metadata.jvmMethods << (e as JvmMethod)
+				else if (e instanceof JvmVariable) metadata.jvmVariables << (e as JvmVariable)
 				else if (e instanceof Usage) metadata.usages << (e as Usage)
-				else if (e instanceof HeapAllocation) metadata.heapAllocations << (e as HeapAllocation)
-				else if (e instanceof MethodInvocation) metadata.invocations << (e as MethodInvocation)
+				else if (e instanceof JvmHeapAllocation) metadata.jvmHeapAllocations << (e as JvmHeapAllocation)
+				else if (e instanceof JvmMethodInvocation) metadata.jvmInvocations << (e as JvmMethodInvocation)
 			}
 	}
 
@@ -83,7 +83,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		boolean isProtected = modifier? modifier.any { it.text == "protected" } : false
 		boolean isPrivate   = modifier? modifier.any { it.text == "private" } : false
 
-		klass = new Klass(
+		klass = new JvmClass(
 				position,
 				filename,
 				className,
@@ -114,13 +114,13 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		def name = stripQuotes(ctx.IDENTIFIER(1).text)
 		def position = new Position(line, line, startCol, startCol + name.length())
 
-		processor.accept new Field(
+		processor.accept new JvmField(
 				position,
 				filename,
 				name,
-				"<${klass.doopId}: $type $name>", //doopId
+				"<${klass.symbolId}: $type $name>", //doopId
 				type,
-				klass.doopId, //declaringClassDoopId
+				klass.symbolId, //declaringClassId
 				ctx.modifier().any() { it.text == "static" }
 		)
 	}
@@ -150,13 +150,13 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		boolean isProtected    = modifier ? modifier.any { it.text == "protected" } : false
 		boolean isPrivate      = modifier ? modifier.any { it.text == "private" } : false
 
-		method = new Method(
+		method = new JvmMethod(
 				position,
 				filename,
 				name,
-				klass.doopId, //declaringClassDoopId
+				klass.symbolId, //declaringClassId
 				retType,
-				"<${klass.doopId}: $retType $name($params)>", //doopId
+				"<${klass.symbolId}: $retType $name($params)>", //doopId
 				null, //params, TODO
 				paramTypeNames as String[],
 				isStatic,
@@ -195,7 +195,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		def type = ctx.IDENTIFIER().text
 		pending.each { v ->
 			v.type = type
-			varTypes[v.doopId] = type
+			varTypes[v.symbolId] = type
 		}
 		addTypeUsage(ctx.IDENTIFIER())
 	}
@@ -277,12 +277,12 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		def c = heapCounters[type] as int
 		heapCounters[type] = c + 1
 
-		processor.accept new HeapAllocation(
+		processor.accept new JvmHeapAllocation(
 				new Position(line, line, startCol, endCol),
 				filename,
-				"${method.doopId}/new $type/$c", //doopId
+				"${method.symbolId}/new $type/$c", //doopId
 				type,
-				method.doopId, //allocatingMethodDoopId
+				method.symbolId, //allocatingMethodId
 				false, //inIIB
 				isArray)
 	}
@@ -312,15 +312,15 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		if (!gDoopId) {
 			def c = methodInvoCounters["$methodClass|$methodName"] as int
 			methodInvoCounters["$methodClass|$methodName"] = c + 1
-			gDoopId = "${method.doopId}/${methodClass}.$methodName/$c"
+			gDoopId = "${method.symbolId}/${methodClass}.$methodName/$c"
 		}
 
-		processor.accept new MethodInvocation(
+		processor.accept new JvmMethodInvocation(
 				new Position(line, line, startCol, endCol),
 				filename,
 				methodName,
 				gDoopId, //doopId
-				method.doopId, //invokingMethodDoopId
+				method.symbolId, //invokingMethodId
 				false //inIIB
 		)
 	}
@@ -329,10 +329,10 @@ class JimpleListenerImpl extends JimpleBaseListener {
 	String dynamicInvokeMiddlePart(InvokeStmtContext ctx) {
 		def bootName = "${ctx.methodSig().IDENTIFIER(0).text}.${ctx.methodSig().IDENTIFIER(2).text}"
 		def dynamicName = ctx.STRING().text.replaceAll('"', '')
-		def invoId = DynamicMethodInvocation.genericId(getClassName(bootName), dynamicName)
+		def invoId = JvmDynamicMethodInvocation.genericId(getClassName(bootName), dynamicName)
 		def c = methodInvoCounters[invoId] as int
 		methodInvoCounters[invoId] = c + 1
-		return "${method.doopId}/${invoId}/$c"
+		return "${method.symbolId}/${invoId}/$c"
 	}
 
 	void exitMethodSig(MethodSigContext ctx) {
@@ -361,25 +361,25 @@ class JimpleListenerImpl extends JimpleBaseListener {
 	}
 
 
-	Variable var(TerminalNode id, boolean isLocal) {
+	JvmVariable var(TerminalNode id, boolean isLocal) {
 		def line = id.symbol.line
 		def startCol = id.symbol.charPositionInLine + 1
 		def name = stripQuotes(id.text)
 
-		def v = new Variable(
+		def v = new JvmVariable(
 				new Position(line, line, startCol, startCol + name.length()),
 				filename,
 				name,
-				"${method.doopId}/$name", //doopId
+				"${method.symbolId}/$name", //doopId
 				null, //type, provided later
-				method.doopId, //declaringMethodDoopId
+				method.symbolId, //declaringMethodId
 				isLocal,
 				!isLocal,
 				false //inIIB
 		)
 
-		if (varTypes[v.doopId])
-			v.type = varTypes[v.doopId] as String
+		if (varTypes[v.symbolId])
+			v.type = varTypes[v.symbolId] as String
 		else
 			pending.push(v)
 		return v
@@ -393,7 +393,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		processor.accept new Usage(
 				new Position(line, line, startCol, startCol + name.length()),
 				filename,
-				"${method.doopId}/$name", //doopId
+				"${method.symbolId}/$name", //doopId
 				kind
 		)
 	}

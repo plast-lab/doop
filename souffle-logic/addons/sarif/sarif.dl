@@ -6,7 +6,7 @@
 // doopIdPosition    : the index of the column containing the target element
 //                     (given by a Doop id)
 // contentType       : the type of element described by the Doop id (examples:
-//                     Method, Field, MethodInvocation)
+//                     JvmMethod, JvmField, JvmMethodInvocation)
 // resultMessage     : the message to show on each element appearance -- this can
 //                     contain binding placeholders, e.g. "@@1" is the contents of
 //                     column 1 (zero-based) in the relation for the same Doop id
@@ -16,20 +16,20 @@
 .output SARIF_InterestingRelation
 
 .output PhantomType
-SARIF_InterestingRelation("PhantomType", 0, "Class", "Type is phantom.", "Type is phantom, this could be an indication of missing code.", "warning").
+SARIF_InterestingRelation("PhantomType", 0, "JvmClass", "Type is phantom.", "Type is phantom, this could be an indication of missing code.", "warning").
 .output mainAnalysis.PhantomInvoke(IO="file",filename="PhantomInvoke.csv",delimiter="\t")
-SARIF_InterestingRelation("PhantomInvoke", 0, "MethodInvocation", "Invoked method is phantom.", "Invoked method is phantom, this could be an indication of missing code.", "warning").
+SARIF_InterestingRelation("PhantomInvoke", 0, "JvmMethodInvocation", "Invoked method is phantom.", "Invoked method is phantom, this could be an indication of missing code.", "warning").
 
 #ifdef GENERATE_OPTIMIZATION_DIRECTIVES
-SARIF_InterestingRelation("MethodToRemove", 0, "Method", "Method seems to be unused and can be removed.", "Method seems to be unused and can be removed.", "warning").
-SARIF_InterestingRelation("SingleInvocationToInline", 0, "MethodInvocation", "Invoked method can be inlined: @@1", "Invoked method can be inlined.", "warning").
+SARIF_InterestingRelation("MethodToRemove", 0, "JvmMethod", "Method seems to be unused and can be removed.", "Method seems to be unused and can be removed.", "warning").
+SARIF_InterestingRelation("SingleInvocationToInline", 0, "JvmMethodInvocation", "Invoked method can be inlined: @@1", "Invoked method can be inlined.", "warning").
 #endif // GENERATE_OPTIMIZATION_DIRECTIVES
 
 #ifdef INFORMATION_FLOW
 .output AppTaintedVarPointsTo
-SARIF_InterestingRelation("AppTaintedVarPointsTo", 1, "Variable", "Variable is tainted, points to @@0.", "Variable is tainted.", "warning").
+SARIF_InterestingRelation("AppTaintedVarPointsTo", 1, "JvmVariable", "Variable is tainted, points to @@0.", "Variable is tainted.", "warning").
 #endif // INFORMATION_FLOW
 
 #ifdef X_SERVER_LOGIC
-SARIF_InterestingRelation("Server_Field_ShadowedBy", 0, "Field", "Field is shadowed by field @@1", "Field is shadowed.", "warning").
+SARIF_InterestingRelation("Server_Field_ShadowedBy", 0, "JvmField", "Field is shadowed by field @@1", "Field is shadowed.", "warning").
 #endif // X_SERVER_LOGIC

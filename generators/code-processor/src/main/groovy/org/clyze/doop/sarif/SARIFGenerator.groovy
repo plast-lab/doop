@@ -2,15 +2,15 @@ package org.clyze.doop.sarif
 
 import groovy.transform.CompileStatic
 import java.util.concurrent.atomic.AtomicInteger
-import org.clyze.persistent.model.Class as Klass
 import org.clyze.persistent.model.Element
-import org.clyze.persistent.model.Field
-import org.clyze.persistent.model.Method
-import org.clyze.persistent.model.MethodInvocation
 import org.clyze.persistent.model.Position
-import org.clyze.persistent.model.SymbolWithDoopId
+import org.clyze.persistent.model.SymbolWithId
 import org.clyze.persistent.model.Usage
-import org.clyze.persistent.model.Variable
+import org.clyze.persistent.model.jvm.JvmClass
+import org.clyze.persistent.model.jvm.JvmField
+import org.clyze.persistent.model.jvm.JvmMethod
+import org.clyze.persistent.model.jvm.JvmMethodInvocation
+import org.clyze.persistent.model.jvm.JvmVariable
 import org.clyze.sarif.model.ArtifactLocation
 import org.clyze.sarif.model.Location
 import org.clyze.sarif.model.Message
@@ -120,7 +120,7 @@ class SARIFGenerator {
         println "SARIF results written to file: ${sarifOut.canonicalPath}"
     }
 
-    private Result resultForSymbol(String doopId, SymbolWithDoopId sym, RMetadata metadata) {
+    private Result resultForSymbol(String doopId, SymbolWithId sym, RMetadata metadata) {
         ArtifactLocation artLoc = new ArtifactLocation(sym.sourceFileName)
         Position pos = sym.position
         Location loc = new Location(artLoc, pos.startLine, pos.startColumn, pos.endLine, pos.endColumn)
@@ -152,40 +152,40 @@ class SARIFGenerator {
         elements.incrementAndGet()
         if (parseOnly || !metadataExist)
             return
-        if (e instanceof SymbolWithDoopId) {
-            SymbolWithDoopId sym = e as SymbolWithDoopId
-            String doopId = sym.doopId
-            Set<RMetadata> metadataTable = doopIds.get(doopId)
+        if (e instanceof SymbolWithId) {
+            SymbolWithId sym = e as SymbolWithId
+            String symbolId = sym.symbolId
+            Set<RMetadata> metadataTable = doopIds.get(symbolId)
             if (metadataTable != null) {
                 for (RMetadata metadata : metadataTable) {
                     switch (metadata.contentType) {
-                        case 'Method':
-                            if (sym instanceof Method)
-                                results.add resultForSymbol(doopId, sym, metadata)
+                        case 'JvmMethod':
+                            if (sym instanceof JvmMethod)
+                                results.add resultForSymbol(symbolId, sym, metadata)
                             else
                                 println "ERROR: wrong content type for element ${metadata.contentType}"
                             break
-                        case 'MethodInvocation':
-                            if (sym instanceof MethodInvocation)
-                                results.add resultForSymbol(doopId, sym, metadata)
+                        case 'JvmMethodInvocation':
+                            if (sym instanceof JvmMethodInvocation)
+                                results.add resultForSymbol(symbolId, sym, metadata)
                             else
                                 println "ERROR: wrong content type for element ${metadata.contentType}"
                             break
-                        case 'Variable':
-                            if (sym instanceof Variable)
-                                results.add resultForSymbol(doopId, sym, metadata)
+                        case 'JvmVariable':
+                            if (sym instanceof JvmVariable)
+                                results.add resultForSymbol(symbolId, sym, metadata)
                             else if (!(sym instanceof Usage))
                                 println "ERROR: wrong content type for element ${metadata.contentType}"
                             break
-                        case 'Field':
-                            if (sym instanceof Field)
-                                results.add resultForSymbol(doopId, sym, metadata)
+                        case 'JvmField':
+                            if (sym instanceof JvmField)
+                                results.add resultForSymbol(symbolId, sym, metadata)
                             else if (!(sym instanceof Usage))
                                 println "ERROR: wrong content type for element ${metadata.contentType}"
                             break
-                        case 'Class':
-                            if (sym instanceof Klass)
-                                results.add resultForSymbol(doopId, sym, metadata)
+                        case 'JvmClass':
+                            if (sym instanceof JvmClass)
+                                results.add resultForSymbol(symbolId, sym, metadata)
                             else if (!(sym instanceof Usage))
                                 println "ERROR: wrong content type for element ${metadata.contentType}"
                             break
