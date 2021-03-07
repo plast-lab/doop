@@ -4,7 +4,6 @@ import groovy.cli.commons.OptionAccessor
 import groovy.transform.CompileStatic
 import groovy.util.logging.Log4j
 import java.util.function.Predicate
-import org.apache.log4j.Logger
 import org.clyze.analysis.AnalysisOption
 import org.clyze.analysis.BooleanAnalysisOption
 import org.clyze.analysis.IntegerAnalysisOption
@@ -36,17 +35,11 @@ class Doop {
 	static String doopCache
 	static String doopLog
 	static String doopTmp
-	static String souffleAnalysesCache
-	static String logicPath
+	static String lbLogicPath
 	static String souffleLogicPath
-	static String factsPath
-	static String souffleFactsPath
-	static String addonsPath
-	static String souffleAddonsPath
-	static String analysesPath
+	static String souffleAnalysesCache
+ 	static String lbAnalysesPath
 	static String souffleAnalysesPath
-	static String soufflePythonPath
-	static String soufflePythonAnalysesPath
 
 	/**
 	 * Initializes Doop.
@@ -65,17 +58,11 @@ class Doop {
 		doopCache = cachePath ?: "$doopHome/cache"
 		doopLog = logPath ?: "$doopHome/build/logs"
 		doopTmp = tmpPath ?: "$doopHome/build/tmp"
-		souffleAnalysesCache = "$doopCache/souffle-analyses"
-		logicPath = "$doopHome/logic"
+		lbLogicPath = "$doopHome/lb-logic"
 		souffleLogicPath = "$doopHome/souffle-logic"
-		factsPath = "$logicPath/facts"
-		souffleFactsPath = "$souffleLogicPath/facts"
-		addonsPath = "$logicPath/addons"
-		souffleAddonsPath = "$souffleLogicPath/addons"
-		analysesPath = "$logicPath/analyses"
+		souffleAnalysesCache = "$doopCache/souffle-analyses"
+		lbAnalysesPath = "$lbLogicPath/analyses"
 		souffleAnalysesPath = "$souffleLogicPath/analyses"
-		soufflePythonPath = "$souffleLogicPath/python"
-		soufflePythonAnalysesPath = "$soufflePythonPath/analyses"
 
 		[doopOut, doopCache, doopLog, doopTmp, souffleAnalysesCache].each {
 			def f = new File(it)
@@ -106,7 +93,7 @@ class Doop {
 			throw new DoopErrorCodeException(15)
 		}
 
-		log.debug "Doop initialized with: doopOut = ${doopOut}, doopCache = ${doopCache}, doopLog = ${doopLog}, doopTmp = ${doopTmp}, souffleAnalysesCache = ${souffleAnalysesCache}, logicPath = ${logicPath}, souffleLogicPath = ${souffleLogicPath}, analysesPath = ${analysesPath}"
+		log.debug "Doop initialized with: doopOut = ${doopOut}, doopCache = ${doopCache}, doopLog = ${doopLog}, doopTmp = ${doopTmp}, souffleAnalysesCache = ${souffleAnalysesCache}, logicPath = ${lbLogicPath}, souffleLogicPath = ${souffleLogicPath}, analysesPath = ${lbAnalysesPath}"
 	}
 
 	/**

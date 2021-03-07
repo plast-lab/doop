@@ -777,7 +777,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					group: GROUP_INFORMATION_FLOW,
 					argName: "APPLICATION_PLATFORM",
 					description: "Load additional logic to perform information flow analysis.",
-					validValues: informationFlowPlatforms(Doop.addonsPath, Doop.souffleAddonsPath),
+					validValues: informationFlowPlatforms("${Doop.lbLogicPath}/addons", "${Doop.souffleLogicPath}/addons"),
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
@@ -1158,19 +1158,19 @@ class DoopAnalysisFamily implements AnalysisFamily {
 
 	private static List<String> analysesLB() {
 		try {
-			if (!Doop.analysesPath) {
+			if (!Doop.lbAnalysesPath) {
 				Doop.initDoopFromEnv()
 			}
 		} catch (e) {
 			println "ERROR: Could not initialize Doop: ${e.message}"
 			e.printStackTrace()
 		}
-		if (!Doop.analysesPath) {
+		if (!Doop.lbAnalysesPath) {
 			println "WARNING: LB legacy logic path not found, set DOOP_HOME."
 			return []
 		}
-		if (Doop.analysesPath) {
-			File legacyPath = new File(Doop.analysesPath)
+		if (Doop.lbAnalysesPath) {
+			File legacyPath = new File(Doop.lbAnalysesPath)
 			if (legacyPath.exists()) {
 				return analysesFor(legacyPath, "analysis.logic")
 			}

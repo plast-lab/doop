@@ -67,10 +67,10 @@ class SoufflePythonAnalysis extends SouffleAnalysis {
 
     @Override
     void initDatabase(File analysis) {
-        cpp.includeAtEnd("$analysis", "${Doop.soufflePythonPath}/facts/schema.dl")
-        cpp.includeAtEnd("$analysis", "${Doop.soufflePythonPath}/facts/import-entities.dl")
-        cpp.includeAtEnd("$analysis", "${Doop.soufflePythonPath}/facts/import-facts.dl")
-        cpp.includeAtEnd("$analysis", "${Doop.soufflePythonPath}/facts/post-process.dl")
+        cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/python/facts/schema.dl")
+        cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/python/facts/import-entities.dl")
+        cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/python/facts/import-facts.dl")
+        cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/python/facts/post-process.dl")
     }
 
     @Override
@@ -86,7 +86,7 @@ class SoufflePythonAnalysis extends SouffleAnalysis {
 
     @Override
     void mainAnalysis(File analysis) {
-        cpp.includeAtEnd("$analysis", "${Doop.soufflePythonAnalysesPath}/${name}/analysis.dl")
+        cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/python/analyses/${name}/analysis.dl")
 //        def commonMacros = "${Doop.souffleLogicPath}/commonMacros.dl"
 //        def mainPath = "${Doop.souffleLogicPath}/main"
 //        def analysisPath = "${Doop.souffleAnalysesPath}/${name}"
@@ -126,7 +126,7 @@ class SoufflePythonAnalysis extends SouffleAnalysis {
 
     @Override
     void produceStats(File analysis) {
-        def statsPath = "${Doop.soufflePythonPath}/addons/statistics"
+        def statsPath = "${Doop.souffleLogicPath}/python/addons/statistics"
 
         if (options.X_STATS_NONE.value) return
 

@@ -41,7 +41,7 @@ class LB3Analysis extends DoopAnalysis {
 			mainAnalysis()
 
 			try {
-				FileOps.findFileOrThrow("${Doop.analysesPath}/${name}/refinement-delta.logic", "No refinement-delta.logic for ${name}")
+				FileOps.findFileOrThrow("${Doop.lbAnalysesPath}/${name}/refinement-delta.logic", "No refinement-delta.logic for ${name}")
 				reanalyze()
 			}
 			catch (e) {
@@ -64,16 +64,16 @@ class LB3Analysis extends DoopAnalysis {
 	}
 
 	void initDatabase() {
-		def commonMacros = "${Doop.logicPath}/commonMacros.logic"
+		def commonMacros = "${Doop.lbLogicPath}/commonMacros.logic"
 
 		deleteQuietly(database)
-		cpp.preprocess("${outDir}/flow-sensitive-schema.logic", "${Doop.factsPath}/flow-sensitive-schema.logic")
-		cpp.preprocess("${outDir}/flow-insensitive-schema.logic", "${Doop.factsPath}/flow-insensitive-schema.logic")
-		cpp.preprocess("${outDir}/import-entities.logic", "${Doop.factsPath}/import-entities.logic")
-		cpp.preprocess("${outDir}/import-facts.logic", "${Doop.factsPath}/import-facts.logic")
-		cpp.preprocess("${outDir}/to-flow-insensitive-delta.logic", "${Doop.factsPath}/to-flow-insensitive-delta.logic")
-		cpp.preprocess("${outDir}/post-process.logic", "${Doop.factsPath}/post-process.logic", commonMacros)
-		cpp.preprocess("${outDir}/mock-heap.logic", "${Doop.factsPath}/mock-heap.logic", commonMacros)
+		cpp.preprocess("${outDir}/flow-sensitive-schema.logic", "${Doop.lbLogicPath}/facts/flow-sensitive-schema.logic")
+		cpp.preprocess("${outDir}/flow-insensitive-schema.logic", "${Doop.lbLogicPath}/facts/flow-insensitive-schema.logic")
+		cpp.preprocess("${outDir}/import-entities.logic", "${Doop.lbLogicPath}/facts/import-entities.logic")
+		cpp.preprocess("${outDir}/import-facts.logic", "${Doop.lbLogicPath}/facts/import-facts.logic")
+		cpp.preprocess("${outDir}/to-flow-insensitive-delta.logic", "${Doop.lbLogicPath}/facts/to-flow-insensitive-delta.logic")
+		cpp.preprocess("${outDir}/post-process.logic", "${Doop.lbLogicPath}/facts/post-process.logic", commonMacros)
+		cpp.preprocess("${outDir}/mock-heap.logic", "${Doop.lbLogicPath}/facts/mock-heap.logic", commonMacros)
 
 		lbBuilder
 				.createDB(database.name)
@@ -85,7 +85,7 @@ class LB3Analysis extends DoopAnalysis {
 
 
 		if (options.TAMIFLEX.value) {
-			def tamiflexDir = "${Doop.addonsPath}/tamiflex"
+			def tamiflexDir = "${Doop.lbLogicPath}/addons/tamiflex"
 			cpp.preprocess("${outDir}/tamiflex-fact-declarations.logic", "${tamiflexDir}/fact-declarations.logic")
 			cpp.preprocess("${outDir}/tamiflex-import.logic", "${tamiflexDir}/import.logic")
 			cpp.preprocess("${outDir}/tamiflex-post-import.logic", "${tamiflexDir}/post-import.logic")
@@ -116,9 +116,9 @@ class LB3Analysis extends DoopAnalysis {
 		handleImportDynamicFacts()
 
 		if (options.HEAPDLS.value || options.IMPORT_DYNAMIC_FACTS.value) {
-			cpp.preprocess("${outDir}/import-dynamic-facts.logic", "${Doop.factsPath}/import-dynamic-facts.logic")
-			cpp.preprocess("${outDir}/import-dynamic-facts2.logic", "${Doop.factsPath}/import-dynamic-facts2.logic")
-			cpp.preprocess("${outDir}/externalheaps.logic", "${Doop.factsPath}/externalheaps.logic", commonMacros)
+			cpp.preprocess("${outDir}/import-dynamic-facts.logic", "${Doop.lbLogicPath}/facts/import-dynamic-facts.logic")
+			cpp.preprocess("${outDir}/import-dynamic-facts2.logic", "${Doop.lbLogicPath}/facts/import-dynamic-facts2.logic")
+			cpp.preprocess("${outDir}/externalheaps.logic", "${Doop.lbLogicPath}/facts/externalheaps.logic", commonMacros)
 			lbBuilder
 					.echo("-- Importing dynamic facts ---")
 					.startTimer()
@@ -136,16 +136,16 @@ class LB3Analysis extends DoopAnalysis {
 	}
 
 	void basicAnalysis() {
-		def commonMacros = "${Doop.logicPath}/commonMacros.logic"
-		cpp.preprocess("${outDir}/basic.logic", "${Doop.logicPath}/basic/basic.logic", commonMacros)
+		def commonMacros = "${Doop.lbLogicPath}/commonMacros.logic"
+		cpp.preprocess("${outDir}/basic.logic", "${Doop.lbLogicPath}/basic/basic.logic", commonMacros)
 
 		lbBuilder
 				.timedTransaction("-- Basic Analysis --")
 				.addBlockFile("basic.logic")
 
 		if (options.CFG_ANALYSIS.value) {
-			cpp.preprocess("${outDir}/cfg-analysis.logic", "${Doop.addonsPath}/cfg-analysis/analysis.logic",
-					"${Doop.addonsPath}/cfg-analysis/declarations.logic")
+			cpp.preprocess("${outDir}/cfg-analysis.logic", "${Doop.lbLogicPath}/addons/cfg-analysis/analysis.logic",
+					"${Doop.lbLogicPath}/addons/cfg-analysis/declarations.logic")
 			lbBuilder.addBlockFile("cfg-analysis.logic")
 		}
 
@@ -155,10 +155,10 @@ class LB3Analysis extends DoopAnalysis {
 	}
 
 	void mainAnalysis() {
-		def commonMacros = "${Doop.logicPath}/commonMacros.logic"
-		def macros = "${Doop.analysesPath}/${name}/macros.logic"
-		def mainPath = "${Doop.logicPath}/main"
-		def analysisPath = "${Doop.analysesPath}/${name}"
+		def commonMacros = "${Doop.lbLogicPath}/commonMacros.logic"
+		def macros = "${Doop.lbAnalysesPath}/${name}/macros.logic"
+		def mainPath = "${Doop.lbLogicPath}/main"
+		def analysisPath = "${Doop.lbAnalysesPath}/${name}"
 
 		// By default, assume we run a context-sensitive analysis
 		boolean isContextSensitive = true
@@ -220,7 +220,7 @@ class LB3Analysis extends DoopAnalysis {
 
 		if (options.INFORMATION_FLOW.value) {
 			echo_analysis = "Pointer and Information-flow Analysis"
-			def infoFlowPath = "${Doop.addonsPath}/information-flow"
+			def infoFlowPath = "${Doop.lbLogicPath}/addons/information-flow"
 			cpp.preprocess("${outDir}/information-flow-declarations.logic", "${infoFlowPath}/declarations.logic")
 			cpp.preprocess("${outDir}/information-flow-delta.logic", "${infoFlowPath}/delta.logic", macros)
 			cpp.preprocess("${outDir}/information-flow-rules.logic", "${infoFlowPath}/rules.logic", macros)
@@ -245,17 +245,17 @@ class LB3Analysis extends DoopAnalysis {
 		String openProgramsRules = options.OPEN_PROGRAMS.value
 		if (openProgramsRules) {
 			log.debug "Using open-programs rules: ${openProgramsRules}"
-			cpp.preprocess("${outDir}/open-programs.logic", "${Doop.addonsPath}/open-programs/rules-${openProgramsRules}.logic", macros)
+			cpp.preprocess("${outDir}/open-programs.logic", "${Doop.lbLogicPath}/addons/open-programs/rules-${openProgramsRules}.logic", macros)
 			cpp.includeAtStart("${outDir}/addons.logic", "${outDir}/open-programs.logic")
 		}
 
 		if (options.DACAPO.value || options.DACAPO_BACH.value)
-			cpp.includeAtStart("${outDir}/addons.logic", "${Doop.addonsPath}/dacapo/rules.logic", commonMacros)
+			cpp.includeAtStart("${outDir}/addons.logic", "${Doop.lbLogicPath}/addons/dacapo/rules.logic", commonMacros)
 
 		if (options.TAMIFLEX.value) {
-			cpp.preprocess("${outDir}/tamiflex-declarations.logic", "${Doop.addonsPath}/tamiflex/declarations.logic")
-			cpp.preprocess("${outDir}/tamiflex-delta.logic", "${Doop.addonsPath}/tamiflex/delta.logic")
-			cpp.includeAtStart("${outDir}/addons.logic", "${Doop.addonsPath}/tamiflex/rules.logic", commonMacros)
+			cpp.preprocess("${outDir}/tamiflex-declarations.logic", "${Doop.lbLogicPath}/addons/tamiflex/declarations.logic")
+			cpp.preprocess("${outDir}/tamiflex-delta.logic", "${Doop.lbLogicPath}/addons/tamiflex/delta.logic")
+			cpp.includeAtStart("${outDir}/addons.logic", "${Doop.lbLogicPath}/addons/tamiflex/rules.logic", commonMacros)
 
 			lbBuilder
 					.addBlockFile("tamiflex-declarations.logic")
@@ -263,7 +263,7 @@ class LB3Analysis extends DoopAnalysis {
 		}
 
 		if (options.SANITY.value)
-			cpp.includeAtStart("${outDir}/addons.logic", "${Doop.addonsPath}/sanity.logic")
+			cpp.includeAtStart("${outDir}/addons.logic", "${Doop.lbLogicPath}/addons/sanity.logic")
 
 		cpp.includeAtStart("${outDir}/${name}.logic", "${outDir}/addons.logic")
 
@@ -280,8 +280,8 @@ class LB3Analysis extends DoopAnalysis {
 				.elapsedTime()
 
 		if (options.MUST.value) {
-			cpp.preprocess("${outDir}/must-point-to-may-pre-analysis.logic", "${Doop.analysesPath}/must-point-to/may-pre-analysis.logic")
-			cpp.preprocess("${outDir}/must-point-to.logic", "${Doop.analysesPath}/must-point-to/analysis-simple.logic")
+			cpp.preprocess("${outDir}/must-point-to-may-pre-analysis.logic", "${Doop.lbAnalysesPath}/must-point-to/may-pre-analysis.logic")
+			cpp.preprocess("${outDir}/must-point-to.logic", "${Doop.lbAnalysesPath}/must-point-to/analysis-simple.logic")
 
 			lbBuilder
 					.echo("-- Pre Analysis (for Must) --")
@@ -304,7 +304,7 @@ class LB3Analysis extends DoopAnalysis {
 				// Show a warning as recent changes may break old scripts
 				// (e.g. removing LOGICBLOX_HOME as a deployment property).
 				log.warn "WARNING: LB server logic is deprecated"
-				cpp.preprocess("${outDir}/server.logic", "${Doop.addonsPath}/server-logic/queries.logic")
+				cpp.preprocess("${outDir}/server.logic", "${Doop.lbLogicPath}/addons/server-logic/queries.logic")
 
 				lbBuilder
 						.timedTransaction("-- Server Logic --")
@@ -331,14 +331,14 @@ class LB3Analysis extends DoopAnalysis {
 	void produceStats() {
 		if (options.X_STATS_NONE.value) return
 
-		def specialStatsScript = new File("${Doop.analysesPath}/${name}/statistics.part.lb")
+		def specialStatsScript = new File("${Doop.lbAnalysesPath}/${name}/statistics.part.lb")
 		if (specialStatsScript.exists()) {
 			lbBuilder.include(specialStatsScript.toString())
 			return
 		}
 
-		def macros = "${Doop.analysesPath}/${name}/macros.logic"
-		def statsPath = "${Doop.addonsPath}/statistics"
+		def macros = "${Doop.lbAnalysesPath}/${name}/macros.logic"
+		def statsPath = "${Doop.lbLogicPath}/addons/statistics"
 		cpp.preprocess("${outDir}/statistics-simple.logic", "${statsPath}/statistics-simple.logic", macros)
 
 		lbBuilder
@@ -368,7 +368,7 @@ class LB3Analysis extends DoopAnalysis {
 	}
 
 	void runTransformInput() {
-		cpp.preprocess("${outDir}/transform.logic", "${Doop.addonsPath}/transform/rules.logic", "${Doop.addonsPath}/transform/declarations.logic")
+		cpp.preprocess("${outDir}/transform.logic", "${Doop.lbLogicPath}/addons/transform/rules.logic", "${Doop.lbLogicPath}/addons/transform/declarations.logic")
 		lbBuilder
 				.echo("-- Transforming Facts --")
 				.startTimer()
@@ -380,16 +380,16 @@ class LB3Analysis extends DoopAnalysis {
 			lbBuilder
 					.echo(""" "-- Transformation (step $i) --" """)
 					.transaction()
-					.executeFile("${Doop.addonsPath}/transform/delta.logic")
+					.executeFile("${Doop.lbLogicPath}/addons/transform/delta.logic")
 					.commit()
 		}
 		lbBuilder.elapsedTime()
 	}
 
 	private void reanalyze() {
-		cpp.preprocess("${outDir}/refinement-delta.logic", "${Doop.analysesPath}/${name}/refinement-delta.logic")
-		cpp.preprocess("${outDir}/export-refinement.logic", "${Doop.logicPath}/main/export-refinement.logic")
-		cpp.preprocess("${outDir}/import-refinement.logic", "${Doop.logicPath}/main/import-refinement.logic")
+		cpp.preprocess("${outDir}/refinement-delta.logic", "${Doop.lbAnalysesPath}/${name}/refinement-delta.logic")
+		cpp.preprocess("${outDir}/export-refinement.logic", "${Doop.lbLogicPath}/main/export-refinement.logic")
+		cpp.preprocess("${outDir}/import-refinement.logic", "${Doop.lbLogicPath}/main/import-refinement.logic")
 
 		lbBuilder
 				.echo("++++ Refinement ++++")

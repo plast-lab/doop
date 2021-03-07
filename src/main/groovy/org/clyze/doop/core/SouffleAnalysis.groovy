@@ -95,7 +95,7 @@ class SouffleAnalysis extends DoopAnalysis {
 
 			if (options.X_SERVER_CHA.value) {
 				log.info "[CHA...]"
-				def methodLookupFile = new File("${Doop.souffleAddonsPath}/server-logic/method-lookup-ext.dl")
+				def methodLookupFile = new File("${Doop.souffleLogicPath}/addons/server-logic/method-lookup-ext.dl")
                 if (runInterpreted) {
                     script.interpretScript(methodLookupFile, outDir, factsDir,
                                            jobs, profiling, debug, removeContexts)
@@ -166,16 +166,16 @@ class SouffleAnalysis extends DoopAnalysis {
 		cpp.includeAtEnd("$analysis", "${Doop.souffleAnalysesPath}/${getBaseName(analysis.name)}/analysis.dl")
 
 		if (options.INFORMATION_FLOW.value)
-			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/information-flow/${options.INFORMATION_FLOW.value}${INFORMATION_FLOW_SUFFIX}.dl")
+			cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/addons/information-flow/${options.INFORMATION_FLOW.value}${INFORMATION_FLOW_SUFFIX}.dl")
 
 		String openProgramsRules = options.OPEN_PROGRAMS.value
 		if (openProgramsRules) {
 			log.debug "Using open-programs rules: ${openProgramsRules}"
-			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/open-programs/rules-${openProgramsRules}.dl")
+			cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/addons/open-programs/rules-${openProgramsRules}.dl")
 		}
 
 		if (options.SANITY.value) {
-			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/sanity.dl")
+			cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/addons/sanity.dl")
 			if (options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value) {
 				log.warn("WARNING: the sanity check is not fully compatible with --" + options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.name)
 			}
@@ -206,7 +206,7 @@ class SouffleAnalysis extends DoopAnalysis {
 	}
 
 	void produceStats(File analysis) {
-		def statsPath = "${Doop.souffleAddonsPath}/statistics"
+		def statsPath = "${Doop.souffleLogicPath}/addons/statistics"
 		if (options.X_EXTRA_METRICS.value) {
 			cpp.includeAtEnd("$analysis", "${statsPath}/metrics.dl")
 		}

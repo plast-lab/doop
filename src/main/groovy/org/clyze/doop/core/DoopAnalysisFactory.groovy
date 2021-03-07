@@ -222,7 +222,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		def name = options.ANALYSIS.value
 		log.debug "Verifying analysis name: $name"
 		if (options.X_LB3.value)
-			FileOps.findFileOrThrow("${Doop.analysesPath}/${name}/analysis.logic", "Unsupported analysis: $name")
+			FileOps.findFileOrThrow("${Doop.lbAnalysesPath}/${name}/analysis.logic", "Unsupported analysis: $name")
 		else
 			FileOps.findFileOrThrow("${Doop.souffleAnalysesPath}/${name}/analysis.dl", "Unsupported analysis: $name")
 	}
