@@ -105,14 +105,14 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         } else
             log.info "New $name analysis on user-provided facts at ${options.INPUT_ID.value} - id: $id"
 
+        database = new File(outDir, "database")
+
         if (options.X_STOP_AT_FACTS.value)
             factsDir = new File(options.X_STOP_AT_FACTS.value.toString())
         else
-            factsDir = new File(outDir, "facts")
+            factsDir = database
 
         gen0 = new FactGenerator0(factsDir)
-
-        database = new File(outDir, "database")
 
         executor = new Executor(outDir, commandsEnvironment)
         cpp = new CPreprocessor(this, executor)
