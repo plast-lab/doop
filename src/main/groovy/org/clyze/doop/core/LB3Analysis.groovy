@@ -35,22 +35,18 @@ class LB3Analysis extends DoopAnalysis {
 		if (options.X_STOP_AT_FACTS.value) return
 
 		initDatabase()
-		basicAnalysis()
-		if (!options.X_STOP_AT_BASIC.value) {
+		mainAnalysis()
 
-			mainAnalysis()
-
-			try {
-				FileOps.findFileOrThrow("${Doop.lbAnalysesPath}/${name}/refinement-delta.logic", "No refinement-delta.logic for ${name}")
-				reanalyze()
-			}
-			catch (e) {
-				log.debug e.message
-			}
-
-			produceStats()
-			cleanUp()
+		try {
+			FileOps.findFileOrThrow("${Doop.lbAnalysesPath}/${name}/refinement-delta.logic", "No refinement-delta.logic for ${name}")
+			reanalyze()
 		}
+		catch (e) {
+			log.debug e.message
+		}
+
+		produceStats()
+		cleanUp()
 
 		log.info "\nAnalysis START"
 		long t = Helper.timing {
@@ -135,7 +131,7 @@ class LB3Analysis extends DoopAnalysis {
 			runTransformInput()
 	}
 
-	void basicAnalysis() {
+	void mainAnalysis() {
 		def commonMacros = "${Doop.lbLogicPath}/commonMacros.logic"
 		cpp.preprocess("${outDir}/basic.logic", "${Doop.lbLogicPath}/basic/basic.logic", commonMacros)
 
@@ -152,10 +148,7 @@ class LB3Analysis extends DoopAnalysis {
 		lbBuilder
 				.commit()
 				.elapsedTime()
-	}
 
-	void mainAnalysis() {
-		def commonMacros = "${Doop.lbLogicPath}/commonMacros.logic"
 		def macros = "${Doop.lbAnalysesPath}/${name}/macros.logic"
 		def mainPath = "${Doop.lbLogicPath}/main"
 		def analysisPath = "${Doop.lbAnalysesPath}/${name}"
@@ -405,7 +398,6 @@ class LB3Analysis extends DoopAnalysis {
 
 		isRefineStep = true
 		initDatabase()
-		basicAnalysis()
 		mainAnalysis()
 	}
 

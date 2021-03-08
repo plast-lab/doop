@@ -43,11 +43,8 @@ class SouffleGenericsMultiPhaseAnalysis extends SouffleAnalysis {
 		cpp = new CPreprocessor(this, executor)
 
 		initDatabase(preAnalysis)
-		basicAnalysis(preAnalysis)
-		if (!options.X_STOP_AT_BASIC.value) {
-			log.debug("analysis: ${getBaseName(preAnalysis.name)}")
-			runAnalysisAndProduceStats(preAnalysis)
-		}
+		log.debug("analysis: ${getBaseName(preAnalysis.name)}")
+		runAnalysisAndProduceStats(preAnalysis)
 
 		def script = newScriptForAnalysis(executor)
 
@@ -159,11 +156,8 @@ class SouffleGenericsMultiPhaseAnalysis extends SouffleAnalysis {
 		Files.copy(collectionAcceptsValueFallbackType.toPath(), collectionAcceptsValueFallbackTypeFacts.toPath())
 
 		initDatabase(analysis)
-		basicAnalysis(analysis)
-		if (!options.X_STOP_AT_BASIC.value) {
-			log.debug("analysis: ${getBaseName(analysis.name)}")
-			runAnalysisAndProduceStats(analysis)
-		}
+		log.debug("analysis: ${getBaseName(analysis.name)}")
+		runAnalysisAndProduceStats(analysis)
 
 		compilationFuture = null
 		executorService = Executors.newSingleThreadExecutor()

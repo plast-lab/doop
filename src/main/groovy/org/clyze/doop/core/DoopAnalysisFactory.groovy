@@ -364,6 +364,8 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
 		if (options.ANALYSIS.value == "sound-may-point-to" || options.ANALYSIS.value == "dependency-analysis" || options.SYMBOLIC_REASONING.value)
 			options.CFG_ANALYSIS.value = true
+		if (options.ANALYSIS.value == "basic-only")
+			options.X_STATS_NONE.value = true
 
 		try {
 			setOptionsForPlatform(options, platformName)

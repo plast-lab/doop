@@ -25,10 +25,7 @@ class SoufflePythonAnalysis extends SouffleAnalysis {
         analysis.createNewFile()
 
         initDatabase(analysis)
-        basicAnalysis(analysis)
-        if (!options.X_STOP_AT_BASIC.value) {
-            runAnalysisAndProduceStats(analysis)
-        }
+        runAnalysisAndProduceStats(analysis)
 
         def script = newScriptForAnalysis(executor)
         if (options.SOUFFLE_RUN_INTERPRETED.value) {
@@ -71,17 +68,6 @@ class SoufflePythonAnalysis extends SouffleAnalysis {
         cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/python/facts/import-entities.dl")
         cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/python/facts/import-facts.dl")
         cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/python/facts/post-process.dl")
-    }
-
-    @Override
-    void basicAnalysis(File analysis) {
-//        def commonMacros = "${Doop.souffleLogicPath}/commonMacros.dl"
-//        cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/basic/basic.dl", commonMacros)
-//
-//        if (options.CFG_ANALYSIS.value || name == "sound-may-point-to") {
-//            def cfgAnalysisPath = "${Doop.souffleAddonsPath}/cfg-analysis"
-//            cpp.includeAtEnd("$analysis", "${cfgAnalysisPath}/analysis.dl", "${cfgAnalysisPath}/declarations.dl")
-//        }
     }
 
     @Override

@@ -42,10 +42,3 @@ MainMethodDeclaration(?method) :-
 #ifdef CFG_ANALYSIS
 #include "../addons/cfg-analysis/analysis.dl"
 #endif
-
-#ifdef X_STOP_AT_BASIC_SCC
-#include "classes-scc.dl"
-#endif
-#ifdef X_STOP_AT_BASIC_PARTITIONING
-#include "partitioning.dl"
-#endif

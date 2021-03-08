@@ -32,10 +32,7 @@ class SouffleAnalysis extends DoopAnalysis {
 		analysis.createNewFile()
 
 		initDatabase(analysis)
-		basicAnalysis(analysis)
-		if (!options.X_STOP_AT_BASIC.value) {
-			runAnalysisAndProduceStats(analysis)
-		}
+		runAnalysisAndProduceStats(analysis)
 
 		File runtimeMetricsFile = File.createTempFile('Stats_Runtime', '.csv')
 		runtimeMetricsFile.deleteOnExit()
@@ -145,16 +142,6 @@ class SouffleAnalysis extends DoopAnalysis {
 	void initDatabase(File analysis) {
 		cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/facts/facts.dl")
 		handleImportDynamicFacts()
-	}
-
-	void basicAnalysis(File analysis) {
-		if (options.X_STOP_AT_BASIC.value == 'classes-scc') {
-			cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/basic/classes-scc.dl")
-		}
-		if (options.X_STOP_AT_BASIC.value == 'partitioning') {
-			cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/basic/partitioning.dl")
-		}
-		cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/basic/basic.dl")
 	}
 
 	void runAnalysisAndProduceStats(File analysis) {

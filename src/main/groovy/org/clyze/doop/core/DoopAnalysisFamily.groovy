@@ -921,13 +921,6 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					argName: "OUT_DIR",
 					argInputType: InputType.MISC
 			),
-			new AnalysisOption<String>(
-					id: "X_STOP_AT_BASIC",
-					name: "Xstop-at-basic",
-					group: GROUP_FACTS,
-					description: "Run the basic analysis and exit. Possible strategies: default, classes-scc (outputs the classes in SCC), partitioning (outputs the classes in partitions)",
-					argName: "PARTITIONING_STRATEGY"
-			),
 			new BooleanAnalysisOption(
 					id: "DONT_CACHE_FACTS",
 					name: "dont-cache-facts",

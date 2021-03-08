@@ -28,10 +28,7 @@ class SoufflePartitionedAnalysis extends SouffleAnalysis {
         analysis.createNewFile()
 
         initDatabase(analysis)
-        basicAnalysis(analysis)
-        if (!options.X_STOP_AT_BASIC.value) {
-            runAnalysisAndProduceStats(analysis)
-        }
+        runAnalysisAndProduceStats(analysis)
 
         def script = newScriptForAnalysis(executor)
 

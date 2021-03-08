@@ -76,7 +76,7 @@ SCCTypesInSameSCC(?type, ?type) :-
 
 TypeToSCCId(?type, ?idType) :-
   SCCTypesInSameSCC(?type, ?t),
-  idType = min ord(?t): (SCCTypesInSameSCC(?type, ?t).
+  ?idType = min ord(?t): SCCTypesInSameSCC(?type, ?t).
 
 CountOfTypesPerSCC(?idType, ?num) :-
   TypeToSCCId(_, ?idType),

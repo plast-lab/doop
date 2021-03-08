@@ -14,7 +14,7 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor<DoopAnal
 
 	@Override
 	void process(DoopAnalysis analysis) {
-		if (!analysis.options.get('X_STOP_AT_FACTS').value && !analysis.options.get('X_STOP_AT_BASIC').value)
+		if (!analysis.options.get('X_STOP_AT_FACTS').value)
 			printStats(analysis)
 		if (analysis.options.get('SANITY').value && !analysis.options.get('DRY_RUN').value)
 			printSanityResults(analysis)
