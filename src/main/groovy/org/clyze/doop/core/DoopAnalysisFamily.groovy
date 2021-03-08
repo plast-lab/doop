@@ -849,6 +849,15 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Use dynamic information from file.",
 					forPreprocessor: true
 			),
+			new AnalysisOption<String>(
+					id: "INPUT_ID",
+					name: "input-id",
+					group: GROUP_FACTS,
+					description: "Import facts from OUT_DIR and start the analysis. Application/library inputs are ignored.",
+					argName: "ID_DIR",
+					argInputType: InputType.MISC,
+					forPreprocessor: true
+			),
 
 			/* Start LogicBlox related options */
 			new AnalysisOption<String>(
@@ -1007,15 +1016,6 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					group: GROUP_EXPERIMENTAL,
 					description: "Do not run fact generation and compilation in parallel.",
 					cli: false
-			),
-			new AnalysisOption<String>(
-					id: "X_START_AFTER_FACTS",
-					name: "Xstart-after-facts",
-					group: GROUP_FACTS,
-					description: "Import facts from OUT_DIR and start the analysis. Application/library inputs are ignored.",
-					argName: "OUT_DIR",
-					argInputType: InputType.MISC,
-					forPreprocessor: true
 			),
 			new IntegerAnalysisOption(
 					id: "X_SERVER_LOGIC_THRESHOLD",

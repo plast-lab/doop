@@ -112,7 +112,7 @@ class SouffleScalerMultiPhaseAnalysis extends SouffleAnalysis {
 		ScalerPostAnalysis scalerPostAnalysis = new ScalerPostAnalysis(database)
 		scalerPostAnalysis.run(factsDir)
 
-		options.X_START_AFTER_FACTS.value = factsDir
+		options.INPUT_ID.value = factsDir
 		options.CONFIGURATION.value = "FullyGuidedContextSensitiveConfiguration"
 		options.SCALER_PRE_ANALYSIS.value = null
 		executor = new Executor(outDir, commandsEnv)

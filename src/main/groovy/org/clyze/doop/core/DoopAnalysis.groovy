@@ -97,13 +97,13 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         super(DoopAnalysisFamily.instance, options)
         this.ctx = ctx
 
-        if (!options.X_START_AFTER_FACTS.value) {
+        if (!options.INPUT_ID.value) {
             log.info "New $name analysis"
             log.info "Id       : $id"
             log.info "Inputs   : ${inputFiles.join(', ')}"
             log.info "Libraries: ${libraryFiles.join(', ')}"
         } else
-            log.info "New $name analysis on user-provided facts at ${options.X_START_AFTER_FACTS.value} - id: $id"
+            log.info "New $name analysis on user-provided facts at ${options.INPUT_ID.value} - id: $id"
 
         if (options.X_STOP_AT_FACTS.value)
             factsDir = new File(options.X_STOP_AT_FACTS.value.toString())
@@ -209,8 +209,8 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         if (options.CACHE.value) {
             log.info "Using cached facts from $cacheDir"
             linkOrCopyFacts(cacheDir)
-        } else if (options.X_START_AFTER_FACTS.value) {
-            def importedFactsDir = options.X_START_AFTER_FACTS.value as String
+        } else if (options.INPUT_ID.value) {
+            def importedFactsDir = options.INPUT_ID.value as String
             log.info "Using user-provided facts from ${importedFactsDir} in ${factsDir}"
             linkOrCopyFacts(new File(importedFactsDir))
         } else {
@@ -278,7 +278,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                 log.info "Time to make facts unique: $timing"
             }
 
-            if (!options.X_START_AFTER_FACTS.value && !options.CACHE.value && !options.X_EXTEND_FACTS.value) {
+            if (!options.INPUT_ID.value && !options.CACHE.value && !options.X_EXTEND_FACTS.value) {
                 if (options.HEAPDLS.value) {
                     runHeapDL(options.HEAPDLS.value.collect { File f -> f.canonicalPath })
                 }
@@ -334,8 +334,8 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             return
         }
 
-        if (options.X_START_AFTER_FACTS.value) {
-            throw new RuntimeException("Internal error: code fact generator called under --${options.X_START_AFTER_FACTS.name}")
+        if (options.INPUT_ID.value) {
+            throw new RuntimeException("Internal error: code fact generator called under --${options.INPUT_ID.name}")
         } else if (options.CACHE.value) {
             throw new RuntimeException("Internal error: code fact generator called under --${options.CACHE.name}")
         }

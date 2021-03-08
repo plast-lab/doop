@@ -110,7 +110,7 @@ class SouffleGenericsMultiPhaseAnalysis extends SouffleAnalysis {
 		}
 		printStats()
 
-		options.X_START_AFTER_FACTS.value = factsDir
+		options.INPUT_ID.value = factsDir
 		options.CONFIGURATION.value = "AdaptiveTwoObjectSensitivePlusHeapConfiguration"
 		options.GENERICS_PRE_ANALYSIS.value = null
 		options.PRECISE_GENERICS.value = true

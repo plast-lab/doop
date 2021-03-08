@@ -75,7 +75,7 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor<DoopAnal
 		def inputName
 		def platform = analysis.options.get('PLATFORM').value
 
-		if (analysis.options.get('X_START_AFTER_FACTS').value)
+		if (analysis.options.get('INPUT_ID').value)
 			inputName = analysis.id
 		else
 			inputName = FilenameUtils.getBaseName(analysis.inputFiles[0].toString())
