@@ -18,7 +18,7 @@ class SoufflePythonAnalysis extends SouffleAnalysis {
     void run() {
         generateFacts()
 
-        if (options.X_STOP_AT_FACTS.value) return
+        if (options.FACTS_ONLY.value) return
 
         File analysis = new File(outDir, "${name}.dl")
         deleteQuietly(analysis)
@@ -94,7 +94,7 @@ class SoufflePythonAnalysis extends SouffleAnalysis {
 //        if (options.SANITY.value)
 //            cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/sanity.dl")
 //
-//        if (!options.X_STOP_AT_FACTS.value && options.X_SERVER_LOGIC.value) {
+//        if (!options.FACTS_ONLY.value && options.X_SERVER_LOGIC.value) {
 //            cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/server-logic/queries.dl")
 //        }
 //

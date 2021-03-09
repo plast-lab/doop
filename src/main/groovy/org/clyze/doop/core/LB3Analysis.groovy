@@ -32,7 +32,7 @@ class LB3Analysis extends DoopAnalysis {
 		lbBuilder = new LBBuilder(cpp, outDir)
 
 		generateFacts()
-		if (options.X_STOP_AT_FACTS.value) return
+		if (options.FACTS_ONLY.value) return
 
 		initDatabase()
 		mainAnalysis()
@@ -293,7 +293,7 @@ class LB3Analysis extends DoopAnalysis {
 		}
 
 		if (options.X_SERVER_LOGIC.value) {
-			if (!options.X_STOP_AT_FACTS.value) {
+			if (!options.FACTS_ONLY.value) {
 				// Show a warning as recent changes may break old scripts
 				// (e.g. removing LOGICBLOX_HOME as a deployment property).
 				log.warn "WARNING: LB server logic is deprecated"
@@ -305,7 +305,7 @@ class LB3Analysis extends DoopAnalysis {
 						.commit()
 						.elapsedTime()
 			} else {
-				log.warn "WARNING: LB server logic is ignored when using --${options.X_STOP_AT_FACTS.name}"
+				log.warn "WARNING: LB server logic is ignored when using --${options.FACTS_ONLY.name}"
 			}
 		}
 

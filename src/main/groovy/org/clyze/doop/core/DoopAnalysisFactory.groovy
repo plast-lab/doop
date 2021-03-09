@@ -207,7 +207,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 	static File getFactsReuseDir(AnalysisOption factsOpt, Map<String, AnalysisOption<?>> options,
 								 boolean throwError) {
 		checkFactsReuse(factsOpt, options, throwError)
-		File cacheDir = new File(factsOpt.value as String)
+		File cacheDir = factsOpt.value as File
 		FileOps.findDirOrThrow(cacheDir, "Invalid user-provided facts directory: $cacheDir")
 		return cacheDir
 	}
@@ -325,7 +325,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		log.debug "Processing analysis options"
 		def platformName = options.PLATFORM.value as String
 
-		if (options.X_STOP_AT_FACTS.value) {
+		if (options.FACTS_ONLY.value) {
 			// Dummy value so the option is not empty, because otherwise it is mandatory
 			// Must be a valid one
 			options.ANALYSIS.value = "context-insensitive"
@@ -395,14 +395,14 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			}
 		}
 
-		throwIfBothSet(options.INPUT_ID, options.X_STOP_AT_FACTS)
+		throwIfBothSet(options.INPUT_ID, options.FACTS_ONLY)
 		throwIfBothSet(options.INPUT_ID, options.X_EXTEND_FACTS)
-		throwIfBothSet(options.X_EXTEND_FACTS, options.X_STOP_AT_FACTS)
+		throwIfBothSet(options.X_EXTEND_FACTS, options.FACTS_ONLY)
 		throwIfBothSet(options.INPUT_ID, options.CACHE)
 		throwIfBothSet(options.KEEP_SPEC, options.X_SYMLINK_CACHED_FACTS)
 
-		if (options.X_SERVER_CHA.value && !options.X_STOP_AT_FACTS.value)
-			throw new RuntimeException("Option --${options.X_SERVER_CHA.name} should only be used together with --${options.X_STOP_AT_FACTS.name}.")
+		if (options.X_SERVER_CHA.value && !options.FACTS_ONLY.value)
+			throw new RuntimeException("Option --${options.X_SERVER_CHA.name} should only be used together with --${options.FACTS_ONLY.name}.")
 
 		if (options.X_SKIP_CODE_FACTGEN.value && !options.X_EXTEND_FACTS.value) {
 			throw new RuntimeException("Option --${options.X_SKIP_CODE_FACTGEN.name} should only be used together with --${options.X_EXTEND_FACTS.name}.")

@@ -34,7 +34,7 @@ class SoufflePartitionedAnalysis extends SouffleAnalysis {
 
         Future<File> compilationFuture = null
         def executorService = Executors.newSingleThreadExecutor()
-        if (!options.X_STOP_AT_FACTS.value) {
+        if (!options.FACTS_ONLY.value) {
             compilationFuture = executorService.submit(new Callable<File>() {
                 @Override
                 File call() {
@@ -96,7 +96,7 @@ class SoufflePartitionedAnalysis extends SouffleAnalysis {
 
             log.info "[Task FACTS Done]"
 
-            if (options.X_STOP_AT_FACTS.value) return
+            if (options.FACTS_ONLY.value) return
 
             def generatedFile = compilationFuture.get()
             database.mkdirs()

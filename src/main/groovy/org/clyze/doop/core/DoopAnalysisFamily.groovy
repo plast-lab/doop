@@ -858,6 +858,12 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					argInputType: InputType.MISC,
 					forPreprocessor: true
 			),
+			new BooleanAnalysisOption(
+					id: "FACTS_ONLY",
+					name: "facts-only",
+					group: GROUP_FACTS,
+					description: "Only generate facts and exit."
+			),
 
 			/* Start LogicBlox related options */
 			new AnalysisOption<String>(
@@ -921,14 +927,6 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Load default logic for collecting statistics.",
 					forPreprocessor: true,
 					cli: false
-			),
-			new AnalysisOption<String>(
-					id: "X_STOP_AT_FACTS",
-					name: "Xstop-at-facts",
-					group: GROUP_FACTS,
-					description: "Only generate facts and exit. Link result to OUT_DIR",
-					argName: "OUT_DIR",
-					argInputType: InputType.MISC
 			),
 			new BooleanAnalysisOption(
 					id: "DONT_CACHE_FACTS",

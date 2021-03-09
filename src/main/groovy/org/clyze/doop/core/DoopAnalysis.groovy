@@ -80,9 +80,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
     List<File> getLibraryFiles() { options.LIBRARIES.value as List<File> }
 
-    File getDatabase() {
-        return database
-    }
+    File getDatabase() { database }
 
     FactGenerator0 gen0
 
@@ -106,11 +104,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             log.info "New $name analysis on user-provided facts at ${options.INPUT_ID.value} - id: $id"
 
         database = new File(outDir, "database")
-
-        if (options.X_STOP_AT_FACTS.value)
-            factsDir = new File(options.X_STOP_AT_FACTS.value.toString())
-        else
-            factsDir = database
+        factsDir = database
 
         gen0 = new FactGenerator0(factsDir)
 

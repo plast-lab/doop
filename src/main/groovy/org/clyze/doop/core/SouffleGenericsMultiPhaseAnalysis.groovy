@@ -53,7 +53,7 @@ class SouffleGenericsMultiPhaseAnalysis extends SouffleAnalysis {
 		boolean provenance = options.SOUFFLE_PROVENANCE.value as boolean
 		boolean profiling = options.SOUFFLE_PROFILE.value as boolean
 		boolean liveProf = options.SOUFFLE_LIVE_PROFILE.value as boolean
-		if (!options.X_STOP_AT_FACTS.value) {
+		if (!options.FACTS_ONLY.value) {
 			if (options.VIA_DDLOG.value) {
 				// Copy the DDlog converter, needed both for logic
 				// compilation and fact post-processing.
@@ -91,7 +91,7 @@ class SouffleGenericsMultiPhaseAnalysis extends SouffleAnalysis {
 			script.postprocessFacts(outDir, profiling)
 			log.info "[Task FACTS Done]"
 
-			if (options.X_STOP_AT_FACTS.value) return
+			if (options.FACTS_ONLY.value) return
 
 			if (!options.X_SERIALIZE_FACTGEN_COMPILATION.value) {
 			    generatedFile0 = compilationFuture.get()
@@ -161,7 +161,7 @@ class SouffleGenericsMultiPhaseAnalysis extends SouffleAnalysis {
 
 		compilationFuture = null
 		executorService = Executors.newSingleThreadExecutor()
-		if (!options.X_STOP_AT_FACTS.value) {
+		if (!options.FACTS_ONLY.value) {
 			compilationFuture = executorService.submit(new Callable<File>() {
 				@Override
 				File call() {
@@ -188,7 +188,7 @@ class SouffleGenericsMultiPhaseAnalysis extends SouffleAnalysis {
 			System.gc()
 		}
 		try {
-			if (options.X_STOP_AT_FACTS.value) return
+			if (options.FACTS_ONLY.value) return
 
 			if (!options.X_SERIALIZE_FACTGEN_COMPILATION.value) {
 				generatedFile = compilationFuture.get()

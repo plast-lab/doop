@@ -57,7 +57,7 @@ class SouffleAnalysis extends DoopAnalysis {
 		boolean forceRecompile = options.SOUFFLE_FORCE_RECOMPILE.value as boolean
 		long monitorInterval = (options.X_MONITORING_INTERVAL.value as long) * 1000
 
-		if (!options.X_STOP_AT_FACTS.value && !analysisBinaryPath && !runInterpreted) {
+		if (!options.FACTS_ONLY.value && !analysisBinaryPath && !runInterpreted) {
 			if (options.VIA_DDLOG.value) {
 				// Copy the DDlog converter, needed both for logic
 				// compilation and fact post-processing.
@@ -107,7 +107,7 @@ class SouffleAnalysis extends DoopAnalysis {
 				log.info "[CHA Done]"
 			}
 
-			if (options.X_STOP_AT_FACTS.value) return
+			if (options.FACTS_ONLY.value) return
 
 			if (!analysisBinaryPath && !runInterpreted) {
 				if (!options.X_SERIALIZE_FACTGEN_COMPILATION.value) {
