@@ -145,6 +145,9 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		if (!options.INPUT_ID.value && !options.CACHE.value && !options.PYTHON.value) {
 			checkAppGlob(options)
 		}
+		if (options.INPUT_ID.value) {
+			options.INPUT_ID.value = new File(options.OUT_DIR.value as File, options.INPUT_ID.value as String)
+		}
 
 		log.debug "Created new analysis"
 		if (options.X_LB3.value)
@@ -208,7 +211,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 								 boolean throwError) {
 		checkFactsReuse(factsOpt, options, throwError)
 		File cacheDir = factsOpt.value as File
-		FileOps.findDirOrThrow(cacheDir, "Invalid user-provided facts directory: $cacheDir")
+		FileOps.findDirOrThrow(cacheDir, "Invalid user-provided ID for facts directory: $cacheDir")
 		return cacheDir
 	}
 

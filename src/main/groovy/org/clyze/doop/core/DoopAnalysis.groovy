@@ -104,6 +104,9 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             log.info "New $name analysis on user-provided facts at ${options.INPUT_ID.value} - id: $id"
 
         database = new File(outDir, "database")
+        deleteQuietly(database)
+        database.mkdirs()
+
         factsDir = database
 
         gen0 = new FactGenerator0(factsDir)
@@ -204,9 +207,9 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             log.info "Using cached facts from $cacheDir"
             linkOrCopyFacts(cacheDir)
         } else if (options.INPUT_ID.value) {
-            def importedFactsDir = options.INPUT_ID.value as String
+            def importedFactsDir = options.INPUT_ID.value as File
             log.info "Using user-provided facts from ${importedFactsDir} in ${factsDir}"
-            linkOrCopyFacts(new File(importedFactsDir))
+            linkOrCopyFacts(importedFactsDir)
         } else {
 
             log.info "-- Fact Generation --"

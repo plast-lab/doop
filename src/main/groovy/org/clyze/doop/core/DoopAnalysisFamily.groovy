@@ -853,8 +853,8 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "INPUT_ID",
 					name: "input-id",
 					group: GROUP_FACTS,
-					description: "Import facts from OUT_DIR and start the analysis. Application/library inputs are ignored.",
-					argName: "ID_DIR",
+					description: "Import facts from dir with id ID and start the analysis. Application/library inputs are ignored.",
+					argName: "ID",
 					argInputType: InputType.MISC,
 					forPreprocessor: true
 			),
