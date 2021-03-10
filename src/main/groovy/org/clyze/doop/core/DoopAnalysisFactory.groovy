@@ -145,9 +145,6 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		if (!options.INPUT_ID.value && !options.CACHE.value && !options.PYTHON.value) {
 			checkAppGlob(options)
 		}
-		if (options.INPUT_ID.value) {
-			options.INPUT_ID.value = new File(options.OUT_DIR.value as File, options.INPUT_ID.value as String)
-		}
 
 		log.debug "Created new analysis"
 		if (options.X_LB3.value)
@@ -250,8 +247,14 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 	// This method may not be static, see [Note] above.
 	protected File createOutputDirectory(Map<String, AnalysisOption<?>> options) {
 		def outDir = new File(getOutputDirectory(options))
-		FileUtils.deleteQuietly(outDir)
-		outDir.mkdirs()
+
+		// Do not delete outdir if it's the same as input-id
+		def inputDir = options.INPUT_ID.value as File
+		if (!(inputDir && inputDir.parentFile == outDir)) {
+			FileUtils.deleteQuietly(outDir)
+			outDir.mkdirs()
+		}
+
 		FileOps.findDirOrThrow(outDir, "Could not create analysis directory: ${outDir}")
 		options.OUT_DIR.value = outDir
 		return outDir
@@ -507,6 +510,10 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		// may want to analyze an .apk using a non-Android platform.
 		if (!options.INPUT_ID.value) {
 			options.DECODE_APK.value = true
+		}
+
+		if (options.INPUT_ID.value) {
+			options.INPUT_ID.value = new File("${Doop.doopOut}/${options.INPUT_ID.value}/database")
 		}
 
 		// Resolution of facts location when reusing facts.

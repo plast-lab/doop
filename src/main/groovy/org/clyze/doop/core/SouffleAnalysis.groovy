@@ -35,11 +35,8 @@ class SouffleAnalysis extends DoopAnalysis {
 		runAnalysisAndProduceStats(analysis)
 
 		File runtimeMetricsFile = File.createTempFile('Stats_Runtime', '.csv')
-		runtimeMetricsFile.deleteOnExit()
 		log.debug "Using intermediate runtime metrics file: ${runtimeMetricsFile.canonicalPath}"
-		if (!database.exists()) {
-			database.mkdirs()
-		}
+		runtimeMetricsFile.deleteOnExit()
 		runtimeMetricsFile.createNewFile()
 
 		SouffleScript script = newScriptForAnalysis(executor)

@@ -104,11 +104,9 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             log.info "New $name analysis on user-provided facts at ${options.INPUT_ID.value} - id: $id"
 
         database = new File(outDir, "database")
-        deleteQuietly(database)
         database.mkdirs()
 
         factsDir = database
-
         gen0 = new FactGenerator0(factsDir)
 
         executor = new Executor(outDir, commandsEnvironment)
@@ -146,9 +144,12 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             }
         }
 
-        log.debug "Copying: ${fromDir} -> ${factsDir}"
-        deleteQuietly(factsDir)
+        def inputDir = options.INPUT_ID.value as File
+        if (!(inputDir && inputDir == database)) {
+            deleteQuietly(factsDir)
+        }
         factsDir.mkdirs()
+        log.debug "Copying: ${fromDir} -> ${factsDir}"
         FileOps.copyDirContents(fromDir, factsDir)
     }
 
