@@ -60,7 +60,7 @@ the repository contains the following directories:
   - *generators/code-processor*: Functionality for processing Jimple (in
     text representation) and generating results in SARIF format.
 
-For legacy reasons, directory *logic* contains old/deprecated Logicblox-based analysis logic.
+For legacy reasons, directory *lb-logic* contains old/deprecated Logicblox-based analysis logic.
 
 The source directory is structured according to the Gradle conventions
 [Java](http://gradle.org/docs/current/userguide/java_plugin.html),
