@@ -11,6 +11,8 @@ import org.clyze.doop.utils.SouffleScript
 import org.clyze.utils.Executor
 import org.clyze.utils.JHelper
 
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 import java.util.concurrent.Callable
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
@@ -130,7 +132,7 @@ class SouffleAnalysis extends DoopAnalysis {
 				postprocess()
 			}
 
-			moveFile(runtimeMetricsFile, new File(database, "Stats_Runtime.csv"))
+			Files.move(runtimeMetricsFile.toPath(), new File(database, "Stats_Runtime.csv").toPath(), StandardCopyOption.REPLACE_EXISTING)
 		} finally {
 			executorService.shutdownNow()
 		}
