@@ -145,10 +145,8 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             }
         }
 
-        def inputDir = options.INPUT_ID.value as File
-        if (!(inputDir && inputDir == database)) {
+        if (fromDir != database)
             deleteQuietly(factsDir)
-        }
         factsDir.mkdirs()
         log.debug "Copying: ${fromDir} -> ${factsDir}"
         FileOps.copyDirContents(fromDir, factsDir)
