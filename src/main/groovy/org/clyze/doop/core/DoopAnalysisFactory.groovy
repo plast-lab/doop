@@ -188,28 +188,12 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 				if (options.X_SYMLINK_CACHED_FACTS.value) {
 					throw new RuntimeException("Option --${opt.name} modifies facts, cannot be used with --${options.X_SYMLINK_CACHED_FACTS.name}.")
 				} else if (throwError) {
-					throw new RuntimeException("Option --${opt.name} modifies facts, cannot be used with --${factsOpt.name}, use --${options.X_EXTEND_FACTS.name} instead.")
+					throw new RuntimeException("Option --${opt.name} modifies facts, cannot be used with --${factsOpt.name}")
 				} else {
 					log.warn "WARNING: Option --${opt.name} modifies facts, the copy of the facts may be extended (since option --${factsOpt.name} is on)."
 				}
 			}
 		}
-	}
-
-	/**
-	 * Return the directory containing facts that will be reused.
-	 *
-	 * @param factsOpt     the facts-reusing option that has been enabled
-	 * @param options      the analysis options
-	 * @param throwError   if true, then throw an error, otherwise report a warning
-	 * @return             the directory containing facts to reuse
-	 */
-	static File getFactsReuseDir(AnalysisOption factsOpt, Map<String, AnalysisOption<?>> options,
-								 boolean throwError) {
-		checkFactsReuse(factsOpt, options, throwError)
-		File cacheDir = factsOpt.value as File
-		FileOps.findDirOrThrow(cacheDir, "Invalid user-provided ID for facts directory: $cacheDir")
-		return cacheDir
 	}
 
 	// Throw an error when two incompatible options are set.
@@ -339,12 +323,10 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
 		// Inputs are optional when reusing facts (but the 'cache'
 		// option needs them to compute the cache hash identifier).
-		if (options.INPUT_ID.value || options.X_EXTEND_FACTS.value) {
+		if (options.INPUT_ID.value) {
 			options.INPUTS.isMandatory = false
 			options.LIBRARIES.isMandatory = false
-		}
-
-		if (!options.INPUT_ID.value) {
+		} else {
 			log.debug "Resolving files"
 			try {
 				context.resolve()
@@ -402,19 +384,11 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		}
 
 		throwIfBothSet(options.INPUT_ID, options.FACTS_ONLY)
-		throwIfBothSet(options.INPUT_ID, options.X_EXTEND_FACTS)
-		throwIfBothSet(options.X_EXTEND_FACTS, options.FACTS_ONLY)
 		throwIfBothSet(options.INPUT_ID, options.CACHE)
 		throwIfBothSet(options.KEEP_SPEC, options.X_SYMLINK_CACHED_FACTS)
 
 		if (options.X_SERVER_CHA.value && !options.FACTS_ONLY.value)
 			throw new RuntimeException("Option --${options.X_SERVER_CHA.name} should only be used together with --${options.FACTS_ONLY.name}.")
-
-		if (options.X_SKIP_CODE_FACTGEN.value && !options.X_EXTEND_FACTS.value) {
-			throw new RuntimeException("Option --${options.X_SKIP_CODE_FACTGEN.name} should only be used together with --${options.X_EXTEND_FACTS.name}.")
-		} else if (options.INPUT_ID.value) {
-			options.X_SKIP_CODE_FACTGEN.value = true
-		}
 
 		if (options.TAMIFLEX.value && options.TAMIFLEX.value != "dummy") {
 			def tamiflexArg = options.TAMIFLEX.value as String
@@ -518,10 +492,9 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
 		// Resolution of facts location when reusing facts.
 		if (options.INPUT_ID.value) {
-			// Facts are assumed to be read-only.
-			options.CACHE_DIR.value = getFactsReuseDir(options.INPUT_ID, options, true)
-		} else if (options.X_EXTEND_FACTS.value) {
-			options.CACHE_DIR.value = getFactsReuseDir(options.X_EXTEND_FACTS, options, false)
+			File cacheDir = options.INPUT_ID.value as File
+			FileOps.findDirOrThrow(cacheDir, "Invalid user-provided ID for facts directory: $cacheDir")
+			options.CACHE_DIR.value = cacheDir
 		} else {
 			def cacheId = generateCacheID(options)
 			File cachedFacts = new File(Doop.doopCache, cacheId)
@@ -572,7 +545,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 				!options.DACAPO.value && !options.DACAPO_BACH.value) {
 				if (options.DISCOVER_MAIN_METHODS.value) {
 					log.warn "WARNING: No main class was found. Using option --${options.DISCOVER_MAIN_METHODS.name} to discover main methods."
-				} else if (options.INPUT_ID.value || options.CACHE.value || options.X_EXTEND_FACTS.value) {
+				} else if (options.INPUT_ID.value || options.CACHE.value) {
 					if (!options.OPEN_PROGRAMS.value)
 						log.warn("WARNING: No main class was found and option --${options.OPEN_PROGRAMS.name} is missing. The reused facts are assumed to declare the correct main class(es).")
 				} else {

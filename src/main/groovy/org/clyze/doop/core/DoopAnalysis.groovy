@@ -136,8 +136,9 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
     protected void linkOrCopyFacts(File fromDir) {
         if (options.X_SYMLINK_CACHED_FACTS.value) {
             try {
-                Path fromDirPath = FileSystems.default.getPath(fromDir.canonicalPath)
-                Files.createSymbolicLink(factsDir.toPath(), fromDirPath)
+                fromDir.eachFile { file ->
+                    Files.createSymbolicLink(new File(factsDir, file.name).toPath(), file.toPath())
+                }
                 return
             } catch (UnsupportedOperationException ignored) {
                 log.warn("WARNING: Filesystem does not support symbolic links, copying directory instead...")
@@ -191,14 +192,8 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
      * when restarting fact generation.
      */
     protected void initFactsDir() {
-        def existingFactsDir = options.X_EXTEND_FACTS.value as File
-        if (existingFactsDir) {
-            log.info "Expanding upon facts found in: $existingFactsDir.canonicalPath"
-            linkOrCopyFacts(existingFactsDir)
-        } else {
-            deleteQuietly(factsDir)
-            factsDir.mkdirs()
-        }
+        deleteQuietly(factsDir)
+        factsDir.mkdirs()
         generateFacts0()
     }
 
@@ -276,7 +271,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                 log.info "Time to make facts unique: $timing"
             }
 
-            if (!options.INPUT_ID.value && !options.CACHE.value && !options.X_EXTEND_FACTS.value) {
+            if (!options.INPUT_ID.value && !options.CACHE.value) {
                 if (options.HEAPDLS.value) {
                     runHeapDL(options.HEAPDLS.value.collect { File f -> f.canonicalPath })
                 }
@@ -327,17 +322,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
     }
 
     protected void runFrontEnd(Set<String> tmpDirs, FrontEnd frontEnd, CHA cha) {
-        if (options.X_SKIP_CODE_FACTGEN.value) {
-            log.info "Skipping facts generation for code inputs."
-            return
-        }
-
-        if (options.INPUT_ID.value) {
-            throw new RuntimeException("Internal error: code fact generator called under --${options.INPUT_ID.name}")
-        } else if (options.CACHE.value) {
-            throw new RuntimeException("Internal error: code fact generator called under --${options.CACHE.name}")
-        }
-
         def platform = options.PLATFORM.value.toString().tokenize("_")[0]
         if (platform != "android" && platform != "java")
             throw new RuntimeException("Unsupported platform: ${platform}")

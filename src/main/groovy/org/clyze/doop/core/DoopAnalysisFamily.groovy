@@ -166,12 +166,6 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "The path to the Java platform to use.",
 					argName: "PATH"
 			),
-			new BooleanAnalysisOption(
-					id: "X_SKIP_CODE_FACTGEN",
-					name: "Xskip-code-factgen",
-					group: GROUP_EXPERIMENTAL,
-					description: "Don't generate facts for code."
-			),
 
 			new AnalysisOption<List<String>>(
 					id: "MAIN_CLASS",
@@ -1087,14 +1081,6 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					group: GROUP_FACTS,
 					description: "Eliminate redundancy from .facts files.",
 					forCacheID: true
-			),
-			new AnalysisOption<String>(
-					id: "X_EXTEND_FACTS",
-					name: "Xextend-facts",
-					group: GROUP_FACTS,
-					description: "Expand upon the facts found in the given directory.",
-					argName: "DIR",
-					argInputType: InputType.MISC
 			),
 			/* End non-standard flags */
 
