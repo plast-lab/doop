@@ -147,6 +147,7 @@ class SouffleAnalysis extends DoopAnalysis {
 	}
 
 	void mainAnalysis(File analysis) {
+		cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/basic/basic.dl")
 		cpp.includeAtEnd("$analysis", "${Doop.souffleAnalysesPath}/${getBaseName(analysis.name)}/analysis.dl")
 
 		if (options.INFORMATION_FLOW.value)
