@@ -30,6 +30,7 @@ class LB3Analysis extends DoopAnalysis {
 	void run() {
 		//Initialize the instance here and not in the constructor, in order to allow an analysis to be re-runnable.
 		lbBuilder = new LBBuilder(cpp, outDir)
+		database = new File("${database.canonicalPath}-lb")
 
 		generateFacts()
 		if (options.FACTS_ONLY.value) return
