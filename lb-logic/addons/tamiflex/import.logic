@@ -14,7 +14,7 @@ _Tamiflex:ToDoopFormat[?orig] = ?formatted ->
 
 // Import data from the reflection log generated from tamiflex
 lang:physical:storageModel[`_Tamiflex:ReflectionData] = "DelimitedFile".
-lang:physical:filePath[`_Tamiflex:ReflectionData] = "facts/Tamiflex.facts".
+lang:physical:filePath[`_Tamiflex:ReflectionData] = "database/Tamiflex.facts".
 lang:physical:delimiter[`_Tamiflex:ReflectionData] = "\t".
 lang:physical:hasColumnNames[`_Tamiflex:ReflectionData] = false.
 _Tamiflex:ReflectionData(?classStr, ?methodStr, ?mapped, ?inClassStr, ?inMethodStr, ?lineNumber) ->
