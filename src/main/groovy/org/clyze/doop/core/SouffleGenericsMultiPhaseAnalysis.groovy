@@ -43,11 +43,8 @@ class SouffleGenericsMultiPhaseAnalysis extends SouffleAnalysis {
 		cpp = new CPreprocessor(this, executor)
 
 		initDatabase(preAnalysis)
-		basicAnalysis(preAnalysis)
-		if (!options.X_STOP_AT_BASIC.value) {
-			log.debug("analysis: ${getBaseName(preAnalysis.name)}")
-			runAnalysisAndProduceStats(preAnalysis)
-		}
+		log.debug("analysis: ${getBaseName(preAnalysis.name)}")
+		runAnalysisAndProduceStats(preAnalysis)
 
 		def script = newScriptForAnalysis(executor)
 
@@ -56,7 +53,7 @@ class SouffleGenericsMultiPhaseAnalysis extends SouffleAnalysis {
 		boolean provenance = options.SOUFFLE_PROVENANCE.value as boolean
 		boolean profiling = options.SOUFFLE_PROFILE.value as boolean
 		boolean liveProf = options.SOUFFLE_LIVE_PROFILE.value as boolean
-		if (!options.X_STOP_AT_FACTS.value) {
+		if (!options.FACTS_ONLY.value) {
 			if (options.VIA_DDLOG.value) {
 				// Copy the DDlog converter, needed both for logic
 				// compilation and fact post-processing.
@@ -94,7 +91,7 @@ class SouffleGenericsMultiPhaseAnalysis extends SouffleAnalysis {
 			script.postprocessFacts(outDir, profiling)
 			log.info "[Task FACTS Done]"
 
-			if (options.X_STOP_AT_FACTS.value) return
+			if (options.FACTS_ONLY.value) return
 
 			if (!options.X_SERIALIZE_FACTGEN_COMPILATION.value) {
 			    generatedFile0 = compilationFuture.get()
@@ -113,7 +110,7 @@ class SouffleGenericsMultiPhaseAnalysis extends SouffleAnalysis {
 		}
 		printStats()
 
-		options.X_START_AFTER_FACTS.value = factsDir
+		options.INPUT_ID.value = factsDir
 		options.CONFIGURATION.value = "AdaptiveTwoObjectSensitivePlusHeapConfiguration"
 		options.GENERICS_PRE_ANALYSIS.value = null
 		options.PRECISE_GENERICS.value = true
@@ -159,15 +156,12 @@ class SouffleGenericsMultiPhaseAnalysis extends SouffleAnalysis {
 		Files.copy(collectionAcceptsValueFallbackType.toPath(), collectionAcceptsValueFallbackTypeFacts.toPath())
 
 		initDatabase(analysis)
-		basicAnalysis(analysis)
-		if (!options.X_STOP_AT_BASIC.value) {
-			log.debug("analysis: ${getBaseName(analysis.name)}")
-			runAnalysisAndProduceStats(analysis)
-		}
+		log.debug("analysis: ${getBaseName(analysis.name)}")
+		runAnalysisAndProduceStats(analysis)
 
 		compilationFuture = null
 		executorService = Executors.newSingleThreadExecutor()
-		if (!options.X_STOP_AT_FACTS.value) {
+		if (!options.FACTS_ONLY.value) {
 			compilationFuture = executorService.submit(new Callable<File>() {
 				@Override
 				File call() {
@@ -194,7 +188,7 @@ class SouffleGenericsMultiPhaseAnalysis extends SouffleAnalysis {
 			System.gc()
 		}
 		try {
-			if (options.X_STOP_AT_FACTS.value) return
+			if (options.FACTS_ONLY.value) return
 
 			if (!options.X_SERIALIZE_FACTGEN_COMPILATION.value) {
 				generatedFile = compilationFuture.get()

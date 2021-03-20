@@ -163,13 +163,6 @@ class SouffleScript {
 		}
 	}
 
-	final File makeDatabase(File outDir) {
-		def db = new File(outDir, "database")
-		deleteQuietly(db)
-		db.mkdirs()
-		return db
-	}
-
 	/**
 	 * Subclasses can override this method to post-process the facts before analysis.
 	 */
@@ -180,7 +173,7 @@ class SouffleScript {
 			boolean provenance = false, boolean liveProf = false,
 			boolean profile = false) {
 
-		def db = makeDatabase(outDir)
+		def db = new File(outDir, "database")
 		def baseCommand = "${analysisBinary} -j${jobs} -F${factsDir.canonicalPath} -D${db.canonicalPath}"
 		if (new File(TIME_UTIL).exists()) {
 			println "Using ${TIME_UTIL} to gather performance statistics..."
@@ -214,7 +207,7 @@ class SouffleScript {
 
 		setScriptFileViaCPP(origScriptFile, outDir)
 
-		def db = makeDatabase(outDir)
+	    def db = new File(outDir, "database")
 
         if (removeContext)
             removeContexts(scriptFile)

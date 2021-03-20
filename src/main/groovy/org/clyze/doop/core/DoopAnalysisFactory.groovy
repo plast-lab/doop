@@ -142,7 +142,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		def commandsEnv = initExternalCommandsEnvironment(options)
 		createOutputDirectory(options)
 
-		if (!options.X_START_AFTER_FACTS.value && !options.CACHE.value && !options.PYTHON.value) {
+		if (!options.INPUT_ID.value && !options.CACHE.value && !options.PYTHON.value) {
 			checkAppGlob(options)
 		}
 
@@ -188,28 +188,12 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 				if (options.X_SYMLINK_CACHED_FACTS.value) {
 					throw new RuntimeException("Option --${opt.name} modifies facts, cannot be used with --${options.X_SYMLINK_CACHED_FACTS.name}.")
 				} else if (throwError) {
-					throw new RuntimeException("Option --${opt.name} modifies facts, cannot be used with --${factsOpt.name}, use --${options.X_EXTEND_FACTS.name} instead.")
+					throw new RuntimeException("Option --${opt.name} modifies facts, cannot be used with --${factsOpt.name}")
 				} else {
 					log.warn "WARNING: Option --${opt.name} modifies facts, the copy of the facts may be extended (since option --${factsOpt.name} is on)."
 				}
 			}
 		}
-	}
-
-	/**
-	 * Return the directory containing facts that will be reused.
-	 *
-	 * @param factsOpt     the facts-reusing option that has been enabled
-	 * @param options      the analysis options
-	 * @param throwError   if true, then throw an error, otherwise report a warning
-	 * @return             the directory containing facts to reuse
-	 */
-	static File getFactsReuseDir(AnalysisOption factsOpt, Map<String, AnalysisOption<?>> options,
-								 boolean throwError) {
-		checkFactsReuse(factsOpt, options, throwError)
-		File cacheDir = new File(factsOpt.value as String)
-		FileOps.findDirOrThrow(cacheDir, "Invalid user-provided facts directory: $cacheDir")
-		return cacheDir
 	}
 
 	// Throw an error when two incompatible options are set.
@@ -222,7 +206,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		def name = options.ANALYSIS.value
 		log.debug "Verifying analysis name: $name"
 		if (options.X_LB3.value)
-			FileOps.findFileOrThrow("${Doop.analysesPath}/${name}/analysis.logic", "Unsupported analysis: $name")
+			FileOps.findFileOrThrow("${Doop.lbAnalysesPath}/${name}/analysis.logic", "Unsupported analysis: $name")
 		else
 			FileOps.findFileOrThrow("${Doop.souffleAnalysesPath}/${name}/analysis.dl", "Unsupported analysis: $name")
 	}
@@ -241,14 +225,20 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
 	// This method may not be static, see [Note] above.
 	private String getOutputDirectory(Map<String, AnalysisOption<?>> options) {
-		return "${Doop.doopOut}/${options.ANALYSIS.value}/${options.USER_SUPPLIED_ID.value}"
+		return "${Doop.doopOut}/${options.USER_SUPPLIED_ID.value}"
 	}
 
 	// This method may not be static, see [Note] above.
 	protected File createOutputDirectory(Map<String, AnalysisOption<?>> options) {
 		def outDir = new File(getOutputDirectory(options))
-		FileUtils.deleteQuietly(outDir)
-		outDir.mkdirs()
+
+		// Do not delete outdir if it's the same as input-id
+		def inputDir = options.INPUT_ID.value as File
+		if (!(inputDir && inputDir.parentFile == outDir)) {
+			FileUtils.deleteQuietly(outDir)
+			outDir.mkdirs()
+		}
+
 		FileOps.findDirOrThrow(outDir, "Could not create analysis directory: ${outDir}")
 		options.OUT_DIR.value = outDir
 		return outDir
@@ -325,7 +315,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		log.debug "Processing analysis options"
 		def platformName = options.PLATFORM.value as String
 
-		if (options.X_STOP_AT_FACTS.value) {
+		if (options.FACTS_ONLY.value) {
 			// Dummy value so the option is not empty, because otherwise it is mandatory
 			// Must be a valid one
 			options.ANALYSIS.value = "context-insensitive"
@@ -333,12 +323,10 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
 		// Inputs are optional when reusing facts (but the 'cache'
 		// option needs them to compute the cache hash identifier).
-		if (options.X_START_AFTER_FACTS.value || options.X_EXTEND_FACTS.value) {
+		if (options.INPUT_ID.value) {
 			options.INPUTS.isMandatory = false
 			options.LIBRARIES.isMandatory = false
-		}
-
-		if (!options.X_START_AFTER_FACTS.value) {
+		} else {
 			log.debug "Resolving files"
 			try {
 				context.resolve()
@@ -364,6 +352,8 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
 		if (options.ANALYSIS.value == "sound-may-point-to" || options.ANALYSIS.value == "dependency-analysis" || options.SYMBOLIC_REASONING.value)
 			options.CFG_ANALYSIS.value = true
+		if (options.ANALYSIS.value == "basic-only")
+			options.X_STATS_NONE.value = true
 
 		try {
 			setOptionsForPlatform(options, platformName)
@@ -372,7 +362,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		}
 
 		if (options.DACAPO.value || options.DACAPO_BACH.value) {
-			if (!options.X_START_AFTER_FACTS.value) {
+			if (!options.INPUT_ID.value) {
 				def libraryPaths = context.libraries()
 				def inputJarName = context.inputs().first()
 				def deps = inputJarName.replace(".jar", "-deps.jar")
@@ -393,20 +383,12 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			}
 		}
 
-		throwIfBothSet(options.X_START_AFTER_FACTS, options.X_STOP_AT_FACTS)
-		throwIfBothSet(options.X_START_AFTER_FACTS, options.X_EXTEND_FACTS)
-		throwIfBothSet(options.X_EXTEND_FACTS, options.X_STOP_AT_FACTS)
-		throwIfBothSet(options.X_START_AFTER_FACTS, options.CACHE)
+		throwIfBothSet(options.INPUT_ID, options.FACTS_ONLY)
+		throwIfBothSet(options.INPUT_ID, options.CACHE)
 		throwIfBothSet(options.KEEP_SPEC, options.X_SYMLINK_CACHED_FACTS)
 
-		if (options.X_SERVER_CHA.value && !options.X_STOP_AT_FACTS.value)
-			throw new RuntimeException("Option --${options.X_SERVER_CHA.name} should only be used together with --${options.X_STOP_AT_FACTS.name}.")
-
-		if (options.X_SKIP_CODE_FACTGEN.value && !options.X_EXTEND_FACTS.value) {
-			throw new RuntimeException("Option --${options.X_SKIP_CODE_FACTGEN.name} should only be used together with --${options.X_EXTEND_FACTS.name}.")
-		} else if (options.X_START_AFTER_FACTS.value) {
-			options.X_SKIP_CODE_FACTGEN.value = true
-		}
+		if (options.X_SERVER_CHA.value && !options.FACTS_ONLY.value)
+			throw new RuntimeException("Option --${options.X_SERVER_CHA.name} should only be used together with --${options.FACTS_ONLY.name}.")
 
 		if (options.TAMIFLEX.value && options.TAMIFLEX.value != "dummy") {
 			def tamiflexArg = options.TAMIFLEX.value as String
@@ -500,16 +482,19 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		// Enable APK decoding on Android when not reusing read-only
 		// facts. We don't check the ANDROID option, since the user
 		// may want to analyze an .apk using a non-Android platform.
-		if (!options.X_START_AFTER_FACTS.value) {
+		if (!options.INPUT_ID.value) {
 			options.DECODE_APK.value = true
 		}
 
+		if (options.INPUT_ID.value) {
+			options.INPUT_ID.value = new File("${Doop.doopOut}/${options.INPUT_ID.value}/database")
+		}
+
 		// Resolution of facts location when reusing facts.
-		if (options.X_START_AFTER_FACTS.value) {
-			// Facts are assumed to be read-only.
-			options.CACHE_DIR.value = getFactsReuseDir(options.X_START_AFTER_FACTS, options, true)
-		} else if (options.X_EXTEND_FACTS.value) {
-			options.CACHE_DIR.value = getFactsReuseDir(options.X_EXTEND_FACTS, options, false)
+		if (options.INPUT_ID.value) {
+			File cacheDir = options.INPUT_ID.value as File
+			FileOps.findDirOrThrow(cacheDir, "Invalid user-provided ID for facts directory: $cacheDir")
+			options.CACHE_DIR.value = cacheDir
 		} else {
 			def cacheId = generateCacheID(options)
 			File cachedFacts = new File(Doop.doopCache, cacheId)
@@ -537,7 +522,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 					throw new RuntimeException("Option --${options.MAIN_CLASS.name} is not compatible with --${options.IGNORE_MAIN_METHOD.name}")
 				else
 					log.info "Main class(es) expanded with ${options.MAIN_CLASS.value}"
-			} else if (!options.X_START_AFTER_FACTS.value && !options.IGNORE_MAIN_METHOD.value) {
+			} else if (!options.INPUT_ID.value && !options.IGNORE_MAIN_METHOD.value) {
 				options.INPUTS.value
 					.findAll { it.name.toLowerCase().endsWith(".jar") }
 					.each { File jarPath ->
@@ -560,7 +545,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 				!options.DACAPO.value && !options.DACAPO_BACH.value) {
 				if (options.DISCOVER_MAIN_METHODS.value) {
 					log.warn "WARNING: No main class was found. Using option --${options.DISCOVER_MAIN_METHODS.name} to discover main methods."
-				} else if (options.X_START_AFTER_FACTS.value || options.CACHE.value || options.X_EXTEND_FACTS.value) {
+				} else if (options.INPUT_ID.value || options.CACHE.value) {
 					if (!options.OPEN_PROGRAMS.value)
 						log.warn("WARNING: No main class was found and option --${options.OPEN_PROGRAMS.name} is missing. The reused facts are assumed to declare the correct main class(es).")
 				} else {

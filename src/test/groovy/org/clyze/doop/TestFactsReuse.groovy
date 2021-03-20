@@ -6,7 +6,7 @@ import spock.lang.Unroll
 
 class TestFactsReuse extends DoopSpec {
 
-    String getHelloFacts() { "${Doop.doopHome}/test-hello-facts" }
+    String getHelloFacts() { "test-hello-facts" }
 
     // @spock.lang.Ignore
     @Unroll
@@ -15,17 +15,16 @@ class TestFactsReuse extends DoopSpec {
         // Generate facts and stop.
         Main.main((String[])
                   ['-i', Artifacts.HELLO_JAR,
-                   '--id', 'hello-facts-run',
-                   '--Xstop-at-facts', helloFacts,
+                   '--id', helloFacts,
+                   '--facts-only',
                    '--server-cha', '--generate-jimple'])
         Analysis analysis1 = Main.analysis
         // Reuse facts from previous step.
         Main.main((String[])
-                  ['--Xextend-facts', helloFacts,
+                  ['--input-id', helloFacts,
                    '-a', 'types-only',
                    '--regex', 'Main',
                    '--main', 'DUMMY',
-                   '--skip-code-factgen',
                    '--server-logic',
                    '--stats', 'none',
                    '--id', 'hello-facts-analyzed'])
@@ -37,7 +36,11 @@ class TestFactsReuse extends DoopSpec {
     }
 
     def cleanup() {
-        println "Deleting directory: ${helloFacts}"
-        (new File(helloFacts)).delete()
+        def dir = new File("${Doop.doopOut}/$helloFacts")
+        println "Deleting directory: $dir"
+        dir.delete()
+        dir = new File("${Doop.doopOut}/hello-facts-analyzed")
+        println "Deleting directory: $dir"
+        dir.delete()
     }
 }

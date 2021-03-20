@@ -38,7 +38,15 @@ class CrudeLBTest extends Specification {
 		long actualVal = -1
 		def cmd = [analysis.options.BLOXBATCH.value as String, '-db', analysis.database as String, '-query', "_(v) <- Stats:Metrics(_, \"$metric\", v)." as String]
 		println "equals() cmd = ${cmd}"
-		analysis.executor.execute(cmd) { line -> println "result line = ${line}" ; actualVal = line as long }
+		analysis.executor.execute(cmd) { line ->
+			println "result line = ${line}"
+			try {
+				actualVal = line as long
+			} catch (NumberFormatException ignored) {
+				// Ignore number conversion errors in the output
+				// prefix, to accommodate old LogicBlox versions.
+			}
+		}
 		// We expect numbers to deviate by 10%.
 		assert actualVal > (expectedVal * 0.9)
 		assert actualVal < (expectedVal * 1.1)

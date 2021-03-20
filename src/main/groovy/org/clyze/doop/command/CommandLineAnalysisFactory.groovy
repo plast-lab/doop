@@ -83,15 +83,15 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
 		// Get the name of the analysis (short option: a)
 		options.ANALYSIS.value = cli['a']
 		// Get the inputFiles of the analysis (short option: i)
-		if (options.X_START_AFTER_FACTS.value && cli['is']) {
-			log.warn "WARNING: Ignoring inputs (--${options.X_START_AFTER_FACTS.name})."
+		if (options.INPUT_ID.value && cli['is']) {
+			log.warn "WARNING: Ignoring inputs (--${options.INPUT_ID.name})."
 		}
-		options.INPUTS.value = (!options.X_START_AFTER_FACTS.value && cli['is']) ? cli['is'] : []
+		options.INPUTS.value = (!options.INPUT_ID.value && cli['is']) ? cli['is'] : []
 		// Get the libraryFiles of the analysis (short option: l)
-		if (options.X_START_AFTER_FACTS.value && cli['ls']) {
-			log.warn "WARNING: ignoring libraries (--${options.X_START_AFTER_FACTS.name})."
+		if (options.INPUT_ID.value && cli['ls']) {
+			log.warn "WARNING: ignoring libraries (--${options.INPUT_ID.name})."
 		}
-		options.LIBRARIES.value = (!options.X_START_AFTER_FACTS.value && cli['ls']) ? cli['ls'] : []
+		options.LIBRARIES.value = (!options.INPUT_ID.value && cli['ls']) ? cli['ls'] : []
 
 		newAnalysis(FAMILY, options)
 	}

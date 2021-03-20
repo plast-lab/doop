@@ -80,9 +80,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
     List<File> getLibraryFiles() { options.LIBRARIES.value as List<File> }
 
-    File getDatabase() {
-        return database
-    }
+    File getDatabase() { database }
 
     FactGenerator0 gen0
 
@@ -97,22 +95,19 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         super(DoopAnalysisFamily.instance, options)
         this.ctx = ctx
 
-        if (!options.X_START_AFTER_FACTS.value) {
+        if (!options.INPUT_ID.value) {
             log.info "New $name analysis"
             log.info "Id       : $id"
             log.info "Inputs   : ${inputFiles.join(', ')}"
             log.info "Libraries: ${libraryFiles.join(', ')}"
         } else
-            log.info "New $name analysis on user-provided facts at ${options.X_START_AFTER_FACTS.value} - id: $id"
-
-        if (options.X_STOP_AT_FACTS.value)
-            factsDir = new File(options.X_STOP_AT_FACTS.value.toString())
-        else
-            factsDir = new File(outDir, "facts")
-
-        gen0 = new FactGenerator0(factsDir)
+            log.info "New $name analysis on user-provided facts at ${options.INPUT_ID.value} - id: $id"
 
         database = new File(outDir, "database")
+        database.mkdirs()
+
+        factsDir = database
+        gen0 = new FactGenerator0(factsDir)
 
         executor = new Executor(outDir, commandsEnvironment)
         cpp = new CPreprocessor(this, executor)
@@ -141,17 +136,19 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
     protected void linkOrCopyFacts(File fromDir) {
         if (options.X_SYMLINK_CACHED_FACTS.value) {
             try {
-                Path fromDirPath = FileSystems.default.getPath(fromDir.canonicalPath)
-                Files.createSymbolicLink(factsDir.toPath(), fromDirPath)
+                fromDir.eachFile { file ->
+                    Files.createSymbolicLink(new File(factsDir, file.name).toPath(), file.toPath())
+                }
                 return
             } catch (UnsupportedOperationException ignored) {
                 log.warn("WARNING: Filesystem does not support symbolic links, copying directory instead...")
             }
         }
 
-        log.debug "Copying: ${fromDir} -> ${factsDir}"
-        deleteQuietly(factsDir)
+        if (fromDir != database)
+            deleteQuietly(factsDir)
         factsDir.mkdirs()
+        log.debug "Copying: ${fromDir} -> ${factsDir}"
         FileOps.copyDirContents(fromDir, factsDir)
     }
 
@@ -193,14 +190,8 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
      * when restarting fact generation.
      */
     protected void initFactsDir() {
-        def existingFactsDir = options.X_EXTEND_FACTS.value as File
-        if (existingFactsDir) {
-            log.info "Expanding upon facts found in: $existingFactsDir.canonicalPath"
-            linkOrCopyFacts(existingFactsDir)
-        } else {
-            deleteQuietly(factsDir)
-            factsDir.mkdirs()
-        }
+        deleteQuietly(factsDir)
+        factsDir.mkdirs()
         generateFacts0()
     }
 
@@ -209,10 +200,10 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         if (options.CACHE.value) {
             log.info "Using cached facts from $cacheDir"
             linkOrCopyFacts(cacheDir)
-        } else if (options.X_START_AFTER_FACTS.value) {
-            def importedFactsDir = options.X_START_AFTER_FACTS.value as String
+        } else if (options.INPUT_ID.value) {
+            def importedFactsDir = options.INPUT_ID.value as File
             log.info "Using user-provided facts from ${importedFactsDir} in ${factsDir}"
-            linkOrCopyFacts(new File(importedFactsDir))
+            linkOrCopyFacts(importedFactsDir)
         } else {
 
             log.info "-- Fact Generation --"
@@ -278,7 +269,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                 log.info "Time to make facts unique: $timing"
             }
 
-            if (!options.X_START_AFTER_FACTS.value && !options.CACHE.value && !options.X_EXTEND_FACTS.value) {
+            if (!options.INPUT_ID.value && !options.CACHE.value) {
                 if (options.HEAPDLS.value) {
                     runHeapDL(options.HEAPDLS.value.collect { File f -> f.canonicalPath })
                 }
@@ -329,17 +320,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
     }
 
     protected void runFrontEnd(Set<String> tmpDirs, FrontEnd frontEnd, CHA cha) {
-        if (options.X_SKIP_CODE_FACTGEN.value) {
-            log.info "Skipping facts generation for code inputs."
-            return
-        }
-
-        if (options.X_START_AFTER_FACTS.value) {
-            throw new RuntimeException("Internal error: code fact generator called under --${options.X_START_AFTER_FACTS.name}")
-        } else if (options.CACHE.value) {
-            throw new RuntimeException("Internal error: code fact generator called under --${options.CACHE.name}")
-        }
-
         def platform = options.PLATFORM.value.toString().tokenize("_")[0]
         if (platform != "android" && platform != "java")
             throw new RuntimeException("Unsupported platform: ${platform}")

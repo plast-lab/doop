@@ -166,12 +166,6 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "The path to the Java platform to use.",
 					argName: "PATH"
 			),
-			new BooleanAnalysisOption(
-					id: "X_SKIP_CODE_FACTGEN",
-					name: "Xskip-code-factgen",
-					group: GROUP_EXPERIMENTAL,
-					description: "Don't generate facts for code."
-			),
 
 			new AnalysisOption<List<String>>(
 					id: "MAIN_CLASS",
@@ -777,7 +771,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					group: GROUP_INFORMATION_FLOW,
 					argName: "APPLICATION_PLATFORM",
 					description: "Load additional logic to perform information flow analysis.",
-					validValues: informationFlowPlatforms(Doop.addonsPath, Doop.souffleAddonsPath),
+					validValues: informationFlowPlatforms("${Doop.lbLogicPath}/addons", "${Doop.souffleLogicPath}/addons"),
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
@@ -849,6 +843,21 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Use dynamic information from file.",
 					forPreprocessor: true
 			),
+			new AnalysisOption<String>(
+					id: "INPUT_ID",
+					name: "input-id",
+					group: GROUP_FACTS,
+					description: "Import facts from dir with id ID and start the analysis. Application/library inputs are ignored.",
+					argName: "ID",
+					argInputType: InputType.MISC,
+					forPreprocessor: true
+			),
+			new BooleanAnalysisOption(
+					id: "FACTS_ONLY",
+					name: "facts-only",
+					group: GROUP_FACTS,
+					description: "Only generate facts and exit."
+			),
 
 			/* Start LogicBlox related options */
 			new AnalysisOption<String>(
@@ -912,21 +921,6 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Load default logic for collecting statistics.",
 					forPreprocessor: true,
 					cli: false
-			),
-			new AnalysisOption<String>(
-					id: "X_STOP_AT_FACTS",
-					name: "Xstop-at-facts",
-					group: GROUP_FACTS,
-					description: "Only generate facts and exit. Link result to OUT_DIR",
-					argName: "OUT_DIR",
-					argInputType: InputType.MISC
-			),
-			new AnalysisOption<String>(
-					id: "X_STOP_AT_BASIC",
-					name: "Xstop-at-basic",
-					group: GROUP_FACTS,
-					description: "Run the basic analysis and exit. Possible strategies: default, classes-scc (outputs the classes in SCC), partitioning (outputs the classes in partitions)",
-					argName: "PARTITIONING_STRATEGY"
 			),
 			new BooleanAnalysisOption(
 					id: "DONT_CACHE_FACTS",
@@ -1015,15 +1009,6 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Do not run fact generation and compilation in parallel.",
 					cli: false
 			),
-			new AnalysisOption<String>(
-					id: "X_START_AFTER_FACTS",
-					name: "Xstart-after-facts",
-					group: GROUP_FACTS,
-					description: "Import facts from OUT_DIR and start the analysis. Application/library inputs are ignored.",
-					argName: "OUT_DIR",
-					argInputType: InputType.MISC,
-					forPreprocessor: true
-			),
 			new IntegerAnalysisOption(
 					id: "X_SERVER_LOGIC_THRESHOLD",
 					name: "server-logic-threshold",
@@ -1097,14 +1082,6 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Eliminate redundancy from .facts files.",
 					forCacheID: true
 			),
-			new AnalysisOption<String>(
-					id: "X_EXTEND_FACTS",
-					name: "Xextend-facts",
-					group: GROUP_FACTS,
-					description: "Expand upon the facts found in the given directory.",
-					argName: "DIR",
-					argInputType: InputType.MISC
-			),
 			/* End non-standard flags */
 
 			/* TODO: deprecated or broken? */
@@ -1158,19 +1135,19 @@ class DoopAnalysisFamily implements AnalysisFamily {
 
 	private static List<String> analysesLB() {
 		try {
-			if (!Doop.analysesPath) {
+			if (!Doop.lbAnalysesPath) {
 				Doop.initDoopFromEnv()
 			}
 		} catch (e) {
 			println "ERROR: Could not initialize Doop: ${e.message}"
 			e.printStackTrace()
 		}
-		if (!Doop.analysesPath) {
+		if (!Doop.lbAnalysesPath) {
 			println "WARNING: LB legacy logic path not found, set DOOP_HOME."
 			return []
 		}
-		if (Doop.analysesPath) {
-			File legacyPath = new File(Doop.analysesPath)
+		if (Doop.lbAnalysesPath) {
+			File legacyPath = new File(Doop.lbAnalysesPath)
 			if (legacyPath.exists()) {
 				return analysesFor(legacyPath, "analysis.logic")
 			}

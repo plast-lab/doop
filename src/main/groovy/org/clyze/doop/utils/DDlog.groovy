@@ -164,7 +164,7 @@ class DDlog extends SouffleScript {
             boolean profile = false) {
 
         checkOptions(false, provenance, liveProf, false, false)
-        def db = makeDatabase(outDir)
+	    def db = new File(outDir, "database")
         log.info "Running the analysis (using ${jobs} jobs)..."
         try {
             executionTime = Helper.timing {

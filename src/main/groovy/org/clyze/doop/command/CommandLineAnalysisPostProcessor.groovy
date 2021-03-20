@@ -14,7 +14,7 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor<DoopAnal
 
 	@Override
 	void process(DoopAnalysis analysis) {
-		if (!analysis.options.get('X_STOP_AT_FACTS').value && !analysis.options.get('X_STOP_AT_BASIC').value)
+		if (!analysis.options.get('FACTS_ONLY').value)
 			printStats(analysis)
 		if (analysis.options.get('SANITY').value && !analysis.options.get('DRY_RUN').value)
 			printSanityResults(analysis)
@@ -66,16 +66,16 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor<DoopAnal
 	}
 
 	void linkResult(DoopAnalysis analysis) {
-		def xStopAtFactsOpt = analysis.options.get('X_STOP_AT_FACTS').value
-		if (xStopAtFactsOpt) {
-			log.info "Making facts available at ${xStopAtFactsOpt}"
+		def factsOnly = analysis.options.get('FACTS_ONLY').value
+		if (factsOnly) {
+			log.info "Making facts available at ${factsOnly}"
 			return
 		}
 
 		def inputName
 		def platform = analysis.options.get('PLATFORM').value
 
-		if (analysis.options.get('X_START_AFTER_FACTS').value)
+		if (analysis.options.get('INPUT_ID').value)
 			inputName = analysis.id
 		else
 			inputName = FilenameUtils.getBaseName(analysis.inputFiles[0].toString())

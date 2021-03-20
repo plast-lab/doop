@@ -1,0 +1,8 @@
+//#include "../../basic/classes-scc.dl"
+#include "../../basic/partitioning.dl"
+
+.output basic.MainMethodDeclaration
+.output basic.SubtypeOf
+.output basic.SupertypeOf
+.output basic.MethodLookup
+.output basic.ResolveInvocation

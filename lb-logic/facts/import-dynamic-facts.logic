@@ -9,7 +9,7 @@ This stage must be executed before any basic analysis but *AFTER* Heap Allocatio
 
 // DynamicNormalHeapAllocation
 lang:physical:storageModel[`_DynamicNormalHeapAllocation] = "DelimitedFile".
-lang:physical:filePath[`_DynamicNormalHeapAllocation] = "facts/DynamicNormalHeapAllocation.facts".
+lang:physical:filePath[`_DynamicNormalHeapAllocation] = "database/DynamicNormalHeapAllocation.facts".
 lang:physical:delimiter[`_DynamicNormalHeapAllocation] = "\t".
 lang:physical:hasColumnNames[`_DynamicNormalHeapAllocation] = false.
 _DynamicNormalHeapAllocation(?param1, ?param2, ?param3, ?param4) ->
@@ -86,7 +86,7 @@ _MatchedHeapAllocation2(?representation, ?heap) <-
 
 // TODO: DynamicStringHeapAllocation 
 //lang:physical:storageModel[`_DynamicStringHeapAllocation] = "DelimitedFile".
-//lang:physical:filePath[`_DynamicStringHeapAllocation] = "facts/DynamicStringHeapAllocation.facts".
+//lang:physical:filePath[`_DynamicStringHeapAllocation] = "database/DynamicStringHeapAllocation.facts".
 //lang:physical:delimiter[`_DynamicStringHeapAllocation] = "\t".
 //lang:physical:hasColumnNames[`_DynamicStringHeapAllocation] = false.
 //_DynamicStringHeapAllocation(?param1) ->
@@ -99,7 +99,7 @@ _MatchedHeapAllocation2(?representation, ?heap) <-
 
 // DynamicReachableMethod
 lang:physical:storageModel[`_DynamicReachableMethod] = "DelimitedFile".
-lang:physical:filePath[`_DynamicReachableMethod] = "facts/DynamicReachableMethod.facts".
+lang:physical:filePath[`_DynamicReachableMethod] = "database/DynamicReachableMethod.facts".
 lang:physical:delimiter[`_DynamicReachableMethod] = "\t".
 lang:physical:hasColumnNames[`_DynamicReachableMethod] = false.
 _DynamicReachableMethod(?param1) ->

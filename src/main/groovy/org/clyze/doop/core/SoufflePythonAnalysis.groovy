@@ -18,17 +18,14 @@ class SoufflePythonAnalysis extends SouffleAnalysis {
     void run() {
         generateFacts()
 
-        if (options.X_STOP_AT_FACTS.value) return
+        if (options.FACTS_ONLY.value) return
 
         File analysis = new File(outDir, "${name}.dl")
         deleteQuietly(analysis)
         analysis.createNewFile()
 
         initDatabase(analysis)
-        basicAnalysis(analysis)
-        if (!options.X_STOP_AT_BASIC.value) {
-            runAnalysisAndProduceStats(analysis)
-        }
+        runAnalysisAndProduceStats(analysis)
 
         def script = newScriptForAnalysis(executor)
         if (options.SOUFFLE_RUN_INTERPRETED.value) {
@@ -67,26 +64,15 @@ class SoufflePythonAnalysis extends SouffleAnalysis {
 
     @Override
     void initDatabase(File analysis) {
-        cpp.includeAtEnd("$analysis", "${Doop.soufflePythonPath}/facts/schema.dl")
-        cpp.includeAtEnd("$analysis", "${Doop.soufflePythonPath}/facts/import-entities.dl")
-        cpp.includeAtEnd("$analysis", "${Doop.soufflePythonPath}/facts/import-facts.dl")
-        cpp.includeAtEnd("$analysis", "${Doop.soufflePythonPath}/facts/post-process.dl")
-    }
-
-    @Override
-    void basicAnalysis(File analysis) {
-//        def commonMacros = "${Doop.souffleLogicPath}/commonMacros.dl"
-//        cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/basic/basic.dl", commonMacros)
-//
-//        if (options.CFG_ANALYSIS.value || name == "sound-may-point-to") {
-//            def cfgAnalysisPath = "${Doop.souffleAddonsPath}/cfg-analysis"
-//            cpp.includeAtEnd("$analysis", "${cfgAnalysisPath}/analysis.dl", "${cfgAnalysisPath}/declarations.dl")
-//        }
+        cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/python/facts/schema.dl")
+        cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/python/facts/import-entities.dl")
+        cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/python/facts/import-facts.dl")
+        cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/python/facts/post-process.dl")
     }
 
     @Override
     void mainAnalysis(File analysis) {
-        cpp.includeAtEnd("$analysis", "${Doop.soufflePythonAnalysesPath}/${name}/analysis.dl")
+        cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/python/analyses/${name}/analysis.dl")
 //        def commonMacros = "${Doop.souffleLogicPath}/commonMacros.dl"
 //        def mainPath = "${Doop.souffleLogicPath}/main"
 //        def analysisPath = "${Doop.souffleAnalysesPath}/${name}"
@@ -108,7 +94,7 @@ class SoufflePythonAnalysis extends SouffleAnalysis {
 //        if (options.SANITY.value)
 //            cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/sanity.dl")
 //
-//        if (!options.X_STOP_AT_FACTS.value && options.X_SERVER_LOGIC.value) {
+//        if (!options.FACTS_ONLY.value && options.X_SERVER_LOGIC.value) {
 //            cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/server-logic/queries.dl")
 //        }
 //
@@ -126,7 +112,7 @@ class SoufflePythonAnalysis extends SouffleAnalysis {
 
     @Override
     void produceStats(File analysis) {
-        def statsPath = "${Doop.soufflePythonPath}/addons/statistics"
+        def statsPath = "${Doop.souffleLogicPath}/python/addons/statistics"
 
         if (options.X_STATS_NONE.value) return
 

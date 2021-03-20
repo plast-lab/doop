@@ -37,6 +37,6 @@ abstract class DoopSpec extends Specification {
     }
 
     protected List<String> getTestExports() {
-        return [ "--extra-logic", "${Doop.souffleAddonsPath}/testing/test-exports.dl" ]
+        return [ "--extra-logic", "${Doop.souffleLogicPath}/addons/testing/test-exports.dl" ]
     }
 }

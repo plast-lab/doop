@@ -11,6 +11,8 @@ import org.clyze.doop.utils.SouffleScript
 import org.clyze.utils.Executor
 import org.clyze.utils.JHelper
 
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 import java.util.concurrent.Callable
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
@@ -32,17 +34,11 @@ class SouffleAnalysis extends DoopAnalysis {
 		analysis.createNewFile()
 
 		initDatabase(analysis)
-		basicAnalysis(analysis)
-		if (!options.X_STOP_AT_BASIC.value) {
-			runAnalysisAndProduceStats(analysis)
-		}
+		runAnalysisAndProduceStats(analysis)
 
 		File runtimeMetricsFile = File.createTempFile('Stats_Runtime', '.csv')
-		runtimeMetricsFile.deleteOnExit()
 		log.debug "Using intermediate runtime metrics file: ${runtimeMetricsFile.canonicalPath}"
-		if (!database.exists()) {
-			database.mkdirs()
-		}
+		runtimeMetricsFile.deleteOnExit()
 		runtimeMetricsFile.createNewFile()
 
 		SouffleScript script = newScriptForAnalysis(executor)
@@ -60,7 +56,7 @@ class SouffleAnalysis extends DoopAnalysis {
 		boolean forceRecompile = options.SOUFFLE_FORCE_RECOMPILE.value as boolean
 		long monitorInterval = (options.X_MONITORING_INTERVAL.value as long) * 1000
 
-		if (!options.X_STOP_AT_FACTS.value && !analysisBinaryPath && !runInterpreted) {
+		if (!options.FACTS_ONLY.value && !analysisBinaryPath && !runInterpreted) {
 			if (options.VIA_DDLOG.value) {
 				// Copy the DDlog converter, needed both for logic
 				// compilation and fact post-processing.
@@ -95,7 +91,7 @@ class SouffleAnalysis extends DoopAnalysis {
 
 			if (options.X_SERVER_CHA.value) {
 				log.info "[CHA...]"
-				def methodLookupFile = new File("${Doop.souffleAddonsPath}/server-logic/method-lookup-ext.dl")
+				def methodLookupFile = new File("${Doop.souffleLogicPath}/addons/server-logic/method-lookup-ext.dl")
                 if (runInterpreted) {
                     script.interpretScript(methodLookupFile, outDir, factsDir,
                                            jobs, profiling, debug, removeContexts)
@@ -110,7 +106,7 @@ class SouffleAnalysis extends DoopAnalysis {
 				log.info "[CHA Done]"
 			}
 
-			if (options.X_STOP_AT_FACTS.value) return
+			if (options.FACTS_ONLY.value) return
 
 			if (!analysisBinaryPath && !runInterpreted) {
 				if (!options.X_SERIALIZE_FACTGEN_COMPILATION.value) {
@@ -136,7 +132,7 @@ class SouffleAnalysis extends DoopAnalysis {
 				postprocess()
 			}
 
-			moveFile(runtimeMetricsFile, new File(database, "Stats_Runtime.csv"))
+			Files.move(runtimeMetricsFile.toPath(), new File(database, "Stats_Runtime.csv").toPath(), StandardCopyOption.REPLACE_EXISTING)
 		} finally {
 			executorService.shutdownNow()
 		}
@@ -147,35 +143,26 @@ class SouffleAnalysis extends DoopAnalysis {
 		handleImportDynamicFacts()
 	}
 
-	void basicAnalysis(File analysis) {
-		if (options.X_STOP_AT_BASIC.value == 'classes-scc') {
-			cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/basic/classes-scc.dl")
-		}
-		if (options.X_STOP_AT_BASIC.value == 'partitioning') {
-			cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/basic/partitioning.dl")
-		}
-		cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/basic/basic.dl")
-	}
-
 	void runAnalysisAndProduceStats(File analysis) {
 		mainAnalysis(analysis)
 		produceStats(analysis)
 	}
 
 	void mainAnalysis(File analysis) {
+		cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/basic/basic.dl")
 		cpp.includeAtEnd("$analysis", "${Doop.souffleAnalysesPath}/${getBaseName(analysis.name)}/analysis.dl")
 
 		if (options.INFORMATION_FLOW.value)
-			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/information-flow/${options.INFORMATION_FLOW.value}${INFORMATION_FLOW_SUFFIX}.dl")
+			cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/addons/information-flow/${options.INFORMATION_FLOW.value}${INFORMATION_FLOW_SUFFIX}.dl")
 
 		String openProgramsRules = options.OPEN_PROGRAMS.value
 		if (openProgramsRules) {
 			log.debug "Using open-programs rules: ${openProgramsRules}"
-			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/open-programs/rules-${openProgramsRules}.dl")
+			cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/addons/open-programs/rules-${openProgramsRules}.dl")
 		}
 
 		if (options.SANITY.value) {
-			cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/sanity.dl")
+			cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/addons/sanity.dl")
 			if (options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value) {
 				log.warn("WARNING: the sanity check is not fully compatible with --" + options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.name)
 			}
@@ -206,7 +193,7 @@ class SouffleAnalysis extends DoopAnalysis {
 	}
 
 	void produceStats(File analysis) {
-		def statsPath = "${Doop.souffleAddonsPath}/statistics"
+		def statsPath = "${Doop.souffleLogicPath}/addons/statistics"
 		if (options.X_EXTRA_METRICS.value) {
 			cpp.includeAtEnd("$analysis", "${statsPath}/metrics.dl")
 		}

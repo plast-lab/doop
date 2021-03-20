@@ -43,7 +43,7 @@ def run_pre_analyses(init_args, app):
     args = [DOOP] + init_args
     args = args + ['-a', PRE_ANALYSIS_1]
     args = args + ['--Xoracular-heuristics']
-    args = args + ['--Xstart-after-facts', app+"-facts"]
+    args = args + ['--input-id', app+"-facts"]
     args = args + ['--id', app+"-ci"]
     args = args + ['--Xsymlink-cached-facts']
 
@@ -66,7 +66,7 @@ def run_pre_analyses(init_args, app):
     args = [DOOP] + init_args
     args = args + ['-a', PRE_ANALYSIS_2]
     #args = args + ['--Xcontext-dependency-heuristic']
-    args = args + ['--Xstart-after-facts', app+"-facts"]
+    args = args + ['--input-id', app+"-facts"]
     args = args + ['--id', app+'-1type']
     args = args + ['--Xsymlink-cached-facts']
     args = args + ['--timeout 10000']
@@ -245,7 +245,7 @@ def run_main_analysis(args, app, oracular_file):
     args = [DOOP] + args
     args = args + ['-a', MAIN_ANALYSIS]
     args = args + ['--special-cs-methods', oracular_file]
-    args = args + ['--Xstart-after-facts', app+"-facts"]
+    args = args + ['--input-id', app+"-facts"]
     args = args + ['--id', app+'-oracular']
     args = args + ['--Xsymlink-cached-facts']
     args = args + ['--timeout 10000']
