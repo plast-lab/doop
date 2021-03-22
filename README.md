@@ -162,7 +162,7 @@ Soufflé supports multithreading, so you can select the number of threads the an
 
 You can then inspect the analysis results by using `souffle-profile` and providing the profile.txt file produced by Souffle under the output directory of the analysis database. In order to inspect the profile.txt of the above doop invocation with --souffle you would use the following command:
 
-    $ souffle-profile out/context-insensitive/antlr-ci/profile.txt
+    $ souffle-profile out/antlr-ci/profile.txt
 
 ### Using LogicBlox as the Datalog engine of choice 
 
@@ -234,10 +234,10 @@ Running an analysis (non-incrementally) with id "ID":
 
 For more applications of the analysis, such as incremental
 computations, the DDlog program can be found in
-`out/micro/<ID>/converted_logic_ddlog/target/release/converted_logic_cli`,
+`out/<ID>/converted_logic_ddlog/target/release/converted_logic_cli`,
 the script (including the facts) is in
-`out/micro/<ID>/converted_logic.dat`, and the output is saved in
-`out/micro/<ID>/database/dump`.
+`out/<ID>/converted_logic.dat`, and the output is saved in
+`out/<ID>/database/dump`.
 
 
 ### Generating GraalVM native image configurations
@@ -256,7 +256,7 @@ on the GraalVM version installed (Java 8 or Java 11):
 ```
 
 After the analysis finishes, the resulting configurations can be found
-in `out/<ANALYSIS>/<ID>/database/configurations`.
+in `out/<ID>/database/configurations`.
 
 
 ### Building Doop distribution
@@ -321,7 +321,7 @@ Then start Visual Studio Code to view the intermediate code annotated
 with the analysis results:
 
 ```
-code out/context-insensitive/app/facts/jimple out/context-insensitive/app/database/doop.sarif
+code out/app/facts/jimple out/app/database/doop.sarif
 ```
 
 ## License
