@@ -86,6 +86,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		klass = new JvmClass(
 				position,
 				filename,
+				false,
 				className,
 				packageName,
 				qualifiedName,
@@ -117,6 +118,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		processor.accept new JvmField(
 				position,
 				filename,
+				false,
 				name,
 				"<${klass.symbolId}: $type $name>", //doopId
 				type,
@@ -153,6 +155,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		method = new JvmMethod(
 				position,
 				filename,
+				false,
 				name,
 				klass.symbolId, //declaringClassId
 				retType,
@@ -280,6 +283,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		processor.accept new JvmHeapAllocation(
 				new Position(line, line, startCol, endCol),
 				filename,
+				false,
 				"${method.symbolId}/new $type/$c", //doopId
 				type,
 				method.symbolId, //allocatingMethodId
@@ -318,6 +322,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		processor.accept new JvmMethodInvocation(
 				new Position(line, line, startCol, endCol),
 				filename,
+				false,
 				methodName,
 				gDoopId, //doopId
 				method.symbolId, //invokingMethodId
@@ -369,6 +374,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		def v = new JvmVariable(
 				new Position(line, line, startCol, startCol + name.length()),
 				filename,
+				false,
 				name,
 				"${method.symbolId}/$name", //doopId
 				null, //type, provided later
@@ -393,6 +399,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		processor.accept new Usage(
 				new Position(line, line, startCol, startCol + name.length()),
 				filename,
+				false,
 				"${method.symbolId}/$name", //doopId
 				kind
 		)
@@ -410,6 +417,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		new Usage(
 				new Position(line, line, startCol, endCol),
 				filename,
+				false,
 				"<$klassStr: $type $name>", //doopId
 				kind
 		)
@@ -427,6 +435,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		processor.accept new Usage(
 				new Position(line, line, startCol, startCol + name.length()),
 				filename,
+				false,
 				name, //doopId
 				UsageKind.TYPE
 		)
