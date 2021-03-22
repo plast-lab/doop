@@ -158,14 +158,14 @@ analysis id):
 
 ```
 #!bash
-$ cp out/context-insensitive/$id/facts/Var-DeclaringMethod.facts out/context-insensitive/$id/database/
+$ cp out/$id/facts/Var-DeclaringMethod.facts out/$id/database/
 ```
 
 Run the query and view its results:
 
 ```
 #!bash
-$ souffle -F out/context-insensitive/$id/database/ temp.dl
+$ souffle -F out/$id/database/ temp.dl
 $ cat Temp.csv
 <Example: void test(int)>/@this <Example: void main(java.lang.String[])>/new Example/0
 <Example: void test(int)>/l0#_0 <Example: void main(java.lang.String[])>/new Example/0
