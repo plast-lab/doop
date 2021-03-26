@@ -646,7 +646,7 @@ isMethodInvocation(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method),
 MethodInvocation_Method(?instruction, ?signature) :-
-  _SpecialMethodInvocation(?instruction, ?index, ?signature, ?base, ?method).
+  _SpecialMethodInvocation(?instruction, ?index, ?signature, _, ?method).
 
 isSpecialMethodInvocation_Insn(?instruction),
 SpecialMethodInvocation_Base(?instruction, ?base) :-
@@ -663,11 +663,11 @@ isMethodInvocation(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method),
 MethodInvocation_Method(?instruction, ?signature) :-
-  _VirtualMethodInvocation(?instruction, ?index, ?signature, ?base, ?method).
+  _VirtualMethodInvocation(?instruction, ?index, ?signature, _, ?method).
 
 isVirtualMethodInvocation_Insn(?instruction),
 VirtualMethodInvocation_Base(?instruction, ?base) :-
-  _VirtualMethodInvocation(?instruction, _, ?signature, ?base, ?method),
+  _VirtualMethodInvocation(?instruction, _, ?signature, ?base, _),
   !isOpaqueMethod(?signature).
 
 // Super method invocation
