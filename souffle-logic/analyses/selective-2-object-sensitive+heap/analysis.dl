@@ -12,8 +12,8 @@
   // static calls) sometimes.  The real heap context is a single Value.
   // Keeping mapping functions is the way to handle analyses where HContext =
   // Context (since the language considers them different types).
-  .type Context  = [ elem1:symbol, elem2:symbol, value:mainAnalysis.Value ]
-  .type HContext = [ value:mainAnalysis.Value ]
+  .type Context  = [ elem1:symbol, elem2:symbol, value:Value ]
+  .type HContext = [ value:Value ]
 
   ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, ?calleeCtx) :-
     ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, _),

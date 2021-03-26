@@ -10,19 +10,19 @@ import static org.clyze.doop.TestUtils.*
  */
 class InformationFlowTest extends DoopSpec {
 
-	// @spock.lang.Ignore
-	@Unroll
-	def "Information flow (P/Taint) test"() {
-		when:
-		List args = ["-i", Artifacts.ANDROIDTERM_APK,
-					 "-a", "context-insensitive",
-					 "--platform", "android_25_fulljars",
-					 "--information-flow", "android", "--sarif",
-					 "--information-flow-extra-controls", "7878787878,android.widget.EditText,2131296798",
-					 "--id", "test-android-androidterm-information-flow",
-					 "--generate-jimple", "--stats", "full", "-Ldebug"] + testExports
-		Main.main((String[])args)
-		Analysis analysis = Main.analysis
+    // @spock.lang.Ignore
+    @Unroll
+    def "Information flow (P/Taint) test"() {
+        when:
+        List args = ["-i", Artifacts.ANDROIDTERM_APK,
+                     "-a", "context-insensitive",
+                     "--platform", "android_25_fulljars",
+                     "--information-flow", "android", "--sarif",
+                     "--information-flow-extra-controls", "7878787878,android.widget.EditText,2131296798",
+                     "--id", "test-android-androidterm-information-flow",
+                     "--generate-jimple", "--stats", "full", "-Ldebug"] + testExports
+        Main.main((String[])args)
+        Analysis analysis = Main.analysis
 
         then:
         isSensitiveLayoutControl(analysis, '7878787878', 'android.widget.EditText')

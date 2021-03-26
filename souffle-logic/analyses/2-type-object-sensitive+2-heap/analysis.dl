@@ -6,8 +6,8 @@
 
 .comp TwoTypeObjectSensitivePlusTwoHeapConfiguration : AbstractConfiguration {
 
-  .type Context  = [ type:Type, value:mainAnalysis.Value ]
-  .type HContext = [ type:Type, value:mainAnalysis.Value ]
+  .type Context  = [ type:Type, value:Value ]
+  .type HContext = [ type:Type, value:Value ]
 
   ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, ?calleeCtx) :-
     ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, _),

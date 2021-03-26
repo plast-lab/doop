@@ -80,7 +80,8 @@ VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
    (AssignNumConstant_Id(?insn, ?const);
     AssignCastNumConstant_Id(?insn, ?const)), // TODO: check the cast?
    AssignInstruction_To(?insn, ?to),
-   Value_Num(?value, ?const),
+   NumConstantRawInt(?const),
+   Value_Num(?value, to_number(?const)),
    isImmutableHContext(?hctx).
 
 #endif // DISABLE_POINTS_TO
@@ -257,7 +258,9 @@ ReachableStoreStaticFieldFrom(?from) :-
  */
 StaticFieldPointsTo(?hctx, ?value, ?signature) :-
   FieldInitialValue(?signature, ?const),
-  Value_Num(?value, ?const),
+  // Since all initial values are strings, constant numbers are also stored
+  // as strings and must be cast to the proper number type.
+  Value_Num(?value, as(?const, number)),
   isImmutableHContext(?hctx).
 
 /**
@@ -277,7 +280,8 @@ ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?baseHeap) :-
   ReachableContext(?ctx, ?inMethod),
   Instruction_Method(?i, ?inMethod),
   ArrayInitialValueFromConst(?i, _, ?to, _, ?const, ?baseHeap, _),
-  Value_Num(?value, ?const),
+  NumConstantRawInt(?const),
+  Value_Num(?value, to_number(?const)),
   isImmutableHContext(?hctx).
 
 #endif // ANDROID, DISABLE_POINTS_TO
@@ -327,7 +331,8 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
 
 NotEmptyArrayValue(?heapValue) :-
   Value_isHeap(?heapValue),
-  !HeapAllocation_EmptyArray(?heapValue).
+  isHeapAllocation(?heapValue),
+  !HeapAllocation_EmptyArray(as(?heapValue, HeapAllocation)).
 NotEmptyArrayValue(?value) :-
   Value_isNonHeap(?value).
 
@@ -717,3 +722,12 @@ ReachableValue(?hctx, ?value) :-
   isImmutableHContext(?hctx),
   ?value = cat("<Annotation ", cat(?annotation, ">")).
 #endif // DISABLE_POINTS_TO
+
+// Constant integer values.
+Value_Num(?constValue, ?n),
+isValue(?constValue),
+Value_Type(?constValue, ?type),
+Value_DeclaringType(?constValue, ?declaringType) :-
+  CreateIntValue(?n, ?declaringType),
+  Type_int(?type),
+  ?constValue = cat("num-constant-", to_string(?n)).

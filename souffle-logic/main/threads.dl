@@ -31,7 +31,7 @@ RunningThread(?hctx, ?value)
     ?start = "<java.lang.Thread: void start0()>",
 #endif // JRE13, JRE14
     ThisVar(?start, ?startThis),
-    CallGraphEdge(?callerCtx, _, ?calleeCtx, ?start),
+    CallGraphEdge(_, _, ?calleeCtx, ?start),
     VarPointsTo(?hctx, ?value, ?calleeCtx, ?startThis),
     Value_Type(?value, ?valuetype),
     basic.MethodLookup("run", "void()", ?valuetype, ?run),

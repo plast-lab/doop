@@ -89,14 +89,15 @@ ForwardHighConfidenceReflectiveAssignClassConstant(?ctx, ?invocation, ?type) :-
  * TODO: primitive classes
  *************************************************************/
 
-VarPointsTo(?hctx, ?className, ?callerCtx, ?to) :-
+VarPointsTo(?hctx, ?classNameVal, ?callerCtx, ?to) :-
   isImmutableHContext(?hctx),
   (java_lang_Class_getName(?to, ?from);
    java_lang_Class_getCanonicalName(?to, ?from)),
   VarPointsTo(_, ?classValue, ?callerCtx, ?from),
   ReifiedClass(?className, ?classValue),
-  isStringConstant(?className),
-  Value_isHeap(?className).
+  ?classNameVal = as(?className, Value),
+  isStringConstant(?classNameVal),
+  Value_isHeap(?classNameVal).
 #ifdef INFORMATION_FLOW
   .plan 2:(6,5,4,3,2,1)
 #endif // INFORMATION_FLOW
@@ -112,7 +113,7 @@ VarPointsTo(?hctx, ?className, ?callerCtx, ?to) :-
 
 // This is an opaque invocation, so we read its facts directly.
 OpaqueCallGraphEdge(?invocation, ?method),
-VarPointsTo(?hctx, ?simpleName, ?ctx, ?return) :-
+VarPointsTo(?hctx, as(?simpleName, Value), ?ctx, ?return) :-
   ReachableContext(?ctx, ?caller),
   _VirtualMethodInvocation(?invocation, _, ?method, ?base, ?caller),
   ?method = "<java.lang.Class: java.lang.String getSimpleName()>",
@@ -558,7 +559,7 @@ ReflectiveBaseVar(?invocation, ?to) :-
 
 #define PrimitiveClassForParam(className, primitiveName) \
 VarPointsTo(?hctx, ?classValue, ?ctx, ?to) :- \
-  java_lang_Class_getPrimitiveClass(?invocation, ?to, ?param), \
+  java_lang_Class_getPrimitiveClass(?to, ?param), \
   VarPointsTo(?hctx, ?heap, ?ctx, ?param), \
   (?heap = "<<string-constant>>" ; ?heap = primitiveName), \
   ReifiedClass(className, ?classValue)
@@ -621,9 +622,9 @@ ArrayIndexPointsTo(?hctx, ?annotationValue, ?hctx, ?annotationsArray) :-
 /*************************************************************
  * Auxiliaries
  *************************************************************/
-.decl NumberOfClassesMatchingConstant(?constant:StringConstant, ?n:number)
-.decl NumberOfMethodsMatchingConstant(?constant:StringConstant, ?n:number)
-.decl NumberOfFieldsMatchingConstant(?constant:StringConstant, ?n:number)
+.decl NumberOfClassesMatchingConstant(?constant:HeapAllocation, ?n:number)
+.decl NumberOfMethodsMatchingConstant(?constant:HeapAllocation, ?n:number)
+.decl NumberOfFieldsMatchingConstant(?constant:HeapAllocation, ?n:number)
 
 NumberOfClassesMatchingConstant(?constant, ?n) :-
   ClassNameMatchingStringConstant_Type(_, ?constant),

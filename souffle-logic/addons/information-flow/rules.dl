@@ -245,7 +245,7 @@ mainAnalysis.VarPointsTo(?hctx, ?newvalue, ?ctx, ?var) :-
   mainAnalysis.isImmutableHContext(?hctx).
   .plan 1:(2,1,3)
 
-.decl XYZ(?value:mainAnalysis.Value, ?ctx:mainAnalysis.configuration.Context, ?param:Var)
+.decl XYZ(?value:Value, ?ctx:mainAnalysis.configuration.Context, ?param:Var)
 
 XYZ(?existingvalue, ?ctx, ?param) :-
   ParamTaintTransferredToBase(?param, ?ctx, ?base),
@@ -262,7 +262,7 @@ BaseValueTaintedFromParamValue(ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB),
   mainAnalysis.Value_DeclaringType(?value, ?declaringType).
   .plan 1:(2,1,3,4,5), 2:(3,1,2,4,5), 3:(4,3,1,2,5), 4:(5,3,1,2,4)
 #else
-.decl XYZ2(?type:Type, ?value:mainAnalysis.Value, ?ctx:mainAnalysis.configuration.Context, ?param:Var)
+.decl XYZ2(?type:Type, ?value:Value, ?ctx:mainAnalysis.configuration.Context, ?param:Var)
 
 XYZ2(?type, ?value, ?ctx, ?param) :-
   ParamTaintTransferredToBase(?param, ?ctx, ?base),
@@ -375,14 +375,14 @@ SerializeObjectInvocation(?base, ?ctx, ?var) :-
   MethodInvocation_Base(?invocation, ?base),
   ActualParam(_, ?invocation, ?var).
 
-.decl ObjectSerializedToBase(?ctx:mainAnalysis.configuration.Context, ?base:Var, ?obj:mainAnalysis.Value)
+.decl ObjectSerializedToBase(?ctx:mainAnalysis.configuration.Context, ?base:Var, ?obj:Value)
 
 ObjectSerializedToBase(?ctx, ?base, ?obj) :-
   SerializeObjectInvocation(?base, ?ctx, ?var),
   mainAnalysis.VarPointsTo(_, ?obj, ?ctx, ?var),
   SerializableValue(?obj).
 
-.decl SerializableValue(?obj:mainAnalysis.Value)
+.decl SerializableValue(?obj:Value)
 
 SerializableValue(?obj) :-
    mainAnalysis.Value_Type(?obj, ?type),
@@ -424,14 +424,14 @@ OptDeserializeInvoke(?ret) :-
    MethodInvocationInContextInApplication(_, ?invocation, "<java.io.ObjectInputStream: java.lang.Object readObject()>"),
    AssignReturnValue(?invocation, ?ret).
 
-.decl MaybeDeserializedValue(?value:mainAnalysis.Value)
+.decl MaybeDeserializedValue(?value:Value)
 
 MaybeDeserializedValue(?value) :-
    OptDeserializeInvoke(?ret),
    TaintedVarPointsTo(?value, _, ?ret),
    SerializableValue(?value).
 
-.decl AppTaintedVarPointsTo(?value:mainAnalysis.Value, ?var:Var)
+.decl AppTaintedVarPointsTo(?value:Value, ?var:Var)
 AppTaintedVarPointsTo(?value, ?var) :-
   TaintedVarPointsTo(?value, _, ?var), ApplicationVar(?var).
 

@@ -3,14 +3,14 @@
  *
  * TODO Test for accessibility.
  */
-.decl MethodLookup(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:Type, ?method:Method)
+.decl MethodLookup(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:ReferenceType, ?method:Method)
 
-.decl _MethodLookup_WithLen(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:Type, ?method:Method, ?len:number)
-.decl _MethodLookup_MoreThanOne(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:Type)
-.decl _MethodLookup_ClassResolution(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:Type, ?method:Method)
-.decl _MethodLookup_ClosestInterface(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:Type, ?method:Method)
-.decl _MethodLookup_MultiClosestInterfaces(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:Type)
-.decl _MethodLookup_ImpossibleClosest(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:Type, ?method:Method)
+.decl _MethodLookup_WithLen(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:ReferenceType, ?method:Method, ?len:number)
+.decl _MethodLookup_MoreThanOne(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:ReferenceType)
+.decl _MethodLookup_ClassResolution(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:ReferenceType, ?method:Method)
+.decl _MethodLookup_ClosestInterface(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:ReferenceType, ?method:Method)
+.decl _MethodLookup_MultiClosestInterfaces(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:ReferenceType)
+.decl _MethodLookup_ImpossibleClosest(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:ReferenceType, ?method:Method)
 
 /**
  * Handling of the diamond problem in Java
@@ -85,7 +85,7 @@ _MethodLookup_ImpossibleClosest(?simplename, ?descriptor, ?type, ?method2) :-
 /**
  * Is there a non-abstract method declaration?
  */
-.decl MethodImplemented(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:Type, ?method:Method)
+.decl MethodImplemented(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:ReferenceType, ?method:Method)
 
 
 #ifdef SANITY
@@ -109,7 +109,7 @@ CovariantMethods(?meth, ?methSub) :-
 
 // Method lookup should be a function of the first three arguments
 // (simple name, descriptor, type).
-.decl DuplicateMethodLookup(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:Type, ?method1:Method, ?method2:Method)
+.decl DuplicateMethodLookup(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:ReferenceType, ?method1:Method, ?method2:Method)
 
 DuplicateMethodLookup(?simplename, ?descriptor, ?type, ?method1, ?method2):-
   MethodLookup(?simplename, ?descriptor, ?type, ?method1),
@@ -119,7 +119,7 @@ DuplicateMethodLookup(?simplename, ?descriptor, ?type, ?method1, ?method2):-
   ?simplename != "<clinit>",
   !CovariantMethods(?method1, ?method2).
 
-.decl DuplicateMethodImplemented(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:Type, ?method1:Method, ?method2:Method)
+.decl DuplicateMethodImplemented(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:ReferenceType, ?method1:Method, ?method2:Method)
 
 DuplicateMethodImplemented(?simplename, ?descriptor, ?type, ?method1, ?method2):-
   MethodImplemented(?simplename, ?descriptor, ?type, ?method1),
@@ -237,7 +237,7 @@ Method_CovariantBridge(?bridge, ?cometh) :-
    Method_ReturnType(?cometh, ?coRetType),
    SubtypeOfDifferent(?coRetType, ?retType).
 
-.decl MethodImplementedModuloCovariance(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:Type, ?method:Method)
+.decl MethodImplementedModuloCovariance(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:ReferenceType, ?method:Method)
 
 // Superset of MethodImplemented, also containing covariant methods.
 MethodImplementedModuloCovariance(?name, ?descriptor, ?type, ?method) :-

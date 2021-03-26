@@ -25,30 +25,22 @@ Value_Type(?heapValue, ?type) :-
 // nested classes. REVIEW to generalize.
 // Numeric constants are prepended with *num-constant-* to distinguish
 // them from allocations that share the same string value.
-Value_Num(cat("num-constant-", ?const), ?const),
-isValue(cat("num-constant-", ?const)),
-Value_Type(cat("num-constant-", ?const), ?type),
-Value_DeclaringType(cat("num-constant-", ?const), ?className) :-
-  isNumConstant(?const),
+CreateIntValue(to_number(?const), ?className) :-
   AssignNumConstant_Id(?insn, ?const),
+  NumConstantRawInt(?const),
   Instruction_Method(?insn, ?meth),
   Method_SimpleName(?meth, "<clinit>"),
   Method_DeclaringType(?meth, ?className),
-  isType(?className),
-  contains(".R$", ?className),
-  Type_int(?type).
+  isReferenceType(?className),
+  contains(".R$", ?className).
 
 #ifdef ANDROID
-Value_Num(cat("num-constant-", ?const), ?const),
-isValue(cat("num-constant-", ?const)),
-Value_Type(cat("num-constant-", ?const), ?type),
-Value_DeclaringType(cat("num-constant-", ?const), ?className) :-
-  isNumConstant(?const),
+CreateIntValue(to_number(?const), ?className) :-
   FieldInitialValue(?fld, ?const),
+  NumConstantRawInt(?const),
   Field_DeclaringType(?fld, ?className),
-  isType(?className),
-  contains(".R$", ?className),
-  Type_int(?type).
+  isReferenceType(?className),
+  contains(".R$", ?className).
 #endif // ANDROID
 
 
@@ -61,11 +53,11 @@ Value_Null(?nullheap) :-
 
 
 Value_DeclaringType(?heapValue, ?type) :-
-  AssignHeapAllocation(?heapValue, _, ?inmethod),
+  isHeapAllocation(?heapValue),
+  ?heapAlloc = as(?heapValue, HeapAllocation),
+  AssignHeapAllocation(?heapAlloc, _, ?inmethod),
   Method_DeclaringType(?inmethod, ?type),
-  !isStringConstant(?heapValue),
-  !isClassHeap(?heapValue),
-  !isMethodHandleConstant(?heapValue).
+  isNormalHeap(?heapAlloc).
 
 Value_DeclaringType(?heapValue, "java.lang.System") :-
   isClassHeap(?heapValue).

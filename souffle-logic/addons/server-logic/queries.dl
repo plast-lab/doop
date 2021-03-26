@@ -5,13 +5,11 @@
 
 .decl _Valid_Interesting_Type(?type:ReferenceType)
 _Valid_Interesting_Type(?type) :-
-  isReferenceType(?type),
-  !Type_null(?type),
-  !isArrayType(?type),
+  (isClassType(?type) ; isInterfaceType(?type)),
   _Server_Interesting_Type(?type).
 
-// ?class has access to ?field (either it is declared in the class, or in a superclass)
-.decl Server_Type_Can_Access_Field(?class:ClassType, ?fld:Field)
+// ?type has access to ?field (either it is declared in the type, or in a supertype)
+.decl Server_Type_Can_Access_Field(?type:ReferenceType, ?fld:Field)
 .output Server_Type_Can_Access_Field
 
 .decl _Server_Interesting_Type(?class:ReferenceType)
@@ -46,7 +44,8 @@ _Server_Interesting_Type(?interface) :-
 // Transitively, everything up the hierarchy
 _Server_Interesting_Type(?interface) :-
   _Server_Interesting_Type(?class),
-  basic.SupertypeOf(?interface, ?class).
+  basic.SupertypeOf(?interface, ?class),
+  isInterfaceType(?interface).
 
 Server_Type_Can_Access_Field(?class, ?fld) :-
   Field_DeclaringType(?fld, ?class),
@@ -67,9 +66,9 @@ Server_Type_Can_Access_Field(?class, ?fld) :-
 // Field-- //
 
 .decl Server_Field_ShadowedBy(?fld:Field, ?shadowFld:Field)
-.decl Server_IField_Values(?baseValue:mainAnalysis.Value, ?fld:Field, ?value:mainAnalysis.Value)
-.decl Server_SField_Values(?fld:Field, ?value:mainAnalysis.Value)
-.decl Server_IField_Values_Count(?baseValue:mainAnalysis.Value, ?fld:Field, ?n:number)
+.decl Server_IField_Values(?baseValue:Value, ?fld:Field, ?value:Value)
+.decl Server_SField_Values(?fld:Field, ?value:Value)
+.decl Server_IField_Values_Count(?baseValue:Value, ?fld:Field, ?n:number)
 .output Server_Field_ShadowedBy
 .output Server_IField_Values
 .output Server_SField_Values
@@ -84,13 +83,14 @@ Server_Field_ShadowedBy(?fld, ?shadowFld) :-
   Field_DeclaringType(?shadowFld, ?subClass),
   Field_SimpleName(?shadowFld, ?name).
 
-.decl _IFPT(?baseValue:mainAnalysis.Value, ?fld:Field, ?value:mainAnalysis.Value)
-.decl _SFPT(?fld:Field, ?value:mainAnalysis.Value)
+.decl _IFPT(?baseValue:Value, ?fld:Field, ?value:Value)
+.decl _SFPT(?fld:Field, ?value:Value)
 .decl _SFPT_Count(?fld:Field, ?n:number)
 
 #ifndef DISABLE_POINTS_TO
 _IFPT(?baseValue, ?fld, ?value) :-
   mainAnalysis.InstanceFieldPointsTo(_, ?value, ?fld, _, ?baseValue),
+  isHeapAllocation(?value),
   !isNumConstant(?value).
 #endif // DISABLE_POINTS_TO
 
@@ -100,6 +100,7 @@ Server_IField_Values_Count(?baseValue, ?fld, ?n) :-
 
 _SFPT(?fld, ?value) :-
   mainAnalysis.StaticFieldPointsTo(_, ?value, ?fld),
+  isHeapAllocation(?value),
   !isNumConstant(?value).
 
 _SFPT_Count(?fld, ?n) :-
@@ -110,36 +111,35 @@ Server_IField_Values(?baseValue, ?fld, ?value) :-
   _IFPT(?baseValue, ?fld, ?value),
   Server_IField_Values_Count(?baseValue, ?fld, ?count),
   ?count <= X_SERVER_LOGIC_THRESHOLD,
-  mainAnalysis.isValue(?baseValue),
-  mainAnalysis.isValue(?value),
-  !isStringConstant(?value).
+  isValue(?baseValue),
+  ((isHeapAllocation(?value), !isStringConstant(?value)) ; isValue(?value)).
 
 Server_IField_Values(?baseValue, ?fld, STRING_CONSTANT(?value)) :-
   _IFPT(?baseValue, ?fld, ?value),
   Server_IField_Values_Count(?baseValue, ?fld, ?count),
   ?count <= X_SERVER_LOGIC_THRESHOLD,
-  mainAnalysis.isValue(?baseValue),
-  mainAnalysis.isValue(?value),
+  isValue(?baseValue),
+  isValue(?value),
   isStringConstant(?value).
 
 Server_IField_Values(?baseValue, ?fld, "<<XL-pt-set>>") :-
   Server_IField_Values_Count(?baseValue, ?fld, ?count),
   ?count > X_SERVER_LOGIC_THRESHOLD,
-  mainAnalysis.isValue(?baseValue).
+  isValue(?baseValue).
 
 Server_SField_Values(?fld, ?value) :-
   _SFPT(?fld, ?value),
   _SFPT_Count(?fld, ?count),
   ?count <= X_SERVER_LOGIC_THRESHOLD,
   !isStringConstant(?value),
-  mainAnalysis.isValue(?value).
+  isValue(?value).
 
 Server_SField_Values(?fld, STRING_CONSTANT(?value)) :-
   _SFPT(?fld, ?value),
   _SFPT_Count(?fld, ?count),
   ?count <= X_SERVER_LOGIC_THRESHOLD,
   isStringConstant(?value),
-  mainAnalysis.isValue(?value).
+  isValue(?value).
 
 Server_SField_Values(?fld, "<<XL-pt-set>>") :-
   _SFPT_Count(?fld, ?count),
@@ -150,17 +150,18 @@ Server_SField_Values(?fld, "<<XL-pt-set>>") :-
 
 // Var-- //
 
-.decl Server_Var_Values(?class:ClassType, ?var:Var, ?value:mainAnalysis.Value)
+.decl Server_Var_Values(?type:ReferenceType, ?var:Var, ?value:Value)
 .decl Server_Var_Return(?var:Var, ?method:Method)
 .output Server_Var_Values
 .output Server_Var_Return
 
-.decl _VPT(?var:Var, ?value:mainAnalysis.Value)
+.decl _VPT(?var:Var, ?value:Value)
 .decl _VPT_Count(?var:Var, ?n:number)
 .decl _InterestingVar(?var:Var)
 
 _VPT(?var, ?value) :-
   mainAnalysis.VarPointsTo(_, ?value, _, ?var),
+  isHeapAllocation(?value),
   !isNumConstant(?value).
 
 _InterestingVar(?var) :-
@@ -175,7 +176,7 @@ _VarUnderThreshold(?var) :-
   _VPT_Count(?var, ?count),
   ?count <= X_SERVER_LOGIC_THRESHOLD.
 
-.decl _VarDeclaringClass(?var:Var, ?class:Type)
+.decl _VarDeclaringClass(?var:Var, ?class:ReferenceType)
 _VarDeclaringClass(?var, ?class) :-
   _InterestingVar(?var),
   Var_DeclaringMethod(?var, ?method),
@@ -184,14 +185,14 @@ _VarDeclaringClass(?var, ?class) :-
 Server_Var_Values(?class, ?var, ?value) :-
   _VPT(?var, ?value),
   _VarUnderThreshold(?var),
-//  mainAnalysis.isValue(?value),
+//  isValue(?value),
   !isStringConstant(?value),
   _VarDeclaringClass(?var, ?class).
 
 Server_Var_Values(?class, ?var, STRING_CONSTANT(?value)) :-
   _VPT(?var, ?value),
   _VarUnderThreshold(?var),
-//  mainAnalysis.isValue(?value),
+//  isValue(?value),
   isStringConstant(?value),
   _VarDeclaringClass(?var, ?class).
 
@@ -210,11 +211,11 @@ Server_Var_Return(?var, ?method) :-
 
 // Array-- //
 
-.decl Server_Array_Values(?arrayValue:mainAnalysis.Value, ?value:mainAnalysis.Value)
+.decl Server_Array_Values(?arrayValue:Value, ?value:Value)
 .output Server_Array_Values
 
-.decl _AIPT(?arrayValue:mainAnalysis.Value, ?value:mainAnalysis.Value)
-.decl _AIPT_Count(?arrayValue:mainAnalysis.Value, ?n:number)
+.decl _AIPT(?arrayValue:Value, ?value:Value)
+.decl _AIPT_Count(?arrayValue:Value, ?n:number)
 
 _AIPT(?arrayValue, ?value) :-
   mainAnalysis.ArrayIndexPointsTo(_, ?value, _, ?arrayValue).
@@ -298,9 +299,9 @@ Server_Method_Subtype(?method, ?subMethod) :-
 // Invocation-- //
 
 .decl Server_Invocation_Values(?fromMethod:Method, ?invo:MethodInvocation, ?toMethod:Method)
-.decl Server_ClassCallsClass(?fromClass:ClassType, ?toClass:ClassType)
+.decl Server_TypeCallsType(?fromClass:ReferenceType, ?toClass:ReferenceType)
 .output Server_Invocation_Values
-.output Server_ClassCallsClass
+// .output Server_TypeCallsType
 
 Server_Invocation_Values(?fromMethod, ?invo, ?toMethod) :-
   mainAnalysis.AnyCallGraphEdge(?invo, ?toMethod),
@@ -315,10 +316,10 @@ Server_Invocation_Values(?fromMethod, ?invo, ?toMethod) :-
   Method_Descriptor(?bridge, ?desc),
   basic.MethodImplementedModuloCovariance(?name, ?desc, ?type, ?toMethod).
 
-Server_ClassCallsClass(?fromClass, ?toClass) :-
+Server_TypeCallsType(?fromType, ?toType) :-
   Server_Invocation_Values(?fromMethod, _, ?toMethod),
-  Method_DeclaringType(?fromMethod, ?fromClass),
-  Method_DeclaringType(?toMethod, ?toClass).
+  Method_DeclaringType(?fromMethod, ?fromType),
+  Method_DeclaringType(?toMethod, ?toType).
 
 // --Invocation //
 

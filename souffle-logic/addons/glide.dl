@@ -1,6 +1,6 @@
 // Special logic to support features of the Glide framework.
 
-.decl GlideReifiedType(?value:Value, ?type:Type)
+.decl GlideReifiedType(?value:Value, ?type:ReferenceType)
 
 MockValueConsMacro(?value, ?type),
 ReachableValue(?hctx, ?value),
@@ -15,7 +15,8 @@ GlideReifiedType(?value, ?type) :-
   ( ?glideType = "com.bumptech.glide.module.GlideModule"
   ; ?glideType = "com.bumptech.glide.module.AppGlideModule"
   ),
-  ?value = cat("<Glide module, value of type ", cat(?type, ">")).
+  ?value = cat("<Glide module, value of type ", cat(?type, ">")),
+  isReferenceType(?type).
 
 // Superset of Glide rules (matches all methods instead of just "public" ones).
 GlideReifiedType(?value, ?type) :-

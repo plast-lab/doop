@@ -1,6 +1,8 @@
 package org.clyze.doop
 
 import org.clyze.analysis.Analysis
+import org.clyze.doop.core.Doop
+import org.clyze.utils.JHelper
 import spock.lang.Specification
 import spock.lang.Unroll
 import static org.clyze.doop.TestUtils.*
@@ -10,20 +12,31 @@ import static org.clyze.doop.TestUtils.*
  */
 class CrudeMicroTest extends Specification {
 
-	// @spock.lang.Ignore
-	@Unroll
-	def "Crude testing micro analysis"() {
-		when:
-		Main.main((String[])["-i", Artifacts.ANTLR_JAR, "-a", "micro", "--id", "antlr-micro", "--dacapo", "--stats", "none", "--fact-gen-cores", "1", "--platform", "java_7"])
-		Analysis analysis = Main.analysis
+    // @spock.lang.Ignore
+    @Unroll
+    def "Crude testing micro/self-contained analyses"() {
+        when:
+        String id = 'antlr-micro'
+        // First run 'micro' analysis.
+        Main.main((String[])['-i', Artifacts.ANTLR_JAR, '-a', 'micro', '--id', id, '--dacapo', '--stats', 'none', '--fact-gen-cores', '1', '--platform', 'java_7'])
+        Analysis analysis = Main.analysis
+        // Then, run 'self-contained' analysis on the same facts using a different output directory.
+        File selfContainedIn  = new File(analysis.outDir, 'database')
+        File selfContainedOut = new File(analysis.outDir, 'self-contained-out')
+        selfContainedOut.mkdirs()
+        JHelper.runWithOutput(['souffle',
+                               '--fact-dir', selfContainedIn.canonicalPath,
+                               '--output-dir', selfContainedOut.canonicalPath,
+                               Doop.souffleLogicPath + '/analyses/micro/self-contained.dl'] as String[], 'SELF-CONTAINED')
 
-		then:
-		relationHasApproxSize(analysis, "ApplicationMethod", 2680)
-		relationHasApproxSize(analysis, "ArrayIndexPointsTo", 7497)
-		relationHasApproxSize(analysis, "Assign", 32658)
-		relationHasApproxSize(analysis, "CallGraphEdge", 13873)
-		relationHasApproxSize(analysis, "InstanceFieldPointsTo", 539551)
-		relationHasApproxSize(analysis, "StaticFieldPointsTo", 783)
-		relationHasApproxSize(analysis, "VarPointsTo", 624730)
-	}
+        then:
+        relationHasApproxSize(analysis, "ApplicationMethod", 2680)
+        relationHasApproxSize(analysis, "ArrayIndexPointsTo", 7497)
+        relationHasApproxSize(analysis, "Assign", 32658)
+        relationHasApproxSize(analysis, "CallGraphEdge", 13873)
+        relationHasApproxSize(analysis, "InstanceFieldPointsTo", 539551)
+        relationHasApproxSize(analysis, "StaticFieldPointsTo", 783)
+        relationHasApproxSize(analysis, "VarPointsTo", 624730)
+        assert (new File(selfContainedOut, 'Reachable.csv')).exists()
+    }
 }

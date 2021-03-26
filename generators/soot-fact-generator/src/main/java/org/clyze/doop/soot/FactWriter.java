@@ -415,7 +415,10 @@ class FactWriter extends JavaFactWriter {
 
     void writeAssignCastNumericConstant(SootMethod m, Stmt stmt, Local to, NumericConstant constant, Type t, Session session) {
         InstrInfo ii = calcInstrInfo(m, stmt, session);
-        _db.add(ASSIGN_CAST_NUM_CONST, ii.insn, str(ii.index), constant.toString(), _rep.local(m, to), writeType(t), ii.methodId);
+        String val = constant.toString();
+        if (constant instanceof ArithmeticConstant)
+            writeNumConstantRawInt(val);
+        _db.add(ASSIGN_CAST_NUM_CONST, ii.insn, str(ii.index), val, _rep.local(m, to), writeType(t), ii.methodId);
     }
 
     void writeAssignCastNull(SootMethod m, Stmt stmt, Local to, Type t, Session session) {
@@ -1028,7 +1031,7 @@ class FactWriter extends JavaFactWriter {
                     int len = val.length();
                     if (!Character.isDigit(val.charAt(len-1)))
                         val = val.substring(0, len-1);
-                    _db.add(NUM_CONSTANT_RAW, val);
+                    writeNumConstantRawInt(val);
                 } else if (tag instanceof StringConstantValueTag) {
                     writeStringConstant(val);
                 } else

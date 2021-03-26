@@ -10,10 +10,11 @@
 ApplicationPackage(?package) :-
   XMLNode(?manifest, ?manifestId, _, _, _, "manifest"),
   XMLNodeAttribute(?manifest, ?manifestId, _, _, "package", ?package).
-AndroidApplication(?type) :-
+AndroidApplication(as(?type, ClassType)) :-
   XMLNode(?manifest, ?manifestId, _, _, _, "manifest"),
   XMLNode(?manifest, ?applicationId, ?manifestId, _, _, "application"),
-  XMLNodeAttribute(?manifest, ?applicationId, _, _, "android:name", ?type).
+  XMLNodeAttribute(?manifest, ?applicationId, _, _, "android:name", ?type),
+  isClassType(?type).
 
 // Compute application regex if it is not given in the facts.
 ApplicationPackageRegex(cat(?package, ".*")) :-
@@ -29,50 +30,53 @@ ApplicationPackageRegex(cat(?package, ".*")) :-
       ; qType = cat(?package, cat(".", t)) \
       ) \
     ) \
-  ), \
-  isType(qType)
+  )
 
 // Detect activities, providers, receivers, and services.
 // Activity XML pattern:
 // <manifest>
 //   <application>
 //     <activity android:name="...">
-Activity(?qType) :-
+Activity(as(?qType, ReferenceType)) :-
   XMLNode(?manifest, ?manifestId, _, _, _, "manifest"),
   XMLNode(?manifest, ?applicationId, ?manifestId, _, _, "application"),
   XMLNode(?manifest, ?activityId, ?applicationId, _, _, "activity"),
   XMLNodeAttribute(?manifest, ?activityId, _, _, "android:name", ?type),
-  APP_QUALIFIED_TYPE(?type, ?qType).
+  APP_QUALIFIED_TYPE(?type, ?qType),
+  isReferenceType(?qType).
 // Service XML pattern:
 // <manifest>
 //   <application>
 //     <service android:name="...">
-Service(?qType) :-
+Service(as(?qType, ReferenceType)) :-
   XMLNode(?manifest, ?manifestId, _, _, _, "manifest"),
   XMLNode(?manifest, ?applicationId, ?manifestId, _, _, "application"),
   XMLNode(?manifest, ?serviceId, ?applicationId, _, _, "service"),
   XMLNodeAttribute(?manifest, ?serviceId, _, _, "android:name", ?type),
-  APP_QUALIFIED_TYPE(?type, ?qType).
+  APP_QUALIFIED_TYPE(?type, ?qType),
+  isReferenceType(?qType).
 // Broadcast receiver XML pattern:
 // <manifest>
 //   <application>
 //     <receiver android:name="...">
-BroadcastReceiver(?qType) :-
+BroadcastReceiver(as(?qType, ReferenceType)) :-
   XMLNode(?manifest, ?manifestId, _, _, _, "manifest"),
   XMLNode(?manifest, ?applicationId, ?manifestId, _, _, "application"),
   XMLNode(?manifest, ?receiverId, ?applicationId, _, _, "receiver"),
   XMLNodeAttribute(?manifest, ?receiverId, _, _, "android:name", ?type),
-  APP_QUALIFIED_TYPE(?type, ?qType).
+  APP_QUALIFIED_TYPE(?type, ?qType),
+  isReferenceType(?qType).
 // Content provider XML pattern:
 // <manifest>
 //   <application>
 //     <provider android:name="...">
-ContentProvider(?qType) :-
+ContentProvider(as(?qType, ReferenceType)) :-
   XMLNode(?manifest, ?manifestId, _, _, _, "manifest"),
   XMLNode(?manifest, ?applicationId, ?manifestId, _, _, "application"),
   XMLNode(?manifest, ?providerId, ?applicationId, _, _, "provider"),
   XMLNodeAttribute(?manifest, ?providerId, _, _, "android:name", ?type),
-  APP_QUALIFIED_TYPE(?type, ?qType).
+  APP_QUALIFIED_TYPE(?type, ?qType),
+  isReferenceType(?qType).
 
 // Make all methods reachable for configured 'appComponentFactory'
 // classes. These classes may come from the platform, so we don't
@@ -89,37 +93,44 @@ ForcedReachableAndroidContext(?ctx, ?meth) :-
 
 // Detect parent activities.
 .decl Activity_Parent(?type:ClassType, ?parentActivity:ClassType)
-Activity(?parentActivity),
-Activity_Parent(?type, ?parentActivity) :-
+Activity(?parentActivityClass),
+Activity_Parent(?typeClass, ?parentActivityClass) :-
   XMLNode(?manifest, ?manifestId, _, _, _, "manifest"),
   XMLNode(?manifest, ?applicationId, ?manifestId, _, _, "application"),
   XMLNode(?manifest, ?activityId, ?applicationId, _, _, "activity"),
   XMLNodeAttribute(?manifest, ?activityId, _, _, "android:name", ?type),
-  XMLNodeAttribute(?manifest, ?activityId, _, _, "android:parentActivityName", ?parentActivity).
+  XMLNodeAttribute(?manifest, ?activityId, _, _, "android:parentActivityName", ?parentActivity),
+  isClassType(?type),
+  isClassType(?parentActivity),
+  ?typeClass = as(?type, ClassType),
+  ?parentActivityClass = as(?parentActivity, ClassType).
 
 // Detect activity aliases. XML pattern:
 // <manifest>
 //   <application>
 //     <activity-alias android:name="..." android:targetActivity="...">
 .decl Activity_Alias(?activity:ClassType, ?alias:symbol)
-Activity_Alias(?activity, ?alias) :-
+Activity_Alias(as(?activity, ClassType), ?alias) :-
   XMLNode(?manifest, ?manifestId, _, _, _, "manifest"),
   XMLNode(?manifest, ?applicationId, ?manifestId, _, _, "application"),
   XMLNode(?manifest, ?activityId, ?applicationId, _, _, "activity-alias"),
   XMLNodeAttribute(?manifest, ?activityId, _, _, "android:name", ?alias),
-  XMLNodeAttribute(?manifest, ?activityId, _, _, "android:targetActivity", ?activity).
+  XMLNodeAttribute(?manifest, ?activityId, _, _, "android:targetActivity", ?activity),
+  isClassType(?activity).
 
 // Detect onClick handlers.
-CallbackMethod(?method) :-
-  XMLNodeAttribute(_, _, _, _, "android:onClick", ?method).
+AndroidCallbackMethodName(?methodName) :-
+  XMLNodeAttribute(_, _, _, _, "android:onClick", ?methodName).
 
 // Types-only: for a callback method that is just a name, consider as
 // callbacks all methods whose names match that name.
 #ifdef DISABLE_POINTS_TO
-CallbackMethod(?method) :-
-  CallbackMethod(?name),
-  !isMethod(?name),
-  Method_SimpleName(?method, ?name).
+AndroidCallbackMethod(?method) :-
+  AndroidCallbackMethodName(?name),
+  Method_SimpleName(?method, ?name),
+  Method_Modifier("public", ?method),
+  Method_ReturnType(?method, "void"),
+  Method_ParamTypes(?method, "android.view.View").
 #endif // DISABLE_POINTS_TO
 
 .decl LayoutControl_CallbackMethod(?controlId:symbol, ?method:symbol)
@@ -164,17 +175,20 @@ XMLNode_Id(?file, ?nodeId, ?name, ?id) :-
   FieldInitialValue(?field, ?id).
 
 // Detect layout controls.
-LayoutControl0(?id, ?name, ?parentId) :-
+LayoutControl0(?id, as(?name, ReferenceType), ?parentId) :-
   XMLNode_Id(?file, ?nodeId, ?name, ?id),
   XMLNode_Parent(?file, ?nodeId, ?parentFile, ?parentNodeId),
-  XMLNode_Id(?parentFile, ?parentNodeId, _, ?parentId).
+  XMLNode_Id(?parentFile, ?parentNodeId, _, ?parentId),
+  isReferenceType(?name).
 
 // Handle layout controls where the parent is missing (or is not a layout control).
-LayoutControl0(?id, ?name, "-") :-
+LayoutControl0(?id, as(?name, ReferenceType), "-") :-
   XMLNode_Id(?file, ?nodeId, ?name, ?id),
+  isReferenceType(?name),
   !XMLNode_Parent(?file, ?nodeId, _, _).
-LayoutControl0(?id, ?name, "-") :-
+LayoutControl0(?id, as(?name, ReferenceType), "-") :-
   XMLNode_Id(?file, ?nodeId, ?name, ?id),
+  isReferenceType(?name),
   XMLNode_Parent(?file, ?nodeId, ?parentFile, ?parentNodeId),
   !XMLNode_Id(?parentFile, ?parentNodeId, _, _).
 
@@ -198,43 +212,45 @@ SensitiveLayoutControl0(?id, ?type, ?parent) :-
 //     <intent-filter>
 //       <category android:name="android.intent.category.LAUNCHER" />
 .decl LauncherActivity(?type:ClassType)
-LauncherActivity(?qType) :-
+LauncherActivity(as(?qType, ClassType)) :-
   XMLNode(?manifest, ?activityId, _, _, _, "activity"),
   XMLNodeAttribute(?manifest, ?activityId, _, _, "android:name", ?type),
   XMLNode(?manifest, ?intentFilterId, ?activityId, _, _, "intent-filter"),
   XMLNode(?manifest, ?categoryId, ?intentFilterId, _, _, "category"),
   XMLNodeAttribute(?manifest, ?categoryId, _, _, "android:name", "android.intent.category.LAUNCHER"),
-  APP_QUALIFIED_TYPE(?type, ?qType).
+  APP_QUALIFIED_TYPE(?type, ?qType),
+  isClassType(?qType).
 
 // Detect fragments. XML pattern: <fragment android:id="@id/fragment" class="Fragment">
 .decl XMLFragment_Class(?file:symbol, ?nodeId:symbol, ?qClass:ClassType)
-XMLFragment_Class(?file, ?nodeId, ?qClass) :-
+XMLFragment_Class(?file, ?nodeId, as(?qClass, ClassType)) :-
   XMLNode(?file, ?nodeId, _, _, _, "fragment"),
   // Both "class" and "android:name" can be used for the fragment type:
   // https://stackoverflow.com/questions/10162983/activity-layout-fragment-class-vs-androidname-attributes
   ( XMLNodeAttribute(?file, ?nodeId, _, _, "class", ?class)
   ; XMLNodeAttribute(?file, ?nodeId, _, _, "android:name", ?class)
   ),
-  APP_QUALIFIED_TYPE(?class, ?qClass).
+  APP_QUALIFIED_TYPE(?class, ?qClass),
+  isClassType(?qClass).
 .decl XMLFragment_Id(?file:symbol, ?nodeId:symbol, ?id:symbol)
 XMLFragment_Id(?file, ?nodeId, ?id) :-
   XMLNode_Id(?file, ?nodeId, "fragment", ?id).
 
 // Detect types used in action views.
 .decl ActionViewType(?class:ClassType)
-ActionViewType(?class) :-
+ActionViewType(as(?class, ClassType)) :-
   XMLNodeAttribute(_, _, _, _, "app:actionViewClass", ?class),
-  isType(?class).
+  isClassType(?class).
 
 // Layout behaviors. XML pattern:
 //   <... app:layout_behavior="@string/X" />
 //   <string name="X">CLASS</string>
 .decl LayoutBehavior(?class:ClassType)
-
-LayoutBehavior(?qClass) :-
+LayoutBehavior(as(?qClass, ClassType)) :-
   XMLNode(?file, ?nodeId, _, _, _, "string"),
   XMLNodeAttribute(?file, ?nodeId, _, _, "name", ?x),
   XMLNodeAttribute(_, _, _, _, "app:layout_behavior", ?s),
   ?s = cat("@string/", ?x),
   XMLNodeData(?file, ?nodeId, ?class),
-  APP_QUALIFIED_TYPE(?class, ?qClass).
+  APP_QUALIFIED_TYPE(?class, ?qClass),
+  isClassType(?qClass).

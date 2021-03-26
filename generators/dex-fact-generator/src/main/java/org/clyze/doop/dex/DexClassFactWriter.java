@@ -90,7 +90,7 @@ class DexClassFactWriter extends JavaFactWriter {
             if (val != null) {
                 _db.add(FIELD_INITIAL_VALUE, fieldId, val);
                 if (initialValue.type == InitialValue.IVType.NUMBER)
-                    _db.add(NUM_CONSTANT_RAW, val);
+                    writeNumConstantRawInt(val);
                 else if (initialValue.type == InitialValue.IVType.STRING)
                     writeStringConstant(val);
             }

@@ -4,7 +4,7 @@
 // "True-may"-point-to?). Does not conclude anything if it is not
 // certain it over-approximates all possible points-to targets. That
 // is, an empty points-to set means "anything can be pointed to".
-.type String
+.type String <: symbol
 
 .decl InitialRootMethodForMayAnalysis(?meth:Method)
 .decl EmptyHeapContext(?hctx:MayHeapContext)
@@ -1689,7 +1689,7 @@ InitialRootMethodForMayAnalysis(?meth) :-
   // Strong base cases
   VarHasNoSideEffects(?var) :-
     Var_Type(?var, ?type),
-    !isReferenceType(?type),
+    !isReferenceType(as(?type, ReferenceType)),
     Var_DeclaringMethod(?var, ?meth),
     SoundMay.MayReachableMethodUnderMayContext(_, ?meth).
 
@@ -2131,7 +2131,7 @@ NextInvocationInSameMethod(?invo1, ?invo2, ?meth) :-
 //// BEGIN type definitions
 
 .type MayContext = [ ?invo:MethodInvocation, ?rest:MayContext ]
-.type MayHeapContext
+.type MayHeapContext <: symbol
 
 .type AccessPathBase = Var | Field   // the latter for static fields
 .type AccessPathSuffix = [ ?fld:Field, ?rest:AccessPathSuffix ]

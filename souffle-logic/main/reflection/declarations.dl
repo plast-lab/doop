@@ -1,4 +1,4 @@
-.decl ReifiedClass(?type:symbol, ?value:Value)
+.decl ReifiedClass(?type:ReferenceType, ?value:Value)
 
 .decl ReifiedConstructor(?constructor:Method, ?value:Value)
 
@@ -53,7 +53,7 @@
 
 .decl java_lang_Class_getDeclaredField(?to:Var, ?param:Var, ?from:Var)
 
-.decl java_lang_Class_getPrimitiveClass(?invocation:MethodInvocation, ?to:Var, ?name:Var)
+.decl java_lang_Class_getPrimitiveClass(?to:Var, ?name:Var)
 
 .decl java_lang_Class_newInstance(?invocation:MethodInvocation, ?to:Var, ?from:Var)
 

@@ -82,10 +82,10 @@ SeedMethodNotReachable(?m) :-
 
 #endif // DEBUG_SEEDS
 
-.decl ClassOfDeadMethod(?method:Method, ?class:ClassType)
-ClassOfDeadMethod(?method, ?class) :-
+.decl TypeOfDeadMethod(?method:Method, ?type:ReferenceType)
+TypeOfDeadMethod(?method, ?type) :-
   MethodToRemove(?method),
-  Method_DeclaringType(?method, ?class).
+  Method_DeclaringType(?method, ?type).
 
 .decl _RelevantStringPosition(?className: symbol, ?pos:number)
 _RelevantStringPosition(?className, ?pos) :-
@@ -93,30 +93,31 @@ _RelevantStringPosition(?className, ?pos) :-
   mainAnalysis._StringIterationTrick(?pos), ?pos < strlen(?className).
 
 // N^2 computation, but it doesn't matter since its application is so limited
-.decl ClassNameWithSlashes(?className:ClassType, ?classNameWithSlash:symbol)
-ClassNameWithSlashes(?className, ?className) :-
-  ClassOfDeadMethod(_, ?className).
-ClassNameWithSlashes(?className, ?classNameTransformed) :-
-  ClassNameWithSlashes(?className, ?classNameOther),
-  _RelevantStringPosition(?className, ?pos),
-  substr(?classNameOther, ?pos, 1) = ".",
-  substr(?classNameOther, 0, ?pos) = ?prefix,
+.decl ClassNameWithSlashes(?typeName:ReferenceType, ?typeNameWithSlash:symbol)
+ClassNameWithSlashes(?typeName, ?typeNameSymbol) :-
+  TypeOfDeadMethod(_, ?typeName),
+  ?typeNameSymbol = ?typeName.
+ClassNameWithSlashes(?typeName, ?typeNameTransformed) :-
+  ClassNameWithSlashes(?typeName, ?typeNameOther),
+  _RelevantStringPosition(?typeName, ?pos),
+  substr(?typeNameOther, ?pos, 1) = ".",
+  substr(?typeNameOther, 0, ?pos) = ?prefix,
   !contains(".", ?prefix),
-  substr(?classNameOther, ?pos+1, strlen(?className)-?pos-1) = ?suffix,
-  ?classNameTransformed = cat(?prefix, cat("/", ?suffix)).
+  substr(?typeNameOther, ?pos+1, strlen(?typeName)-?pos-1) = ?suffix,
+  ?typeNameTransformed = cat(?prefix, cat("/", ?suffix)).
 
-.decl ClassNameWithOnlySlashes(?className:ClassType, ?classNameTransformed:symbol)
-ClassNameWithOnlySlashes(?className, ?classNameTransformed) :-
-  ClassNameWithSlashes(?className, ?classNameTransformed),
-  !contains(".", ?classNameTransformed).
+.decl ClassNameWithOnlySlashes(?typeName:ReferenceType, ?typeNameTransformed:symbol)
+ClassNameWithOnlySlashes(?typeName, ?typeNameTransformed) :-
+  ClassNameWithSlashes(?typeName, ?typeNameTransformed),
+  !contains(".", ?typeNameTransformed).
 
 .decl DeadMethodWithJVMDescriptor(?jvmFullName:symbol, ?method:symbol)
 DeadMethodWithJVMDescriptor(?jvmFullName, ?method) :-
-  ClassOfDeadMethod(?method, ?class),
-  ClassNameWithOnlySlashes(?class, ?className),
+  TypeOfDeadMethod(?method, ?class),
+  ClassNameWithOnlySlashes(?class, ?typeName),
   Method_JVMDescriptor(?method, ?sig),
   Method_SimpleName(?method, ?simplename),
-  ?jvmFullName = cat("L", cat(?className, cat(";:", cat(?simplename, ?sig)))).
+  ?jvmFullName = cat("L", cat(?typeName, cat(";:", cat(?simplename, ?sig)))).
 
 #define FILENAME_EXPECTED_BY_OPT_PASS "methods_to_remove.csv"
 .output DeadMethodWithJVMDescriptor(IO="file", filename=FILENAME_EXPECTED_BY_OPT_PASS, delimiter="\t")
@@ -472,16 +473,17 @@ MethodInvokedByReflection(?method) :-
 // "allPublicConstructors", "allDeclaredMethods", "allPublicMethods",
 // "allDeclaredFields", "allPublicFields".
 
-.decl UnreachableDeclaredMethod(?method:Method)
+.decl UnreachableDeclaredMethod(?method:Method, ?type:ReferenceType)
 // .output UnreachableDeclaredMethod
-UnreachableDeclaredMethod(?method) :-
+UnreachableDeclaredMethod(?method, ?type) :-
   ApplicationMethod(?method),
+  Method_DeclaringType(?method, ?type),
   !mainAnalysis.AppReachable(?method).
 
-.decl UnreachablePublicMethod(?method:Method)
+.decl UnreachablePublicMethod(?method:Method, ?type:ReferenceType)
 // .output UnreachablePublicMethod
-UnreachablePublicMethod(?method) :-
-  UnreachableDeclaredMethod(?method),
+UnreachablePublicMethod(?method, ?type) :-
+  UnreachableDeclaredMethod(?method, ?type),
   Method_Modifier("public", ?method).
 
 .decl UnreachableDeclaredField(?field:Field, ?type:ReferenceType)
@@ -500,7 +502,7 @@ UnreachablePublicField(?type) :-
 .decl UnreachableDeclaredConstructor(?constructor:Method, ?type:ReferenceType)
 // .output UnreachableDeclaredConstructor
 UnreachableDeclaredConstructor(?constructor, ?type) :-
-  UnreachableDeclaredMethod(?constructor),
+  UnreachableDeclaredMethod(?constructor, ?type),
   basic.ClassConstructor(?constructor, ?type).
 
 .decl UnreachablePublicConstructor(?type:ReferenceType)
@@ -529,7 +531,7 @@ NI_AllPublicConstructors(?type) :-
 NI_AllDeclaredMethods(?type) :-
   ReachableType(?type),
   Method_DeclaringType(_, ?type),         // ensure there is at least one method
-  !UnreachableDeclaredMethod(?type).
+  !UnreachableDeclaredMethod(_, ?type).
 
 .decl NI_AllPublicMethods(?type:ReferenceType)
 .output NI_AllPublicMethods
@@ -537,7 +539,7 @@ NI_AllPublicMethods(?type) :-
   ReachableType(?type),
   Method_DeclaringType(?method, ?type),   // ensure there is at least one method
   Method_Modifier("public", ?method),     // that is public
-  !UnreachablePublicMethod(?type).
+  !UnreachablePublicMethod(_, ?type).
 
 .decl NI_AllDeclaredFields(?type:ReferenceType)
 .output NI_AllDeclaredFields

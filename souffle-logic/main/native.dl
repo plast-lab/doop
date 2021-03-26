@@ -32,7 +32,7 @@ ArrayIndexPointsTo(?hctx, ?argArrayContent, ?hctx, ?argArray) :-
 .decl SimulateNativeAllocation(?strMethod: Method, ?strHeap: Value, ?strConstructor: Method)
 
 // Generate value.
-AssignHeapAllocation(?strHeap, ?return, ?strMethod),
+AssignHeapAllocation(as(?strHeap, HeapAllocation), ?return, ?strMethod),
 Value_DeclaringType(?strHeap, ?strType) :-
   SimulateNativeAllocation(?strMethod, ?strHeap, _),
   Method_DeclaringType(?strMethod, ?strType),

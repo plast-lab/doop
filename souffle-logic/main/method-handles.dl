@@ -2,7 +2,11 @@
  * Method Types
  *************************************************************/
 
-.type MethodType = mainAnalysis.Value
+/*
+ * Method types can either be normal Java values or special method
+ * type constants that come from the constant pool.
+ */
+.type MethodType = Value | MethodTypeConstant
 .type ParamTypes = symbol
 .decl MethodType_ParamType(?mt:MethodType, ?index:number, ?pType:Type)
 .decl MethodType_ParamTypes(?mt:MethodType, ?paramTypes:ParamTypes)
@@ -222,7 +226,7 @@ MethodType_ReturnType(?mt, ?retType) :-
 HeapAllocation_ContextInsensitive(?heap) :-
   isMethodHandleConstant(?heap).
 
-.type MethodHandle = mainAnalysis.Value
+.type MethodHandle = Value
 .decl MethodHandle_Method(?methodHandle:MethodHandle, ?method:Method)
 // Returns a method type for a method handle. This is not a function: a method
 // handle may, for example, contain both a method type that only mentions the
@@ -371,7 +375,7 @@ MethodHandle_MethodType(?adapterMH, ?mt) :-
   VarPointsTo(_, ?mt, ?ctx, ?arg),
   AssignReturnValue(?invo, ?ret),
   MethodHandle_Method(?mh, ?mhMethod),
-  Method_ParamTypes(?mhMethod, ?paramTypes),
+  Method_ParamTypes(?mhMethod, _),
   ?adapterMH = cat("<adapter for ", cat(?mh, cat(" as ", ?mt))).
 
 /*************************************************************
@@ -657,7 +661,7 @@ VarPointsTo(?immHctx, ?invokedName, ?calleeCtx, ?invokedNameParam) :-
 
 // Helper method to compute the varargs accumulator formal of a method.
 .decl MethodVarArgs(?method:Method, ?idx:number, ?formal:Var, ?type:ArrayType)
-MethodVarArgs(?method, ?idx, ?formal, ?type) :-
+MethodVarArgs(?method, ?idx, ?formal, as(?type, ArrayType)) :-
   Method_Modifier("varargs", ?method),
   Method_Arity(?method, ?arity),
   ?idx = ?arity - 1,
@@ -672,7 +676,7 @@ MethodVarArgs(?method, ?idx, ?formal, ?type) :-
 ArrayIndexPointsTo(?immHctx, ?val, ?immHctx, ?mockArray),
 MockValueConsMacro(?mockArray, ?varArgsType),
 VarPointsTo(?immHctx, ?mockArray, ?calleeCtx, ?formalVarArgs) :-
-  InvokedynamicBootCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?bootMethod),
+  InvokedynamicBootCallGraphEdge(_, ?invokedynamic, ?calleeCtx, ?bootMethod),
   MethodVarArgs(?bootMethod, ?bootIdx, ?formalVarArgs, ?varArgsType),
   BootstrapParam(?idx, ?invokedynamic, ?actual),
   ?idx > ?bootIdx - 3,
@@ -689,7 +693,7 @@ VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
   VarPointsTo(?hctx, ?val, _, ?actual).
 #endif // DISABLE_POINTS_TO
 
-.type CallSite = mainAnalysis.Value
+.type CallSite = Value
 .decl InvokedynamicCallSite(?callsite:CallSite, ?invokedynamic:DynamicMethodInvocation_Insn, ?dynName:symbol, ?K:number, ?ctx:configuration.Context)
 
 // Record CallSite metadata. This rule handles the return values of bootstrap
@@ -789,7 +793,7 @@ UnhandledInvokedynamic(?invokedynamic, ?bootMethodId) :-
 #define LAMBDA_ALT_VAL(invo, ret, type, method, real, name) \
   cat(invo, cat("::: ", cat(ret, cat("::: (Mock)::: ", cat("reference ", cat(type, cat ("::", cat(method, cat(" from ", cat(real, cat(" wrapped as ", cat(ret, cat(".", name)))))))))))))
 
-.type Lambda = mainAnalysis.Value
+.type Lambda = Value
 // TODO: Field ?ctx is currently unused, should be used in the
 // LambdaCallGraphEdge rule for context sensitivity.
 .decl LambdaObject(?invokedynamic:DynamicMethodInvocation_Insn, ?lambda:Lambda, ?dynName:symbol, ?K:number, ?implMethod:Method, ?ctx:configuration.Context)
