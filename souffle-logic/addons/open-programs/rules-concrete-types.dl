@@ -1,12 +1,13 @@
 #include "../../commonMacros.dl"
 #include "entry-points.dl"
 
-.decl AllConcreteImplementations(?class:ClassType, ?type:Type)
-.decl ConcreteType(?class:ClassType)
+.decl AllConcreteImplementations(?class:ReferenceType, ?type:ReferenceType)
+.decl ConcreteType(?class:ReferenceType)
 
 AllConcreteImplementations(?class, ?staticType) :-
   isClassType(?class),
   basic.SubtypeOf(?class, ?staticType),
+  isReferenceType(?staticType),
   !ClassModifier("abstract", ?class).
 
 AllConcreteImplementations(?class, ?class) :-
@@ -23,8 +24,8 @@ ConcreteType(?type) :-
 #define OPEN_PROGRAM_MOCK_OBJS
 .decl ObjToMock(?class:ReferenceType)
 .decl MockObjFromOpenProgramEntryPoint(?class:ReferenceType)
-.decl MockObjFromOpenProgramEntryPointReceiver(?value:mainAnalysis.Value)
-.decl MockObjFromOpenProgramEntryPointArg(?value:mainAnalysis.Value)
+.decl MockObjFromOpenProgramEntryPointReceiver(?value:Value)
+.decl MockObjFromOpenProgramEntryPointArg(?value:Value)
 .decl MockObjFromArray(?class:ReferenceType)
 
 MockObjFromOpenProgramEntryPoint(?class),
@@ -65,7 +66,7 @@ FieldInformation(?signature, ?fieldConcreteType, ?class) :-
   FieldInformation(?signature, ?fieldStaticType, ?class),
   StaticToActualType(?fieldConcreteType, ?fieldStaticType).
 
-.decl FieldTypeForMockObject(?signature:Field, ?basevalue:mainAnalysis.Value, ?fieldtype:Type)
+.decl FieldTypeForMockObject(?signature:Field, ?basevalue:Value, ?fieldtype:Type)
 
 FieldTypeForMockObject(?signature, ?basevalue, ?fieldtype) :-
   FieldInformation(?signature, ?fieldtype, ?class),
@@ -78,13 +79,13 @@ InstanceFieldPointsTo(?hctx, ?value, ?signature, ?hctx, ?basevalue) :-
 #endif // MOCK_OBJECTS_FOR_FIELDS
 
 // Arrays
-.decl MockObjectForType(?value:mainAnalysis.Value, ?staticType:Type)
+.decl MockObjectForType(?value:Value, ?staticType:ReferenceType)
 
 MockObjectForType(?value, ?staticType) :-
   MockObject(?value, ?class),
   StaticToActualType(?class, ?staticType).
 
-.decl MockObjectForComponentType(?value:mainAnalysis.Value, ?arrayType:ArrayType)
+.decl MockObjectForComponentType(?value:Value, ?arrayType:ArrayType)
 
 MockObjectForComponentType(?value, ?arrayType) :-
   ComponentType(?arrayType, ?componentType),
@@ -114,14 +115,14 @@ TypeForFormals(?formal, ?method, ?subtype) :-
   Var_Type(?formal, ?staticType),
   StaticToActualType(?subtype, ?staticType).
 
-.decl MockForFormal(?value:mainAnalysis.Value, ?formal:Var, ?type:ReferenceType, ?method:Method)
+.decl MockForFormal(?value:Value, ?formal:Var, ?type:ReferenceType, ?method:Method)
 
 MockForFormal(?value, ?formal, ?type, ?method) :-
   TypeForFormals(?formal, ?method, ?type),
   MockObject(?value, ?type).
 
-.decl MockObject(?value:mainAnalysis.Value, ?class:ReferenceType)
-.decl MockObjectContext(?hctx:mainAnalysis.configuration.HContext, ?value:mainAnalysis.Value, ?class:ReferenceType)
+.decl MockObject(?value:Value, ?class:ReferenceType)
+.decl MockObjectContext(?hctx:mainAnalysis.configuration.HContext, ?value:Value, ?class:ReferenceType)
 
 .decl ContextForOpenProgramEntryPoint(?ctx:mainAnalysis.configuration.Context, ?method:Method)
 .decl HContextForOpenProgramEntryPoint(?hctx:mainAnalysis.configuration.HContext, ?method:Method)
@@ -137,7 +138,7 @@ mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?formal) :-
 // feel free to remove/collapse some
 
 // receivers for entry points
-.decl ReceiverPointsTo(?value:mainAnalysis.Value, ?ctx:mainAnalysis.configuration.Context, ?receiver:Var, ?class:ReferenceType, ?method:Method)
+.decl ReceiverPointsTo(?value:Value, ?ctx:mainAnalysis.configuration.Context, ?receiver:Var, ?class:ReferenceType, ?method:Method)
 
 mainAnalysis.configuration.RecordContextRequest(?calleeCtx, ?value, ?receiver) :-
   ReceiverPointsTo(?value, ?calleeCtx, ?receiver, _, _).
@@ -165,7 +166,7 @@ mainAnalysis.configuration.ContextRequest(?callerCtx, ?immutablehctx, ?invo, ?va
   mainAnalysis.isImmutableHContext(?immutablehctx),
   mainAnalysis.isImmutableContext(?callerCtx).
 
-.decl MockInvocationForEntryPoint(?value:mainAnalysis.Value, ?method:Method, ?invo:MethodInvocation)
+.decl MockInvocationForEntryPoint(?value:Value, ?method:Method, ?invo:MethodInvocation)
 
 MockInvocationForEntryPoint(?value, ?method, cat(cat(cat("<mock-invo ", ?value), ?method), ">")),
 PlusMethodInvocation(cat(cat(cat("<mock-invo ", ?value), ?method), ">")) :-
@@ -206,8 +207,8 @@ ContextForOpenProgramEntryPoint(?calleeCtx, ?method) :-
   !Method_Modifier("abstract", ?method),
   OpenProgramEntryPoint(?method).
 
-.decl TypeToConcreteImplementationOrd(?staticType:Type, ?classOrd:number)
-.decl ConcreteImplementations(?staticType:Type, ?class:ClassType)
+.decl TypeToConcreteImplementationOrd(?staticType:ReferenceType, ?classOrd:number)
+.decl ConcreteImplementations(?staticType:ReferenceType, ?class:ClassType)
 
 // Here we "randomly" select a concrete implementation for each type.
 // In a partitioned analysis we try to select one from the same partition.
@@ -218,8 +219,8 @@ TypeToConcreteImplementationOrd(?staticType, ?classOrd) :-
      AllConcreteImplementations(?allClasses, ?staticType)
    }.
 #else
-.decl PrimaryTypeHasNoPrimaryConcreteImplementation(?type:Type)
-.decl PrimaryTypeHasPrimaryConcreteImplementation(?type:Type)
+.decl PrimaryTypeHasNoPrimaryConcreteImplementation(?type:ReferenceType)
+.decl PrimaryTypeHasPrimaryConcreteImplementation(?type:ReferenceType)
 
 PrimaryTypeHasPrimaryConcreteImplementation(?type) :-
   mainAnalysis.configuration.TypeInPrimaryPartition(?type),
@@ -230,8 +231,8 @@ PrimaryTypeHasNoPrimaryConcreteImplementation(?type) :-
   mainAnalysis.configuration.TypeInPrimaryPartition(?type),
   !PrimaryTypeHasPrimaryConcreteImplementation(?type).
 
-.decl NonPrimaryTypeHasNoNonPrimaryConcreteImplementation(?type:Type)
-.decl NonPrimaryTypeHasNonPrimaryConcreteImplementation(?type:Type)
+.decl NonPrimaryTypeHasNoNonPrimaryConcreteImplementation(?type:ReferenceType)
+.decl NonPrimaryTypeHasNonPrimaryConcreteImplementation(?type:ReferenceType)
 
 NonPrimaryTypeHasNonPrimaryConcreteImplementation(?type) :-
   mainAnalysis.configuration.TypeInNonPrimaryPartition(?type),
@@ -261,11 +262,11 @@ TypeToConcreteImplementationOrd(?staticType, ?classOrd) :-
 
 ConcreteImplementations(?staticType, ?class) :-
   TypeToConcreteImplementationOrd(?staticType, ?classOrd),
-  isType(?class),
+  isClassType(?class),
   ord(?class) = ?classOrd.
 
 // gives us a concrete implementation of a type, preferably itself
-.decl StaticToActualType(?class:ClassType, ?staticType:Type)
+.decl StaticToActualType(?class:ReferenceType, ?staticType:ReferenceType)
 
 StaticToActualType(?class, ?staticType) :-
   ConcreteImplementations(?staticType, ?class),

@@ -8,12 +8,12 @@ PossibleOpenProgramEntryPoint(?class, ?meth) :-
   Method_DeclaringType(?meth, ?class),
   Method_SimpleName(?meth, "init").
 
-.decl WebappMock(?v: mainAnalysis.Value)
+.decl WebappMock(?v:Value)
 
 #define MOCK_WEBAPP_CTX(class)\
   cat(cat("<Mock webapp context ", class), ">")
 
-.decl MockCallReturnVal(?meth: Method)
+.decl MockCallReturnVal(?meth:Method)
 
 // These methods introduce webapp context mock objects
 MockCallReturnVal("<org.springframework.web.context.support.WebApplicationContextUtils: org.springframework.web.context.WebApplicationContext getWebApplicationContext(javax.servlet.ServletContext)>").
@@ -45,7 +45,7 @@ MockObject(MOCK_WEBAPP_CTX(?class), ?class) :-
 // If a method is called on a webapp mock that returns a type that
 // contains the following substrings or if it's casted,
 // return a new mock object
-.decl MockedObjTypeContains(?part: symbol)
+.decl MockedObjTypeContains(?part:symbol)
 MockedObjTypeContains("org.springframework.web.context.").
 MockedObjTypeContains("org.springframework.context.").
 MockedObjTypeContains("java.lang.Object").

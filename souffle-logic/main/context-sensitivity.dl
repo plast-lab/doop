@@ -81,7 +81,7 @@ VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
     AssignCastNumConstant_Id(?insn, ?const)), // TODO: check the cast?
    AssignInstruction_To(?insn, ?to),
    NumConstantRawInt(?const),
-   Value_Num(?value, to_number(?const)),
+   Value_Num(?value, ?const),
    isImmutableHContext(?hctx).
 
 #endif // DISABLE_POINTS_TO
@@ -260,7 +260,7 @@ StaticFieldPointsTo(?hctx, ?value, ?signature) :-
   FieldInitialValue(?signature, ?const),
   // Since all initial values are strings, constant numbers are also stored
   // as strings and must be cast to the proper number type.
-  Value_Num(?value, as(?const, number)),
+  Value_Num(?value, ?const),
   isImmutableHContext(?hctx).
 
 /**
@@ -281,7 +281,7 @@ ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?baseHeap) :-
   Instruction_Method(?i, ?inMethod),
   ArrayInitialValueFromConst(?i, _, ?to, _, ?const, ?baseHeap, _),
   NumConstantRawInt(?const),
-  Value_Num(?value, to_number(?const)),
+  Value_Num(?value, ?const),
   isImmutableHContext(?hctx).
 
 #endif // ANDROID, DISABLE_POINTS_TO
@@ -730,4 +730,4 @@ Value_Type(?constValue, ?type),
 Value_DeclaringType(?constValue, ?declaringType) :-
   CreateIntValue(?n, ?declaringType),
   Type_int(?type),
-  ?constValue = cat("num-constant-", to_string(?n)).
+  ?constValue = cat("num-constant-", ?n).

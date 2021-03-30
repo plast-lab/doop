@@ -57,12 +57,6 @@ isType(?id) :-
 
 // NumConstantRawInt
 
-.decl NumConstantRawInt(?const:symbol)
-.input NumConstantRawInt(filename="NumConstantRawInt.facts")
-
-// Assume that raw constants are created by java.lang.Object (which is always reachable).
-CreateIntValue(to_number(?const), "java.lang.Object") :- NumConstantRawInt(?const).
-
 .decl ArrayInitialValueFromConst(?instruction:Instruction, ?index:number, ?to:Var, ?arrayIndex:number, ?const:symbol, ?baseHeap:HeapAllocation, ?method:Method)
 .input ArrayInitialValueFromConst(filename="ArrayInitialValueFromConst.facts")
 
@@ -71,7 +65,7 @@ Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method) :-
   ArrayInitialValueFromConst(?instruction, ?index, _, _, _, _, ?method).
 
-CreateIntValue(to_number(?const), "java.lang.Object") :-
+CreateIntValue(?const, "java.lang.Object") :-
   NumConstantRawInt(?const),
   ( ArrayInitialValueFromConst(_, _, _, _, ?const, _, _)
   ; ArrayInitialValueFromConst(_, _, _, _, ?const, _, _)).

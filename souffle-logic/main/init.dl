@@ -25,7 +25,7 @@ Value_Type(?heapValue, ?type) :-
 // nested classes. REVIEW to generalize.
 // Numeric constants are prepended with *num-constant-* to distinguish
 // them from allocations that share the same string value.
-CreateIntValue(to_number(?const), ?className) :-
+CreateIntValue(?const, ?className) :-
   AssignNumConstant_Id(?insn, ?const),
   NumConstantRawInt(?const),
   Instruction_Method(?insn, ?meth),
@@ -35,7 +35,7 @@ CreateIntValue(to_number(?const), ?className) :-
   contains(".R$", ?className).
 
 #ifdef ANDROID
-CreateIntValue(to_number(?const), ?className) :-
+CreateIntValue(?const, ?className) :-
   FieldInitialValue(?fld, ?const),
   NumConstantRawInt(?const),
   Field_DeclaringType(?fld, ?className),

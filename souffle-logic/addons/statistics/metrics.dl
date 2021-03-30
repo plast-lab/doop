@@ -173,11 +173,15 @@ Metrics_Method_OutgoingMethods_Count(?inMethod, ?n) :-
 _ValueAsReceiver(?value, ?invo) :-
   VirtualMethodInvocation_Base(?invo, ?base),
   mainAnalysis.VarPointsTo(_, ?value, _, ?base),
-  !mainAnalysis.Value_Null(?value),
-  !mainAnalysis.HeapAllocation_Merge(?value, _),
-  !mainAnalysis.HeapAllocation_Merge(_, ?value),
-  !mainAnalysis.HeapIsMergedString(?value),
-  !mainAnalysis.HeapIsMergedStringFactory(?value).
+  ( !mainAnalysis.Value_Null(?value)
+  ; (isHeapAllocation(?value),
+     ?heap = as(?value, HeapAllocation),
+     ( !mainAnalysis.HeapAllocation_Merge(?heap, _)
+     ; !mainAnalysis.HeapAllocation_Merge(_, ?heap)
+     ; !mainAnalysis.HeapIsMergedString(?heap)
+     ; !mainAnalysis.HeapIsMergedStringFactory(?heap)
+     ))
+  ).
 
 Metrics_Value_AsReceiver_Count(?value, ?n) :-
   _ValueAsReceiver(?value, _),

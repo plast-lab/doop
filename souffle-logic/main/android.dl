@@ -751,7 +751,7 @@ VarPointsTo(?hctx, ?controlValue, ?ctx, ?ret) :-
   VarPointsTo(?hctx, ?value, ?ctx, ?var),
   LayoutControlObjectValueFromId(?controlValue, ?numId),
   NumConstantRawInt(?numId),
-  Value_Num(?value, to_number(?numId)).
+  Value_Num(?value, ?numId).
 ///// HACK, HACK, HACK below!!!!!
 ///// ids seemed broken, so I just return whatever. Fixed now (?)
 //  Value_Num(?value, _),
