@@ -1169,3 +1169,7 @@ MockHeapConsMacro(?heap, ?type) :-
 MockHeapConsMacro(?heap, ?type) :-
   ?heap = "<<immutable>>",
   ?type = "java.lang.Object".
+
+
+// Relation that triggers the creation of (non-heap) number constants from imported facts.
+.decl CreateIntValue(?n: number, ?declaringType: ReferenceType)

@@ -57,8 +57,6 @@ isType(?id) :-
 
 // NumConstantRawInt
 
-.decl CreateIntValue(?n: number, ?declaringType: ReferenceType)
-
 .decl NumConstantRawInt(?const:symbol)
 .input NumConstantRawInt(filename="NumConstantRawInt.facts")
 
