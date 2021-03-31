@@ -2,6 +2,7 @@ package org.clyze.doop.command
 
 import groovy.util.logging.Log4j
 import java.nio.file.Files
+import java.nio.file.Path
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
 import org.clyze.analysis.AnalysisPostProcessor
@@ -90,12 +91,15 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor<DoopAnal
 				FileUtils.deleteDirectory(humanDatabase)
 			}
 			log.info "Making database available at $humanDatabase"
-			Files.createSymbolicLink(humanDatabase.toPath(), analysis.database.toPath())
+			Path humanDatabasePath = humanDatabase.toPath()
+			Files.deleteIfExists(humanDatabasePath)
+			Files.createSymbolicLink(humanDatabasePath, analysis.database.toPath())
 
 			def lastAnalysis = new File("${Doop.doopHome}/last-analysis")
-			Files.deleteIfExists(lastAnalysis.toPath())
+			Path lastAnalysisPath = lastAnalysis.toPath()
+			Files.deleteIfExists(lastAnalysisPath)
 			log.info "Making database available at $lastAnalysis"
-			Files.createSymbolicLink(lastAnalysis.toPath(), analysis.database.toPath())
+			Files.createSymbolicLink(lastAnalysisPath, analysis.database.toPath())
 		}
 
 		if (analysis.options.SOUFFLE_PROFILE.value)
