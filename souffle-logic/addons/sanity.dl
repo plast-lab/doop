@@ -96,16 +96,10 @@ ForceTypeCompatibility("java.lang.String", "java.lang.Class").
 ForceTypeCompatibility(?valueType, ?varType) :-
   mainAnalysis.BoxTypeConversion(?valueType, ?varType).
 
-// On Android, primitive number types may all collapse into 'int'.
-#ifdef ANDROID
-.decl ForceValueCompatibility(?varType:Type, ?value:Value, ?valueType:Type)
-
-ForceValueCompatibility("boolean", "num-constant-0", "int").
-ForceValueCompatibility("boolean", "num-constant-1", "int").
-ForceValueCompatibility(?primType, ?numConst, "int") :-
-  ( ?primType = "byte" ;  ?primType = "char" ;  ?primType = "short" ),
-  mainAnalysis.Value_Num(?numConst, _).
-#endif // ANDROID
+// Support primitive conversions due to $numconstant reuse with different
+// target types. This should be removed when $numconstant pseudo variables
+// are removed from fact generation.
+ForceTypeCompatibility("byte", "int").
 
 #ifndef DISABLE_POINTS_TO
 .decl VarPointsToWronglyTypedValue(?var:Var, ?varType:Type, ?value:Value, ?valueType:Type)
@@ -116,9 +110,6 @@ VarPointsToWronglyTypedValue(?var, ?varType, ?value, ?valueType) :-
   mainAnalysis.VarPointsTo(_, ?value, _, ?var),
   Var_Type(?var, ?varType),
   !basic.SubtypeOf(?valueType, ?varType),
-#ifdef ANDROID
-  !ForceValueCompatibility(?varType, ?value, ?valueType),
-#endif // ANDROID
   !ForceTypeCompatibility(?valueType, ?varType).
 
 .decl FieldPointsToWronglyTypedValue(?field:Field, ?fieldType:Type, ?value:Value, ?valueType:Type)
@@ -130,9 +121,6 @@ FieldPointsToWronglyTypedValue(?field, ?fieldType, ?value, ?valueType) :-
    mainAnalysis.StaticFieldPointsTo(_, ?value, ?field)),
   Field_Type(?field, ?fieldType),
   !basic.SubtypeOf(?valueType, ?fieldType),
-#ifdef ANDROID
-  !ForceValueCompatibility(?fieldType, ?value, ?valueType),
-#endif // ANDROID
   !ForceTypeCompatibility(?valueType, ?fieldType).
 
 .decl VarPointsToMergedHeap(?var:Var, ?value:Value)
@@ -180,19 +168,21 @@ ValueIsNeitherHeapNorNonHeap(?value) :-
   !mainAnalysis.Value_isNonHeap(?value),
   mainAnalysis.NotSpecialObject(?value).
 
-.decl ClassTypeIsInterfaceType(?type:ClassType)
+.decl ClassTypeIsInterfaceType(?type:ReferenceType)
 .output ClassTypeIsInterfaceType
 
 ClassTypeIsInterfaceType(?t) :-
   isClassType(?t),
-  isInterfaceType(as(?t, InterfaceType)).
+  isInterfaceType(?t2),
+  ord(?t) = ord(?t2).
 
 .decl PrimitiveTypeIsReferenceType(?type:PrimitiveType)
 .output PrimitiveTypeIsReferenceType
 
 PrimitiveTypeIsReferenceType(?t) :-
   isPrimitiveType(?t),
-  isReferenceType(as(?t, ReferenceType)).
+  isReferenceType(?t2),
+  ord(?t) = ord(?t2).
 
 .decl TypeIsConcreteType(?type:Type)
 .output TypeIsConcreteType

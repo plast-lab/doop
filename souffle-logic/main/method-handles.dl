@@ -6,7 +6,7 @@
  * Method types can either be normal Java values or special method
  * type constants that come from the constant pool.
  */
-.type MethodType = Value | MethodTypeConstant
+.type MethodType = Value
 .type ParamTypes = symbol
 .decl MethodType_ParamType(?mt:MethodType, ?index:number, ?pType:Type)
 .decl MethodType_ParamTypes(?mt:MethodType, ?paramTypes:ParamTypes)

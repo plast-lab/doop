@@ -46,7 +46,7 @@ CreateIntValue(?const, ?className) :-
 
 Value_isNonHeap(?value) :-
   Value_isMock(?value) ;
-  Value_Num(?value, _).
+  Value_Num(?value, _, _).
 
 Value_Null(?nullheap) :-
   HeapAllocation_Null(?nullheap).
@@ -73,11 +73,18 @@ Value_DeclaringType(?value, "java.lang.Object") :-
 Value_DeclaringType(?heapValue, "java.lang.invoke.MethodHandle") :-
   isMethodHandleConstant(?heapValue).
 
+Value_DeclaringType(?heapValue, "java.lang.invoke.MethodType") :-
+  isMethodTypeConstant(?heapValue).
+
+Value_DeclaringType(?heapValue, ?type) :-
+  SimulatedNativeAllocation(?heapValue, ?method),
+  Method_DeclaringType(?method, ?type).
+
 // Mark objects that are normal, i.e., not special
 NotSpecialObject(?value) :-
   Value_isHeap(?value) ;
   Value_isMock(?value) ;
-  Value_Num(?value, _).
+  Value_Num(?value, _, _).
 
 configuration.InitContextRequest("<<immutable-context>>").
 //configuration.InitContextRequest("<<initial-context>>").

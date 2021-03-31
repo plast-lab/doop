@@ -1,8 +1,7 @@
 isType(?t) :- isPrimitiveType(?t) ; isReferenceType(?t).
 
-isReferenceType(as(?t, ReferenceType)) :-
+isReferenceType(?t) :-
   isNullType(?t) ; isArrayType(?t) ; isClassType(?t) ; isInterfaceType(?t) ; isAnnotation(?t).
-
 
 isHeapAllocation(?h) :-
   isNormalHeap(?h) ; isStringConstant(?h) ; isClassHeap(?h) ; isMethodHandleConstant(?h) ; isMethodTypeConstant(?h).
@@ -13,7 +12,7 @@ isInstruction(?i) :-
   isFieldInstruction(?i) ; isArrayInstruction(?i) ; isAssignInstruction(?i) ;
   isReturnInstruction(?i) ; isMethodInvocation(?i) ; isUnsupportedInstruction(?i).
 
-isThrowNull_Insn(as(?i, ThrowNull_Insn)) :- isThrow_Insn(?i).
+isThrowNull_Insn(?i) :- isThrow_Insn(?i).
 
 isSwitch_Insn(?i) :- isTableSwitch_Insn(?i) ; isLookupSwitch_Insn(?i).
 

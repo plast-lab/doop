@@ -267,3 +267,6 @@ Class_InterestingSubtype(?class, ?subClass) :-
 _Valid_Type(?type) :-
   isReferenceType(?type),
   (isClassType(?type) ; isInterfaceType(?type)).
+
+isIntegerType(?type) :-
+  Type_byte(?type) ; Type_short(?type) ; Type_int(?type) ; Type_long(?type).

@@ -70,4 +70,4 @@
    isMethodInvocation(ins), \
    isStaticMethodInvocation_Insn(ins)
 
-#define NUM_CONSTANT(n) cat("num-constant-", n)
+#define NUM_CONSTANT(n, type) cat(cat(cat("num-constant-", n), "/"), type)

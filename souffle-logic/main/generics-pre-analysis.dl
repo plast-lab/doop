@@ -1,29 +1,29 @@
 .decl GenericFieldSignatureViolation(?field:Field)
-.decl isCollectionValue(?value:mainAnalysis.Value)
-.decl isMapValue(?value:mainAnalysis.Value)
+.decl isCollectionValue(?value:Value)
+.decl isMapValue(?value:Value)
 .decl isMapField(?field:Field)
 .decl isCollectionField(?field:Field)
 .decl isMapGetMethod(?method:Method)
 .decl isCollectionGetMethod(?method:Method)
 
-.decl FieldPointsToMap(?value:mainAnalysis.Value, ?field:Field)
-.decl FieldPointsToCollection(?value:mainAnalysis.Value, ?field:Field)
+.decl FieldPointsToMap(?value:Value, ?field:Field)
+.decl FieldPointsToCollection(?value:Value, ?field:Field)
 
-.decl MapAcceptsKeyTypeByGenericFieldInfo(?value:mainAnalysis.Value, ?type:Type)
-.decl MapAcceptsValueTypeByGenericFieldInfo(?value:mainAnalysis.Value, ?type:Type)
-.decl CollectionAcceptsValueTypeByGenericFieldInfo(?value:mainAnalysis.Value, ?type:Type)
+.decl MapAcceptsKeyTypeByGenericFieldInfo(?value:Value, ?type:Type)
+.decl MapAcceptsValueTypeByGenericFieldInfo(?value:Value, ?type:Type)
+.decl CollectionAcceptsValueTypeByGenericFieldInfo(?value:Value, ?type:Type)
 
-.decl MapAcceptsValueType(?value:mainAnalysis.Value, ?type:Type)
-.decl MapAcceptsKeyType(?value:mainAnalysis.Value, ?type:Type)
-.decl CollectionAcceptsValueType(?value:mainAnalysis.Value, ?type:Type)
+.decl MapAcceptsValueType(?value:Value, ?type:Type)
+.decl MapAcceptsKeyType(?value:Value, ?type:Type)
+.decl CollectionAcceptsValueType(?value:Value, ?type:Type)
 
 .output MapAcceptsValueType(IO="file",filename="MapAcceptsValueType.csv",delimiter="\t")
 .output MapAcceptsKeyType(IO="file",filename="MapAcceptsKeyType.csv",delimiter="\t")
 .output CollectionAcceptsValueType(IO="file",filename="CollectionAcceptsValueType.csv",delimiter="\t")
 
-.decl MapAcceptsKeyFallbackType(?mapValue:mainAnalysis.Value, ?type:Type)
-.decl MapAcceptsValueFallbackType(?mapValue:mainAnalysis.Value, ?type:Type)
-.decl CollectionAcceptsValueFallbackType(?mapValue:mainAnalysis.Value, ?type:Type)
+.decl MapAcceptsKeyFallbackType(?mapValue:Value, ?type:Type)
+.decl MapAcceptsValueFallbackType(?mapValue:Value, ?type:Type)
+.decl CollectionAcceptsValueFallbackType(?mapValue:Value, ?type:Type)
 
 .printsize MapAcceptsKeyFallbackType
 .printsize MapAcceptsValueFallbackType
@@ -49,16 +49,16 @@ isCollectionGetMethod(?method) :-
   Method_DeclaringType(?method, ?type),
   basic.SubtypeOf(?type, "java.util.Collection").
 
-.decl MapAcceptsValueTypeByDowncast(?mapValue:mainAnalysis.Value, ?type:Type)
+.decl MapAcceptsValueTypeByDowncast(?mapValue:Value, ?type:Type)
 .output MapAcceptsValueTypeByDowncast
 
-.decl CollectionAcceptsValueTypeByDowncast(?mapValue:mainAnalysis.Value, ?type:Type)
+.decl CollectionAcceptsValueTypeByDowncast(?mapValue:Value, ?type:Type)
 .output CollectionAcceptsValueTypeByDowncast
 
-.decl GetMethodInvocationBasePointsToMap(?invo:MethodInvocation, ?to:Var, ?mapValue:mainAnalysis.Value)
-.decl GetMethodInvocationBasePointsToCollection(?invo:MethodInvocation,  ?to:Var, ?collectionValue:mainAnalysis.Value)
+.decl GetMethodInvocationBasePointsToMap(?invo:MethodInvocation, ?to:Var, ?mapValue:Value)
+.decl GetMethodInvocationBasePointsToCollection(?invo:MethodInvocation,  ?to:Var, ?collectionValue:Value)
 
-.decl NoValueRetrievalFromMap(?mapValue:mainAnalysis.Value)
+.decl NoValueRetrievalFromMap(?mapValue:Value)
 
 NoValueRetrievalFromMap(?mapValue) :-
   isMapValue(?mapValue),

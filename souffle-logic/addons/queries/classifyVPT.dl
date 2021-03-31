@@ -71,7 +71,7 @@ VPTClassHeap(v, o) :- VPTOpt(v, o), Value_isHeap(o), isClassHeap(o).
 VPTCIandClass(v, o) :- VPTCI(v, o), VPTClassHeap(v, o).
 
 // Numeric constants
-VPTNum(v, o) :- VPTOpt(v, o), Value_Num(o, _).
+VPTNum(v, o) :- VPTOpt(v, o), Value_Num(o, _, _).
 VPTCIandNum(v, o) :- VPTCI(v, o), VPTNum(v, o).
 
 // Mock values (not to be confused with mock heaps): taint values, etc.

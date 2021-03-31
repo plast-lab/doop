@@ -19,7 +19,7 @@
 .decl isType(?t:Type)
 .decl isPrimitiveType(?t:PrimitiveType)
 .decl isReferenceType(?t:ReferenceType)
-.decl isNullType(?t:Type)
+.decl isNullType(?t:ReferenceType)
 .decl isArrayType(?t:ReferenceType)
 .decl isClassType(?t:ClassType)
 .decl isInterfaceType(?t:InterfaceType)
@@ -48,6 +48,8 @@
 .decl Type_void(?t:Type)
 .decl Type_null(?t:NullType)
 .decl Type_object(?t:ReferenceType)
+
+.decl isIntegerType(?type:Type)
 
 .decl ClassModifier(?mod:Modifier, ?class:ReferenceType)
 
@@ -136,7 +138,7 @@
 
 .decl isHeapAllocation(?h:Value)
 .decl isNormalHeap(?h:HeapAllocation)
-.decl isStringConstant(?h:Value)
+.decl isStringConstant(?h:HeapAllocation)
 .decl isClassHeap(?h:HeapAllocation)
 .decl isMethodHandleConstant(?h:HeapAllocation)
 .decl isMethodTypeConstant(?h:HeapAllocation)
@@ -172,7 +174,7 @@
 .decl Instruction_Method(?insn:Instruction, ?inMethod:Method)
 
 .type Throw_Insn                      <: Instruction
-.type ThrowNull_Insn                  <: Throw_Insn
+.type ThrowNull_Insn                  = Throw_Insn
 .type Goto_Insn                       <: Instruction
 .type If_Insn                         <: Instruction
 .type Switch_Insn                     <: Instruction

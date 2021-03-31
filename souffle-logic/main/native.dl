@@ -29,10 +29,10 @@ ArrayIndexPointsTo(?hctx, ?argArrayContent, ?hctx, ?argArray) :-
     isField(field)
 
 // Populating this relation generates simulated native values.
-.decl SimulateNativeAllocation(?strMethod: Method, ?strHeap: Value, ?strConstructor: Method)
+.decl SimulateNativeAllocation(?strMethod: Method, ?strHeap: HeapAllocation, ?strConstructor: Method)
 
 // Generate value.
-AssignHeapAllocation(as(?strHeap, HeapAllocation), ?return, ?strMethod),
+AssignHeapAllocation(?strHeap, ?return, ?strMethod),
 Value_DeclaringType(?strHeap, ?strType) :-
   SimulateNativeAllocation(?strMethod, ?strHeap, _),
   Method_DeclaringType(?strMethod, ?strType),
@@ -52,7 +52,13 @@ Instruction_Index(?newInstrId, ?index) :-
   ?index = 1,
   ?newInstrId = cat(?strMethod, cat("/native ", strConstructor)).
 
+.decl SimulatedNativeAllocation(?heap:HeapAllocation, ?method:Method)
+.output SimulatedNativeAllocation
+
 #define SimulateNativeStringArrayAllocation(strMethod, strArray, strElement, strElementType) \
+  SimulatedNativeAllocation(strArray, strMethod). \
+  SimulatedNativeAllocation(strElement, strMethod). \
+  \
   AssignHeapAllocation(strArray, ?return, strMethod) \
     :- \
       isMethod(strMethod), \
