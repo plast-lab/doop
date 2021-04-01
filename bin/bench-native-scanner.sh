@@ -24,7 +24,7 @@ ANALYSIS=context-insensitive
 TIMEOUT=600
 STRING_DISTANCE1=40
 STRING_DISTANCE2=2000
-BASE_GLOBAL_OPTS="--timeout ${TIMEOUT} --no-standard-exports --Xlow-mem --stats none --extra-logic ${DOOP_HOME}/souffle-logic/addons/testing/native-tests.dl --Xdont-cache-facts"
+BASE_GLOBAL_OPTS="--timeout ${TIMEOUT} --no-standard-exports --Xlow-mem --stats none --extra-logic ${DOOP_HOME}/souffle-logic/addons/testing/native-tests.dl --dont-cache-facts"
 
 if [ "${DOOP}" == "" ]; then
     DOOP='./doop'

@@ -134,11 +134,11 @@ Field_Modifier(?modifier, ?field) :-
 
 // ClassModifier
 
-.decl _ClassModifier(?class:symbol, ?modifier:symbol)
+.decl _ClassModifier(?modifier:symbol, ?class:symbol)
 .input _ClassModifier(filename="ClassModifier.facts")
 
-ClassModifier(?class, ?modifier) :-
-  _ClassModifier(?class, ?modifier).
+ClassModifier(?modifier, ?class) :-
+  _ClassModifier(?modifier, ?class).
 
 
 // FormalParam

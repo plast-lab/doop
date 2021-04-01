@@ -103,7 +103,7 @@ public class Main {
                 Options.v().set_android_jars(sootParameters._androidJars);
             android = new AndroidSupport_Soot(sootParameters, java);
         } else {
-            Options.v().set_src_prec(Options.src_prec_class);
+            Options.v().set_src_prec(Options.src_prec_only_class);
             android = null;
         }
 

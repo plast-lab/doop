@@ -350,9 +350,10 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			log.debug "HeapDL file paths: ${context.heapDLs()} -> ${options.HEAPDLS.value}"
 		}
 
-		if (options.ANALYSIS.value == "sound-may-point-to" || options.ANALYSIS.value == "dependency-analysis" || options.SYMBOLIC_REASONING.value)
+		def analysisName = options.ANALYSIS.value
+		if (analysisName == "sound-may-point-to" || analysisName == "dependency-analysis" || options.SYMBOLIC_REASONING.value)
 			options.CFG_ANALYSIS.value = true
-		if (options.ANALYSIS.value == "basic-only")
+		if (analysisName == "basic-only" || analysisName == "data-flow")
 			options.X_STATS_NONE.value = true
 
 		try {

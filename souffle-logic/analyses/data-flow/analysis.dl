@@ -1,0 +1,99 @@
+#include "setup.dl"
+#define MK_INDEX_VAR(v, i) cat(v, cat("[", cat(to_string(i), "]")))
+#define MK_SFLD_VAR(fld) cat("@", fld)
+
+// Flows from 'x' to 'y'
+.decl Flows(x:Var, y:Var)
+// Optimized for transitive join
+.decl OptBaseFlows(x:Var, y:Var)
+// Method will return its 'nth' formal param
+.decl OptMethodRetFormal(m:Method, nth:number)
+// Flows to itself
+.decl SelfFlows(x:Var)
+// Flows between reference typed vars
+.decl PointerFlows(x:Var, y:Var)
+.output Flows
+.output SelfFlows
+.output PointerFlows
+
+OptBaseFlows(from, to) :-
+	//InterestingStmt(stmt),
+	(MOVE(stmt, to, from) ; CAST(stmt, to, _, from)).
+
+OptBaseFlows(from, to) :-
+	InterestingStmt(stmt),
+	(UNOP(stmt, to, _) ; BINOP(stmt, to, _)),
+	OPERAND_VAR(stmt, _, from).
+
+// Array STORE with const index
+OptBaseFlows(from, v) :-
+	InterestingStmt(stmt),
+	ASTORE_NUM(stmt, arr, i, from),
+	v = MK_INDEX_VAR(arr, i).
+
+// Array LOAD with const index
+OptBaseFlows(v, to) :-
+	InterestingStmt(stmt),
+	ALOAD_NUM(stmt, to, arr, i),
+	v = MK_INDEX_VAR(arr, i).
+
+// Static field STORE
+OptBaseFlows(from, v) :-
+	InterestingStmt(stmt),
+	SSTORE(stmt, fld, from),
+	v = MK_SFLD_VAR(fld).
+
+// Static field LOAD
+OptBaseFlows(v, to) :-
+	InterestingStmt(stmt),
+	SLOAD(stmt, to, fld),
+	v = MK_SFLD_VAR(fld).
+
+// Instance field STORE/LOAD
+OptBaseFlows(from, to) :-
+	Flows(base, base2),
+	ISTORE(stmt1, base, fld, from),
+	InterestingStmt(stmt1),
+	ILOAD(stmt2, to, base2, fld),
+	InterestingStmt(stmt2).
+
+OptBaseFlows(from, to) :-
+	InterestingStmt(stmt1),
+	ISTORE(stmt1, base, fld, from),
+	ILOAD(stmt2, to, base, fld),
+	InterestingStmt(stmt2).
+
+// Interprocedural: actual param -> formal param
+OptBaseFlows(actual, formal) :-
+	InterestingStmt(stmt),
+	RESOLVE_CALL(stmt, meth),
+	ACTUAL_PARAM(stmt, nth, actual),
+	FORMAL_PARAM(meth, nth, formal).
+
+// Intraprocedural: formal param -> formal ret
+OptMethodRetFormal(meth, nth) :-
+	Flows(formal, ret),
+	FORMAL_RET(retStmt, ret),
+	InterestingStmt(retStmt),
+	FORMAL_PARAM(meth, nth, formal).
+
+// Interprocedural: actual param -> (formal param -> formal ret ->) actual ret
+OptBaseFlows(actual, to) :-
+	InterestingStmt(callStmt),
+	RESOLVE_CALL(callStmt, meth),
+	OptMethodRetFormal(meth, nth),
+	ACTUAL_PARAM(callStmt, nth, actual),
+	ACTUAL_RET(callStmt, to).
+
+Flows(x, y) :- OptBaseFlows(x, y).
+
+// Transitive closure
+Flows(x, z) :- Flows(x, y), OptBaseFlows(y, z).
+.plan 1:(2,1)
+
+SelfFlows(x) :- Flows(x, x).
+
+PointerFlows(x, y) :-
+	VarType(x, xT), isReferenceType(xT),
+	Flows(x, y),
+	VarType(y, yT), isReferenceType(yT).
