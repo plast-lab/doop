@@ -34,7 +34,7 @@ VarPointsTo(?hctx, ?classValue, ?callerCtx, ?classResultVar) :-
   ClassLoaderMethod(?method, ?argIdx),
   ActualParam(?argIdx, ?invocation, ?arg),
   VarPointsTo(_, ?className, _, ?arg),
-  ReifiedClass(as(?className, ReferenceType), ?classValue),
+  ReifiedClass(?className, ?classValue),
   AssignReturnValue(?invocation, ?classResultVar),
   isImmutableHContext(?hctx).
 

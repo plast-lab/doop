@@ -249,7 +249,7 @@ Subclassable(?type) :-
     Method_Modifier("protected", ?method),
     ! Unsubclassable(?type).
 
-ClassConstructor(method, as(type, ClassType)) :-
+ClassConstructor(method, type) :-
     isClassType(type),
     MethodLookup(_, _, type, method),
     isMethod(method),

@@ -2,7 +2,7 @@
  * Definitions of sources and sinks
  */
 
-.type InformationLabel <: symbol
+.type InformationLabel = symbol
 .decl isInformationLabel(?id:symbol)
 
 .decl TaintSourceMethod(?label:InformationLabel, ?method:Method)

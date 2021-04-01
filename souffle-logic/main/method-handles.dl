@@ -118,7 +118,7 @@ ReachableMethodTypeN(?id, ?invo, ?ctx) :-
   Instruction_Method(?invo, ?method),
   ReachableContext(?ctx, ?method).
 
-.decl MT_ReturnType(?invo:MethodInvocation, ?hctx:configuration.HContext, ?ctx:configuration.Context, ?type:Type)
+.decl MT_ReturnType(?invo:MethodInvocation, ?hctx:configuration.HContext, ?ctx:configuration.Context, ?type:ReferenceType)
 .decl MT_ParamValue(?invo:MethodInvocation, ?index:number, ?classValue:Value)
 
 #if defined(REFLECTION) || defined(LIGHT_REFLECTION_GLUE)
@@ -421,7 +421,7 @@ CreateMHLookup("java.lang.Object", ?ctx, ?ret) :-
 VarPointsTo(?hctx, ?classValue, ?ctx, ?ret),
 #endif // DISABLE_POINTS_TO
 OpaqueCallGraphEdge(?invo, ?sig) :-
-  _VirtualMethodInvocation(?invo, _, ?ig, ?base, ?method),
+  _VirtualMethodInvocation(?invo, _, ?sig, ?base, ?method),
   ?sig = "<java.lang.invoke.MethodHandles$Lookup: java.lang.Class lookupClass()>",
   ReachableContext(?ctx, ?method),
   VarPointsTo(?hctx, ?mhLookup, ?ctx, ?base),
@@ -450,7 +450,7 @@ VarPointsTo(?hctx, ?dmh, ?ctx, ?var),
 MockValueConsMacro(?dmh, "java.lang.invoke.MethodHandle"),
 MethodHandle_Method(?dmh, ?method),
 MethodHandle_MethodType(?dmh, ?mt) :-
-  AssignMethodHandleToVarRequest(?method, ?paramTypes, ?retType, ?hctx, ?ctx, ?var),
+  AssignMethodHandleToVarRequest(?method, _, _, ?hctx, ?ctx, ?var),
   !MethodHandleConstant_Method(_, ?method),
   Method_MethodType(?method, ?mt),
   ?dmh = cat("<computed direct method handle for ", cat(?method, ">")).
@@ -528,7 +528,7 @@ DMHLookup(?type, ?id, ?mt, ?method, ?retType, ?paramTypes) :-
 
 #if defined(REFLECTION) || defined(LIGHT_REFLECTION_GLUE)
 // Create VarPointsTo for return values of method finders.
-.decl FindMethod(?invo:MethodInvocation, ?type:Type, ?id:symbol, ?mt:MethodType, ?hctx:configuration.HContext, ?ctx:configuration.Context)
+.decl FindMethod(?invo:MethodInvocation, ?type:ReferenceType, ?id:symbol, ?mt:MethodType, ?hctx:configuration.HContext, ?ctx:configuration.Context)
 FindMethod(?invo, ?type, ?id, ?mt, ?hctx, ?ctx) :-
   (FindStatic(?invo, _) ; FindVirtual(?invo, _) ; FindSpecial(?invo, _)),
   ActualParam(0, ?invo, ?classParam),
@@ -661,7 +661,7 @@ VarPointsTo(?immHctx, ?invokedName, ?calleeCtx, ?invokedNameParam) :-
 
 // Helper method to compute the varargs accumulator formal of a method.
 .decl MethodVarArgs(?method:Method, ?idx:number, ?formal:Var, ?type:ArrayType)
-MethodVarArgs(?method, ?idx, ?formal, as(?type, ArrayType)) :-
+MethodVarArgs(?method, ?idx, ?formal, ?type) :-
   Method_Modifier("varargs", ?method),
   Method_Arity(?method, ?arity),
   ?idx = ?arity - 1,
@@ -1006,7 +1006,7 @@ MockValueConsMacro(?mockObj, ?type) :-
 .decl FillConstructorsFromClass(?hctx:configuration.HContext, ?mockConstructors:Value, ?class:Type)
 
 #define GET_DECLARED_METHODS "<java.lang.Class: java.lang.reflect.Method[] getDeclaredMethods()>"
-#define GET_DECLARED_CONSRUCTORS "<java.lang.Class: java.lang.reflect.Constructor[] getDeclaredConstructors()>"
+#define GET_DECLARED_CONSTRUCTORS "<java.lang.Class: java.lang.reflect.Constructor[] getDeclaredConstructors()>"
 .decl Class_getMembers(?sig:Method, ?hctx:configuration.HContext, ?ctx:configuration.Context, ?ret:Var, ?class:Type)
 
 Class_getMembers(?sig, ?hctx, ?ctx, ?ret, ?class) :-

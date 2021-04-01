@@ -6,7 +6,7 @@
 // first is compiled to the latter behind the scenes). These rules are usually
 // effective when string constants are distinguished.
 
-.decl ReifiedClass(?type:symbol, ?value:Value)
+.decl ReifiedClass(?type:ReferenceType, ?value:Value)
 
 // Taken from reflection/rules.dl.
 ReifiedClass(?type, ?classHeap) :-
@@ -26,7 +26,7 @@ java_lang_Class_forName(?invocation, ?inmethod) :-
     isMethod(?sig) ),
   StaticMethodInvocation(?invocation, ?sig, ?inmethod).
 
-.decl ReflectiveAssignClassConstant(?ctx:configuration.Context, ?invocation:MethodInvocation, ?type:Type)
+.decl ReflectiveAssignClassConstant(?ctx:configuration.Context, ?invocation:MethodInvocation, ?type:ReferenceType)
 
 // Similar to java.lang.Class.dl but simplified.
 ReflectiveAssignClassConstant(?ctx, ?invocation, ?type) :-

@@ -53,11 +53,9 @@ Value_Null(?nullheap) :-
 
 
 Value_DeclaringType(?heapValue, ?type) :-
-  isHeapAllocation(?heapValue),
-  ?heapAlloc = as(?heapValue, HeapAllocation),
-  AssignHeapAllocation(?heapAlloc, _, ?inmethod),
+  AssignHeapAllocation(?heapValue, _, ?inmethod),
   Method_DeclaringType(?inmethod, ?type),
-  isNormalHeap(?heapAlloc).
+  isNormalHeap(?heapValue).
 
 Value_DeclaringType(?heapValue, "java.lang.System") :-
   isClassHeap(?heapValue).

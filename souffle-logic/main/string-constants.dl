@@ -68,21 +68,21 @@ AssignContextInsensitiveHeapAllocation(?heap, ?var, ?inmethod) :-
 
 // If the object is a string that should be merged, ignore other
 // representatives and merge with that.
-HeapIsMergedString(as(?heap, HeapAllocation)) :-
+HeapIsMergedString(?heap) :-
   HeapRepresentative("<<string-constant>>", ?heap).
 // Rule split in two since it needs to be stratified differently
 .decl HeapIsMergedStringFactory(?heap:HeapAllocation)
 
 #ifndef NO_MERGES
-HeapAllocation_Merge(as(?heap, HeapAllocation), ?heapRepr) :-
+HeapAllocation_Merge(?heap, ?heapRepr) :-
   ?heapRepr = "<<string-constant>>",
   HeapRepresentative(?heapRepr, ?heap).
 
-HeapIsMergedStringFactory(as(?heap, HeapAllocation)) :-
+HeapIsMergedStringFactory(?heap) :-
   HeapRepresentative("<<string-buffer>>", ?heap);
   HeapRepresentative("<<string-builder>>", ?heap).
 
-HeapAllocation_Merge(as(?heap, HeapAllocation), ?heapRepr) :-
+HeapAllocation_Merge(?heap, ?heapRepr) :-
   (?heapRepr = "<<string-buffer>>",
    HeapRepresentative(?heapRepr, ?heap));
   (?heapRepr = "<<string-builder>>",
@@ -94,12 +94,11 @@ HeapAllocation_Merge(as(?heap, HeapAllocation), ?heapRepr) :-
 
 .decl RepresentativesToPickFrom(?heapRepr:HeapAllocation, ?heap:HeapAllocation)
 
-RepresentativesToPickFrom(?heapRepr, as(?heap, HeapAllocation)) :-
+RepresentativesToPickFrom(?heapRepr, ?heap) :-
   HeapRepresentative(?heapRepr, ?heap),
-  ?heapAlloc = as(?heap, HeapAllocation),
-  !HeapIsMergedString(?heapAlloc),
-  !HeapIsMergedStringFactory(?heapAlloc),
-  !HeapAllocation_Keep(?heapAlloc).
+  !HeapIsMergedString(?heap),
+  !HeapIsMergedStringFactory(?heap),
+  !HeapAllocation_Keep(?heap).
 
 .decl MinRepresentativeHeapToPickFromOrdinal(?minHeapReprOrd:number, ?heap:HeapAllocation)
 
@@ -107,7 +106,7 @@ MinRepresentativeHeapToPickFromOrdinal(?minHeapReprOrd, ?heap) :-
   RepresentativesToPickFrom(_, ?heap),
   ?minHeapReprOrd = min ord(?heapRepr): RepresentativesToPickFrom(?heapRepr, ?heap).
 
-HeapAllocation_Merge(?heap, as(?mergeHeap, HeapAllocation)) :-
+HeapAllocation_Merge(?heap, ?mergeHeap) :-
   isHeapAllocation(?mergeHeap),
   ord(?mergeHeap) = ?minHeapReprOrd,
   MinRepresentativeHeapToPickFromOrdinal(?minHeapReprOrd, ?heap).
@@ -121,12 +120,11 @@ HeapAllocation_Merge(?heap, as(?mergeHeap, HeapAllocation)) :-
 #ifndef DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS
 #ifndef DISTINGUISH_WEB_APP_STRING_CONSTANTS
 #ifndef NO_MERGES
-HeapRepresentative(as(?constant, HeapAllocation), ?heap) :-
+HeapRepresentative(?constant, ?heap) :-
   isStringConstant(?heap),
   ?constant = "<<string-constant>>",
   isHeapAllocation(?constant),
-  ?strConstantHeap = as(?heap, StringConstant),
-  !HeapAllocation_Keep(?strConstantHeap).
+  !HeapAllocation_Keep(?heap).
 
 // HeapRepresentative("<<class-metaobject>>", ?heap) :-
 //   HeapAllocation_Type(?heap, "java.lang.Class"),
@@ -173,8 +171,7 @@ ReflectionSubstringObject(?heap) :-
 
 #ifndef NO_MERGES
 HeapRepresentative("<<string-constant>>", ?heap) :-
-  isStringConstant(?strConst),
-  ?heap = as(?strConst, HeapAllocation),
+  isStringConstant(?heap),
   !ReflectionStringConstant(?heap),
   !HeapAllocation_Keep(?heap).
 #endif // NO_MERGES
@@ -328,13 +325,13 @@ FieldNameMatchingStringConstant_Signature(?sig, ?heapRepr) :-
 #endif // GROUP_REFLECTION_STRINGS
 #endif // DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS
 
-HeapAllocation_ContextInsensitive(as(?heap, StringConstant)) :-
+HeapAllocation_ContextInsensitive(?heap) :-
   isStringConstant(?heap),
   !HeapRepresentative(_, ?heap).
 
 .decl NonTrivialStringConstant(?heap:StringConstant)
 
-NonTrivialStringConstant(as(?heap, StringConstant)) :-
+NonTrivialStringConstant(?heap) :-
   isStringConstant(?heap),
   strlen(?heap) >= 7.
 
@@ -363,11 +360,10 @@ FieldNameMatchingStringConstant_Signature(?sig, ?heap) :-
 // We distinguish between an exact match and a
 // substring match.
 
-PreClassNameMatchingStringConstant(?stringConst),
-PreClassNameMatchingStringConstant_Type(?type, ?stringConst),
-PreClassNameMatchingStringConstantExact_Type(?type, ?stringConst) :-
+PreClassNameMatchingStringConstant(?string),
+PreClassNameMatchingStringConstant_Type(?type, ?string),
+PreClassNameMatchingStringConstantExact_Type(?type, ?string) :-
   isStringConstant(?string),
-  ?stringConst = as(?string, StringConstant),
   isReferenceType(?type),
 #ifndef REFLECTION_HIGH_SOUNDNESS_MODE
   ApplicationClass(?type),
@@ -386,11 +382,10 @@ PreClassNameMatchingStringConstantExact_Type(?type, ?stringConst) :-
 .decl PreMethodNameMatchingStringConstantExact_Signature(?sig:Method, ?heap:HeapAllocation)
 .decl PreMethodNameMatchingStringConstantInexact_Signature(?sig:Method, ?heap:HeapAllocation)
 
-PreMethodNameMatchingStringConstant(?stringConst),
-PreMethodNameMatchingStringConstant_Signature(?sig, ?stringConst),
-PreMethodNameMatchingStringConstantExact_Signature(?sig, ?stringConst) :-
+PreMethodNameMatchingStringConstant(?string),
+PreMethodNameMatchingStringConstant_Signature(?sig, ?string),
+PreMethodNameMatchingStringConstantExact_Signature(?sig, ?string) :-
   isStringConstant(?string),
-  ?stringConst = as(?string, StringConstant),
   //  Method_DeclaringType(?sig, ?type),
   //  ApplicationClass(?type),
      // there is some possibility of accessing methods and fields
@@ -406,11 +401,10 @@ PreMethodNameMatchingStringConstantExact_Signature(?sig, ?stringConst) :-
 .decl PreFieldNameMatchingStringConstantExact_Signature(?sig:Field, ?heap:HeapAllocation)
 .decl PreFieldNameMatchingStringConstantInexact_Signature(?sig:Field, ?heap:HeapAllocation)
 
-PreFieldNameMatchingStringConstant(?stringConst),
-PreFieldNameMatchingStringConstant_Signature(?sig, ?stringConst),
-PreFieldNameMatchingStringConstantExact_Signature(?sig, ?stringConst) :-
+PreFieldNameMatchingStringConstant(?string),
+PreFieldNameMatchingStringConstant_Signature(?sig, ?string),
+PreFieldNameMatchingStringConstantExact_Signature(?sig, ?string) :-
   isStringConstant(?string),
-  ?stringConst = as(?string, StringConstant),
   // Field_DeclaringType(?sig, ?declaringClass),
   // ApplicationClass(?declaringClass);
   // #ifndef REFLECTION_HIGH_SOUNDNESS_MODE
@@ -423,19 +417,18 @@ PreFieldNameMatchingStringConstantExact_Signature(?sig, ?stringConst) :-
 #ifdef REFLECTION_SUBSTRING_ANALYSIS
 // Creating class/field/method names via string concatenation makes more
 // sense for application classes/fields/methods.
-PreClassNameMatchingStringConstant(?stringAlloc),
-PreClassNameMatchingStringConstant_Type(?type, ?stringAlloc),
-PreClassNameMatchingStringConstantInexact_Type(?type, ?stringAlloc) :-
+PreClassNameMatchingStringConstant(?string),
+PreClassNameMatchingStringConstant_Type(?type, ?string),
+PreClassNameMatchingStringConstantInexact_Type(?type, ?string) :-
   isHeapAllocation(?string),
-  ?stringAlloc = as(?string, HeapAllocation),
 #ifndef REFLECTION_HIGH_SOUNDNESS_MODE
   ApplicationClass(?type),
 #endif // REFLECTION_HIGH_SOUNDNESS_MODE
   ClassNameSuffix(?string, ?type).
 
-PreMethodNameMatchingStringConstant(?stringAlloc),
-PreMethodNameMatchingStringConstant_Signature(?sig, ?stringAlloc),
-PreMethodNameMatchingStringConstantInexact_Signature(?sig, ?stringAlloc) :-
+PreMethodNameMatchingStringConstant(?string),
+PreMethodNameMatchingStringConstant_Signature(?sig, ?string),
+PreMethodNameMatchingStringConstantInexact_Signature(?sig, ?string) :-
 #ifndef REFLECTION_HIGH_SOUNDNESS_MODE
   ApplicationClass(?type),
   Method_DeclaringType(?sig, ?type),
@@ -443,21 +436,19 @@ PreMethodNameMatchingStringConstantInexact_Signature(?sig, ?stringAlloc) :-
   (MethodNameSuffix(?string, ?sig);
    MethodNamePrefix(?string, ?sig)),
   isHeapAllocation(?string),
-  ?stringAlloc = as(?string, HeapAllocation),
   ?string != "<init>",
   ?string != "<clinit>". // common, yet not methods callable via reflection
 
-PreFieldNameMatchingStringConstant(?stringAlloc),
-PreFieldNameMatchingStringConstant_Signature(?sig, ?stringAlloc),
-PreFieldNameMatchingStringConstantInexact_Signature(?sig, ?stringAlloc) :-
+PreFieldNameMatchingStringConstant(?string),
+PreFieldNameMatchingStringConstant_Signature(?sig, ?string),
+PreFieldNameMatchingStringConstantInexact_Signature(?sig, ?string) :-
 #ifndef REFLECTION_HIGH_SOUNDNESS_MODE
   ApplicationClass(?declaringClass),
   Field_DeclaringType(?sig, ?declaringClass),
 #endif // REFLECTION_HIGH_SOUNDNESS_MODE
   (FieldNameSuffix(?string, ?sig);
    FieldNamePrefix(?string, ?sig)),
-  isHeapAllocation(?string),
-  ?stringAlloc = as(?string, HeapAllocation).
+  isHeapAllocation(?string).
 
 
 .decl ClassIterationTrick(?length:number)
@@ -570,7 +561,7 @@ ValidPrefixForField(?field, ?fieldName, ?length) :-
 .decl FieldNamePrefix(?prefix:symbol, ?sig:Field)
 
 // Precompute proper suffixes. Crucial for efficiency.
-ClassNameSuffix(substr(?className, ?index, ?length), as(?className, ReferenceType)) :-
+ClassNameSuffix(substr(?className, ?index, ?length), ?className) :-
   ValidSuffixForType(?className, ?index, ?length),
   StringChangesCaseBeforePosition(?index, ?className).
 
@@ -664,7 +655,7 @@ ObjectMultipleAllocated(?heap) :-
 MethodAndTypeToHeap(?heap, ?heaptype, ?meth) :-
   AssignHeapAllocation(?heap, _, ?meth),
   HeapAllocation_Type(?heap, ?heaptype),
-  !isStringConstant(as(?heap, StringConstant)),
+  !isStringConstant(?heap),
   !StringFactoryHeap(?heap),
   !HeapAllocation_EmptyArray(?heap),
   !ObjectMultipleAllocated(?heap),
@@ -696,7 +687,7 @@ MinHeapOrdinalPerMethodAndType(?minHeapOrd, ?type, ?meth) :-
   MethodAndTypeToMergedHeap(_, ?type, ?meth),
   ?minHeapOrd = min ord(?heap): MethodAndTypeToMergedHeap(?heap, ?type, ?meth).
 
-MethodAndTypeToRepresentative(?type, ?meth, as(?representativeHeap, HeapAllocation)) :-
+MethodAndTypeToRepresentative(?type, ?meth, ?representativeHeap) :-
   isHeapAllocation(?representativeHeap),
   MinHeapOrdinalPerMethodAndType(?minHeapOrd, ?type, ?meth),
   ord(?representativeHeap) = ?minHeapOrd.
@@ -736,7 +727,7 @@ MinHeapOrdinalPerClassAndType(?minHeapOrd, ?type, ?class) :-
   ClassAndTypeToMergedHeap(_, ?type, ?class),
   ?minHeapOrd = min ord(?heap): ClassAndTypeToMergedHeap(?heap, ?type, ?class).
 
-ClassAndTypeToRepresentative(?type, ?class, as(?representativeHeap, HeapAllocation)) :-
+ClassAndTypeToRepresentative(?type, ?class, ?representativeHeap) :-
   isHeapAllocation(?representativeHeap),
   MinHeapOrdinalPerClassAndType(?minHeapOrd, ?type, ?class),
   ord(?representativeHeap) = ?minHeapOrd.
@@ -776,7 +767,7 @@ MinHeapOrdinalPerPackageAndType(?minHeapOrd, ?type, ?packageName) :-
   PackageAndTypeToMergedHeap(_, ?type, ?packageName),
   ?minHeapOrd = min ord(?heap): PackageAndTypeToMergedHeap(?heap, ?type, ?packageName).
 
-PackageAndTypeToRepresentative(?type, ?packageName, as(?representativeHeap, HeapAllocation)) :-
+PackageAndTypeToRepresentative(?type, ?packageName, ?representativeHeap) :-
   isHeapAllocation(?representativeHeap),
   MinHeapOrdinalPerPackageAndType(?minHeapOrd, ?type, ?packageName),
   ord(?representativeHeap) = ?minHeapOrd.
@@ -813,7 +804,7 @@ MinHeapOrdinalPerType(?minHeapOrd, ?type) :-
   TypeToMergedHeap(_, ?type),
   ?minHeapOrd = min ord(?heap): TypeToMergedHeap(?heap, ?type).
 
-TypeToRepresentative(?type, as(?representativeHeap, HeapAllocation)) :-
+TypeToRepresentative(?type, ?representativeHeap) :-
   isHeapAllocation(?representativeHeap),
   MinHeapOrdinalPerType(?minHeapOrd, ?type),
   ord(?representativeHeap) = ?minHeapOrd.
@@ -984,7 +975,7 @@ ExceptionHeapTypeRepresentativeOrdinal(?type, ?representativeHeapOrd) :-
   ?representativeHeapOrd = min ord(?heap) : ExceptionTypeToHeap(?heap, ?type).
 
 #ifndef NO_MERGES
-HeapRepresentative(as(?representativeHeap, HeapAllocation), ?heap) :-
+HeapRepresentative(?representativeHeap, ?heap) :-
   ExceptionHeapTypeRepresentativeOrdinal(?heaptype, ?representativeHeapOrd),
   ExceptionTypeToHeap(?heap, ?heaptype),
   ord(?representativeHeap) = ?representativeHeapOrd,

@@ -1,4 +1,4 @@
-.type Modifier <: symbol
+.type Modifier = symbol
 .decl isModifier(?m:Modifier)
 
 .decl Modifier_abstract(?mod:Modifier)
@@ -8,19 +8,19 @@
 .decl Modifier_static(?mod:Modifier)
 
 // Java Type Hierarchy
-.type Type          <: symbol
-.type PrimitiveType <: Type
-.type ReferenceType <: Type
-.type NullType      <: ReferenceType
-.type ArrayType     <: ReferenceType
-.type ClassType     <: ReferenceType
-.type InterfaceType <: ReferenceType
+.type Type          = symbol
+.type PrimitiveType = Type
+.type ReferenceType = Type
+.type NullType      = ReferenceType
+.type ArrayType     = ReferenceType
+.type ClassType     = ReferenceType
+.type InterfaceType = ReferenceType
 
 .decl isType(?t:Type)
 .decl isPrimitiveType(?t:PrimitiveType)
 .decl isReferenceType(?t:ReferenceType)
 .decl isNullType(?t:ReferenceType)
-.decl isArrayType(?t:ReferenceType)
+.decl isArrayType(?t:ArrayType)
 .decl isClassType(?t:ClassType)
 .decl isInterfaceType(?t:InterfaceType)
 
@@ -55,7 +55,7 @@
 
 //-----------------------------------------------------------------------------
 
-.type Field <: symbol
+.type Field = symbol
 .decl isField(?field:Field)
 .decl ApplicationField(?field:Field)
 
@@ -70,7 +70,7 @@
 .type MethodDescriptor = symbol
 .decl isMethodDescriptor(?md:MethodDescriptor)
 
-.type Method <: symbol
+.type Method = symbol
 .decl isMethod(?m:Method)
 
 .decl Method_DeclaringType(?method:Method, ?declaringType:ReferenceType)
@@ -80,7 +80,7 @@
 .decl Method_Descriptor(?method:Method, ?descriptor:MethodDescriptor)
 .decl Method_Arity(?method:Method, ?arity:number)
 
-.type JVMDescriptor <: symbol
+.type JVMDescriptor = symbol
 .decl isJVMDescriptor(?jvmd:JVMDescriptor)
 
 // JVM method descriptor
@@ -99,7 +99,7 @@
 
 //-----------------------------------------------------------------------------
 
-.type Var <: symbol
+.type Var = symbol
 .decl isVar(v:Var)
 
 .decl Var_Type(?var:Var, ?type:Type)
@@ -113,7 +113,7 @@
 // [Value]
 //-----------------------------------------------------------------------------
 
-.type Value <: symbol
+.type Value = symbol
 
 .decl isValue(?value:Value)
 
@@ -121,27 +121,27 @@
 // [Constant numbers]
 //-----------------------------------------------------------------------------
 
-.type NumConstant <: Value
+.type NumConstant = Value
 
-.decl isNumConstant(?n:Value)
+.decl isNumConstant(?n:NumConstant)
 
 //-----------------------------------------------------------------------------
 // [Heap Allocation]
 //-----------------------------------------------------------------------------
 
-.type HeapAllocation       <: Value
-.type NormalHeap           <: HeapAllocation
-.type StringConstant       <: HeapAllocation
-.type ClassHeap            <: HeapAllocation
-.type MethodHandleConstant <: HeapAllocation
-.type MethodTypeConstant   <: HeapAllocation
+.type HeapAllocation       = Value
+.type NormalHeap           = HeapAllocation
+.type StringConstant       = HeapAllocation
+.type ClassHeap            = HeapAllocation
+.type MethodHandleConstant = HeapAllocation
+.type MethodTypeConstant   = HeapAllocation
 
-.decl isHeapAllocation(?h:Value)
-.decl isNormalHeap(?h:HeapAllocation)
-.decl isStringConstant(?h:HeapAllocation)
-.decl isClassHeap(?h:HeapAllocation)
-.decl isMethodHandleConstant(?h:HeapAllocation)
-.decl isMethodTypeConstant(?h:HeapAllocation)
+.decl isHeapAllocation(?h:HeapAllocation)
+.decl isNormalHeap(?h:NormalHeap)
+.decl isStringConstant(?h:StringConstant)
+.decl isClassHeap(?h:ClassHeap)
+.decl isMethodHandleConstant(?h:MethodHandleConstant)
+.decl isMethodTypeConstant(?h:MethodTypeConstant)
 .decl isStringRaw(?id:symbol)
 
 .decl HeapAllocation_Type(?heap:HeapAllocation, ?type:ReferenceType)
@@ -166,28 +166,28 @@
 // [Bytecode Instructions]
 //-----------------------------------------------------------------------------
 
-.type Instruction <: symbol
+.type Instruction = symbol
 .decl isInstruction(?insn:Instruction)
 
 .decl Instruction_Index(?insn:Instruction, ?index:number)
 .decl Instruction_Line(?insn:Instruction, ?index:number)
 .decl Instruction_Method(?insn:Instruction, ?inMethod:Method)
 
-.type Throw_Insn                      <: Instruction
+.type Throw_Insn                      = Instruction
 .type ThrowNull_Insn                  = Throw_Insn
-.type Goto_Insn                       <: Instruction
-.type If_Insn                         <: Instruction
-.type Switch_Insn                     <: Instruction
-.type TableSwitch_Insn                <: Switch_Insn
-.type LookupSwitch_Insn               <: Switch_Insn
+.type Goto_Insn                       = Instruction
+.type If_Insn                         = Instruction
+.type Switch_Insn                     = Instruction
+.type TableSwitch_Insn                = Switch_Insn
+.type LookupSwitch_Insn               = Switch_Insn
 .type MonitorInstruction              = Instruction
 .type EnterMonitor_Insn               = MonitorInstruction
 .type ExitMonitor_Insn                = MonitorInstruction
-.type FieldInstruction                <: Instruction
-.type LoadInstanceField_Insn          <: FieldInstruction
-.type StoreInstanceField_Insn         <: FieldInstruction
-.type LoadStaticField_Insn            <: FieldInstruction
-.type StoreStaticField_Insn           <: FieldInstruction
+.type FieldInstruction                = Instruction
+.type LoadInstanceField_Insn          = FieldInstruction
+.type StoreInstanceField_Insn         = FieldInstruction
+.type LoadStaticField_Insn            = FieldInstruction
+.type StoreStaticField_Insn           = FieldInstruction
 .type ArrayInstruction                = Instruction
 .type LoadArrayIndex_Insn             = ArrayInstruction
 .type StoreArrayIndex_Insn            = ArrayInstruction
@@ -463,7 +463,7 @@
 // [Exception Handlers]
 //-----------------------------------------------------------------------------
 
-.type ExceptionHandler <: Instruction
+.type ExceptionHandler = Instruction
 .decl isExceptionHandler(?handler:ExceptionHandler)
 
 .decl ExceptionHandler_Method(?handler:ExceptionHandler, ?inmethod:Method)

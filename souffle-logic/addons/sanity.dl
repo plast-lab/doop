@@ -140,10 +140,9 @@ VarPointsToMergedHeap(?var, ?value) :-
 .decl HeapAllocationHasNoType(?heap:HeapAllocation)
 .output HeapAllocationHasNoType
 
-HeapAllocationHasNoType(?heapAlloc) :-
+HeapAllocationHasNoType(?heap) :-
   isHeapAllocation(?heap),
-  ?heapAlloc = as(?heap, HeapAllocation),
-  !HeapAllocation_Type(?heapAlloc, _).
+  !HeapAllocation_Type(?heap, _).
 
 .decl ValueHasNoType(?value:Value)
 .output ValueHasNoType
@@ -202,7 +201,7 @@ TypeIsNotConcreteType(?t) :- isType(?t), !TypeIsConcreteType(?t).
 .output InstructionIsConcreteInstruction
 
 InstructionIsConcreteInstruction(?insn) :- isThrow_Insn(?insn).
-InstructionIsConcreteInstruction(as(?insn, Instruction)) :- isThrowNull_Insn(?insn).
+InstructionIsConcreteInstruction(?insn) :- isThrowNull_Insn(?insn).
 InstructionIsConcreteInstruction(?insn) :- isGoto_Insn(?insn).
 InstructionIsConcreteInstruction(?insn) :- isIf_Insn(?insn).
 InstructionIsConcreteInstruction(?insn) :- isSwitch_Insn(?insn).

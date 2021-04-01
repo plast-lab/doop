@@ -10,7 +10,7 @@
 ApplicationPackage(?package) :-
   XMLNode(?manifest, ?manifestId, _, _, _, "manifest"),
   XMLNodeAttribute(?manifest, ?manifestId, _, _, "package", ?package).
-AndroidApplication(as(?type, ClassType)) :-
+AndroidApplication(?type) :-
   XMLNode(?manifest, ?manifestId, _, _, _, "manifest"),
   XMLNode(?manifest, ?applicationId, ?manifestId, _, _, "application"),
   XMLNodeAttribute(?manifest, ?applicationId, _, _, "android:name", ?type),
@@ -37,7 +37,7 @@ ApplicationPackageRegex(cat(?package, ".*")) :-
 // <manifest>
 //   <application>
 //     <activity android:name="...">
-Activity(as(?qType, ReferenceType)) :-
+Activity(?qType) :-
   XMLNode(?manifest, ?manifestId, _, _, _, "manifest"),
   XMLNode(?manifest, ?applicationId, ?manifestId, _, _, "application"),
   XMLNode(?manifest, ?activityId, ?applicationId, _, _, "activity"),
@@ -48,7 +48,7 @@ Activity(as(?qType, ReferenceType)) :-
 // <manifest>
 //   <application>
 //     <service android:name="...">
-Service(as(?qType, ReferenceType)) :-
+Service(?qType) :-
   XMLNode(?manifest, ?manifestId, _, _, _, "manifest"),
   XMLNode(?manifest, ?applicationId, ?manifestId, _, _, "application"),
   XMLNode(?manifest, ?serviceId, ?applicationId, _, _, "service"),
@@ -59,7 +59,7 @@ Service(as(?qType, ReferenceType)) :-
 // <manifest>
 //   <application>
 //     <receiver android:name="...">
-BroadcastReceiver(as(?qType, ReferenceType)) :-
+BroadcastReceiver(?qType) :-
   XMLNode(?manifest, ?manifestId, _, _, _, "manifest"),
   XMLNode(?manifest, ?applicationId, ?manifestId, _, _, "application"),
   XMLNode(?manifest, ?receiverId, ?applicationId, _, _, "receiver"),
@@ -70,7 +70,7 @@ BroadcastReceiver(as(?qType, ReferenceType)) :-
 // <manifest>
 //   <application>
 //     <provider android:name="...">
-ContentProvider(as(?qType, ReferenceType)) :-
+ContentProvider(?qType) :-
   XMLNode(?manifest, ?manifestId, _, _, _, "manifest"),
   XMLNode(?manifest, ?applicationId, ?manifestId, _, _, "application"),
   XMLNode(?manifest, ?providerId, ?applicationId, _, _, "provider"),
@@ -94,23 +94,21 @@ ForcedReachableAndroidContext(?ctx, ?meth) :-
 // Detect parent activities.
 .decl Activity_Parent(?type:ClassType, ?parentActivity:ClassType)
 Activity(?parentActivityClass),
-Activity_Parent(?typeClass, ?parentActivityClass) :-
+Activity_Parent(?type, ?parentActivity) :-
   XMLNode(?manifest, ?manifestId, _, _, _, "manifest"),
   XMLNode(?manifest, ?applicationId, ?manifestId, _, _, "application"),
   XMLNode(?manifest, ?activityId, ?applicationId, _, _, "activity"),
   XMLNodeAttribute(?manifest, ?activityId, _, _, "android:name", ?type),
   XMLNodeAttribute(?manifest, ?activityId, _, _, "android:parentActivityName", ?parentActivity),
   isClassType(?type),
-  isClassType(?parentActivity),
-  ?typeClass = as(?type, ClassType),
-  ?parentActivityClass = as(?parentActivity, ClassType).
+  isClassType(?parentActivity).
 
 // Detect activity aliases. XML pattern:
 // <manifest>
 //   <application>
 //     <activity-alias android:name="..." android:targetActivity="...">
 .decl Activity_Alias(?activity:ClassType, ?alias:symbol)
-Activity_Alias(as(?activity, ClassType), ?alias) :-
+Activity_Alias(?activity, ?alias) :-
   XMLNode(?manifest, ?manifestId, _, _, _, "manifest"),
   XMLNode(?manifest, ?applicationId, ?manifestId, _, _, "application"),
   XMLNode(?manifest, ?activityId, ?applicationId, _, _, "activity-alias"),
@@ -175,18 +173,18 @@ XMLNode_Id(?file, ?nodeId, ?name, ?id) :-
   FieldInitialValue(?field, ?id).
 
 // Detect layout controls.
-LayoutControl0(?id, as(?name, ReferenceType), ?parentId) :-
+LayoutControl0(?id, ?name, ?parentId) :-
   XMLNode_Id(?file, ?nodeId, ?name, ?id),
   XMLNode_Parent(?file, ?nodeId, ?parentFile, ?parentNodeId),
   XMLNode_Id(?parentFile, ?parentNodeId, _, ?parentId),
   isReferenceType(?name).
 
 // Handle layout controls where the parent is missing (or is not a layout control).
-LayoutControl0(?id, as(?name, ReferenceType), "-") :-
+LayoutControl0(?id, ?name, "-") :-
   XMLNode_Id(?file, ?nodeId, ?name, ?id),
   isReferenceType(?name),
   !XMLNode_Parent(?file, ?nodeId, _, _).
-LayoutControl0(?id, as(?name, ReferenceType), "-") :-
+LayoutControl0(?id, ?name, "-") :-
   XMLNode_Id(?file, ?nodeId, ?name, ?id),
   isReferenceType(?name),
   XMLNode_Parent(?file, ?nodeId, ?parentFile, ?parentNodeId),
@@ -212,7 +210,7 @@ SensitiveLayoutControl0(?id, ?type, ?parent) :-
 //     <intent-filter>
 //       <category android:name="android.intent.category.LAUNCHER" />
 .decl LauncherActivity(?type:ClassType)
-LauncherActivity(as(?qType, ClassType)) :-
+LauncherActivity(?qType) :-
   XMLNode(?manifest, ?activityId, _, _, _, "activity"),
   XMLNodeAttribute(?manifest, ?activityId, _, _, "android:name", ?type),
   XMLNode(?manifest, ?intentFilterId, ?activityId, _, _, "intent-filter"),
@@ -223,7 +221,7 @@ LauncherActivity(as(?qType, ClassType)) :-
 
 // Detect fragments. XML pattern: <fragment android:id="@id/fragment" class="Fragment">
 .decl XMLFragment_Class(?file:symbol, ?nodeId:symbol, ?qClass:ClassType)
-XMLFragment_Class(?file, ?nodeId, as(?qClass, ClassType)) :-
+XMLFragment_Class(?file, ?nodeId, ?qClass) :-
   XMLNode(?file, ?nodeId, _, _, _, "fragment"),
   // Both "class" and "android:name" can be used for the fragment type:
   // https://stackoverflow.com/questions/10162983/activity-layout-fragment-class-vs-androidname-attributes
@@ -238,7 +236,7 @@ XMLFragment_Id(?file, ?nodeId, ?id) :-
 
 // Detect types used in action views.
 .decl ActionViewType(?class:ClassType)
-ActionViewType(as(?class, ClassType)) :-
+ActionViewType(?class) :-
   XMLNodeAttribute(_, _, _, _, "app:actionViewClass", ?class),
   isClassType(?class).
 
@@ -246,7 +244,7 @@ ActionViewType(as(?class, ClassType)) :-
 //   <... app:layout_behavior="@string/X" />
 //   <string name="X">CLASS</string>
 .decl LayoutBehavior(?class:ClassType)
-LayoutBehavior(as(?qClass, ClassType)) :-
+LayoutBehavior(?qClass) :-
   XMLNode(?file, ?nodeId, _, _, _, "string"),
   XMLNodeAttribute(?file, ?nodeId, _, _, "name", ?x),
   XMLNodeAttribute(_, _, _, _, "app:layout_behavior", ?s),

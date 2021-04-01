@@ -89,15 +89,14 @@ ForwardHighConfidenceReflectiveAssignClassConstant(?ctx, ?invocation, ?type) :-
  * TODO: primitive classes
  *************************************************************/
 
-VarPointsTo(?hctx, ?classNameVal, ?callerCtx, ?to) :-
+VarPointsTo(?hctx, ?className, ?callerCtx, ?to) :-
   isImmutableHContext(?hctx),
   (java_lang_Class_getName(?to, ?from);
    java_lang_Class_getCanonicalName(?to, ?from)),
   VarPointsTo(_, ?classValue, ?callerCtx, ?from),
   ReifiedClass(?className, ?classValue),
-  ?classNameVal = as(?className, Value),
-  isStringConstant(?classNameVal),
-  Value_isHeap(?classNameVal).
+  isStringConstant(?className),
+  Value_isHeap(?className).
 #ifdef INFORMATION_FLOW
   .plan 2:(6,5,4,3,2,1)
 #endif // INFORMATION_FLOW
@@ -113,7 +112,7 @@ VarPointsTo(?hctx, ?classNameVal, ?callerCtx, ?to) :-
 
 // This is an opaque invocation, so we read its facts directly.
 OpaqueCallGraphEdge(?invocation, ?method),
-VarPointsTo(?hctx, as(?simpleName, Value), ?ctx, ?return) :-
+VarPointsTo(?hctx, ?simpleName, ?ctx, ?return) :-
   ReachableContext(?ctx, ?caller),
   _VirtualMethodInvocation(?invocation, _, ?method, ?base, ?caller),
   ?method = "<java.lang.Class: java.lang.String getSimpleName()>",

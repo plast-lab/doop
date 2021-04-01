@@ -175,11 +175,10 @@ _ValueAsReceiver(?value, ?invo) :-
   mainAnalysis.VarPointsTo(_, ?value, _, ?base),
   ( !mainAnalysis.Value_Null(?value)
   ; (isHeapAllocation(?value),
-     ?heap = as(?value, HeapAllocation),
-     ( !mainAnalysis.HeapAllocation_Merge(?heap, _)
-     ; !mainAnalysis.HeapAllocation_Merge(_, ?heap)
-     ; !mainAnalysis.HeapIsMergedString(?heap)
-     ; !mainAnalysis.HeapIsMergedStringFactory(?heap)
+     ( !mainAnalysis.HeapAllocation_Merge(?value, _)
+     ; !mainAnalysis.HeapAllocation_Merge(_, ?value)
+     ; !mainAnalysis.HeapIsMergedString(?value)
+     ; !mainAnalysis.HeapIsMergedStringFactory(?value)
      ))
   ).
 

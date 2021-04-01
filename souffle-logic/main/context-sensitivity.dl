@@ -334,7 +334,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
 NotEmptyArrayValue(?heapValue) :-
   Value_isHeap(?heapValue),
   isHeapAllocation(?heapValue),
-  !HeapAllocation_EmptyArray(as(?heapValue, HeapAllocation)).
+  !HeapAllocation_EmptyArray(?heapValue).
 NotEmptyArrayValue(?value) :-
   Value_isNonHeap(?value).
 

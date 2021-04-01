@@ -252,7 +252,7 @@ ReifiedAndroidObjectValue(?value, ?type) :-
  * View objects
 **/
 
-AndroidViewType(as(?type, ReferenceType)) :-
+AndroidViewType(?type) :-
   basic.SubtypeOf(?type, ?supertype),
   (?supertype = "android.view.View";
    ?supertype = "android.view.ViewGroup").
@@ -422,7 +422,7 @@ LibraryReachableAppListenerType(?type) :-
 // We term all of these objects "Packable".
 
 .decl AndroidPackableType(?type:ReferenceType)
-AndroidPackableType(as(?type, ReferenceType)) :-
+AndroidPackableType(?type) :-
   isReferenceType(?type),
   ( ?type = "android.os.IBinder"
   ; ?type = "android.os.Parcelable"
