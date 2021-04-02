@@ -364,4 +364,19 @@ Server_Metrics("Results threshold", X_SERVER_LOGIC_THRESHOLD).
 #ifdef INFORMATION_FLOW
 .output TaintSourceMethod(IO="file",filename="TaintSourceMethod.csv",delimiter="\t")
 .output LeakingSinkMethodArg(IO="file",filename="LeakingSinkMethodArg.csv",delimiter="\t")
+
+.decl Server_TaintObjTransfer(?from: Var, ?to: Var)
+.output Server_TaintObjTransfer
+Server_TaintObjTransfer(?from, ?to) :- TaintObjTransfer(_, ?from, _, ?to).
+
+.decl Server_LeakingSinkVariable(?label:InformationLabel, ?tomethod:MethodInvocation, ?var:Var)
+.output Server_LeakingSinkVariable
+Server_LeakingSinkVariable(?label, ?tomethod, ?var) :-
+  LeakingSinkVariable(?label, ?tomethod, _, ?var).
+
+.decl Server_LeakingTaintedInformation(?fromLabel:InformationLabel, ?toLabel:InformationLabel, ?invocation:MethodInvocation, ?value:mainAnalysis.Value)
+.output Server_LeakingTaintedInformation
+Server_LeakingTaintedInformation(?fromLabel, ?toLabel, ?invocation, ?value) :-
+  LeakingTaintedInformation(?fromLabel, ?toLabel, _, ?invocation, ?value).
+
 #endif // INFORMATION_FLOW
