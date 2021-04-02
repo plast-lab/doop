@@ -771,7 +771,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					group: GROUP_INFORMATION_FLOW,
 					argName: "APPLICATION_PLATFORM",
 					description: "Load additional logic to perform information flow analysis.",
-					validValues: informationFlowPlatforms("${Doop.lbLogicPath}/addons", "${Doop.souffleLogicPath}/addons"),
+					validValues: informationFlowPlatforms(Doop.lbLogicPath, Doop.souffleLogicPath),
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
@@ -1155,12 +1155,12 @@ class DoopAnalysisFamily implements AnalysisFamily {
 		return []
 	}
 
-	private static SortedSet<String> informationFlowPlatforms(String lbDir, String souffleDir) {
+	static SortedSet<String> informationFlowPlatforms(String lbDir, String souffleDir) {
 		SortedSet<String> platforms_LB = new TreeSet<>()
 		SortedSet<String> platforms_Souffle = new TreeSet<>()
 		Closure scan = { ifDir ->
 			if (ifDir) {
-				File ifSubDir = new File("${ifDir}/information-flow")
+				File ifSubDir = new File("${ifDir}/addons/information-flow")
 				if (!ifSubDir || !ifSubDir.exists()) {
 					println "WARNING: cannot process information flow directory: ${ifSubDir}"
 					return
