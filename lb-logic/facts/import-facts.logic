@@ -1135,7 +1135,7 @@ _BroadcastReceiver(?id) ->
 
 // CallbackMethod
 lang:physical:storageModel[`_CallbackMethod] = "DelimitedFile".
-lang:physical:filePath[`_CallbackMethod] = "database/CallbackMethod.facts".
+lang:physical:filePath[`_CallbackMethod] = "database/AndroidCallbackMethodName.facts".
 lang:physical:delimiter[`_CallbackMethod] = "\t".
 lang:physical:hasColumnNames[`_CallbackMethod] = false.
 _CallbackMethod(?id) ->
