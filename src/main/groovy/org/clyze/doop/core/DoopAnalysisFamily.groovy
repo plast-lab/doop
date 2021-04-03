@@ -292,6 +292,12 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forCacheID: true
 			),
 			new BooleanAnalysisOption(
+					id: "GENERATE_TAC",
+					name: "generate-tac",
+					group: GROUP_FACTS,
+					description: "Generate Three Address Code experimental representation, along with .facts files.",
+			),
+			new BooleanAnalysisOption(
 					id: "GENERATE_ARTIFACTS_MAP",
 					name: "generate-artifacts-map",
 					group: GROUP_FACTS,
