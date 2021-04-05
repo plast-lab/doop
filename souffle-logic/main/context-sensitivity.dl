@@ -725,7 +725,8 @@ ReachableValue(?hctx, ?value) :-
   ?value = cat("<Annotation ", cat(?annotation, ">")).
 #endif // DISABLE_POINTS_TO
 
-// Constant integer values.
+#ifdef ANDROID
+// Constant integer values, used on Android to find component ids.
 Value_Num(?constValue, ?n, ?type),
 isValue(?constValue),
 Value_Type(?constValue, ?type),
@@ -733,3 +734,4 @@ Value_DeclaringType(?constValue, ?declaringType) :-
   CreateIntValue(?n, ?declaringType),
   isIntegerType(?type),
   ?constValue = NUM_CONSTANT(?n, ?type).
+#endif // ANDROID

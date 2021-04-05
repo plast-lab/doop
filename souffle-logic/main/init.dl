@@ -19,6 +19,7 @@ Value_Type(?heapValue, ?type) :-
   isHeapAllocation(?heapValue),
   HeapAllocation_Type(?heapValue, ?type).
 
+#ifdef ANDROID
 // Only create values for numeric constants in a static initializer
 // (or initial field value) inside a class whose name contains
 // ".R$". We are trying to capture just the constants in Android "R"
@@ -34,7 +35,6 @@ CreateIntValue(?const, ?className) :-
   isReferenceType(?className),
   contains(".R$", ?className).
 
-#ifdef ANDROID
 CreateIntValue(?const, ?className) :-
   FieldInitialValue(?fld, ?const),
   NumConstantRawInt(?const),
