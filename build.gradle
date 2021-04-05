@@ -143,7 +143,7 @@ gradle.rootProject.ext.metadataVersion='2.1.0'
 gradle.rootProject.ext.groovyVersion="3.0.6"
 gradle.rootProject.ext.clueCommonVersion='3.24.0'
 gradle.rootProject.ext.log4jVersion='1.2.17'
-gradle.rootProject.ext.spockVersion='2.0-M3-groovy-3.0'
+gradle.rootProject.ext.spockVersion='2.0-M5-groovy-3.0'
 
 dependencies {
     // apktool "ext:apktool:2.4.0"                              // old artifactory dependency
