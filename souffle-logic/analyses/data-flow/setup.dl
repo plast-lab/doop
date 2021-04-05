@@ -1,0 +1,81 @@
+//#define InterestingStmt(stmt) isInstruction(stmt)
+.decl InterestingStmt(stmt:Instruction)
+InterestingStmt(stmt) :-
+	ApplicationMethod(meth),
+	Instruction_Method(stmt, meth).
+
+#define MOVE(stmt, to, from) AssignLocal(from, to, stmt)
+#define CAST(stmt, to, type, from) AssignCast(type, from, to, stmt)
+
+.decl UNOP(stmt:AssignUnop_Insn, to:Var, op:symbol)
+UNOP(stmt, to, op) :-
+	isAssignUnop_Insn(stmt),
+	_OperatorAt(stmt, op),
+	AssignInstruction_To(stmt, to).
+
+.decl BINOP(stmt:AssignBinop_Insn, to:Var, op:symbol)
+BINOP(stmt, to, op) :-
+	isAssignBinop_Insn(stmt),
+	_OperatorAt(stmt, op),
+	AssignInstruction_To(stmt, to).
+
+// pos starts from 1
+#define OPERAND_VAR(stmt, pos, from) AssignOper_From(stmt, pos, from)
+#define OPERAND_NUM(stmt, pos, from) AssignOper_FromConstant(stmt, pos, from)
+
+.decl ASTORE_NUM(stmt:StoreArrayIndex_Insn, arr:Var, i:number, from:Var)
+ASTORE_NUM(stmt, arr, i, from) :-
+	StoreArrayIndex_Base(stmt, arr),
+	StoreArrayIndex_From(stmt, from),
+	ArrayNumIndex(stmt, i).
+
+.decl ALOAD_NUM(stmt:LoadArrayIndex_Insn, to:Var, arr:Var, i:number)
+ALOAD_NUM(stmt, to, arr, i) :-
+	LoadArrayIndex_Base(stmt, arr),
+	LoadArrayIndex_To(stmt, to),
+	ArrayNumIndex(stmt, i).
+
+.decl SSTORE(stmt:StoreStaticField_Insn, fld:Field, from:Var)
+SSTORE(stmt, fld, from) :-
+	StoreStaticField_From(stmt, from),
+	FieldInstruction_Signature(stmt, fld).
+
+.decl SLOAD(stmt:LoadStaticField_Insn, to:Var, fld:Field)
+SLOAD(stmt, to, fld) :-
+	LoadStaticField_To(stmt, to),
+	FieldInstruction_Signature(stmt, fld).
+
+.decl ISTORE(stmt:StoreInstanceField_Insn, base:Var, fld:Field, from:Var)
+ISTORE(stmt, base, fld, from) :-
+	StoreInstanceField_From(stmt, from),
+	StoreInstanceField_Base(stmt, base),
+	FieldInstruction_Signature(stmt, fld).
+
+.decl ILOAD(stmt:LoadInstanceField_Insn, to:Var, base:Var, fld:Field)
+ILOAD(stmt, to, base, fld) :-
+	LoadInstanceField_To(stmt, to),
+	LoadInstanceField_Base(stmt, base),
+	FieldInstruction_Signature(stmt, fld).
+
+#define FORMAL_PARAM(meth, pos, param) FormalParam(pos, meth, param)
+#define ACTUAL_PARAM(stmt, pos, param) ActualParam(pos, stmt, param)
+#define FORMAL_RET(stmt, ret) ReturnNonvoid_Var(stmt, ret)
+#define ACTUAL_RET(stmt, to) AssignReturnValue(stmt, to)
+
+#define VarType(var, type) Var_Type(var, type)
+
+// Encodes a CHA callgraph, effectively
+.decl RESOLVE_CALL(stmt:MethodInvocation, method:Method)
+RESOLVE_CALL(stmt, method) :-
+	isStaticMethodInvocation_Insn(stmt),
+	MethodInvocation_Method(stmt, method).
+
+RESOLVE_CALL(stmt, method) :-
+	(VirtualMethodInvocation_Base(stmt, base) ;
+	 SpecialMethodInvocation_Base(stmt, base)),
+	MethodInvocation_Method(stmt, sigMethod),
+	Method_SimpleName(sigMethod, name),
+	Method_Descriptor(sigMethod, desc),
+	VarType(base, baseType),
+	basic.SubtypeOf(type, baseType),
+	basic.MethodLookup(name, desc, type, method).

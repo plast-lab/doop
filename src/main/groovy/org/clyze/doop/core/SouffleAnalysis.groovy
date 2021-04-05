@@ -8,6 +8,7 @@ import org.clyze.doop.soot.DoopConventions
 import org.clyze.doop.utils.ConfigurationGenerator
 import org.clyze.doop.utils.DDlog
 import org.clyze.doop.utils.SouffleScript
+import org.clyze.doop.utils.TACGenerator
 import org.clyze.utils.Executor
 import org.clyze.utils.JHelper
 
@@ -17,10 +18,9 @@ import java.util.concurrent.Callable
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
 
-import static org.apache.commons.io.FilenameUtils.getBaseName
 import static org.apache.commons.io.FileUtils.deleteQuietly
-import static org.apache.commons.io.FileUtils.moveFile
 import static org.apache.commons.io.FileUtils.sizeOfDirectory
+import static org.apache.commons.io.FilenameUtils.getBaseName
 
 @CompileStatic
 @InheritConstructors
@@ -245,6 +245,10 @@ class SouffleAnalysis extends DoopAnalysis {
 			}
 		} catch (Throwable t) {
 			log.error "ERROR: SARIF generation failed: ${t.message}"
+		}
+
+		if (options.GENERATE_TAC.value) {
+			TACGenerator.run(factsDir, new File(factsDir, "Methods.tac"))
 		}
 	}
 }

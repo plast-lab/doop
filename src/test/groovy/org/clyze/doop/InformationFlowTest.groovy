@@ -2,6 +2,7 @@ package org.clyze.doop
 
 import org.clyze.analysis.Analysis
 import org.clyze.doop.core.Doop
+import org.clyze.doop.core.DoopAnalysisFamily
 import spock.lang.Unroll
 import static org.clyze.doop.TestUtils.*
 
@@ -15,7 +16,7 @@ class InformationFlowTest extends DoopSpec {
     def "Information flow (P/Taint) test"() {
         when:
         List args = ["-i", Artifacts.ANDROIDTERM_APK,
-                     "-a", "context-insensitive",
+                     "-a", "context-insensitive", "--server-logic",
                      "--platform", "android_25_fulljars",
                      "--information-flow", "android", "--sarif",
                      "--information-flow-extra-controls", "7878787878,android.widget.EditText,2131296798",
@@ -28,5 +29,22 @@ class InformationFlowTest extends DoopSpec {
         isSensitiveLayoutControl(analysis, '7878787878', 'android.widget.EditText')
         relationHasApproxSize(analysis, "AppTaintedVar", 2663)
         relationHasApproxSize(analysis, "Stats_Simple_Application_TaintedVarPointsTo", 55194)
+    }
+
+    // @spock.lang.Ignore
+    @Unroll
+    def "Test all information flow profiles"(String profile) {
+        when:
+        // Some analyses do not support full stats or server logic.
+        Main.main((String[])(["-i", Artifacts.HELLO_JAR,
+                              "-a", "context-insensitive", "-Ldebug", "--dry-run",
+                              "--id", "dry-run-infoflow-${profile}", "--cache"]))
+        Analysis analysis = Main.analysis
+
+        then:
+        assert true
+
+        where:
+        profile << DoopAnalysisFamily.informationFlowPlatforms(null, Doop.souffleLogicPath)
     }
 }

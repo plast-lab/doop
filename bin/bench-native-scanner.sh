@@ -7,41 +7,26 @@ if [ "${DOOP_HOME}" == "" ]; then
     echo "ERROR: Please set DOOP_HOME."
     exit
 fi
-if [ "${DOOP_BENCHMARKS}" == "" ]; then
-    echo "ERROR: Please set DOOP_BENCHMARKS."
-    exit
-fi
-if [ "${XCORPUS_DIR}" == "" ]; then
-    echo "ERROR: Please set XCORPUS_DIR."
-    exit
-fi
-if [ "${XCORPUS_EXT_DIR}" == "" ]; then
-    echo "ERROR: Please set XCORPUS_EXT_DIR."
-    exit
-fi
 
 ANALYSIS=context-insensitive
 TIMEOUT=600
 STRING_DISTANCE1=40
 STRING_DISTANCE2=2000
-BASE_GLOBAL_OPTS="--timeout ${TIMEOUT} --no-standard-exports --Xlow-mem --stats none --extra-logic ${DOOP_HOME}/souffle-logic/addons/testing/native-tests.dl --Xdont-cache-facts"
-
-if [ "${DOOP}" == "" ]; then
-    DOOP='./doop'
-fi
-echo "Using Doop executable: ${DOOP}"
-
-if [ "$1" == "report" ]; then
-    RUN_ANALYSIS=0
-elif [ "$1" == "analyze" ]; then
-    RUN_ANALYSIS=1
-else
-    echo "Usage: bench-native-scanner.sh [analyze|report]"
-    exit
-fi
+BASE_GLOBAL_OPTS="--timeout ${TIMEOUT} --no-standard-exports --Xlow-mem --stats none --extra-logic ${DOOP_HOME}/souffle-logic/addons/testing/native-tests.dl --dont-cache-facts"
 
 # The "fulljars" platform is the full Android code.
 ANDROID_PLATFORM=android_25_fulljars
+
+function checkXCorpusEnv() {
+    if [ "${XCORPUS_DIR}" == "" ]; then
+        echo "ERROR: Please set XCORPUS_DIR."
+        exit
+    fi
+    if [ "${XCORPUS_EXT_DIR}" == "" ]; then
+        echo "ERROR: Please set XCORPUS_EXT_DIR."
+        exit
+    fi
+}
 
 function setIntersection() {
     comm -1 -2 <(sort -u "$1") <(sort -u "$2")
@@ -63,8 +48,8 @@ function printStatsRow() {
     local ID_SCANNER="$3"
     local ID_DYNAMIC="$4"
 
-    local DYNAMIC_METHODS=${DOOP_HOME}/out/${ANALYSIS}/${ID_DYNAMIC}/database/DynamicAppNativeCodeTarget.csv
-    local SCANNER_METHODS=${DOOP_HOME}/out/${ANALYSIS}/${ID_SCANNER}/database/AppReachable.csv
+    local DYNAMIC_METHODS=${DOOP_HOME}/out/${ID_DYNAMIC}/database/DynamicAppNativeCodeTarget.csv
+    local SCANNER_METHODS=${DOOP_HOME}/out/${ID_SCANNER}/database/AppReachable.csv
     local MISSED_FILE="${CURRENT_DIR}/missed-methods-${ID_SCANNER}.log"
 
     if [ ! -f "${SCANNER_METHODS}" ]; then
@@ -73,7 +58,7 @@ function printStatsRow() {
     fi
 
     local BASE_INTERSECTION_FILE="${CURRENT_DIR}/dynamic-scanner-intersection-${ID_BASE}.log"
-    local BASE_APP_REACHABLE_FILE=${DOOP_HOME}/out/${ANALYSIS}/${ID_BASE}/database/AppReachable.csv
+    local BASE_APP_REACHABLE_FILE=${DOOP_HOME}/out/${ID_BASE}/database/AppReachable.csv
     local BASE_APP_REACHABLE=$(cat ${BASE_APP_REACHABLE_FILE} | wc -l)
     local SCANNER_APP_REACHABLE=$(cat ${SCANNER_METHODS} | wc -l)
 
@@ -95,7 +80,7 @@ function printStatsRow() {
         local RECALL='n/a'
     fi
 
-    local APP_METHOD_COUNT=$(cat ${DOOP_HOME}/out/${ANALYSIS}/${ID_BASE}/database/ApplicationMethod.csv | wc -l)
+    local APP_METHOD_COUNT=$(cat ${DOOP_HOME}/out/${ID_BASE}/database/ApplicationMethod.csv | wc -l)
     # echo "Application methods: ${APP_METHOD_COUNT}"
     local APP_REACHABLE_DELTA="${BASE_APP_REACHABLE} -> ${SCANNER_APP_REACHABLE}: "$(calcIncrease ${BASE_APP_REACHABLE} ${SCANNER_APP_REACHABLE})
     # echo "App-reachable increase over base: ${APP_REACHABLE_DELTA}"
@@ -109,7 +94,7 @@ function printStatsRow() {
     local FACTS_TIME_DELTA="${BASE_FACTS_TIME} -> ${SCANNER_FACTS_TIME} "$(calcIncrease ${BASE_FACTS_TIME} ${SCANNER_FACTS_TIME})
     # echo "Analysis time increase over base: ${ANALYSIS_TIME_DELTA}"
 
-    local SCANNER_ENTRY_POINTS=${DOOP_HOME}/out/${ANALYSIS}/${ID_SCANNER}/database/mainAnalysis.ReachableAppMethodFromNativeCode.csv
+    local SCANNER_ENTRY_POINTS=${DOOP_HOME}/out/${ID_SCANNER}/database/mainAnalysis.ReachableAppMethodFromNativeCode.csv
     local ADDED_ENTRY_POINTS_FILE=${CURRENT_DIR}/extra-entry-points-${ID_SCANNER}.log
     setDifference ${SCANNER_ENTRY_POINTS} ${BASE_APP_REACHABLE_FILE} > ${ADDED_ENTRY_POINTS_FILE}
     local ADDED_ENTRY_POINTS=$(cat ${ADDED_ENTRY_POINTS_FILE} | wc -l)
@@ -130,7 +115,7 @@ function setIDs() {
 }
 
 function deleteFacts() {
-    local FACTS_DIR="${DOOP_HOME}/out/${ANALYSIS}/$1/facts"
+    local FACTS_DIR="${DOOP_HOME}/out/$1/facts"
     echo "Deleting facts: ${FACTS_DIR}"
     rm -rf "${FACTS_DIR}"
 }
@@ -140,6 +125,7 @@ function runDoop() {
     local BENCHMARK="$2"
     local PLATFORM="$3"
     local HPROF="$4"
+    local BACKEND="$5"
     # echo HPROF="${HPROF}"
     # if [ ! -f ${HPROF} ]; then
     #     echo "Error, file does not exist: ${HPROF}"
@@ -158,7 +144,7 @@ function runDoop() {
 	deleteFacts ${ID_HEAPDL}
     fi
     # 3. Native scanner, default mode.
-    ${DOOP} -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER} ${BASE_OPTS} --scan-native-code --native-code-backend binutils |& tee ${CURRENT_DIR}/${ID_SCANNER}.log
+    ${DOOP} -i ${INPUT} -a ${ANALYSIS} --id ${ID_SCANNER} ${BASE_OPTS} --scan-native-code --native-code-backend ${BACKEND} |& tee ${CURRENT_DIR}/${ID_SCANNER}.log
     deleteFacts ${ID_SCANNER}
     popd &> /dev/null
 }
@@ -186,7 +172,8 @@ function printStatsTable() {
     echo -e "|          \t| methods\t| recall\t|       \t|  (incr. over base)\t|  (incr. over base)\t|              \t|  points\t|"
     printLine ${LAST_COL}
     # for BENCHMARK in "chrome" "instagram" "009-native" "aspectj-1.6.9" "log4j-1.2.16" "lucene-4.3.0" "tomcat-7.0.2"
-    for BENCHMARK in "chrome" "instagram" "aspectj-1.6.9" "log4j-1.2.16" "lucene-4.3.0" "tomcat-7.0.2"
+    # for BENCHMARK in "chrome" "instagram" "aspectj-1.6.9" "log4j-1.2.16" "lucene-4.3.0" "tomcat-7.0.2"
+    for BENCHMARK in $*
     do
         setIDs "${BENCHMARK}"
         local ID_STATIC="${ID_SCANNER}"
@@ -196,6 +183,7 @@ function printStatsTable() {
 }
 
 function analyzeAspectJ() {
+    checkXCorpusEnv
     local BASE_DIR="${XCORPUS_DIR}/data/qualitas_corpus_20130901/aspectj-1.6.9"
     # APP_INPUTS="${XCORPUS_EXT_DIR}/repackaged/aspectj-1.6.9 ${XCORPUS_EXT_DIR}/native/aspectj/x86_64-1.0.100-v20070510.jar"
     APP_INPUTS="${XCORPUS_EXT_DIR}/repackaged/aspectj-1.6.9 ${XCORPUS_EXT_DIR}/native/aspectj/localfile_1_0_0.dll.zip"
@@ -203,18 +191,21 @@ function analyzeAspectJ() {
 }
 
 function analyzeLucene() {
+    checkXCorpusEnv
     local BASE_DIR="${XCORPUS_DIR}/data/qualitas_corpus_20130901/lucene-4.3.0"
     APP_INPUTS="${XCORPUS_EXT_DIR}/repackaged/lucene-4.3.0 ${XCORPUS_EXT_DIR}/native/lucene/lucene-misc-4.3.0/org/apache/lucene/store/libNativePosixUtil.so.jar"
     analyzeXCorpusBenchmark "lucene-4.3.0"
 }
 
 function analyzeLog4J() {
+    checkXCorpusEnv
     local BASE_DIR="${XCORPUS_DIR}/data/qualitas_corpus_20130901/log4j-1.2.16"
     APP_INPUTS="${BASE_DIR}/project/bin.zip ${BASE_DIR}/project/builtin-tests.zip ${BASE_DIR}/.xcorpus/evosuite-tests.zip"
     analyzeXCorpusBenchmark "log4j-1.2.16"
 }
 
 function analyzeTomcat() {
+    checkXCorpusEnv
     local BASE_DIR="${XCORPUS_DIR}/data/qualitas_corpus_20130901/tomcat-7.0.2"
     APP_INPUTS="${XCORPUS_EXT_DIR}/repackaged/tomcat-7.0.2 ${BASE_DIR}/project/builtin-tests.zip ${XCORPUS_EXT_DIR}/native/tomcat/win64/tcnative.dll_win64_x64.jar ${XCORPUS_EXT_DIR}/native/tomcat/mandriva/libtcnative-1.so.jar"
     analyzeXCorpusBenchmark "tomcat-7.0.2"
@@ -250,7 +241,36 @@ function analyzeXCorpusBenchmark() {
     popd &> /dev/null
 }
 
+
+# Put external benchmarks in this function and use "external" command-line option.
+function analyzeExternalBenchmarks() {
+    runDoop ${DOOP_BENCHMARKS}/android-benchmarks/bm1.apk bm1 ${ANDROID_PLATFORM} "" "radare"
+    printStatsTable bm1
+}
+
 trap "exit" INT
+
+if [ "${DOOP}" == "" ]; then
+    DOOP='./doop'
+fi
+echo "Using Doop executable: ${DOOP}"
+
+if [ "$1" == "report" ]; then
+    RUN_ANALYSIS=0
+elif [ "$1" == "analyze" ]; then
+    RUN_ANALYSIS=1
+elif [ "$1" == "external" ]; then
+    analyzeExternalBenchmarks
+    exit
+else
+    echo "Usage: bench-native-scanner.sh [analyze|report|external]"
+    echo ""
+    echo "  analyze      analyze standard benchmarks"
+    echo "  report       print analysis report for standard benchmarks"
+    echo "  external     analyze and report results for external benchmarks"
+    echo "               (see analyzeExternalBenchmarks() in the script)"
+    exit
+fi
 
 if [ "${RUN_ANALYSIS}" == "1" ]; then
 
@@ -262,11 +282,16 @@ if [ "${RUN_ANALYSIS}" == "1" ]; then
     # fi
     # runDoop ${SERVER_ANALYSIS_TESTS}/009-native/build/libs/009-native.jar 009-native java_8 ${SERVER_ANALYSIS_TESTS}/009-native/java.hprof
 
+    if [ "${DOOP_BENCHMARKS}" == "" ]; then
+        echo "ERROR: Please set DOOP_BENCHMARKS."
+        exit
+    fi
+
     # Chrome.
-    runDoop ${DOOP_BENCHMARKS}/android-benchmarks/com.android.chrome_57.0.2987.132-298713212_minAPI24_x86_nodpi_apkmirror.com.apk chrome ${ANDROID_PLATFORM} ${DOOP_BENCHMARKS}/android-benchmarks/com.android.chrome.hprof.gz
+    runDoop ${DOOP_BENCHMARKS}/android-benchmarks/com.android.chrome_57.0.2987.132-298713212_minAPI24_x86_nodpi_apkmirror.com.apk chrome ${ANDROID_PLATFORM} ${DOOP_BENCHMARKS}/android-benchmarks/com.android.chrome.hprof.gz binutils
 
     # Instagram.
-    runDoop ${DOOP_BENCHMARKS}/android-benchmarks/com.instagram.android_10.5.1-48243323_minAPI16_x86_nodpi_apkmirror.com.apk instagram ${ANDROID_PLATFORM} ${DOOP_BENCHMARKS}/android-benchmarks/com.instagram.android.hprof.gz
+    runDoop ${DOOP_BENCHMARKS}/android-benchmarks/com.instagram.android_10.5.1-48243323_minAPI16_x86_nodpi_apkmirror.com.apk instagram ${ANDROID_PLATFORM} ${DOOP_BENCHMARKS}/android-benchmarks/com.instagram.android.hprof.gz binutils
 
     # AspectJ.
     analyzeAspectJ
@@ -281,4 +306,4 @@ if [ "${RUN_ANALYSIS}" == "1" ]; then
     analyzeTomcat
 fi
 
-printStatsTable
+printStatsTable "chrome" "instagram" "aspectj-1.6.9" "log4j-1.2.16" "lucene-4.3.0" "tomcat-7.0.2"
