@@ -136,7 +136,7 @@ DynamicHeapAllocation(?representation, ?heap) :-
 
 .decl _DynamicContext(?representation:symbol, ?heap1rep:symbol, ?heap2rep:symbol, ?site1inMeth:symbol, ?site1line:number, ?site2inMeth:symbol, ?site2line:number)
 
-.type DynamicContext
+.type DynamicContext = symbol
 
 .decl isDynamicContext(?ctx:DynamicContext)
 
