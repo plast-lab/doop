@@ -96,19 +96,13 @@ ForceTypeCompatibility("java.lang.String", "java.lang.Class").
 ForceTypeCompatibility(?valueType, ?varType) :-
   mainAnalysis.BoxTypeConversion(?valueType, ?varType).
 
-// On Android, primitive number types may all collapse into 'int'.
-#ifdef ANDROID
-.decl ForceValueCompatibility(?varType:Type, ?value:mainAnalysis.Value, ?valueType:Type)
-
-ForceValueCompatibility("boolean", "num-constant-0", "int").
-ForceValueCompatibility("boolean", "num-constant-1", "int").
-ForceValueCompatibility(?primType, ?numConst, "int") :-
-  ( ?primType = "byte" ;  ?primType = "char" ;  ?primType = "short" ),
-  mainAnalysis.Value_Num(?numConst, _).
-#endif // ANDROID
+// Support primitive conversions due to $numconstant reuse with different
+// target types. This should be removed when $numconstant pseudo variables
+// are removed from fact generation.
+ForceTypeCompatibility("byte", "int").
 
 #ifndef DISABLE_POINTS_TO
-.decl VarPointsToWronglyTypedValue(?var:Var, ?varType:Type, ?value:mainAnalysis.Value, ?valueType:Type)
+.decl VarPointsToWronglyTypedValue(?var:Var, ?varType:Type, ?value:Value, ?valueType:Type)
 .output VarPointsToWronglyTypedValue
 
 VarPointsToWronglyTypedValue(?var, ?varType, ?value, ?valueType) :-
@@ -116,12 +110,9 @@ VarPointsToWronglyTypedValue(?var, ?varType, ?value, ?valueType) :-
   mainAnalysis.VarPointsTo(_, ?value, _, ?var),
   Var_Type(?var, ?varType),
   !basic.SubtypeOf(?valueType, ?varType),
-#ifdef ANDROID
-  !ForceValueCompatibility(?varType, ?value, ?valueType),
-#endif // ANDROID
   !ForceTypeCompatibility(?valueType, ?varType).
 
-.decl FieldPointsToWronglyTypedValue(?field:Field, ?fieldType:Type, ?value:mainAnalysis.Value, ?valueType:Type)
+.decl FieldPointsToWronglyTypedValue(?field:Field, ?fieldType:Type, ?value:Value, ?valueType:Type)
 .output FieldPointsToWronglyTypedValue
 
 FieldPointsToWronglyTypedValue(?field, ?fieldType, ?value, ?valueType) :-
@@ -130,12 +121,9 @@ FieldPointsToWronglyTypedValue(?field, ?fieldType, ?value, ?valueType) :-
    mainAnalysis.StaticFieldPointsTo(_, ?value, ?field)),
   Field_Type(?field, ?fieldType),
   !basic.SubtypeOf(?valueType, ?fieldType),
-#ifdef ANDROID
-  !ForceValueCompatibility(?fieldType, ?value, ?valueType),
-#endif // ANDROID
   !ForceTypeCompatibility(?valueType, ?fieldType).
 
-.decl VarPointsToMergedHeap(?var:Var, ?value:mainAnalysis.Value)
+.decl VarPointsToMergedHeap(?var:Var, ?value:Value)
 .output VarPointsToMergedHeap
 
 VarPointsToMergedHeap(?var, ?value) :-
@@ -156,107 +144,115 @@ HeapAllocationHasNoType(?heap) :-
   isHeapAllocation(?heap),
   !HeapAllocation_Type(?heap, _).
 
-.decl ValueHasNoType(?value:mainAnalysis.Value)
+.decl ValueHasNoType(?value:Value)
 .output ValueHasNoType
 
 ValueHasNoType(?value) :-
-  mainAnalysis.isValue(?value),
+  isValue(?value),
   !mainAnalysis.Value_Type(?value, _).
 
-.decl ValueHasNoDeclaringType(?value:mainAnalysis.Value)
+.decl ValueHasNoDeclaringType(?value:Value)
 .output ValueHasNoDeclaringType
 
 ValueHasNoDeclaringType(?value) :-
-  mainAnalysis.isValue(?value),
+  isValue(?value),
   !mainAnalysis.Value_DeclaringType(?value, _).
 
-.decl ValueIsNeitherHeapNorNonHeap(?value:mainAnalysis.Value)
+.decl ValueIsNeitherHeapNorNonHeap(?value:Value)
 .output ValueIsNeitherHeapNorNonHeap
 
 ValueIsNeitherHeapNorNonHeap(?value) :-
-  mainAnalysis.isValue(?value),
+  isValue(?value),
   !mainAnalysis.Value_isHeap(?value),
   !mainAnalysis.Value_isNonHeap(?value),
   mainAnalysis.NotSpecialObject(?value).
 
-.decl ClassTypeIsInterfaceType(?type:Type)
+.decl ClassTypeIsInterfaceType(?type:ReferenceType)
 .output ClassTypeIsInterfaceType
 
 ClassTypeIsInterfaceType(?t) :-
   isClassType(?t),
-  isInterfaceType(?t).
+  isInterfaceType(?t2),
+  ord(?t) = ord(?t2).
 
-.decl PrimitiveTypeIsReferenceType(?type:Type)
+.decl PrimitiveTypeIsReferenceType(?type:PrimitiveType)
 .output PrimitiveTypeIsReferenceType
 
 PrimitiveTypeIsReferenceType(?t) :-
   isPrimitiveType(?t),
-  isReferenceType(?t).
+  isReferenceType(?t2),
+  ord(?t) = ord(?t2).
+
+.decl TypeIsConcreteType(?type:Type)
+.output TypeIsConcreteType
+
+TypeIsConcreteType(?t) :- isInterfaceType(?t).
+TypeIsConcreteType(?t) :- isClassType(?t).
+TypeIsConcreteType(?t) :- isArrayType(?t).
+TypeIsConcreteType(?t) :- isPrimitiveType(?t).
+TypeIsConcreteType(?t) :- isNullType(?t).
 
 .decl TypeIsNotConcreteType(?type:Type)
 .output TypeIsNotConcreteType
 
-TypeIsNotConcreteType(?t) :-
-  isType(?t),
-  !isInterfaceType(?t),
-  !isClassType(?t),
-  !isArrayType(?t),
-  !isPrimitiveType(?t),
-  !isNullType(?t).
+TypeIsNotConcreteType(?t) :- isType(?t), !TypeIsConcreteType(?t).
+
+.decl InstructionIsConcreteInstruction(?insn:Instruction)
+.output InstructionIsConcreteInstruction
+
+InstructionIsConcreteInstruction(?insn) :- isThrow_Insn(?insn).
+InstructionIsConcreteInstruction(?insn) :- isThrowNull_Insn(?insn).
+InstructionIsConcreteInstruction(?insn) :- isGoto_Insn(?insn).
+InstructionIsConcreteInstruction(?insn) :- isIf_Insn(?insn).
+InstructionIsConcreteInstruction(?insn) :- isSwitch_Insn(?insn).
+InstructionIsConcreteInstruction(?insn) :- isTableSwitch_Insn(?insn).
+InstructionIsConcreteInstruction(?insn) :- isLookupSwitch_Insn(?insn).
+InstructionIsConcreteInstruction(?insn) :- isMonitorInstruction(?insn).
+InstructionIsConcreteInstruction(?insn) :- isEnterMonitor_Insn(?insn).
+InstructionIsConcreteInstruction(?insn) :- isExitMonitor_Insn(?insn).
+InstructionIsConcreteInstruction(?insn) :- isFieldInstruction(?insn).
+InstructionIsConcreteInstruction(?insn) :- isLoadInstanceField_Insn(?insn).
+InstructionIsConcreteInstruction(?insn) :- isStoreInstanceField_Insn(?insn).
+InstructionIsConcreteInstruction(?insn) :- isLoadStaticField_Insn(?insn).
+InstructionIsConcreteInstruction(?insn) :- isStoreStaticField_Insn(?insn).
+InstructionIsConcreteInstruction(?insn) :- isArrayInstruction(?insn).
+InstructionIsConcreteInstruction(?insn) :- isLoadArrayIndex_Insn(?insn).
+InstructionIsConcreteInstruction(?insn) :- isStoreArrayIndex_Insn(?insn).
+InstructionIsConcreteInstruction(?insn) :- isAssignInstruction(?insn).
+InstructionIsConcreteInstruction(?insn) :- isAssignOper_Insn(?insn).
+InstructionIsConcreteInstruction(?insn) :- isAssignBinop_Insn(?insn).
+InstructionIsConcreteInstruction(?insn) :- isAssignUnop_Insn(?insn).
+InstructionIsConcreteInstruction(?insn) :- isAssignLocal_Insn(?insn).
+InstructionIsConcreteInstruction(?insn) :- isAssignInstanceOf_Insn(?insn).
+InstructionIsConcreteInstruction(?insn) :- isAssignNull_Insn(?insn).
+InstructionIsConcreteInstruction(?insn) :- isAssignNumConstant_Insn(?insn).
+InstructionIsConcreteInstruction(?insn) :- isAssignCast_Insn(?insn).
+InstructionIsConcreteInstruction(?insn) :- isAssignCastNull_Insn(?insn).
+InstructionIsConcreteInstruction(?insn) :- isAssignCastNumConstant_Insn(?insn).
+InstructionIsConcreteInstruction(?insn) :- isAssignHeapAllocation_Insn(?insn).
+InstructionIsConcreteInstruction(?insn) :- isReturnInstruction(?insn).
+InstructionIsConcreteInstruction(?insn) :- isReturnVoid_Insn(?insn).
+InstructionIsConcreteInstruction(?insn) :- isReturnNonvoid_Insn(?insn).
+InstructionIsConcreteInstruction(?insn) :- isMethodInvocation(?insn).
+InstructionIsConcreteInstruction(?insn) :- isVirtualMethodInvocation_Insn(?insn).
+InstructionIsConcreteInstruction(?insn) :- isSpecialMethodInvocation_Insn(?insn).
+InstructionIsConcreteInstruction(?insn) :- isStaticMethodInvocation_Insn(?insn).
+InstructionIsConcreteInstruction(?insn) :- isUnsupportedInstruction(?insn).
+InstructionIsConcreteInstruction(?insn) :- isAssignPhantomInvoke(?insn).
+InstructionIsConcreteInstruction(?insn) :- isExceptionHandler(?insn).
+InstructionIsConcreteInstruction(?insn) :- isBreakpointStmt(?insn).
 
 .decl InstructionIsNotConcreteInstruction(?insn:Instruction)
 .output InstructionIsNotConcreteInstruction
 
 InstructionIsNotConcreteInstruction(?insn) :-
   isInstruction(?insn),
-  !isThrow_Insn(?insn),
-  !isThrowNull_Insn(?insn),
-  !isGoto_Insn(?insn),
-  !isIf_Insn(?insn),
-  !isSwitch_Insn(?insn),
-  !isTableSwitch_Insn(?insn),
-  !isLookupSwitch_Insn(?insn),
-  !isMonitorInstruction(?insn),
-  !isEnterMonitor_Insn(?insn),
-  !isExitMonitor_Insn(?insn),
-  !isFieldInstruction(?insn),
-  !isLoadInstanceField_Insn(?insn),
-  !isStoreInstanceField_Insn(?insn),
-  !isLoadStaticField_Insn(?insn),
-  !isStoreStaticField_Insn(?insn),
-  !isArrayInstruction(?insn),
-  !isLoadArrayIndex_Insn(?insn),
-  !isStoreArrayIndex_Insn(?insn),
-  !isAssignInstruction(?insn),
-  !isAssignOper_Insn(?insn),
-  !isAssignBinop_Insn(?insn),
-  !isAssignUnop_Insn(?insn),
-  !isAssignLocal_Insn(?insn),
-  !isAssignInstanceOf_Insn(?insn),
-  !isAssignNull_Insn(?insn),
-  !isAssignNumConstant_Insn(?insn),
-  !isAssignCast_Insn(?insn),
-  !isAssignCastNull_Insn(?insn),
-  !isAssignCastNumConstant_Insn(?insn),
-  !isAssignHeapAllocation_Insn(?insn),
-  !isReturnInstruction(?insn),
-  !isReturnVoid_Insn(?insn),
-  !isReturnNonvoid_Insn(?insn),
-  !isMethodInvocation(?insn),
-  !isVirtualMethodInvocation_Insn(?insn),
-  !isSpecialMethodInvocation_Insn(?insn),
-  !isStaticMethodInvocation_Insn(?insn),
-  !isUnsupportedInstruction(?insn),
-  !isAssignPhantomInvoke(?insn),
-  !isExceptionHandler(?insn),
-  !isBreakpointStmt(?insn).
+  !InstructionIsConcreteInstruction(?insn).
 
 .decl ArtifactTypeMissingFromHierarchy(?t:ReferenceType)
 .output ArtifactTypeMissingFromHierarchy
 
 ArtifactTypeMissingFromHierarchy(?t) :-
   _ClassArtifact(_, ?t, _, _),
-  isType(?t),
+  isReferenceType(?t),
   !basic.SubtypeOf(?t, _).
-
-

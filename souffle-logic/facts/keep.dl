@@ -2,7 +2,7 @@
 .decl KeepMethod(?m:Method)
 .decl KeepClassMembers(?m:Method)
 .decl KeepClassesWithMembers(?m:Method)
-.decl KeepClass(?c:ClassType)
+.decl KeepClass(?c:ReferenceType)
 .decl RootCodeElement(?id:symbol)
 
 .input KeepMethod(filename="KeepMethod.facts")

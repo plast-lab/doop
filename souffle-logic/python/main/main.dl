@@ -1,6 +1,6 @@
-.type NumConstantValue
-.type BoolConstantValue
-.type NoneConstantValue
+.type NumConstantValue = symbol
+.type BoolConstantValue = symbol
+.type NoneConstantValue = symbol
 
 .type Value = HeapAllocation | NumConstantValue | BoolConstantValue | Module | NoneConstantValue
 

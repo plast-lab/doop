@@ -1,7 +1,4 @@
-.type NumConstant
-.decl isNumConstant(?n:NumConstant)
-
-.type Modifier
+.type Modifier = symbol
 .decl isModifier(?m:Modifier)
 
 .decl Modifier_abstract(?mod:Modifier)
@@ -11,8 +8,7 @@
 .decl Modifier_static(?mod:Modifier)
 
 // Java Type Hierarchy
-
-.type Type
+.type Type          = symbol
 .type PrimitiveType = Type
 .type ReferenceType = Type
 .type NullType      = ReferenceType
@@ -23,7 +19,7 @@
 .decl isType(?t:Type)
 .decl isPrimitiveType(?t:PrimitiveType)
 .decl isReferenceType(?t:ReferenceType)
-.decl isNullType(?t:NullType)
+.decl isNullType(?t:ReferenceType)
 .decl isArrayType(?t:ArrayType)
 .decl isClassType(?t:ClassType)
 .decl isInterfaceType(?t:InterfaceType)
@@ -36,7 +32,7 @@
 // Important class subsets
 
 .decl ApplicationClass(?ref:ReferenceType)
-.decl ConcreteClass(?ref:ReferenceType)
+.decl ConcreteClass(?ref:ClassType)
 .decl MainClass(?class:ClassType)
 
 // Common type selectors
@@ -49,15 +45,17 @@
 .decl Type_long(?t:PrimitiveType)
 .decl Type_float(?t:PrimitiveType)
 .decl Type_double(?t:PrimitiveType)
-.decl Type_void(?t:PrimitiveType)
-.decl Type_null(?t:PrimitiveType)
-.decl Type_object(?t:PrimitiveType)
+.decl Type_void(?t:Type)
+.decl Type_null(?t:NullType)
+.decl Type_object(?t:ReferenceType)
+
+.decl isIntegerType(?type:Type)
 
 .decl ClassModifier(?mod:Modifier, ?class:ReferenceType)
 
 //-----------------------------------------------------------------------------
 
-.type Field
+.type Field = symbol
 .decl isField(?field:Field)
 .decl ApplicationField(?field:Field)
 
@@ -72,7 +70,7 @@
 .type MethodDescriptor = symbol
 .decl isMethodDescriptor(?md:MethodDescriptor)
 
-.type Method
+.type Method = symbol
 .decl isMethod(?m:Method)
 
 .decl Method_DeclaringType(?method:Method, ?declaringType:ReferenceType)
@@ -82,7 +80,7 @@
 .decl Method_Descriptor(?method:Method, ?descriptor:MethodDescriptor)
 .decl Method_Arity(?method:Method, ?arity:number)
 
-.type JVMDescriptor
+.type JVMDescriptor = symbol
 .decl isJVMDescriptor(?jvmd:JVMDescriptor)
 
 // JVM method descriptor
@@ -101,7 +99,7 @@
 
 //-----------------------------------------------------------------------------
 
-.type Var
+.type Var = symbol
 .decl isVar(v:Var)
 
 .decl Var_Type(?var:Var, ?type:Type)
@@ -112,10 +110,26 @@
 
 
 //-----------------------------------------------------------------------------
+// [Value]
+//-----------------------------------------------------------------------------
+
+.type Value = symbol
+
+.decl isValue(?value:Value)
+
+//-----------------------------------------------------------------------------
+// [Constant numbers]
+//-----------------------------------------------------------------------------
+
+.type NumConstant = Value
+
+.decl isNumConstant(?n:NumConstant)
+
+//-----------------------------------------------------------------------------
 // [Heap Allocation]
 //-----------------------------------------------------------------------------
 
-.type HeapAllocation
+.type HeapAllocation       = Value
 .type NormalHeap           = HeapAllocation
 .type StringConstant       = HeapAllocation
 .type ClassHeap            = HeapAllocation
@@ -130,8 +144,8 @@
 .decl isMethodTypeConstant(?h:MethodTypeConstant)
 .decl isStringRaw(?id:symbol)
 
-.decl HeapAllocation_Type(?heap:HeapAllocation, ?type:Type)
-.decl OriginalHeapAllocation_Type(?heap:HeapAllocation, ?type:Type)
+.decl HeapAllocation_Type(?heap:HeapAllocation, ?type:ReferenceType)
+.decl OriginalHeapAllocation_Type(?heap:HeapAllocation, ?type:ReferenceType)
 
 // [Miscellaneous]
 .decl HeapAllocation_EmptyArray(?heap:HeapAllocation)
@@ -139,7 +153,7 @@
 .decl MainMethodArgArray(?heap:HeapAllocation)
 .decl MainMethodArgArrayContent(?heap:HeapAllocation)
 
-.decl ClassHeap_InstanceType(?classHeap:ClassHeap, ?instanceType:Type)
+.decl ClassHeap_InstanceType(?classHeap:ClassHeap, ?instanceType:ReferenceType)
 .decl MethodHandleConstant_Method(?heap:MethodHandleConstant, ?method:Method)
 .decl MethodHandleConstant_ReturnType(?heap:MethodHandleConstant, ?retType:Type)
 .decl MethodHandleConstant_ParamTypes(?heap:MethodHandleConstant, ?paramTypes:symbol)
@@ -152,7 +166,7 @@
 // [Bytecode Instructions]
 //-----------------------------------------------------------------------------
 
-.type Instruction
+.type Instruction = symbol
 .decl isInstruction(?insn:Instruction)
 
 .decl Instruction_Index(?insn:Instruction, ?index:number)
@@ -352,7 +366,7 @@
 .decl AssignInstruction_To(?insn:AssignInstruction, ?to:Var)
 
 // Assign numeric constant instruction
-.decl AssignNumConstant_Id(?insn:AssignNumConstant_Insn, ?const:NumConstant)
+.decl AssignNumConstant_Id(?insn:AssignNumConstant_Insn, ?const:symbol)
 
 // Assign cast instruction
 .decl AssignCast_From(?insn:AssignCast_Insn, ?from:Var)
@@ -360,7 +374,7 @@
 .decl AssignCast_Type(?insn:AssignCast_Insn, ?type:Type)
 
 // Assign numeric constant casting instruction
-.decl AssignCastNumConstant_Id(?insn:AssignCastNumConstant_Insn, ?const:NumConstant)
+.decl AssignCastNumConstant_Id(?insn:AssignCastNumConstant_Insn, ?const:symbol)
 
 // Assign local instruction
 .decl AssignLocal_From(?insn:AssignLocal_Insn, ?from:Var)
@@ -423,7 +437,7 @@
 // The following triplet is the dynamic method and can be anything
 // (these are parts of a single UTF-8 string in the bytecode).
 .decl DynamicMethodInvocation_DynName(?invocation:DynamicMethodInvocation_Insn, ?dynName:symbol)
-.decl DynamicMethodInvocation_DynReturnType(?invocation:DynamicMethodInvocation_Insn, ?dynRetType:symbol)
+.decl DynamicMethodInvocation_DynReturnType(?invocation:DynamicMethodInvocation_Insn, ?dynRetType:Type)
 .decl DynamicMethodInvocation_DynParamTypes(?invocation:DynamicMethodInvocation_Insn, ?dynParamTypes:symbol)
 // Arity of the dynamic method (calculated by the front-end).
 .decl DynamicMethodInvocation_DynArity(?invocation:DynamicMethodInvocation_Insn, ?dynArity:number)
@@ -449,7 +463,7 @@
 // [Exception Handlers]
 //-----------------------------------------------------------------------------
 
-.type ExceptionHandler
+.type ExceptionHandler = Instruction
 .decl isExceptionHandler(?handler:ExceptionHandler)
 
 .decl ExceptionHandler_Method(?handler:ExceptionHandler, ?inmethod:Method)

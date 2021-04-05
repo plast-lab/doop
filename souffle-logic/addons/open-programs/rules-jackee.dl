@@ -61,9 +61,9 @@ mainAnalysis.ReachableContext(?ctx, ?method) :-
 /**
  *  Mock receivers for entry points
  **/
-.decl MockObject(?value:mainAnalysis.Value, ?class:Type)
+.decl MockObject(?value:Value, ?class:Type)
 .output MockObject
-.decl MockObjFromOpenProgramEntryPointReceiver(?value:mainAnalysis.Value)
+.decl MockObjFromOpenProgramEntryPointReceiver(?value:Value)
 
 mainAnalysis_MockValueConsMacro(?value, ?class),
 mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?receiver),
@@ -78,7 +78,7 @@ MockObject(?value, ?class) :-
 /**
  *  Mock arguments for entry points
  **/
-.decl MockObjFromOpenProgramEntryPointArg(?value:mainAnalysis.Value)
+.decl MockObjFromOpenProgramEntryPointArg(?value:Value)
 
 /**
  * Main policy: If the argument type has concrete subtypes in the application, pass them all as mock objects
@@ -158,7 +158,7 @@ mainAnalysis.InstanceFieldPointsTo(?hctx, ?mockBeanObject, ?injectedField, ?base
 /**
  *  XML driven dependency injection
  **/
-.decl XMLIFPTDI(?hctx:mainAnalysis.configuration.HContext, ?mo:mainAnalysis.Value, ?fld:Field, ?bhctx:mainAnalysis.configuration.HContext, ?bval:mainAnalysis.Value)
+.decl XMLIFPTDI(?hctx:mainAnalysis.configuration.HContext, ?mo:Value, ?fld:Field, ?bhctx:mainAnalysis.configuration.HContext, ?bval:Value)
 .output XMLIFPTDI
 
 // Property injection from XML specification
@@ -475,7 +475,7 @@ ConcreteBean_Id(?authenticationProviderClass, ?id) :-
  *
  * The injected bean is referred in the ref attribute of the property tag
  **/
-.decl BeanFieldInjection(?class:ClassType, ?injectedField:Field, ?mockObject:mainAnalysis.Value)
+.decl BeanFieldInjection(?class:ClassType, ?injectedField:Field, ?mockObject:Value)
 
 BeanFieldInjection(?class, ?injectedField, ?mockObject) :-
   XMLNode(?XMLFile, ?parentNodeId, _, _, _, _),
@@ -516,9 +516,9 @@ BeanFieldInjection(?class, ?injectedField, ?mockObject) :-
  * Creates a unique mock object of the xml-specified collection along
  * and stores the bean mock objects into it.
  **/
-.decl BeanMap(?id:symbol, ?mapClass:Type, ?mapMockObject:mainAnalysis.Value)
-.decl BeanMapEntry(?id:symbol, ?entryBeanId:symbol, ?entryBeanMockObject:mainAnalysis.Value)
-.decl BeanResource(?id:symbol, ?mapClass:Type, ?mapMockObject:mainAnalysis.Value)
+.decl BeanMap(?id:symbol, ?mapClass:Type, ?mapMockObject:Value)
+.decl BeanMapEntry(?id:symbol, ?entryBeanId:symbol, ?entryBeanMockObject:Value)
+.decl BeanResource(?id:symbol, ?mapClass:Type, ?mapMockObject:Value)
 
 BeanResource(?id, ?mapClass, ?value),
 mainAnalysis_MockValueConsMacro(?value, ?mapClass),
@@ -650,7 +650,7 @@ ApplicationUnreachableMethod(?method) :-
   ApplicationConcreteType(?type),
   !mainAnalysis.Reachable(?method).
 
-.decl IncompleteFieldInjection(?type:Type, ?value:mainAnalysis.Value, ?field:Field)
+.decl IncompleteFieldInjection(?type:Type, ?value:Value, ?field:Field)
 
 IncompleteFieldInjection(?decltype, ?basevalue, ?injectedField) :-
   mainAnalysis.Value_Type(?basevalue, ?decltype),
@@ -661,19 +661,19 @@ IncompleteFieldInjection(?decltype, ?basevalue, ?injectedField) :-
   isConcreteBean(?decltype),
   !mainAnalysis.InstanceFieldPointsTo(_, _, ?injectedField, _, ?basevalue).
 
-.decl VPTUnreachableMockObject(?value:mainAnalysis.Value)
+.decl VPTUnreachableMockObject(?value:Value)
 
 VPTUnreachableMockObject(?value) :-
   MockObject(?value, _),
   !mainAnalysis.VarPointsTo(_, ?value, _, _).
 
-.decl IFPTUnreachableMockObject(?value:mainAnalysis.Value)
+.decl IFPTUnreachableMockObject(?value:Value)
 
 IFPTUnreachableMockObject(?value) :-
   MockObject(?value, _),
   !mainAnalysis.InstanceFieldPointsTo(_, ?value, _, _, _).
 
-.decl UnreachableMockObject(?value:mainAnalysis.Value)
+.decl UnreachableMockObject(?value:Value)
 
 UnreachableMockObject(?value) :-
   MockObject(?value, _),

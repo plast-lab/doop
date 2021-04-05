@@ -52,7 +52,7 @@
 // Value_Num maps each numeric constant to a value while
 // also prepending it with *num-constant-* to distinguish it
 // from heap allocations that share the same string value.
-.decl Value_Num(?value:Value, ?const:NumConstant)
+.decl Value_Num(?value:Value, ?const:symbol)
 .decl IntConstantValue_ActualNum(?value:Value, ?num:number)
 .decl Value_String(?value:Value, ?str:StringConstant)
 .decl isNonHeapValue(?value:Value)

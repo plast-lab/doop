@@ -163,7 +163,7 @@ public abstract class AndroidSupport {
             for (String s : appBroadcastReceivers)
                 writer.writeBroadcastReceiver(processMan.expandClassName(s));
             for (String callbackMethod : appCallbackMethods)
-                writer.writeCallbackMethod(callbackMethod);
+                writer.writeAndroidCallbackMethodName(callbackMethod);
 
             for (LayoutControl control : appUserControls) {
                 writer.writeLayoutControl(control.getID(), control.getViewClassName(), control.getParentID(), control.getAppRId(), control.getAndroidRId());

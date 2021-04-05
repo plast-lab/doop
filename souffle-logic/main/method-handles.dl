@@ -2,7 +2,11 @@
  * Method Types
  *************************************************************/
 
-.type MethodType = mainAnalysis.Value
+/*
+ * Method types can either be normal Java values or special method
+ * type constants that come from the constant pool.
+ */
+.type MethodType = Value
 .type ParamTypes = symbol
 .decl MethodType_ParamType(?mt:MethodType, ?index:number, ?pType:Type)
 .decl MethodType_ParamTypes(?mt:MethodType, ?paramTypes:ParamTypes)
@@ -114,7 +118,7 @@ ReachableMethodTypeN(?id, ?invo, ?ctx) :-
   Instruction_Method(?invo, ?method),
   ReachableContext(?ctx, ?method).
 
-.decl MT_ReturnType(?invo:MethodInvocation, ?hctx:configuration.HContext, ?ctx:configuration.Context, ?type:Type)
+.decl MT_ReturnType(?invo:MethodInvocation, ?hctx:configuration.HContext, ?ctx:configuration.Context, ?type:ReferenceType)
 .decl MT_ParamValue(?invo:MethodInvocation, ?index:number, ?classValue:Value)
 
 #if defined(REFLECTION) || defined(LIGHT_REFLECTION_GLUE)
@@ -222,7 +226,7 @@ MethodType_ReturnType(?mt, ?retType) :-
 HeapAllocation_ContextInsensitive(?heap) :-
   isMethodHandleConstant(?heap).
 
-.type MethodHandle = mainAnalysis.Value
+.type MethodHandle = Value
 .decl MethodHandle_Method(?methodHandle:MethodHandle, ?method:Method)
 // Returns a method type for a method handle. This is not a function: a method
 // handle may, for example, contain both a method type that only mentions the
@@ -371,7 +375,7 @@ MethodHandle_MethodType(?adapterMH, ?mt) :-
   VarPointsTo(_, ?mt, ?ctx, ?arg),
   AssignReturnValue(?invo, ?ret),
   MethodHandle_Method(?mh, ?mhMethod),
-  Method_ParamTypes(?mhMethod, ?paramTypes),
+  Method_ParamTypes(?mhMethod, _),
   ?adapterMH = cat("<adapter for ", cat(?mh, cat(" as ", ?mt))).
 
 /*************************************************************
@@ -417,7 +421,7 @@ CreateMHLookup("java.lang.Object", ?ctx, ?ret) :-
 VarPointsTo(?hctx, ?classValue, ?ctx, ?ret),
 #endif // DISABLE_POINTS_TO
 OpaqueCallGraphEdge(?invo, ?sig) :-
-  _VirtualMethodInvocation(?invo, _, ?ig, ?base, ?method),
+  _VirtualMethodInvocation(?invo, _, ?sig, ?base, ?method),
   ?sig = "<java.lang.invoke.MethodHandles$Lookup: java.lang.Class lookupClass()>",
   ReachableContext(?ctx, ?method),
   VarPointsTo(?hctx, ?mhLookup, ?ctx, ?base),
@@ -446,7 +450,7 @@ VarPointsTo(?hctx, ?dmh, ?ctx, ?var),
 MockValueConsMacro(?dmh, "java.lang.invoke.MethodHandle"),
 MethodHandle_Method(?dmh, ?method),
 MethodHandle_MethodType(?dmh, ?mt) :-
-  AssignMethodHandleToVarRequest(?method, ?paramTypes, ?retType, ?hctx, ?ctx, ?var),
+  AssignMethodHandleToVarRequest(?method, _, _, ?hctx, ?ctx, ?var),
   !MethodHandleConstant_Method(_, ?method),
   Method_MethodType(?method, ?mt),
   ?dmh = cat("<computed direct method handle for ", cat(?method, ">")).
@@ -524,7 +528,7 @@ DMHLookup(?type, ?id, ?mt, ?method, ?retType, ?paramTypes) :-
 
 #if defined(REFLECTION) || defined(LIGHT_REFLECTION_GLUE)
 // Create VarPointsTo for return values of method finders.
-.decl FindMethod(?invo:MethodInvocation, ?type:Type, ?id:symbol, ?mt:MethodType, ?hctx:configuration.HContext, ?ctx:configuration.Context)
+.decl FindMethod(?invo:MethodInvocation, ?type:ReferenceType, ?id:symbol, ?mt:MethodType, ?hctx:configuration.HContext, ?ctx:configuration.Context)
 FindMethod(?invo, ?type, ?id, ?mt, ?hctx, ?ctx) :-
   (FindStatic(?invo, _) ; FindVirtual(?invo, _) ; FindSpecial(?invo, _)),
   ActualParam(0, ?invo, ?classParam),
@@ -672,7 +676,7 @@ MethodVarArgs(?method, ?idx, ?formal, ?type) :-
 ArrayIndexPointsTo(?immHctx, ?val, ?immHctx, ?mockArray),
 MockValueConsMacro(?mockArray, ?varArgsType),
 VarPointsTo(?immHctx, ?mockArray, ?calleeCtx, ?formalVarArgs) :-
-  InvokedynamicBootCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?bootMethod),
+  InvokedynamicBootCallGraphEdge(_, ?invokedynamic, ?calleeCtx, ?bootMethod),
   MethodVarArgs(?bootMethod, ?bootIdx, ?formalVarArgs, ?varArgsType),
   BootstrapParam(?idx, ?invokedynamic, ?actual),
   ?idx > ?bootIdx - 3,
@@ -689,7 +693,7 @@ VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
   VarPointsTo(?hctx, ?val, _, ?actual).
 #endif // DISABLE_POINTS_TO
 
-.type CallSite = mainAnalysis.Value
+.type CallSite = Value
 .decl InvokedynamicCallSite(?callsite:CallSite, ?invokedynamic:DynamicMethodInvocation_Insn, ?dynName:symbol, ?K:number, ?ctx:configuration.Context)
 
 // Record CallSite metadata. This rule handles the return values of bootstrap
@@ -789,7 +793,7 @@ UnhandledInvokedynamic(?invokedynamic, ?bootMethodId) :-
 #define LAMBDA_ALT_VAL(invo, ret, type, method, real, name) \
   cat(invo, cat("::: ", cat(ret, cat("::: (Mock)::: ", cat("reference ", cat(type, cat ("::", cat(method, cat(" from ", cat(real, cat(" wrapped as ", cat(ret, cat(".", name)))))))))))))
 
-.type Lambda = mainAnalysis.Value
+.type Lambda = Value
 // TODO: Field ?ctx is currently unused, should be used in the
 // LambdaCallGraphEdge rule for context sensitivity.
 .decl LambdaObject(?invokedynamic:DynamicMethodInvocation_Insn, ?lambda:Lambda, ?dynName:symbol, ?K:number, ?implMethod:Method, ?ctx:configuration.Context)
@@ -1002,7 +1006,7 @@ MockValueConsMacro(?mockObj, ?type) :-
 .decl FillConstructorsFromClass(?hctx:configuration.HContext, ?mockConstructors:Value, ?class:Type)
 
 #define GET_DECLARED_METHODS "<java.lang.Class: java.lang.reflect.Method[] getDeclaredMethods()>"
-#define GET_DECLARED_CONSRUCTORS "<java.lang.Class: java.lang.reflect.Constructor[] getDeclaredConstructors()>"
+#define GET_DECLARED_CONSTRUCTORS "<java.lang.Class: java.lang.reflect.Constructor[] getDeclaredConstructors()>"
 .decl Class_getMembers(?sig:Method, ?hctx:configuration.HContext, ?ctx:configuration.Context, ?ret:Var, ?class:Type)
 
 Class_getMembers(?sig, ?hctx, ?ctx, ?ret, ?class) :-

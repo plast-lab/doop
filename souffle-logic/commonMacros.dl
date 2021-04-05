@@ -34,7 +34,7 @@
 // Copy of MockValueConsMacro but with proper component qualifers.
 #define mainAnalysis_MockValueConsMacro(value, type) \
    mainAnalysis.Value_isMock(value), \
-   mainAnalysis.isValue(value), \
+   isValue(value), \
    mainAnalysis.Value_Type(value, type), \
    mainAnalysis.Value_DeclaringType(value, "java.lang.Object") \
 
@@ -69,3 +69,5 @@
    isInstruction(ins), \
    isMethodInvocation(ins), \
    isStaticMethodInvocation_Insn(ins)
+
+#define NUM_CONSTANT(n, type) cat(cat(cat("num-constant-", n), "/"), type)

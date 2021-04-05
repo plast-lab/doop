@@ -78,15 +78,15 @@ mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?receiver) :-
   mainAnalysis.isImmutableHContext(?hctx),
   ValueForReceiverInContext(?ctx, ?receiver, ?value).
 
-.decl MockObject(?value:mainAnalysis.Value, ?type:Type)
-.decl MockObjFromOpenProgramEntryPoint(?value:mainAnalysis.Value)
+.decl MockObject(?value:Value, ?type:Type)
+.decl MockObjFromOpenProgramEntryPoint(?value:Value)
 
 mainAnalysis_MockValueConsMacro(cat(cat("<Mock receiver ", ?class), " >"), ?class),
 MockObjFromOpenProgramEntryPoint(cat(cat("<Mock receiver ", ?class), " >")),
 MockObject(cat(cat("<Mock receiver ", ?class), " >"), ?class) :-
   MockOpenProgramEntryPoint(?class, _).
 
-.decl ValueForReceiverInContext(?ctx:mainAnalysis.configuration.Context, ?receiver:Var, ?value:mainAnalysis.Value)
+.decl ValueForReceiverInContext(?ctx:mainAnalysis.configuration.Context, ?receiver:Var, ?value:Value)
 
 ValueForReceiverInContext(?ctx, ?receiver, ?value) :-
   mainAnalysis.ReachableContext(?ctx, ?method),

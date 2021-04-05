@@ -101,17 +101,17 @@
 // .decl NegativeObjectFilter(?v:symbol)
 
 #ifdef PRECISE_GENERICS
-.decl MapAcceptsValueType(?value:mainAnalysis.Value, ?type:Type)
-.decl MapAcceptsKeyType(?value:mainAnalysis.Value, ?type:Type)
-.decl CollectionAcceptsValueType(?value:mainAnalysis.Value, ?type:Type)
+.decl MapAcceptsValueType(?value:Value, ?type:Type)
+.decl MapAcceptsKeyType(?value:Value, ?type:Type)
+.decl CollectionAcceptsValueType(?value:Value, ?type:Type)
 
 .input MapAcceptsValueType(IO="file",filename="MapAcceptsValueType.facts",delimiter="\t")
 .input MapAcceptsKeyType(IO="file",filename="MapAcceptsKeyType.facts",delimiter="\t")
 .input CollectionAcceptsValueType(IO="file",filename="CollectionAcceptsValueType.facts",delimiter="\t")
 
-.decl MapAcceptsKeyFallbackType(?mapValue:mainAnalysis.Value, ?type:Type)
-.decl CollectionAcceptsValueFallbackType(?mapValue:mainAnalysis.Value, ?type:Type)
-.decl MapAcceptsValueFallbackType(?mapValue:mainAnalysis.Value, ?type:Type)
+.decl MapAcceptsKeyFallbackType(?mapValue:Value, ?type:Type)
+.decl CollectionAcceptsValueFallbackType(?mapValue:Value, ?type:Type)
+.decl MapAcceptsValueFallbackType(?mapValue:Value, ?type:Type)
 
 .input MapAcceptsKeyFallbackType(IO="file",filename="MapAcceptsKeyFallbackType.facts",delimiter="\t")
 .input CollectionAcceptsValueFallbackType(IO="file",filename="CollectionAcceptsValueFallbackType.facts",delimiter="\t")

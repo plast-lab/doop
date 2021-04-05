@@ -4,7 +4,7 @@
 #include "../../main/single-phase-analysis.dl"
 #include "../../main/configuration.dl"
 
-.type ContextComponent = Type | mainAnalysis.Value
+.type ContextComponent = Type | Value
 
 // For this analysis the context of a method call corresponds to the
 // identity of the receiver object and the receiver object of the caller.
@@ -119,7 +119,7 @@
       ?sensitivity = "2-type",
       ?callerCtx = [?type, ?value],
       isType(?type),
-      mainAnalysis.isValue(?value),
+      isValue(?value),
       mainAnalysis.Value_DeclaringType(?value, ?type1),
       ?calleeCtx = [?type, ?type1].
 
@@ -131,7 +131,7 @@
       ?sensitivity = "2-type",
       ?callerCtx = [?value, ?type],
       isType(?type),
-      mainAnalysis.isValue(?value),
+      isValue(?value),
       mainAnalysis.Value_DeclaringType(?value, ?type1),
       ?calleeCtx = [?type1, ?type].
 
@@ -142,8 +142,8 @@
       SpecialContextSensitivityMethod(?tomethod, ?sensitivity, _, _),
       ?sensitivity = "2-type",
       ?callerCtx = [?value1, ?value2],
-      mainAnalysis.isValue(?value1),
-      mainAnalysis.isValue(?value2),
+      isValue(?value1),
+      isValue(?value2),
       mainAnalysis.Value_DeclaringType(?value1, ?type1),
       mainAnalysis.Value_DeclaringType(?value2, ?type2),
       ?calleeCtx = [?type1, ?type2].
@@ -155,7 +155,7 @@
       SpecialContextSensitivityMethod(?tomethod, ?sensitivity, _, _),
       ?sensitivity = "1-type",
       ?callerCtx = [?valueOrType, ?value],
-      mainAnalysis.isValue(?value),
+      isValue(?value),
       mainAnalysis.Value_DeclaringType(?value, ?type),
       ?calleeCtx = [?type, ?type],
       ?valueOrType = ?valueOrType.

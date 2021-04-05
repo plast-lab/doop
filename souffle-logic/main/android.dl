@@ -38,6 +38,7 @@
  * App Components, in layout resources or dynamically registered
 **/
 
+.decl AndroidOriginalAppComponent(?type:ReferenceType)
 AndroidOriginalAppComponent(?type) :-
   Activity(?type);
   Service(?type);
@@ -62,6 +63,7 @@ ReifiedAndroidObjectValue(?value, ?type) :-
   RegisterBroadCastReceiverVar(?var),
   VarPointsTo(_, ?value, _, ?var),
   Value_Type(?value, ?type),
+  isReferenceType(?type),
   !AndroidOriginalAppComponent(?type).
 
 // Create a new heap object per component declared in layout
@@ -69,7 +71,7 @@ ReifiedAndroidObjectValue(?value, ?type) :-
 MockValueConsMacro(cat("<android component object ", cat(?type, ">")), ?type),
 ReifiedComponent(?type, cat("<android component object ", cat(?type, ">"))) :-
   AndroidOriginalAppComponent(?type),
-  isType(?type).
+  isReferenceType(?type).
 
 ReifiedAndroidObjectValue(?value, ?type) :-
   ReifiedComponent(?type, ?value).
@@ -102,7 +104,7 @@ ForcedReachableAndroidContext(?ctx, ?meth) :-
 //  (PublicMethodOfComponent(?meth);
 //   OverridingProtectedMethodOfComponent(?meth);
   (NonPrivateConcreteMethodOfComponent(?meth);
-   CallbackMethod(?meth)),
+   AndroidCallbackMethod(?meth)),
   isImmutableContext(?ctx).
 
 // By marking them "ForcedReachable" we enable their mocking, not just reachability.
@@ -150,12 +152,15 @@ ForcedReachableAndroidContext(?ctx, ?meth) :-
  * Layout control objects
 **/
 
+#define LAYOUT_CONTROL(id, type) cat("<layout control object ", cat(id, cat(" of type ", cat(type, ">"))))
+
 // Create a new heap object per control object declared in layout
 // (XML) resources. (REVIEW) These are normal heap objects.
-MockValueConsMacro(cat("<layout control object ", cat(?id, cat(" of type ", cat(?type, ">")))), ?type),
-ReifiedLayoutControl(?type, ?id, cat("<layout control object ", cat(?id, cat(" of type ", cat(?type, ">"))))) :-
+MockValueConsMacro(?layoutId, ?type),
+ReifiedLayoutControl(?type, ?id, ?layoutId) :-
   LayoutControl(?id, ?type, _),
-  isType(?type).
+  isReferenceType(?type),
+  ?layoutId = LAYOUT_CONTROL(?id, ?type).
 
 ReifiedAndroidObjectValue(?value, ?type) :-
   ReifiedLayoutControl(?type, _, ?value).
@@ -232,12 +237,12 @@ ReachableLayoutControl(?class) :- ActionViewType(?class).
 ImplicitlyInstantiatedLibraryType(?type) :-
   (?type = "android.content.Intent";
    ?type = "android.os.Bundle"),
-  isType(?type).
+  isReferenceType(?type).
 
 MockValueConsMacro(cat("<android library object ", cat(?type, ">")), ?type),
 ReifiedLibraryObject(?type, cat("<android library object ", cat(?type, ">"))) :-
   ImplicitlyInstantiatedLibraryType(?type),
-  isType(?type).
+  isReferenceType(?type).
 
 ReifiedAndroidObjectValue(?value, ?type) :-
   ReifiedLibraryObject(?type, ?value).
@@ -301,11 +306,13 @@ AndroidLibraryListenerType(?type) :-
 
 ListenerType(?type) :-
   AndroidLibraryListenerType(?listenerType),
-  basic.SubtypeOf(?type, ?listenerType).
+  basic.SubtypeOf(?type, ?listenerType),
+  isReferenceType(?type).
 
 AndroidApplicationListenerClass(?class) :-
   AndroidApplicationClass(?class),
-  ListenerType(?class).
+  ListenerType(?class),
+  isClassType(?class).
 
 PublicOnMethodOfReachableListener(?meth) :-
   LibraryReachableAppListenerType(?class),
@@ -348,7 +355,7 @@ LibraryReachableAppListenerType(?ofType) :-
 // somewhere, explicitly (via <className>.class).
 // REVIEW: for extra soundness, we can consider all ReifiedClass objects.
 //  But this will probably destroy precision.
-.decl ListenerClassConstantValue(?classHeap:Value, ?type:Type)
+.decl ListenerClassConstantValue(?classHeap:Value, ?type:ReferenceType)
 ListenerClassConstantValue(?classHeap, ?type) :-
   ClassHeap_InstanceType(?classHeap, ?type),
   // or: ReifiedClass(?type, ?classHeap),  // needs reflection enabled!
@@ -414,17 +421,19 @@ LibraryReachableAppListenerType(?type) :-
 // from a Parcel. All their methods overriding library methods become reachable.
 // We term all of these objects "Packable".
 
-.decl AndroidPackableType(?type:Type)
+.decl AndroidPackableType(?type:ReferenceType)
 AndroidPackableType(?type) :-
-  ?type = "android.os.IBinder";
-  ?type = "android.os.Parcelable";
-  ?type = "android.os.Parcelable$Creator".
+  isReferenceType(?type),
+  ( ?type = "android.os.IBinder"
+  ; ?type = "android.os.Parcelable"
+  ; ?type = "android.os.Parcelable$Creator").
 
 .decl AndroidApplicationPackableClass(?class:ClassType)
 AndroidApplicationPackableClass(?class) :-
   AndroidApplicationClass(?class),
   basic.SubtypeOf(?class, ?binderType),
-  AndroidPackableType(?binderType).
+  AndroidPackableType(?binderType),
+  isClassType(?class).
 
 .decl ReachableAppPackableMethodOverridingLib(?methConcrete:Method)
 ReachableAppPackableMethodOverridingLib(?methConcrete) :-
@@ -456,14 +465,14 @@ LibraryReachableAppPackableClass(?ofType) :-
 // type to be instantiatable and mock it
 ////////////////////////////////////////////////////////////////////////
 
-.decl LibraryMethodReturningPackable(?method:Method, ?retType:Type)
+.decl LibraryMethodReturningPackable(?method:Method, ?retType:ReferenceType)
 LibraryMethodReturningPackable(?method, ?retType) :-
   Method_ReturnType(?method, ?retType),
   AndroidPackableType(?retType),
   Method_DeclaringType(?method, ?libType),
   AndroidLibraryType(?libType).
 
-.decl AppInvoReturningLibraryPackable(?invo:Instruction, ?retType:Type)
+.decl AppInvoReturningLibraryPackable(?invo:Instruction, ?retType:ReferenceType)
 AppInvoReturningLibraryPackable(?invo, ?retType) :-
   LibraryMethodReturningPackable(?tomethod, ?retType),
   MethodInvocation_Method(?invo, ?tomethod),
@@ -641,7 +650,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?formal) :-
 // Attempt at a policy that yields a reasonable compromise between
 // precision and completeness: ask for real objects of a most-refined
 // subclass, or of identical type to the declared one.
-.decl _NotMostRefinedType(?type:Type)
+.decl _NotMostRefinedType(?type:ReferenceType)
 _NotMostRefinedType(?type) :-
   ConcreteClass(?type),
   basic.SubtypeOf(?other, ?type),
@@ -657,10 +666,11 @@ VarPointsTo(?hctx, ?value, ?ctx, ?formal) :-
 VarPointsTo(?hctx, ?value, ?ctx, ?formal) :-
   FormalOfForcedReachableContext(?ctx, ?formal, ?formalType),
   basic.SubtypeOf(?type, ?formalType),
+  isReferenceType(?type),
   !_NotMostRefinedType(?type),
   ApplicationObjectFlowingToLibrary(?hctx, ?value, ?type).
 #ifndef X_CONTEXT_REMOVER
- .plan 1:(3,2,1)
+ .plan 1:(4,3,2,1)
 #endif // X_CONTEXT_REMOVER
 
 //// REVIEW Ad hoc, but useful?
@@ -739,11 +749,13 @@ LayoutControlObjectValueFromId(?controlValue, ?numId) :-
 VarPointsTo(?hctx, ?controlValue, ?ctx, ?ret) :-
   VarsAtInvocationRetrievingLayoutControl(?ret, ?var),
   VarPointsTo(?hctx, ?value, ?ctx, ?var),
-  Value_Num(?value, ?numId),
-  LayoutControlObjectValueFromId(?controlValue, ?numId).
+  LayoutControlObjectValueFromId(?controlValue, ?numId),
+  NumConstantRawInt(?numId),
+  Var_Type(?ret, ?retType),
+  Value_Num(?value, ?numId, ?retType).
 ///// HACK, HACK, HACK below!!!!!
 ///// ids seemed broken, so I just return whatever. Fixed now (?)
-//  Value_Num(?value, _),
+//  Value_Num(?value, _, _),
 //  LayoutControlObjectValueFromId(?controlValue, _).
 
 
@@ -895,46 +907,46 @@ ReachableContext(?ctx, ?meth) :-
 ApplicationPackageRegex(cat(?package, ".*")) :-
   _ApplicationPackage(?package).
 
-.decl UnobfuscatedApplicationClass(?class:ClassType)
+.decl UnobfuscatedApplicationClass(?type:ReferenceType)
 .output UnobfuscatedApplicationClass
-UnobfuscatedApplicationClass(?class) :-
-  ApplicationClass(?class),
-  (match("android.*", ?class);
-   match("butterknife.*", ?class);
-   match("cn.*", ?class);
-   match("com.*", ?class);
-   match("dagger.*", ?class);
-   match("de.*", ?class);
-   match("ezvcard.*", ?class);
-   match("dk.*", ?class);
-   match("fi.*", ?class);
-   match("org.*", ?class);
-   match("in.*", ?class);
-   match("io.*", ?class);
-   match("it.*", ?class);
-   match("me.*", ?class);
-   match("mobi.*", ?class);
-   match("net.*", ?class);
-   match("pl.*", ?class);
-   match("javax.*", ?class);
-   match("edu.*", ?class);
-   match("oauth.*", ?class);
-   match("okhttp3.*", ?class);
-   match("okio.*", ?class);
-   match("retrofit.*", ?class);
-   match("retrofit2.*", ?class);
-   match("secondary.*", ?class);
-   match("twitter4j.*", ?class)).
-UnobfuscatedApplicationClass(?class) :-
-  ApplicationClass(?class),
+UnobfuscatedApplicationClass(?type) :-
+  ApplicationClass(?type),
+  (match("android.*", ?type);
+   match("butterknife.*", ?type);
+   match("cn.*", ?type);
+   match("com.*", ?type);
+   match("dagger.*", ?type);
+   match("de.*", ?type);
+   match("ezvcard.*", ?type);
+   match("dk.*", ?type);
+   match("fi.*", ?type);
+   match("org.*", ?type);
+   match("in.*", ?type);
+   match("io.*", ?type);
+   match("it.*", ?type);
+   match("me.*", ?type);
+   match("mobi.*", ?type);
+   match("net.*", ?type);
+   match("pl.*", ?type);
+   match("javax.*", ?type);
+   match("edu.*", ?type);
+   match("oauth.*", ?type);
+   match("okhttp3.*", ?type);
+   match("okio.*", ?type);
+   match("retrofit.*", ?type);
+   match("retrofit2.*", ?type);
+   match("secondary.*", ?type);
+   match("twitter4j.*", ?type)).
+UnobfuscatedApplicationClass(?type) :-
+  ApplicationClass(?type),
   ApplicationPackageRegex(?regex),
-  match(?regex, ?class).
+  match(?regex, ?type).
 
 // Report application classes considered obfuscated by the analysis.
-.decl ObfuscatedApplicationClass(?class:ClassType)
-ObfuscatedApplicationClass(?class) :-
-  ApplicationClass(?class),
-  !UnobfuscatedApplicationClass(?class).
+.decl ObfuscatedApplicationClass(?type:ReferenceType)
+ObfuscatedApplicationClass(?type) :-
+  ApplicationClass(?type),
+  !UnobfuscatedApplicationClass(?type).
 
 .decl UnobfuscatedMethod(?meth:Method)
 .output UnobfuscatedMethod
@@ -942,8 +954,8 @@ ObfuscatedApplicationClass(?class) :-
 // A method with a long-ish name is likely unobfuscated, especially in
 // an unobfuscated class.
 UnobfuscatedMethod(?meth) :-
-  UnobfuscatedApplicationClass(?class),
-  Method_DeclaringType(?meth, ?class),
+  UnobfuscatedApplicationClass(?type),
+  Method_DeclaringType(?meth, ?type),
   Method_SimpleName(?meth, ?name),
   strlen(?name) > 2,
   ?name != "<init>",
@@ -979,9 +991,9 @@ KeepMethod(?meth) :-
   ObfuscationOn(),
   UnobfuscatedMethod(?meth).
 
-KeepClass(?class) :-
+KeepClass(?type) :-
   ObfuscationOn(),
-  UnobfuscatedApplicationClass(?class).
+  UnobfuscatedApplicationClass(?type).
 
 // .decl MethodFullJVMDescriptor(?method:Method, ?jvmFullName:symbol)
 
@@ -999,7 +1011,7 @@ KeepClass(?class) :-
 **/
 
 AndroidLibraryType(?type) :-
-  isType(?type),
+  isReferenceType(?type),
   match("android.*", ?type).
 
 // REVIEW: is this needed? android.support classes are included in the
@@ -1009,13 +1021,13 @@ AndroidApplicationClass(?class) :-
   ApplicationClass(?class). 
 //  !AndroidLibraryType(?class).
 
-.decl AppClassSubtypesLibClass(?type:Type, ?libType:Type)
+.decl AppClassSubtypesLibClass(?type:ReferenceType, ?libType:ReferenceType)
 AppClassSubtypesLibClass(?type, ?libraryType) :-
   AndroidApplicationClass(?type),
   basic.SupertypeOf(?libraryType, ?type),
   AndroidLibraryType(?libraryType).
 
-.decl LookupReturnsAppMethod(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:Type, ?method:Method)
+.decl LookupReturnsAppMethod(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:ReferenceType, ?method:Method)
 LookupReturnsAppMethod(?simplename, ?descriptor, ?type, ?methConcrete) :-
   basic.MethodLookup(?simplename, ?descriptor, ?type, ?methConcrete),
   AndroidApplicationClass(?type).
@@ -1073,7 +1085,7 @@ TypeHasApplicationObjectFlowingToLibrary(?type) :-
 
 // Classes whose methods should be all considered reachable. For
 // types-only, there must also be a reachable value of the class.
-.decl ForcedReachableAndroidClass(?ctx:configuration.Context, ?type:Type)
+.decl ForcedReachableAndroidClass(?ctx:configuration.Context, ?type:ReferenceType)
 
 ForcedReachableAndroidContext(?ctx, ?method) :-
   ForcedReachableAndroidClass(?ctx, ?type),

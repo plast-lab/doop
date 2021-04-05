@@ -1,7 +1,7 @@
-.type BoolConstant
+.type BoolConstant = symbol
 .decl isBoolConstant(?n:BoolConstant)
 
-.type NumConstant
+.type NumConstant = symbol
 .decl isNumConstant(?n:NumConstant)
 
 .type IntConstant = NumConstant
@@ -11,7 +11,7 @@
 .type FloatConstant = NumConstant
 .decl isFloatConstant(?n:FloatConstant)
 
-.type Type
+.type Type = symbol
 .type PrimitiveType = Type
 .type ClassType = Type
 
@@ -37,7 +37,7 @@
 
 //-----------------------------------------------------------------------------
 
-.type Field
+.type Field = symbol
 .decl isField(?field:Field)
 .decl isGenericField(?field:Field)
 
@@ -46,12 +46,12 @@
 
 //-----------------------------------------------------------------------------
 
-.type File
+.type File = symbol
 .decl isFile(file:File)
 
 //-----------------------------------------------------------------------------
 
-.type Package
+.type Package = symbol
 .decl isPackage(package:Package)
 
 .decl Package_DeclaringPackage(?pack: Package, ?packageName:symbol, ?declPackage: Package)
@@ -89,7 +89,7 @@
 
 //-----------------------------------------------------------------------------
 
-.type Var
+.type Var = symbol
 .decl isVar(v:Var)
 
 .decl Var_DeclaringFunction(?var:Var, ?function:Function)
@@ -102,7 +102,7 @@
 // [Heap Allocation]
 //-----------------------------------------------------------------------------
 
-.type HeapAllocation
+.type HeapAllocation            = symbol
 .type NormalHeap                = HeapAllocation
 .type StringConstant            = HeapAllocation
 .type ClassInstanceAllocation   = HeapAllocation
@@ -121,7 +121,7 @@
 // [IR Instructions]
 //-----------------------------------------------------------------------------
 
-.type Instruction
+.type Instruction = symbol
 .decl isInstruction(?insn:Instruction)
 
 .decl Instruction_Index(?insn:Instruction, ?index:number)
@@ -326,7 +326,7 @@
 // [Exception Handlers]
 //-----------------------------------------------------------------------------
 
-.type ExceptionHandler
+.type ExceptionHandler = type
 .decl isExceptionHandler(?handler:ExceptionHandler)
 
 .decl ExceptionHandler_Function(?handler:ExceptionHandler, ?inFunction:Function)
