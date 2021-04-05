@@ -375,7 +375,7 @@ Server_TaintObjTransfer(?from, ?to) :- TaintObjTransfer(_, ?from, _, ?to).
 Server_LeakingSinkVariable(?label, ?tomethod, ?var) :-
   LeakingSinkVariable(?label, ?tomethod, _, ?var).
 
-.decl Server_LeakingTaintedInformation(?fromLabel:InformationLabel, ?toLabel:InformationLabel, ?invocation:MethodInvocation, ?value:mainAnalysis.Value)
+.decl Server_LeakingTaintedInformation(?fromLabel:InformationLabel, ?toLabel:InformationLabel, ?invocation:MethodInvocation, ?value:Value)
 .output Server_LeakingTaintedInformation
 Server_LeakingTaintedInformation(?fromLabel, ?toLabel, ?invocation, ?value) :-
   LeakingTaintedInformation(?fromLabel, ?toLabel, _, ?invocation, ?value).
