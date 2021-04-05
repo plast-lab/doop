@@ -875,7 +875,7 @@ ForcedReachableAndroidContext(?ctx, ?method),
 OptInterproceduralAssign(?ctx, ?formal, ?callerCtx, ?actual),
 VarPointsTo(?hctx, ?baseValue, ?ctx, ?this) :-
    AsynchTaskExecute(?actual, ?base),
-   VarPointsTo(?hctx, ?basevalue, ?callerCtx, ?base),
+   VarPointsTo(?hctx, ?baseValue, ?callerCtx, ?base),
    isImmutableContext(?ctx),
    Value_Type(?baseValue, ?type),
    Method_DeclaringType(?method, ?type),
