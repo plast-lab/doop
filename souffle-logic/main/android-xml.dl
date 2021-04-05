@@ -93,7 +93,7 @@ ForcedReachableAndroidContext(?ctx, ?meth) :-
 
 // Detect parent activities.
 .decl Activity_Parent(?type:ClassType, ?parentActivity:ClassType)
-Activity(?parentActivityClass),
+Activity(?parentActivity),
 Activity_Parent(?type, ?parentActivity) :-
   XMLNode(?manifest, ?manifestId, _, _, _, "manifest"),
   XMLNode(?manifest, ?applicationId, ?manifestId, _, _, "application"),
