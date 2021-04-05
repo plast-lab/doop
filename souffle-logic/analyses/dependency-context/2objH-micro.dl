@@ -1,6 +1,6 @@
 // Main schema
-.type Modifier
-.type Type
+.type Modifier = symbol
+.type Type = symbol
 .type PrimitiveType = Type
 .type ReferenceType = Type
 .type ArrayType = ReferenceType
@@ -18,10 +18,10 @@
 .decl ApplicationClass(?ref:ReferenceType)
 .decl MainClass(?class:ClassType)
 .input MainClass(IO="file", filename="MainClass.facts", delimiter="\t")
-.type Field
+.type Field = symbol
 .decl Field_DeclaringType(?field:Field, ?declaringClass:ReferenceType)
-.type MethodDescriptor
-.type Method
+.type MethodDescriptor = symbol
+.type Method = symbol
 .decl Method_DeclaringType(?method:Method, ?declaringType:ReferenceType)
 .decl Method_ReturnType(?method:Method, ?returnType:Type)
 .decl Method_SimpleName(?method:Method, ?simpleName:symbol)
@@ -32,15 +32,15 @@
 .decl FormalParam(?index:number, ?method:Method, ?var:Var)
 .input FormalParam(IO="file", filename="FormalParam.facts", delimiter="\t")
 .decl ThisVar(?method:Method, ?var:Var)
-.type Var
+.type Var = symbol
 .decl Var_Type(?var:Var, ?type:Type)
 .input Var_Type(IO="file", filename="Var-Type.facts", delimiter="\t")
 .decl Var_DeclaringMethod(?var:Var, ?method:Method)
-.type HeapAllocation
+.type HeapAllocation = symbol
 .decl HeapAllocation_Type(?heap:HeapAllocation, ?type:Type)
 .decl MainMethodArgArray(?heap:HeapAllocation)
 .decl MainMethodArgArrayContent(?heap:HeapAllocation)
-.type Instruction
+.type Instruction = symbol
 .decl Instruction_Method(?insn:Instruction, ?inMethod:Method)
 .type FieldInstruction = Instruction
 .type LoadInstanceField_Insn = FieldInstruction
