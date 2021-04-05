@@ -326,7 +326,7 @@
 // [Exception Handlers]
 //-----------------------------------------------------------------------------
 
-.type ExceptionHandler = type
+.type ExceptionHandler = symbol
 .decl isExceptionHandler(?handler:ExceptionHandler)
 
 .decl ExceptionHandler_Function(?handler:ExceptionHandler, ?inFunction:Function)
