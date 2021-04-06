@@ -79,7 +79,7 @@ class AndroidTests extends DoopSpec {
 		noSanityErrors(analysis, false)
 	}
 
-	// @spock.lang.Ignore
+	@spock.lang.Ignore
 	@Unroll
 	def "Types-only Android analysis test (Phonograph)"() {
 		when:
@@ -109,7 +109,7 @@ class AndroidTests extends DoopSpec {
 		noSanityErrors(analysis, false)
 	}
 
-	// @spock.lang.Ignore
+	@spock.lang.Ignore
 	@Unroll
 	def "Types-only Android analysis test (Signal)"() {
 		when:
