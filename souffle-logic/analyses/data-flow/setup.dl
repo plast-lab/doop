@@ -1,5 +1,5 @@
-//#define InterestingStmt(stmt) isInstruction(stmt)
 .decl InterestingStmt(stmt:Instruction)
+//InterestingStmt(stmt) :- isInstruction(stmt)
 InterestingStmt(stmt) :-
 	ApplicationMethod(meth),
 	Instruction_Method(stmt, meth).
@@ -79,3 +79,10 @@ RESOLVE_CALL(stmt, method) :-
 	VarType(base, baseType),
 	basic.SubtypeOf(type, baseType),
 	basic.MethodLookup(name, desc, type, method).
+
+
+.output InterestingStmt
+.output basic.SubtypeOf
+.output basic.MethodLookup
+.output basic.MainMethodDeclaration
+.output basic.ClassConstructor
