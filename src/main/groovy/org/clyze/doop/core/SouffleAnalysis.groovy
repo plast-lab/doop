@@ -7,6 +7,7 @@ import org.clyze.doop.jimple.JimpleProcessor
 import org.clyze.doop.soot.DoopConventions
 import org.clyze.doop.utils.ConfigurationGenerator
 import org.clyze.doop.utils.DDlog
+import org.clyze.doop.utils.SouffleOptions
 import org.clyze.doop.utils.SouffleScript
 import org.clyze.doop.utils.TACGenerator
 import org.clyze.utils.Executor
@@ -45,16 +46,11 @@ class SouffleAnalysis extends DoopAnalysis {
 
 		Future<File> compilationFuture = null
 		def executorService = Executors.newSingleThreadExecutor()
-		boolean provenance = options.SOUFFLE_PROVENANCE.value as boolean
-		boolean profiling = options.SOUFFLE_PROFILE.value as boolean
-		boolean liveProf = options.SOUFFLE_LIVE_PROFILE.value as boolean
 		String analysisBinaryPath = options.USE_ANALYSIS_BINARY.value as String
-		boolean runInterpreted = options.SOUFFLE_RUN_INTERPRETED.value as boolean
-		boolean debug = options.SOUFFLE_DEBUG.value as boolean
+		boolean runInterpreted = options.SOUFFLE_MODE.value == DoopAnalysisFamily.SOUFFLE_INTERPRETED
 		int jobs = options.SOUFFLE_JOBS.value as int
-		boolean removeContexts = options.X_CONTEXT_REMOVER.value as boolean
-		boolean forceRecompile = options.SOUFFLE_FORCE_RECOMPILE.value as boolean
 		long monitorInterval = (options.X_MONITORING_INTERVAL.value as long) * 1000
+		SouffleOptions souffleOpts = new SouffleOptions(options)
 
 		if (!options.FACTS_ONLY.value && !analysisBinaryPath && !runInterpreted) {
 			if (options.VIA_DDLOG.value) {
@@ -66,10 +62,7 @@ class SouffleAnalysis extends DoopAnalysis {
 				@Override
 				File call() {
 					log.info "[Task COMPILE...]"
-					def generatedFile = script.compile(analysis, outDir, profiling,
-													   debug, provenance, liveProf, forceRecompile,
-													   removeContexts,
-													   options.SOUFFLE_USE_FUNCTORS.value as boolean)
+					def generatedFile = script.compile(analysis, outDir, souffleOpts)
 					log.info "[Task COMPILE Done]"
 					return generatedFile
 				}
@@ -85,7 +78,7 @@ class SouffleAnalysis extends DoopAnalysis {
 		try {
 			log.info "[Task FACTS...]"
 			generateFacts()
-			script.postprocessFacts(outDir, profiling)
+			script.postprocessFacts(outDir, souffleOpts.profile)
 			log.info "[Task FACTS Done]"
 			runtimeMetricsFile.append("soot-fact-generation time (sec)\t${factGenTime}\n")
 
@@ -94,14 +87,11 @@ class SouffleAnalysis extends DoopAnalysis {
 				def methodLookupFile = new File("${Doop.souffleLogicPath}/addons/server-logic/method-lookup-ext.dl")
                 if (runInterpreted) {
                     script.interpretScript(methodLookupFile, outDir, factsDir,
-                                           jobs, profiling, debug, removeContexts)
+                                           jobs, souffleOpts)
                 } else {
-				    def generatedFile0 = script.compile(methodLookupFile, outDir,
-						                                profiling, debug, provenance, liveProf, forceRecompile,
-						                                removeContexts)
+				    def generatedFile0 = script.compile(methodLookupFile, outDir, souffleOpts)
 				    script.run(generatedFile0, factsDir, outDir, jobs,
-						       monitorInterval, monitorClosure,
-						       provenance, liveProf, profiling)
+						       monitorInterval, monitorClosure, souffleOpts)
                 }
 				log.info "[CHA Done]"
 			}
@@ -117,13 +107,11 @@ class SouffleAnalysis extends DoopAnalysis {
 
 			if (!options.DRY_RUN.value) {
 				if (runInterpreted) {
-					script.interpretScript(analysis, outDir, factsDir, jobs,
-										   profiling, debug, removeContexts)
+					script.interpretScript(analysis, outDir, factsDir, jobs, souffleOpts)
 				} else {
 				    File analysisBinary = analysisBinaryPath ? new File(analysisBinaryPath) : generatedFile
 				    script.run(analysisBinary, factsDir, outDir, jobs, 
-						       monitorInterval, monitorClosure, provenance,
-                               liveProf, profiling)
+						       monitorInterval, monitorClosure, souffleOpts)
 				}
 
 				runtimeMetricsFile.append("analysis execution time (sec)\t${script.executionTime}\n")

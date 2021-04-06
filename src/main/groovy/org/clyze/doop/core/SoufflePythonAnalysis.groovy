@@ -3,6 +3,7 @@ package org.clyze.doop.core
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 import groovy.util.logging.Log4j
+import org.clyze.doop.utils.SouffleOptions
 
 import static org.apache.commons.io.FileUtils.deleteQuietly
 import static org.apache.commons.io.FileUtils.sizeOfDirectory
@@ -28,27 +29,17 @@ class SoufflePythonAnalysis extends SouffleAnalysis {
         runAnalysisAndProduceStats(analysis)
 
         def script = newScriptForAnalysis(executor)
-        if (options.SOUFFLE_RUN_INTERPRETED.value) {
-            script.interpretScript(analysis, outDir, factsDir,
-                    options.SOUFFLE_JOBS.value as int,
-                    options.SOUFFLE_PROFILE.value as boolean,
-                    options.SOUFFLE_DEBUG.value as boolean,
-                    options.X_CONTEXT_REMOVER.value as boolean)
+        SouffleOptions souffleOpts = new SouffleOptions(options)
+        if (options.SOUFFLE_MODE.value == DoopAnalysisFamily.SOUFFLE_INTERPRETED) {
+            script.interpretScript(analysis, outDir, factsDir, options.SOUFFLE_JOBS.value as int, souffleOpts)
         } else {
-            def generatedFile = script.compile(analysis, outDir,
-                    options.SOUFFLE_PROFILE.value as boolean,
-                    options.SOUFFLE_DEBUG.value as boolean,
-                    options.SOUFFLE_PROVENANCE.value as boolean,
-                    options.SOUFFLE_LIVE_PROFILE.value as boolean,
-                    options.SOUFFLE_FORCE_RECOMPILE.value as boolean,
-                    options.X_CONTEXT_REMOVER.value as boolean)
+            def generatedFile = script.compile(analysis, outDir, souffleOpts)
 
             script.run(generatedFile, factsDir, outDir,
                     options.SOUFFLE_JOBS.value as int,
                     (options.X_MONITORING_INTERVAL.value as long) * 1000,
                     monitorClosure,
-                    options.SOUFFLE_PROVENANCE.value as boolean,
-                    options.SOUFFLE_LIVE_PROFILE.value as boolean)
+                    souffleOpts)
 
         }
 

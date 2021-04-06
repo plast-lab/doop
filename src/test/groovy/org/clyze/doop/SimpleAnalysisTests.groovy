@@ -19,7 +19,7 @@ class SimpleAnalysisTests extends ServerAnalysisTests {
                                         ["--coarse-grained-allocation-sites",
                                          "--server-logic", "--thorough-fact-gen",
 					 "--generate-jimple",
-					 "--souffle-run-interpreted",
+					 "--souffle-mode", "interpreted",
                                          "--cs-library", "--extra-metrics", "--sarif",
                                          "--cfg", "--platform", "java_8"] + sanityOpts)
 

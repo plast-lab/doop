@@ -32,13 +32,20 @@ class DoopAnalysisFamily implements AnalysisFamily {
 	private static final int SERVER_DEFAULT_THRESHOLD = 1000
 	private static final int DEFAULT_JOBS = 4
 	private static final String DEFAULT_NATIVE_BACKEND = ''
+
 	static final String NATIVE_BACKEND_BINUTILS = 'binutils'
 	static final String NATIVE_BACKEND_BUILTIN = 'builtin'
 	static final String NATIVE_BACKEND_RADARE = 'radare'
+
 	static final String USE_ANALYSIS_BINARY_NAME = 'use-analysis-binary'
+
 	static final String STATS_NONE = 'none'
 	static final String STATS_DEFAULT = 'default'
 	static final String STATS_FULL = 'full'
+
+	static final String SOUFFLE_COMPILED = 'compiled'
+	static final String SOUFFLE_INTERPRETED = 'interpreted'
+	static final String SOUFFLE_TRANSLATED = 'translated'
 
 	@Override
 	String getName() { "doop" }
@@ -718,11 +725,14 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Use precompiled analysis binary (for Windows compatibility).",
 					argName: "PATH"
 			),
-			new BooleanAnalysisOption(
-					id: "SOUFFLE_RUN_INTERPRETED",
-					name: "souffle-run-interpreted",
+			new AnalysisOption<String>(
+					id: "SOUFFLE_MODE",
+					name: "souffle-mode",
 					group: GROUP_ENGINE,
-					description: "Run souffle in interpreted mode (currently only for Python analyses)."
+					description: "How to run Souffle: compile to binary, use interpreter, only translate to C++.",
+					validValues: [SOUFFLE_COMPILED, SOUFFLE_INTERPRETED, SOUFFLE_TRANSLATED],
+					value: SOUFFLE_COMPILED,
+					argName: "MODE"
 			),
 			new BooleanAnalysisOption(
 					id: "SOUFFLE_USE_FUNCTORS",
