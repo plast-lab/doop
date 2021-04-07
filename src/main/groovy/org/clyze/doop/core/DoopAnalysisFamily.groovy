@@ -1,8 +1,7 @@
 package org.clyze.doop.core
 
+import groovy.transform.CompileStatic
 import org.apache.commons.io.FileUtils
-
-// import groovy.transform.TypeChecked
 import org.clyze.analysis.*
 import org.clyze.doop.common.Parameters
 
@@ -10,8 +9,7 @@ import static DoopAnalysis.INFORMATION_FLOW_SUFFIX
 import static org.apache.commons.io.FilenameUtils.getExtension
 import static org.apache.commons.io.FilenameUtils.removeExtension
 
-@Singleton
-// @TypeChecked
+@CompileStatic
 class DoopAnalysisFamily implements AnalysisFamily {
 
 	public static final String DOOP_PLATFORMS_LIB_ENV = "DOOP_PLATFORMS_LIB"
@@ -60,7 +58,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 	List<AnalysisOption<?>> supportedOptions() { SUPPORTED_OPTIONS }
 
 	@Override
-	Map<String, AnalysisOption<?>> supportedOptionsAsMap() { SUPPORTED_OPTIONS.collectEntries { [(it.id): it] } }
+	Map<String, AnalysisOption<?>> supportedOptionsAsMap() { supportedOptions().collectEntries { [(it.id): it] } }
 
 	@Override
 	void cleanDeploy() {
@@ -333,7 +331,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					group: GROUP_NATIVE,
 					argName: "BACKEND",
 					description: "Use back-end to scan native code (portable built-in, system binutils, Radare2).",
-					validValues: [NATIVE_BACKEND_BUILTIN, NATIVE_BACKEND_BINUTILS, NATIVE_BACKEND_RADARE],
+					validValues: [NATIVE_BACKEND_BUILTIN, NATIVE_BACKEND_BINUTILS, NATIVE_BACKEND_RADARE] as Set<String>,
 					value: DEFAULT_NATIVE_BACKEND,
 					forCacheID: true
 			),
@@ -730,7 +728,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "souffle-mode",
 					group: GROUP_ENGINE,
 					description: "How to run Souffle: compile to binary, use interpreter, only translate to C++.",
-					validValues: [SOUFFLE_COMPILED, SOUFFLE_INTERPRETED, SOUFFLE_TRANSLATED],
+					validValues: [SOUFFLE_COMPILED, SOUFFLE_INTERPRETED, SOUFFLE_TRANSLATED] as Set<String>,
 					value: SOUFFLE_COMPILED,
 					argName: "MODE"
 			),
@@ -912,7 +910,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					group: GROUP_STATS,
 					argName: "LEVEL",
 					description: "Set statistics collection logic.",
-					validValues: [STATS_NONE, STATS_DEFAULT, STATS_FULL]
+					validValues: [STATS_NONE, STATS_DEFAULT, STATS_FULL] as Set<String>
 			),
 			new BooleanAnalysisOption(
 					id: "X_STATS_FULL",
@@ -1119,19 +1117,19 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forPreprocessor: true,
 					cli: false
 			),
-	]
+	] as List<AnalysisOption<?>>
 
 	private static List<String> analysesFor(File path, String fileToLookFor) {
 		if (!path) {
 			println "ERROR: Doop was not initialized correctly, could not read analyses names. Is environment variable DOOP_HOME set?"
 			return []
 		}
-		def analyses = []
+		List<String> analyses = []
 		path.eachDir { File dir ->
 			def f = new File(dir, fileToLookFor)
 			if (f.exists() && f.file) analyses << dir.name
 		}
-		analyses.sort()
+		return analyses.sort()
 	}
 
 	private static List<String> getValidAnalyses() {
@@ -1205,11 +1203,12 @@ class DoopAnalysisFamily implements AnalysisFamily {
 	}
 
     static Collection<File> getAllInputs(Map<String, AnalysisOption<?>> options) {
-        Collection<File> inputs = [] as List
-        inputs += options.INPUTS.value
-        inputs += options.LIBRARIES.value
-        inputs += options.HEAPDLS.value
-        inputs += options.PLATFORMS.value
+        Collection<File> inputs = [] as List<File>
+        Closure collector = { l -> (l as List<String>).collect { new File(it) }}
+        inputs += collector(options.INPUTS.value)
+        inputs += collector(options.LIBRARIES.value)
+        inputs += collector(options.HEAPDLS.value)
+        inputs += collector(options.PLATFORMS.value)
         return inputs
     }
 }

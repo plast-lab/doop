@@ -41,7 +41,7 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
 	static final String USAGE = "doop -i <INPUT> -a <NAME> [OPTION]..."
 	static final int WIDTH = terminalWidth
 
-	static final AnalysisFamily FAMILY = DoopAnalysisFamily.instance
+	static final AnalysisFamily FAMILY = new DoopAnalysisFamily()
 
 	private static int getTerminalWidth() {
 		// Check environment variable.

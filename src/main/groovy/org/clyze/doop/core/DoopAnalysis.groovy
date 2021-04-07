@@ -92,7 +92,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
     protected DoopAnalysis(Map<String, AnalysisOption<?>> options,
                            InputResolutionContext ctx,
                            Map<String, String> commandsEnvironment) {
-        super(DoopAnalysisFamily.instance, options)
+        super(new DoopAnalysisFamily(), options)
         this.ctx = ctx
 
         if (!options.INPUT_ID.value) {
