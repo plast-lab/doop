@@ -574,14 +574,6 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
 		throwIfBothSet(options.APP_REGEX, options.AUTO_APP_REGEX_MODE)
 
-		if (options.X_SERVER_LOGIC.value) {
-			// Turn on optimization outputs.
-			if (!(options.GENERATE_OPTIMIZATION_DIRECTIVES.value)) {
-				println "Server logic enabled, turning on optimization directives"
-				options.GENERATE_OPTIMIZATION_DIRECTIVES.value = true
-			}
-		}
-
 		if (options.X_SERVER_LOGIC.value || options.GENERATE_OPTIMIZATION_DIRECTIVES.value) {
 		   options.GENERATE_ARTIFACTS_MAP.value = true
 		}
