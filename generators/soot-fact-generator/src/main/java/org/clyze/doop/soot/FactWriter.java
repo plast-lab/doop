@@ -241,6 +241,16 @@ class FactWriter extends JavaFactWriter {
         _db.add(ASSIGN_RETURN_VALUE, insn, _rep.local(inMethod, to));
     }
 
+    private void writeArraySize(SootMethod m, InstrInfo ii, Value sizeVal, int pos, String heap) {
+        if (sizeVal instanceof IntConstant) {
+            IntConstant size = (IntConstant) sizeVal;
+            _db.add(ARRAY_ALLOC_CONST_SIZE, ii.insn, str(pos), str(size.value));
+            if(size.value == 0) _db.add(EMPTY_ARRAY, heap);
+        }
+        else if (sizeVal instanceof Local)
+            _db.add(ARRAY_ALLOC, ii.insn, _rep.local(m, (Local)sizeVal));
+    }
+
     void writeAssignHeapAllocation(SootMethod m, Stmt stmt, Local l, Value expr, Session session) {
         String heap = _rep.heapAlloc(m, expr, session);
         _db.add(NORMAL_HEAP, heap, writeType(expr.getType()));
@@ -251,16 +261,7 @@ class FactWriter extends JavaFactWriter {
 
         if (expr instanceof NewArrayExpr) {
             NewArrayExpr newArray = (NewArrayExpr) expr;
-            Value sizeVal = newArray.getSize();
-
-            if (sizeVal instanceof IntConstant) {
-                IntConstant size = (IntConstant) sizeVal;
-
-                if(size.value == 0)
-                    _db.add(EMPTY_ARRAY, heap);
-            }
-            else if (sizeVal instanceof Local)
-                _db.add(ARRAY_ALLOC, ii.insn, _rep.local(m, (Local)sizeVal));
+            writeArraySize(m, ii, newArray.getSize(), 0, heap);
         }
     }
 
@@ -282,26 +283,28 @@ class FactWriter extends JavaFactWriter {
      * be allocated separately for every dimension of the array.
      */
     void writeAssignNewMultiArrayExpr(SootMethod m, Stmt stmt, Local l, NewMultiArrayExpr expr, Session session) {
-        writeAssignNewMultiArrayExprHelper(m, stmt, l, _rep.local(m,l), expr, (ArrayType) expr.getType(), session);
+        writeAssignNewMultiArrayExprHelper(m, stmt, l, _rep.local(m,l), expr, (ArrayType) expr.getType(), session, 0);
     }
 
-    private void writeAssignNewMultiArrayExprHelper(SootMethod m, Stmt stmt, Local l, String assignTo, NewMultiArrayExpr expr, ArrayType arrayType, Session session) {
+    private void writeAssignNewMultiArrayExprHelper(SootMethod m, Stmt stmt, Local l, String assignTo, NewMultiArrayExpr expr, ArrayType arrayType, Session session, int pos) {
         String heap = _rep.heapMultiArrayAlloc(m, /* expr, */ arrayType, session);
         InstrInfo ii = calcInstrInfo(m, stmt, session);
         String methodId = ii.methodId;
 
         _db.add(NORMAL_HEAP, heap, writeType(arrayType));
         _db.add(ASSIGN_HEAP_ALLOC, ii.insn, str(ii.index), heap, assignTo, methodId, ""+getLineNumberFromStmt(stmt));
+        writeArraySize(m, ii, expr.getSize(pos), pos, heap);
 
         Type componentType = getComponentType(arrayType);
         if (componentType instanceof ArrayType) {
             String childAssignTo = _rep.newLocalIntermediate(m, l, session);
-            writeAssignNewMultiArrayExprHelper(m, stmt, l, childAssignTo, expr, (ArrayType) componentType, session);
+            writeAssignNewMultiArrayExprHelper(m, stmt, l, childAssignTo, expr, (ArrayType) componentType, session, pos+1);
             int storeInsnIndex = session.calcUnitNumber(stmt);
             String storeInsn = _rep.instruction(m, stmt, storeInsnIndex);
 
             _db.add(STORE_ARRAY_INDEX, storeInsn, str(storeInsnIndex), childAssignTo, assignTo, methodId);
             writeLocal(childAssignTo, writeType(componentType), methodId);
+            _db.add(ARRAY_INSN_INDEX, ii.insn, childAssignTo);
         }
     }
 

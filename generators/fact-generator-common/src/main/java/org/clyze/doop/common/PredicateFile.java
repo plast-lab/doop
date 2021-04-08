@@ -25,6 +25,7 @@ public enum PredicateFile
     ARRAY_NUM_INDEX("ArrayNumIndex"),
     ARRAY_TYPE("ArrayType"),
     ARRAY_ALLOC("ArrayAllocation"),
+    ARRAY_ALLOC_CONST_SIZE("ArrayAllocationConstSize"),
     ASSIGN_BINOP("AssignBinop"),
     ASSIGN_CAST("AssignCast"),
     ASSIGN_CAST_NUM_CONST("AssignCastNumConstant"),
