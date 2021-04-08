@@ -17,7 +17,7 @@
 .output PointerFlows
 
 OptBaseFlows(from, to) :-
-	//InterestingStmt(stmt),
+	InterestingStmt(stmt),
 	(MOVE(stmt, to, from) ; CAST(stmt, to, _, from)).
 
 OptBaseFlows(from, to) :-
