@@ -91,6 +91,7 @@ Server_Field_ShadowedBy(?fld, ?shadowFld) :-
 _IFPT(?baseValue, ?fld, ?value) :-
   mainAnalysis.InstanceFieldPointsTo(_, ?value, ?fld, _, ?baseValue),
   isHeapAllocation(?value),
+  !HeapAllocation_Null(?value),
   !isNumConstant(?value).
 #endif // DISABLE_POINTS_TO
 
@@ -101,6 +102,7 @@ Server_IField_Values_Count(?baseValue, ?fld, ?n) :-
 _SFPT(?fld, ?value) :-
   mainAnalysis.StaticFieldPointsTo(_, ?value, ?fld),
   isHeapAllocation(?value),
+  !HeapAllocation_Null(?value),
   !isNumConstant(?value).
 
 _SFPT_Count(?fld, ?n) :-
@@ -162,6 +164,7 @@ Server_SField_Values(?fld, "<<XL-pt-set>>") :-
 _VPT(?var, ?value) :-
   mainAnalysis.VarPointsTo(_, ?value, _, ?var),
   isHeapAllocation(?value),
+  !HeapAllocation_Null(?value),
   !isNumConstant(?value).
 
 _InterestingVar(?var) :-
