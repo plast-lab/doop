@@ -171,8 +171,8 @@ SensitiveLayoutControlValue(?value) :-
 
 // Handle library-callable "on*" methods of layout controls
 
-.decl _OnEventMethod(?meth:Method)
-_OnEventMethod(?meth) :-
+.decl OnEventMethod(?meth:Method)
+OnEventMethod(?meth) :-
   Method_SimpleName(?meth, ?simplename),
   (match("on.*", ?simplename);
    match("before.*", ?simplename);
@@ -181,13 +181,13 @@ _OnEventMethod(?meth) :-
 PublicOnMethodOfLayoutControl(?meth) :-
   basic.MethodDeclaredOrInherited(?meth, ?type),
   LayoutControl(_, ?type, _),
-  _OnEventMethod(?meth),
+  OnEventMethod(?meth),
   Method_Modifier("public", ?meth).
 
 ProtectedOnMethodOfLayoutControl(?meth) :-
   basic.MethodDeclaredOrInherited(?meth, ?type),
   LayoutControl(_, ?type, _),
-  _OnEventMethod(?meth),
+  OnEventMethod(?meth),
   Method_Modifier("protected", ?meth).
 
 OverridingProtectedOnMethodOfLayoutControl(?methConcrete) :-
@@ -205,7 +205,7 @@ ForcedReachableAndroidContext(?ctx, ?meth) :-
 ForcedReachableAndroidContext(?ctx, ?meth) :-
   ReachableLayoutControl(?type),
   Method_DeclaringType(?meth, ?type),
-  (Method_SimpleName(?meth, "<init>") ; _OnEventMethod(?meth)),
+  (Method_SimpleName(?meth, "<init>") ; OnEventMethod(?meth)),
   isImmutableContext(?ctx).
 
 // Create special values for layout controls made reachable by the analysis.
@@ -317,13 +317,13 @@ AndroidApplicationListenerClass(?class) :-
 PublicOnMethodOfReachableListener(?meth) :-
   LibraryReachableAppListenerType(?class),
   basic.MethodDeclaredOrInherited(?meth, ?class),
-  _OnEventMethod(?meth),
+  OnEventMethod(?meth),
   Method_Modifier("public", ?meth).
 
 ProtectedOnMethodOfReachableListener(?meth) :-
   LibraryReachableAppListenerType(?class),
   basic.MethodDeclaredOrInherited(?meth, ?class),
-  _OnEventMethod(?meth),
+  OnEventMethod(?meth),
   Method_Modifier("protected", ?meth).
 
 OverridingProtectedOnMethodOfReachableListener(?methConcrete) :-
@@ -541,9 +541,9 @@ WebClientType(?type):-
   (?supertype = "android.webkit.WebViewClient";
    ?supertype = "android.webkit.WebChromeClient").
 
-.decl _ForcedReachableFromJavascriptContext(?ctx:configuration.Context, ?meth:Method)
+.decl ForcedReachableFromJavascriptContext(?ctx:configuration.Context, ?meth:Method)
 
-_ForcedReachableFromJavascriptContext(?ctx, ?meth),
+ForcedReachableFromJavascriptContext(?ctx, ?meth),
 ForcedReachableAndroidContext(?ctx, ?meth) :-
   basic.ConcreteMethodDeclared(?meth, ?class),
   (Method_Modifier("protected", ?meth);
@@ -812,8 +812,8 @@ ReachableLayoutControl(?fragmentSubType) :-
 #endif // DISABLE_POINTS_TO
 
 // REVIEW: Doesn't the Fact type Activity suffice?
-.decl _ActivityVar(?var:Var)
-_ActivityVar(?var) :-
+.decl ActivityVar(?var:Var)
+ActivityVar(?var) :-
   Var_Type(?var, ?vartype),
   basic.SupertypeOf("android.app.Activity", ?vartype).
 
@@ -829,7 +829,7 @@ BindFragment(?activityThis, ?fragmentParam) :-
   ActualParam(_, ?invocation, ?fragmentParam),
   Instruction_Method(?invocation, ?inmethod),
   ThisVar(?inmethod, ?activityThis),
-  _ActivityVar(?activityThis).
+  ActivityVar(?activityThis).
 
 // TODO: this is only partial support for fragments, and we fail
 // DroidBench's FragmentLifecycle2 benchmark
@@ -838,7 +838,7 @@ BindFragment(?activityThis, ?fragmentParam) :-
 ActivityVarInType(?var, ?ctx, ?type) :-
   ReachableContext(?ctx, ?method),
   Var_DeclaringMethod(?var, ?method),
-  _ActivityVar(?var),
+  ActivityVar(?var),
   Method_DeclaringType(?method, ?type).
 
 
@@ -1039,14 +1039,14 @@ AppMethodOverridesAndroidLibraryMethod(?methConcrete, ?meth) :-
   Method_Descriptor(?meth, ?descriptor),
   LookupReturnsAppMethod(?simplename, ?descriptor, ?type, ?methConcrete).
 
-.decl _AndroidApplicationValue(?value:Value, ?ofType:Type)
-_AndroidApplicationValue(?value, ?ofType) :-
+.decl AndroidApplicationValue(?value:Value, ?ofType:Type)
+AndroidApplicationValue(?value, ?ofType) :-
   AndroidApplicationClass(?ofType),
   Value_Type(?value, ?ofType).
 
 // ... all analysis-reachable application objects
 ReachableApplicationObjectOfType(?hctx, ?value, ?ofType) :-
-  _AndroidApplicationValue(?value, ?ofType),
+  AndroidApplicationValue(?value, ?ofType),
   VarPointsTo(?hctx, ?value, _, _).
 
 // and similar info for type-based analyses
@@ -1055,8 +1055,8 @@ TypeHasReachableApplicationObject(?type) :-
   AndroidApplicationClass(?type).
 
 
-.decl _AndroidLibraryVar(?var:Var)
-_AndroidLibraryVar(?var) :-
+.decl AndroidLibraryVar(?var:Var)
+AndroidLibraryVar(?var) :-
   AndroidLibraryType(?libraryType),
   Method_DeclaringType(?method, ?libraryType),
   Var_DeclaringMethod(?var, ?method).
@@ -1064,13 +1064,13 @@ _AndroidLibraryVar(?var) :-
 // The reasonable definition is below. This is augmented with some
 // more liberal special cases
 ApplicationObjectFlowingToLibrary(?hctx, ?value, ?ofType) :-
-  _AndroidLibraryVar(?var),
+  AndroidLibraryVar(?var),
   VarPointsTo(?hctx, ?value, _, ?var),
-  _AndroidApplicationValue(?value, ?ofType).
+  AndroidApplicationValue(?value, ?ofType).
 
-.decl _AndroidReachableLibraryVarOfType(?var:Var, ?varType:Type)
-_AndroidReachableLibraryVarOfType(?var, ?varType) :-
-  _AndroidLibraryVar(?var),
+.decl AndroidReachableLibraryVarOfType(?var:Var, ?varType:Type)
+AndroidReachableLibraryVarOfType(?var, ?varType) :-
+  AndroidLibraryVar(?var),
   Var_DeclaringMethod(?var, ?method),
   Reachable(?method),
   Var_Type(?var, ?varType).
@@ -1079,7 +1079,7 @@ _AndroidReachableLibraryVarOfType(?var, ?varType) :-
 // ApplicationObjectFlowingToLibrary logic, but for types. But
 // no further logic seems to be enabled by types alone.
 TypeHasApplicationObjectFlowingToLibrary(?type) :-
-  _AndroidReachableLibraryVarOfType(_, ?varType),
+  AndroidReachableLibraryVarOfType(_, ?varType),
   basic.SubtypeOf(?type, ?varType),
   TypeHasReachableApplicationObject(?type).
 

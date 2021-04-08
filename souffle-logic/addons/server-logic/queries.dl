@@ -384,3 +384,42 @@ Server_LeakingTaintedInformation(?fromLabel, ?toLabel, ?invocation, ?value) :-
   LeakingTaintedInformation(?fromLabel, ?toLabel, _, ?invocation, ?value).
 
 #endif // INFORMATION_FLOW
+
+// Android //
+
+#ifdef ANDROID
+.output Activity
+.output Service
+.output BroadcastReceiver
+.output ContentProvider
+.output AndroidApplication
+.output mainAnalysis.AndroidOriginalAppComponent
+.output mainAnalysis.RegisterBroadCastReceiverVar
+.output mainAnalysis.OnEventMethod
+.output mainAnalysis.ReachableLayoutControl
+.output mainAnalysis.ListenerClassConstantValue
+.output mainAnalysis.AndroidPackableType
+.output mainAnalysis.AndroidApplicationPackableClass
+.output mainAnalysis.ReachableAppPackableMethodOverridingLib
+.output mainAnalysis.LibraryReachableAppPackableClass
+.output mainAnalysis.LibraryMethodReturningPackable
+.output mainAnalysis.AppInvoReturningLibraryPackable
+.output mainAnalysis.SpecialMissingPackableValue
+.output mainAnalysis.ForcedReachableFromJavascriptContext
+.output mainAnalysis.ArgToAddJavascriptInterface
+.output mainAnalysis.ReifiedApplicationAndCompatibleVar
+.output mainAnalysis.ActivityVar
+.output mainAnalysis.BindFragment
+.output mainAnalysis.ActivityVarInType
+.output mainAnalysis.AsynchTaskExecute
+.output mainAnalysis.ApplicationPackageRegex
+.output mainAnalysis.UnobfuscatedApplicationClass
+.output mainAnalysis.ObfuscatedApplicationClass
+.output mainAnalysis.UnobfuscatedMethod
+.output mainAnalysis.AppClassSubtypesLibClass
+.output mainAnalysis.LookupReturnsAppMethod
+.output mainAnalysis.AndroidApplicationValue
+.output mainAnalysis.AndroidLibraryVar
+.output mainAnalysis.AndroidReachableLibraryVarOfType
+.output mainAnalysis.ForcedReachableAndroidClass
+#endif // ANDROID
