@@ -221,7 +221,8 @@ Server_Var_Return(?var, ?method) :-
 .decl _AIPT_Count(?arrayValue:Value, ?n:number)
 
 _AIPT(?arrayValue, ?value) :-
-  mainAnalysis.ArrayIndexPointsTo(_, ?value, _, ?arrayValue).
+  mainAnalysis.ArrayIndexPointsTo(_, ?value, _, ?arrayValue),
+  !HeapAllocation_Null(?value).
 
 _AIPT_Count(?arrayValue, ?n) :-
   _AIPT(?arrayValue, _),
