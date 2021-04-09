@@ -100,6 +100,13 @@ OptBaseFlows(actual, to) :-
 	ACTUAL_PARAM(callStmt, nth, actual),
 	ACTUAL_RET(callStmt, to).
 
+#ifdef DATA_FLOW_GOTO_LIB
+InterestingStmt(stmt) :-
+	InterestingStmt(callStmt),
+	RESOLVE_CALL(callStmt, meth),
+	Instruction_Method(stmt, meth).
+#endif
+
 
 Flows(x, y) :- OptBaseFlows(x, y).
 

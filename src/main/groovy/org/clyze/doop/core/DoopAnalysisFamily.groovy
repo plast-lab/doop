@@ -676,6 +676,13 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Discover main() methods.",
 					forPreprocessor: true
 			),
+			new BooleanAnalysisOption(
+					id: "DATA_FLOW_GOTO_LIB",
+					name: "Χdata-flow-goto-lib",
+					group: GROUP_EXPERIMENTAL,
+					description: "Allow data-flow logic to go into library code using CHA.",
+					forPreprocessor: true
+			),
 			/* End preprocessor normal flags */
 			/* Start Souffle related options */
 			new IntegerAnalysisOption(
