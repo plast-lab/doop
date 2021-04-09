@@ -4,8 +4,18 @@ InterestingStmt(stmt) :-
 	ApplicationMethod(meth),
 	Instruction_Method(stmt, meth).
 
-#define MOVE(stmt, to, from) AssignLocal(from, to, stmt)
-#define CAST(stmt, to, type, from) AssignCast(type, from, to, stmt)
+.decl MOVE(stmt:AssignLocal_Insn, to:Var, from:Var)
+MOVE(stmt, to, from) :-
+	isAssignLocal_Insn(stmt),
+	AssignInstruction_To(stmt, to),
+	AssignLocal_From(stmt, from).
+
+.decl CAST(stmt:AssignCast_Insn, to:Var, type:Type, from:Var)
+CAST(stmt, to, type, from) :-
+	isAssignCast_Insn(stmt),
+	AssignInstruction_To(stmt, to),
+	AssignCast_From(stmt, from),
+	AssignCast_Type(stmt, type).
 
 .decl UNOP(stmt:AssignUnop_Insn, to:Var, op:symbol)
 UNOP(stmt, to, op) :-
