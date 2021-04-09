@@ -12,9 +12,18 @@
 .decl SelfFlows(x:Var)
 // Flows between reference typed vars
 .decl PointerFlows(x:Var, y:Var)
+
+.decl FlowsIntoConstArrayIndex(x:Var, arr:Var, index:number)
+.decl FlowsIntoStaticField(x:Var, fld:Field)
+.decl FlowsIntoInstanceFieldBase(x:Var, base:Var)
+
 .output Flows
 .output SelfFlows
 .output PointerFlows
+.output FlowsIntoConstArrayIndex
+.output FlowsIntoStaticField
+.output FlowsIntoInstanceFieldBase
+
 
 OptBaseFlows(from, to) :-
 	InterestingStmt(stmt),
@@ -26,6 +35,7 @@ OptBaseFlows(from, to) :-
 	OPERAND_VAR(stmt, _, from).
 
 // Array STORE with const index
+FlowsIntoConstArrayIndex(from, arr, i),
 OptBaseFlows(from, v) :-
 	InterestingStmt(stmt),
 	ASTORE_NUM(stmt, arr, i, from),
@@ -38,6 +48,7 @@ OptBaseFlows(v, to) :-
 	v = MK_INDEX_VAR(arr, i).
 
 // Static field STORE
+FlowsIntoStaticField(from, fld),
 OptBaseFlows(from, v) :-
 	InterestingStmt(stmt),
 	SSTORE(stmt, fld, from),
@@ -63,6 +74,10 @@ OptBaseFlows(from, to) :-
 	ILOAD(stmt2, to, base, fld),
 	InterestingStmt(stmt2).
 
+FlowsIntoInstanceFieldBase(from, base) :-
+	Flows(from, base),
+	(ISTORE(_, base, _, _) ; ILOAD(_, _, base, _)).
+
 // Interprocedural: actual param -> formal param
 OptBaseFlows(actual, formal) :-
 	InterestingStmt(stmt),
@@ -84,6 +99,7 @@ OptBaseFlows(actual, to) :-
 	OptMethodRetFormal(meth, nth),
 	ACTUAL_PARAM(callStmt, nth, actual),
 	ACTUAL_RET(callStmt, to).
+
 
 Flows(x, y) :- OptBaseFlows(x, y).
 
