@@ -134,7 +134,7 @@ Method_TotalVPT(?method, 0) :-
 InvokedMethod(?method) :-
     Stats_Simple_InsensCallGraphEdge(_, ?method).
 
-.ouptput InvokedMethod
+.output InvokedMethod
 
 .decl PolymorphicallyInvokedMethod(?method:Method)
 
@@ -197,7 +197,7 @@ MethodFormalParam(?method, ?formal) :-
 .decl InvocationActualParam(?invo:MethodInvocation, ?var:Var)
 
 InvocationActualParam(?invo, ?actual) :-
-    Actual(_, ?invo, ?actual).
+    ActualParam(_, ?invo, ?actual).
 
 .decl InvocationReceiver(?invo:MethodInvocation, ?method:Method, ?var:Var)
 
@@ -213,7 +213,7 @@ InvocationHasMethodArgumentAsReceiver(?invo) :-
     MethodFormalParam(?method, ?formal),
     VarsInSameMethodHaveSamePointsToSet(?formal, ?receiver).
 
-.decl InvocationHasMethodReceiverasArgument(?invo) :-
+.decl InvocationHasMethodReceiverasArgument(?invo:MethodInvocation)
 
 InvocationHasMethodReceiverAsArgument(?invo) :-
     InvocationActualParam(?invo, ?actual),
@@ -237,7 +237,7 @@ DoubleDispatchInvocation(?invo) :-
 .decl DoubleDispatchInvocation(?invo:MethodInvocation)
 
 DoubleDispatchInvocation(?invo) :-
-    isInstruction(?invo)
+    isInstruction(?invo).
 /*
 .decl EntryNonDataStructureMethod(?method:Method)
 

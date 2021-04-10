@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 import os
 import shutil
 import sys
@@ -30,7 +30,7 @@ def run_pre_analysis(initArgs):
             del args[i]  # delete the analysis argument
     args = [DOOP] + args
     args = args + ['-a', PRE_ANALYSIS]
-    args = args + ['--zipper-pre']
+    args = args + ['--Xzipper-pre']
     args = args + ['--cache']
     args = args + ['--id', APP + "-zipper-ci"]
     args = args + ['--input-id', APP+"-facts"]
@@ -40,7 +40,7 @@ def run_pre_analysis(initArgs):
     # print cmd
     os.system(cmd)
 
-    ci_analysis_facts = os.path.join(DOOP_OUT, 'context-insensitive', APP + '-zipper-ci', 'facts')
+    ci_analysis_facts = os.path.join(DOOP_OUT, APP + '-zipper-ci', 'facts')
 
     cache_facts_dir = os.path.join(ZIPPER_CACHE, APP, 'facts')
     if not os.path.exists(cache_facts_dir):
@@ -101,7 +101,7 @@ def run_zipper(app, cache_dir, out_dir):
 
 def run_main_analysis(args, zipper_file):
     args = [DOOP] + args
-    args = args + ['--zipper', zipper_file]
+    args = args + ['--Xzipper', zipper_file]
     args = args + ['--input-id', APP+"-facts"]
     args = args + ['--Xsymlink-cached-facts']
     
