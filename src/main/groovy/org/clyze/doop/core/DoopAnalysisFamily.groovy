@@ -683,6 +683,13 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Allow data-flow logic to go into library code using CHA.",
 					forPreprocessor: true
 			),
+			new BooleanAnalysisOption(
+					id: "DATA_FLOW_ONLY_LIB",
+					name: "Χdata-flow-only-lib",
+					group: GROUP_EXPERIMENTAL,
+					description: "Run data-flow logic only for library code.",
+					forPreprocessor: true
+			),
 			/* End preprocessor normal flags */
 			/* Start Souffle related options */
 			new IntegerAnalysisOption(

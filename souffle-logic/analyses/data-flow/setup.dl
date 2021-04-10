@@ -1,8 +1,14 @@
 .decl InterestingStmt(stmt:Instruction)
 //InterestingStmt(stmt) :- isInstruction(stmt)
 InterestingStmt(stmt) :-
+#ifdef DATA_FLOW_ONLY_LIB
+	isInstruction(stmt),
+	Instruction_Method(stmt, meth),
+	!ApplicationMethod(meth).
+#else
 	ApplicationMethod(meth),
 	Instruction_Method(stmt, meth).
+#endif
 
 .decl MOVE(stmt:AssignLocal_Insn, to:Var, from:Var)
 MOVE(stmt, to, from) :-
