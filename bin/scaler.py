@@ -30,7 +30,7 @@ def run_pre_analysis(args):
     args = args + ['--input-id', APP+"-facts"]
     args = args + ['--Xsymlink-cached-facts']
     cmd = ' '.join(args)
-    print YELLOW + BOLD + 'Running pre-analysis ... ' + cmd + RESET
+    print YELLOW + BOLD + 'Running pre-analysis ... ' + RESET
     # print cmd
     os.system(cmd)
        

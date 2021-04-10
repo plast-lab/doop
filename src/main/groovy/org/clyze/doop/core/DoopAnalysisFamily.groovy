@@ -25,6 +25,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 	private static final String GROUP_STATS = "Statistics"
 	private static final String GROUP_ENTRY_POINTS = "Entry points"
 	private static final String GROUP_SERVER = "Server logic"
+	private static final String GROUP_DATA_FLOW = "Data flow"
 	private static final String GROUP_EXPERIMENTAL = "Xtras"
 
 	private static final int SERVER_DEFAULT_THRESHOLD = 1000
@@ -678,15 +679,15 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			),
 			new BooleanAnalysisOption(
 					id: "DATA_FLOW_GOTO_LIB",
-					name: "Χdata-flow-goto-lib",
-					group: GROUP_EXPERIMENTAL,
+					name: "data-flow-goto-lib",
+					group: GROUP_DATA_FLOW,
 					description: "Allow data-flow logic to go into library code using CHA.",
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
 					id: "DATA_FLOW_ONLY_LIB",
-					name: "Χdata-flow-only-lib",
-					group: GROUP_EXPERIMENTAL,
+					name: "data-flow-only-lib",
+					group: GROUP_DATA_FLOW,
 					description: "Run data-flow logic only for library code.",
 					forPreprocessor: true
 			),
