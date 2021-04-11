@@ -1,0 +1,87 @@
+#include "schema-static.dl"
+#include "theorem-prover.dl"
+#include "expr-client.dl"
+
+.decl Sanity_ToSymbolMissing(expr: Expr)
+.decl Sanity_ToSymbolConflict(expr1: Expr, expr2: Expr, out: symbol)
+.decl Sanity_WrongSizedExpr(out: symbol, size: number)
+.printsize Sanity_ToSymbolMissing
+.printsize Sanity_ToSymbolConflict
+.printsize Sanity_WrongSizedExpr
+.output Sanity_WrongSizedExpr
+Sanity_ToSymbolMissing(expr) :- IsExpr(expr), !ToSymbol(expr, _).
+Sanity_ToSymbolConflict(expr1, expr2, out) :- ToSymbol(expr1, out), ToSymbol(expr2, out), expr1 != expr2.
+Sanity_WrongSizedExpr(out, size) :- ExprSize(expr, size), size > MAX_SIZE, ToSymbol(expr, out).
+
+#define DEBUG1(rel) \
+.decl rel##Symbol(out: symbol) \
+.printsize rel##Symbol \
+.printsize rel \
+.output rel##Symbol \
+rel##Symbol(out) :- rel(expr), ToSymbol(expr, out).
+
+#define DEBUG2(rel) \
+.decl rel##Symbol(out1: symbol, out2: symbol) \
+.printsize rel##Symbol \
+.printsize rel \
+.output rel##Symbol \
+rel##Symbol(out1, out2) :- rel(expr1, expr2), ToSymbol(expr1, out1), ToSymbol(expr2, out2).
+
+DEBUG1(API_IsInitialExpr)
+DEBUG1(API_IsInitialConstantExpr)
+DEBUG1(IsExpr)
+DEBUG2(Equals)
+DEBUG2(Normalize)
+DEBUG2(Implies)
+
+//.printsize API_RequestConstantFold1
+//.printsize API_RequestConstantFold2
+.decl VarHasExprSymbol(loc: symbol, out: symbol)
+.decl ArrayHasExprSymbol(out1: symbol, out2: symbol, out3: symbol)
+.decl FldHasExprSymbol(base: symbol, fld: symbol, out: symbol)
+.decl HeapHasExprSymbol(heap: symbol, fld: symbol, out: symbol)
+.output VarHasExprSymbol
+.output ArrayHasExprSymbol
+.output FldHasExprSymbol
+.output HeapHasExprSymbol
+ArrayHasExprSymbol(out1, i, out2) :- ArrayHasExpr(arr, i, e), ToSymbol(arr, out1), ToSymbol(e, out2).
+//VarHasExprSymbol(v, out) :- VarHasExpr(var, e), VarSimpleName(var, v), ToSymbol(e, out).
+VarHasExprSymbol(var, out) :- VarHasExpr(var, e), ToSymbol(e, out).
+//FldHasExprSymbol(v, fld, out) :- FldHasExpr(base, fld, e), VarSimpleName(base, v), ToSymbol(e, out).
+FldHasExprSymbol(base, fld, out) :- FldHasExpr(base, fld, e), ToSymbol(e, out).
+HeapHasExprSymbol(h, fld, out) :- HeapHasExpr(heap, fld, e), ToSymbol(heap, h), ToSymbol(e, out).
+
+/**
+ * Unit Testing
+ */
+//IsExpr(e) :- e = [AND, EX("A"), [OR, EX("A"), EX("B")]].
+//IsExpr(e) :- e = [OR, EX("A"), [AND, EX("A"), EX("B")]].
+//IsExpr(e) :- e = [XOR, EX("B"), [XOR, EX("B"), EX("A")]].
+//IsExpr(e) :- e = [SLL, EX("X"), EX("0")].
+//IsExpr(e) :- e = [SRL, EX("X"), EX("0")].
+//IsExpr(e) :- e = [SRA, EX("X"), EX("0")].
+//IsExpr(e) :- e = [SLL, EX("0"), EX("X")].
+//IsExpr(e) :- e = [SRL, EX("0"), EX("X")].
+//IsExpr(e) :- e = [SRA, EX("0"), EX("X")].
+//IsExpr(e) :- e = [COMPL, [AND, EX("A"), EX("B")], nil].
+//IsExpr(e) :- e = [AND, [COMPL, EX("C"), nil], [COMPL, EX("D"), nil]].
+//IsExpr(e) :- e = [GT, EX("A"), EX("B")].
+//IsExpr(e) :- e = [AND, EX("A"), [OR, EX("B"), EX("C")]].
+//IsExpr(e) :- e = [OR, [OR, EX("B"), EX("C")], EX("A")].
+//IsExpr(e) :- e = [OR, EX("A"), [AND, EX("B"), EX("C")]].
+//IsExpr(e) :- e = [AND, [OR, EX("A"), EX("B")], [OR, EX("A"), EX("C")]].
+//IsExpr(e) :- e = [ADD, [MUL, EX("B"), EX("A")], [MUL, EX("C"), EX("A")]].
+//IsExpr(e) :- e = [AND, [OR, EX("A"), EX("B")], [AND, EX("A"), EX("C")]].
+
+//IsConstantExpr(EX("3"), "3").
+//IsConstantExpr(EX("5"), "5").
+//IsConstantExpr(EX("-1"), "-1").
+//IsConstantExpr(EX("123"), "123").
+//IsExpr(e) :- e = [ADD, EX("3"), EX("123")].
+//IsExpr(e) :- e = [ADD, EX("5"), EX("-1")].
+//IsExpr(e) :- e = [ADD, EX("3"), [ADD, EX("5"), EX("-1")]].
+//IsExpr(e) :- e = [GT, EX("3"), [ADD, EX("5"), EX("-1")]].
+//IsExpr(e) :- e = [CMP, EX("3"), [ADD, EX("5"), EX("-1")]].
+//IsExpr(e) :- e = [CMP, EX("3"), [MOD, EX("3"), EX("5")]].
+//IsExpr(e) :- e = [COMPL, EX("123"), nil].
+//IsExpr(e) :- e = [NOT, ONE_EXPR, nil].

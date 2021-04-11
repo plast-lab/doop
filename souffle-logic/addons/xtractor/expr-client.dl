@@ -1,0 +1,305 @@
+#include "symbolic.dl"
+
+#define MAX_SIZE 10
+#define FUZZY_OP "??"
+#define ARR_NEW "new[]"
+#define ARR_AT "@"
+#define ARR_STAR "$*"
+
+.decl VarHasExpr(loc: Var, expr: Expr)
+// Var or Constant expression for Unary/Binary operand
+// The "var" parameter holds the actual Var that had the operand expression (or "_")
+.decl OperandExpr(stmt: Instruction, pos: number, expr: Expr, size: number, var: Var)
+.decl isRefHeapExpr(heap: HeapAllocation, expr: Expr)
+
+API_IsInitialExpr(expr) :- VarHasExpr(_, expr).
+
+// Bootstrap reasoning with method's parameters
+VarHasExpr(param, EX(param)) :-
+	InterestingMethod(method),
+	FORMAL_PARAM(method, _, param).
+	//MOVE(_, effectiveParam, param). // Deal with Jimple's idiosyncrasies
+
+// Constant assignment
+API_IsInitialConstantExpr(EX(const)),
+VarHasExpr(to, EX(const)) :-
+	InterestingStmt(stmt),
+	INIT_VAR(stmt, to, const),
+	(!match(".*L", const) ; (match(".*L", const), strlen(const) <= 10)).
+
+VarHasExpr(to, EX(out)) :-
+	InterestingStmt(stmt),
+	ALLOC(stmt, to, heap),
+	isStringConstant(heap),
+	out = cat("'", cat(heap, "'")).
+
+isRefHeapExpr(heap, EX(heap)),
+VarHasExpr(to, EX(heap)) :-
+	InterestingStmt(stmt),
+	ALLOC(stmt, to, heap),
+	!isStringConstant(heap).
+
+// Move instructions
+VarHasExpr(to, expr) :-
+	VarHasExpr(from, expr),
+	MOVE(stmt, to, from),
+	InterestingStmt(stmt).
+
+// Variable operand
+OperandExpr(stmt, pos, expr, size, var) :-
+	VarHasExpr(var, expr),
+	ExprSize(expr, size),
+	OPERAND_VAR(stmt, pos, var),
+	InterestingStmt(stmt).
+.plan 1:(2,1,3,4)
+
+// Constant operand
+API_IsInitialConstantExpr(expr),
+OperandExpr(stmt, pos, expr, 1, "_") :-
+	InterestingStmt(stmt),
+	OPERAND_NUM(stmt, pos, const),
+	expr = EX(to_string(const)).
+
+
+// Map "cmp", "cmpl", and "cmpg" to "cmp"
+.decl MapOperator(op: Operator, mapped: Operator)
+MapOperator("cmpl", CMP).
+MapOperator("cmpg", CMP).
+MapOperator(op, op) :- IsOperator(op), op != "cmpl", op != "cmpg".
+
+.decl RequestExpr_BINOP(to: Var, op: Operator, left: Expr, right: Expr, leftVar: Var, rightVar: Var, lrSize: number)
+RequestExpr_BINOP(to, mapped, left, right, leftVar, rightVar, leftSize + rightSize) :-
+	OperandExpr(stmt, 1, left, leftSize, leftVar),
+	BINOP(stmt, to, op),
+	OperandExpr(stmt, 2, right, rightSize, rightVar),
+	MapOperator(op, mapped),
+	leftSize + rightSize + 1 <= MAX_SIZE.
+.plan 1:(3,2,1,4)
+
+VarHasExpr(to, expr) :-
+	RequestExpr_BINOP(to, op, left, right, _, _, lrSize), lrSize + 1 <= MAX_SIZE,
+	!SelfFlows(to),
+	expr = [op, left, right].
+
+VarHasExpr(to, expr) :-
+	RequestExpr_BINOP(to, op, left, right, leftVar, rightVar, lrSize), lrSize + 2 <= MAX_SIZE,
+	SelfFlows(leftVar),
+	!SelfFlows(rightVar),
+	DecomposeExpr(left, _, _, leftRight),
+	fuzzy = [FUZZY_OP, right, nil], fuzzy != leftRight,
+	expr = [op, left, fuzzy].
+
+VarHasExpr(to, expr) :-
+	RequestExpr_BINOP(to, op, left, right, leftVar, rightVar, lrSize), lrSize + 2 <= MAX_SIZE,
+	!SelfFlows(leftVar),
+	SelfFlows(rightVar),
+	DecomposeExpr(right, _, rightLeft, _),
+	fuzzy = [FUZZY_OP, left, nil], fuzzy != rightLeft,
+	expr = [op, fuzzy, right].
+
+VarHasExpr(to, expr) :-
+	RequestExpr_BINOP(to, op, left, right, leftVar, rightVar, lrSize), lrSize + 3 <= MAX_SIZE,
+	SelfFlows(leftVar),
+	SelfFlows(rightVar),
+	DecomposeExpr(left, _, _, leftRight),
+	DecomposeExpr(right, _, rightLeft, _),
+	fuzzyL = [FUZZY_OP, left, nil], fuzzyL != rightLeft,
+	fuzzyR = [FUZZY_OP, right, nil], fuzzyR != leftRight,
+	expr = [op, fuzzyL, fuzzyR].
+
+VarHasExpr(to, expr) :-
+	UNOP(stmt, to, op), op != "len",
+	OperandExpr(stmt, 1, left, leftSize, _),
+	leftSize + 1 <= MAX_SIZE,
+	expr = [op, left, nil].
+
+API_IsInitialExpr(expr) :-
+	OperandExpr(stmt, 1, left, leftSize, _),
+	IF(stmt, op, _),
+	OperandExpr(stmt, 2, right, rightSize, _),
+	leftSize + rightSize + 1 <= MAX_SIZE,
+	expr = [op, left, right].
+.plan 1:(3,2,1)
+
+
+.decl InputMethod(method: Method)
+.decl PassThroughMethod(method: Method, pos: number)
+.decl OutputMethod(method: Method)
+
+InputMethod(m) :- isMethod(m), m = "<java.util.Scanner: int nextInt()>".
+PassThroughMethod(m, 0) :- Method_SimpleName(m, "parseInt"), Method_DeclaringType(m, "java.lang.Integer").
+OutputMethod(m) :- Method_SimpleName(m, "println"), Method_DeclaringType(m, "java.io.PrintStream").
+
+VarHasExpr(ret, EX(name)) :-
+	InterestingStmt(stmt),
+	RESOLVE_CALL(stmt, toMethod),
+	InputMethod(toMethod),
+	Method_SimpleName(toMethod, name),
+	ACTUAL_RET(stmt, ret).
+
+// Returns it's pos'th parameter
+VarHasExpr(ret, expr) :-
+	VarHasExpr(param, expr),
+	ACTUAL_PARAM(stmt, pos, param),
+	RESOLVE_CALL(stmt, toMethod),
+	PassThroughMethod(toMethod, pos),
+	InterestingStmt(stmt),
+	ACTUAL_RET(stmt, ret).
+
+// Array Alloc
+VarHasExpr(arr, expr) :-
+	InterestingStmt(stmt),
+	ALLOC(stmt, arr, _),
+	AllocArraySizeVar(stmt, sizeVar),
+	expr = [ARR_NEW, EX(sizeVar), nil].
+
+// Piggyback on Expr to create more complex locations -- not actual expressions
+.decl ArrayHasExpr(arrExpr: Expr, index: symbol, expr: Expr)
+
+API_IsInitialExpr(expr) :- ArrayHasExpr(_, _, expr).
+
+// Array handling logic example
+// X[i] = Y1 ==> [*]<-Y1
+// X[3] = Y2 ==> [3]<-Y2
+// X[5] = Y3 ==> [5]<-Y3
+// Y = X[i] ==> Y<-[*],[3],[5]
+// Y = X[3] ==> Y<-[*],[3]
+
+// Array Store -- either in [*] or [num]
+ArrayHasExpr(arrExpr, num, expr) :-
+	VarHasExpr(arr, arrExpr),
+	((ASTORE_VAR(stmt, arr, _, from), num = ARR_STAR) ;
+	 (ASTORE_NUM(stmt, arr, i, from), num = to_string(i))),
+	InterestingStmt(stmt),
+	VarHasExpr(from, expr).
+.plan 1:(4,2,3,1)
+
+// Array Load -- Var Index: load from any index
+VarHasExpr(to, expr) :-
+	VarHasExpr(arr, arrExpr),
+	ArrayHasExpr(arrExpr, _, expr),
+	ALOAD_VAR(stmt, to, arr, _),
+	InterestingStmt(stmt).
+.plan 1:(2,1,3,4)
+
+// Array Load -- Num Index: load from [num] and [*]
+// This way different const indexes are not merged
+VarHasExpr(to, expr) :-
+	VarHasExpr(arr, arrExpr),
+	(ArrayHasExpr(arrExpr, num, expr) ;
+	 ArrayHasExpr(arrExpr, ARR_STAR, expr)),
+	ALOAD_NUM(stmt, to, arr, i), num = to_string(i),
+	InterestingStmt(stmt).
+.plan 1:(2,1,3,4)
+
+// len( new[ size ] ) == size
+VarHasExpr(to, sizeExpr) :-
+	UNOP(stmt, to, "len"),
+	OperandExpr(stmt, 1, expr, _, _),
+	DecomposeExpr(expr, ARR_NEW, sizeExpr, nil).
+
+
+
+#define ACC_PATH ".."
+InfixSymbol(ACC_PATH, "..").
+.decl FldHasExpr(base: symbol, fld: Field, expr: Expr)
+
+API_IsInitialExpr(expr) :- FldHasExpr(_, _, expr).
+
+// this.fld = from
+FldHasExpr(this, fld, fromExpr),
+FldHasExpr(base, fld, fromExpr) :-
+	VarHasExpr(from, fromExpr),
+	ISTORE(stmt, base, fld, from),
+	InterestingConstrStmt(stmt, method),
+	ThisVar(method, this),
+	Flows(this, base).
+
+// to = param.fld
+VarHasExpr(to, expr) :-
+	ILOAD(stmt, to, base, fld),
+	InterestingConstrStmt(stmt, method),
+	FORMAL_PARAM(method, _, formal),
+	Flows(formal, base),
+	expr = [ACC_PATH, EX(formal), EX(fld)].
+
+// Load existing fld value
+VarHasExpr(to, expr) :-
+	FldHasExpr(base, fld, expr),
+	ILOAD(stmt, to, base, fld),
+	InterestingConstrStmt(stmt, _).
+
+
+.decl FormalToActualExpr(x:MethodInvocation, formal: Var, actualExpr: Expr)
+.decl MarkedForMapping(x:MethodInvocation, base: Var, fld: Field, expr: Expr)
+.decl REQ_Mapping(x:Instruction, expr: Expr)
+.decl RES_Mapping(x:Instruction, expr: Expr, mapped: Expr)
+.decl HeapHasExpr(heapExpr: Expr, fld: Field, expr: Expr)
+
+API_IsInitialExpr(expr) :- HeapHasExpr(_, _, expr).
+
+FormalToActualExpr(stmt, formal, expr) :-
+	VarHasExpr(actual, expr),
+	ACTUAL_PARAM(stmt, i, actual),
+	InterestingStmt(stmt),
+	SPCALL(stmt, _, constr),
+	InterestingConstrStmt(_, constr),
+	FORMAL_PARAM(constr, i, formal).
+
+REQ_Mapping(stmt, expr),
+MarkedForMapping(stmt, base, fld, expr) :-
+	FldHasExpr(this, fld, expr),
+	ThisVar(constr, this),
+	SPCALL(stmt, base, constr),
+	InterestingStmt(stmt).
+
+REQ_Mapping(stmt, left),
+REQ_Mapping(stmt, right) :-
+	REQ_Mapping(stmt, expr),
+	DecomposeExpr(expr, op, left, right),
+	op != ACC_PATH.
+
+RES_Mapping(stmt, expr, expr2) :-
+	REQ_Mapping(stmt, expr),
+	DecomposeExpr(expr, ACC_PATH, left, right),
+	DecomposeExpr(left, formal, nil, nil),
+	DecomposeExpr(right, fld, nil, nil),
+	FormalToActualExpr(stmt, formal, heapExpr),
+	HeapHasExpr(heapExpr, fld, expr2).
+
+RES_Mapping(stmt, expr, actualExpr) :-
+	REQ_Mapping(stmt, expr),
+	DecomposeExpr(expr, formal, nil, nil),
+	FormalToActualExpr(stmt, formal, actualExpr).
+
+RES_Mapping(stmt, expr, expr) :-
+	REQ_Mapping(stmt, expr),
+	DecomposeExpr(expr, base, nil, nil),
+	!isVar(as(base, Var)).
+
+RES_Mapping(stmt, expr, expr2) :-
+	REQ_Mapping(stmt, expr),
+	DecomposeExpr(expr, op, left, right),
+	RES_Mapping(stmt, left, leftMapped),
+	RES_Mapping(stmt, right, rightMapped),
+	expr2 = [op, leftMapped, rightMapped].
+
+HeapHasExpr(heapExpr, fld, mapped) :-
+	RES_Mapping(stmt, expr, mapped),
+	MarkedForMapping(stmt, base, fld, expr),
+	VarHasExpr(base, heapExpr).
+.plan 1:(3,2,1)
+
+
+
+.decl InterestingConstrStmt(x: Instruction, method: Method)
+.decl isEffectivelyEmptyConstructor(m: Method)
+
+InterestingConstrStmt(stmt, method) :-
+	InterestingMethod(method),
+	Method_SimpleName(method, "<init>"),
+	Instruction_Method(stmt, method).
+
+// Empty constructors have 3 instructions in Jimple:
+// A dummy assignment from `this`, a call to Object.init, and a void return
+isEffectivelyEmptyConstructor(m) :- InterestingConstrStmt(_, m), count : Instruction_Method(_, m) <= 3.

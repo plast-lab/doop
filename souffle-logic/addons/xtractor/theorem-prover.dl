@@ -1,0 +1,536 @@
+#pragma once
+#include "symbolic.dl"
+#include "constant-folding.dl"
+
+/**
+ * Theorem-proving logic. Axioms and inference rules.
+ */
+
+// Main arithmetic inference
+.decl Equals(expr1: Expr, expr2: Expr)
+// Main logical inference
+.decl Implies(expr1: Expr, expr2: Expr)
+// Optimized for transitive joins
+.decl OptBaseEquals(expr1: Expr, expr2: Expr)
+.decl OptBaseImplies(expr1: Expr, expr2: Expr)
+
+.decl ValueForFreeVar(freeVar: Expr, expr: Expr, exprSolved: Expr)
+
+///////////////////////////////////////////////////////////////////////////////
+
+.decl EqualsToNotLarger(expr1: Expr, size1: number, expr2: Expr, size2: number)
+// For equal expressions, expr2 is "smaller" than expr1 (in size or in order)
+.decl EqualsToSmallerExt(expr1: Expr, expr2: Expr)
+
+EqualsToNotLarger(expr1, size1, expr2, size2) :-
+	Equals(expr1, expr2),
+	ExprSize(expr1, size1),
+	ExprSize(expr2, size2),
+	size2 <= size1.
+.plan 1:(2,1,3), 2:(3,1,2)
+
+EqualsToSmallerExt(expr1, expr2) :-
+	EqualsToNotLarger(expr1, size1, expr2, size2),
+	size2 < size1.
+
+// Arbitrary order among same-sized equal expressions
+EqualsToSmallerExt(expr1, expr2) :-
+	EqualsToNotLarger(expr1, size, expr2, size),
+	ToSymbol(expr1, out1), ToSymbol(expr2, out2),
+	ord(out2) < ord(out1).
+
+
+Equals(expr1, expr2) :- OptBaseEquals(expr1, expr2).
+
+// Transitive closure
+Equals(expr1, expr3) :- Equals(expr1, expr2), OptBaseEquals(expr2, expr3).
+.plan 1:(2,1)
+
+// Make it symmetric
+Equals(expr2, expr1) :- Equals(expr1, expr2).
+
+OptBaseEquals(expr, expr) :- IsExpr(expr).
+
+IsExpr(result),
+OptBaseEquals(expr, result) :-
+	DecomposeExpr(expr, op, left, right),
+	EqualsToSmallerExt(left, leftSmaller),
+	result = [op, leftSmaller, right].
+.plan 1:(2,1)
+
+IsExpr(result),
+OptBaseEquals(expr, result) :-
+	DecomposeExpr(expr, op, left, right),
+	EqualsToSmallerExt(right, rightSmaller),
+	result = [op, left, rightSmaller].
+.plan 1:(2,1)
+
+
+// Associativity
+IsExpr(result),
+OptBaseEquals(expr1, result) :-
+	DecomposeExpr(expr1, op, left, right),
+	AssociativeOperator(op),
+	DecomposeExpr(left, op, leftLeft, leftRight),
+	result = [op, leftLeft, [op, leftRight, right]].
+.plan 1:(3,2,1)
+
+// Commutativity
+IsExpr(result),
+OptBaseEquals(expr1, result) :-
+	DecomposeExpr(expr1, op, left, right),
+	CommutativeOperator(op),
+	result = [op, right, left].
+
+// Idempotency
+OptBaseEquals(expr, arg) :-
+	DecomposeExpr(expr, op, arg, arg),
+	IdempotentOperator(op).
+
+// Canceling
+OptBaseEquals(expr, result) :-
+	DecomposeExpr(expr, op, arg, arg),
+	CancelingOperator(op, result).
+
+// Self-Inverse
+OptBaseEquals(expr, arg0) :-
+	DecomposeExpr(expr, op, arg1, nil),
+	SelfInverseOperator(op),
+	DecomposeExpr(arg1, op, arg0, nil).
+.plan 1:(3,2,1)
+
+
+// Determine whether a theorem should be applied to form new expressions,
+// or only to link existing ones, and under what conditions
+.decl RequestDistributivityEQ(expr1: Expr, op1Size: number, expr2: Expr)
+
+OptBaseEquals(expr1, expr2) :-
+	RequestDistributivityEQ(expr1, _, expr2),
+	IsExpr(expr2). // strict: expression needs to exists
+
+// NOTE: ADDITION
+IsExpr(expr2),
+OptBaseEquals(expr1, expr2) :- RequestDistributivityEQ(expr1, 1, expr2).
+
+// Left distributivity. L op1 (RL op2 RR) == (L op1 RL) op2 (L op1 RR)
+// This grows the expression, so it needs to go through a filter
+RequestDistributivityEQ(expr1, op1Size, expr2) :-
+	DecomposeExpr(expr1, op1, left, right),
+	LeftDistributiveOperators(op1, op2),
+	DecomposeExpr(right, op2, rightLeft, rightRight),
+	ExprSize(left, op1Size),
+	expr2 = [op2, [op1, left, rightLeft], [op1, left, rightRight]].
+.plan 1:(3,2,1,4)
+
+// NOTE: ADDITION
+// Factoring: Reverse left distributivity
+// (A op1 B) op2 (A op1 C) => A op1 (B op2 C)
+IsExpr(expr2),
+OptBaseEquals(expr, expr2) :-
+	DecomposeExpr(expr, op2, left, right),
+	LeftDistributiveOperators(op1, op2),
+	DecomposeExpr(left, op1, a, b),
+	DecomposeExpr(right, op1, a, c),
+	expr2 = [op1, a, [op2, b, c]].
+.plan 1:(3,2,1,4), 2:(4,2,1,3)
+
+// Right distributivity. (LL op1 LR) op2 R == (LL op2 R) op1 (LR op2 R)
+// This grows the expression, so it needs to go through the global filter
+RequestDistributivityEQ(expr1, op1Size, expr2) :-
+	DecomposeExpr(expr1, op2, left, right),
+	RightDistributiveOperators(op1, op2),
+	DecomposeExpr(left, op1, leftLeft, leftRight),
+	ExprSize(left, op1Size),
+	expr2 = [op1, [op2, leftLeft, right], [op2, leftRight, right]].
+.plan 1:(3,2,1,4)
+
+// NOTE: ADDITION
+// Factoring: Reverse right distributivity
+// (B op2 A) op1 (C op2 A) => (B op1 C) op2 A
+IsExpr(expr2),
+OptBaseEquals(expr, expr2) :-
+	DecomposeExpr(expr, op1, left, right),
+	RightDistributiveOperators(op1, op2),
+	DecomposeExpr(left, op2, b, a),
+	DecomposeExpr(right, op2, c, a),
+	expr2 = [op2, [op1, b, c], a].
+.plan 1:(3,2,1,4), 2:(4,2,1,3)
+
+
+// Left Identity
+OptBaseEquals(expr, right) :-
+	DecomposeExpr(expr, op, id, right),
+	LeftIdentityElement(op, id).
+
+// Right Identity
+OptBaseEquals(expr, left) :-
+	DecomposeExpr(expr, op, left, id),
+	RightIdentityElement(op, id).
+
+// Left Annihilation
+OptBaseEquals(expr1, const) :-
+	DecomposeExpr(expr1, op, annihilator, _),
+	LeftAnnihilator(op, annihilator, const).
+
+// Right Annihilation
+OptBaseEquals(expr1, const) :-
+	DecomposeExpr(expr1, op, _, annihilator),
+	RightAnnihilator(op, annihilator, const).
+
+// e.g., (x+y)-z = (x-z)+y, or (x-y)-z = (x-z)-y
+IsExpr(expr2),
+OptBaseEquals(expr1, expr2) :-
+	DecomposeExpr(expr1, op1, left, z),
+	DualAssociativeOperators(op2, op1),
+	DecomposeExpr(left, op2, x, y),
+	expr2 = [op2, [op1, x, z], y].
+.plan 1:(3,2,1)
+
+// NOTE: ADDITION
+// Absorbing Operator (i.e., AND/OR)
+// L AND (L OR REST) = L
+OptBaseEquals(expr1, left) :-
+	DecomposeExpr(expr1, op1, left, right),
+	AbsorbingOperators(op1, op2),
+	DecomposeExpr(right, op2, left, _).
+.plan 1:(3,2,1)
+
+// DeMorgan
+// ~(A OR B) == ~A AND ~B
+IsExpr(expr2),
+OptBaseEquals(expr1, expr2) :-
+	DecomposeExpr(expr1, COMPL, inner, nil),
+	DeMorganOperators(op, opInverse),
+	DecomposeExpr(inner, op, left, right),
+	expr2 = [opInverse, [COMPL, left, nil], [COMPL, right, nil]].
+.plan 1:(3,2,1)
+
+// Reverse DeMorgan
+// ~A AND ~B == ~(A OR B)
+IsExpr(expr2),
+OptBaseEquals(expr1, expr2) :-
+	DecomposeExpr(expr1, op, negLeft, negRight),
+	DeMorganOperators(op, opInverse),
+	DecomposeExpr(negLeft, COMPL, left, nil),
+	DecomposeExpr(negRight, COMPL, right, nil),
+	expr2 = [COMPL, [opInverse, left, right], nil].
+.plan 1:(3,1,2,4), 2:(4,1,2,3)
+
+// Complement Equivalence
+// L XOR -1 == ~L
+IsExpr(expr2),
+OptBaseEquals(expr1, expr2) :-
+	DecomposeExpr(expr1, XOR, left, MINUS_ONE_EXPR),
+	expr2 = [COMPL, left, nil].
+
+// Commutative Pair
+// A < B == B > A
+IsExpr(expr2),
+OptBaseEquals(expr1, expr2) :-
+	DecomposeExpr(expr1, op, left, right),
+	CommutativePairOperators(op, opInverse),
+	expr2 = [opInverse, right, left].
+
+// CMP
+// (A cmp B) >= 0 == A >= B
+.decl CompareOperator(op: Operator)
+CompareOperator(GT).
+CompareOperator(GEQ).
+CompareOperator(LT).
+CompareOperator(LEQ).
+CompareOperator(EQ).
+
+IsExpr(expr2),
+OptBaseEquals(expr1, expr2) :-
+	DecomposeExpr(expr1, op, inner, ZERO_EXPR),
+	CompareOperator(op),
+	DecomposeExpr(inner, CMP, left, right),
+	expr2 = [op, left, right].
+.plan 1:(3,1,2)
+
+// Known results
+// x == x
+OptBaseEquals(expr, TRUE_EXPR) :-
+	DecomposeExpr(expr, EQ, arg, arg).
+
+OptBaseEquals(expr, FALSE_EXPR) :-
+	DecomposeExpr(expr, EQ, left, right),
+	left != right.
+
+OptBaseEquals(expr, ZERO_EXPR) :- DecomposeExpr(expr, CMP, arg, arg).
+
+
+
+/**
+ * Theorem proving includes constant folding
+ */
+.decl ExprRequestFold2(expr: Expr, op: symbol, leftConst: symbol, rightConst: symbol)
+.decl ExprRequestFold1(expr: Expr, op: symbol, const: symbol)
+
+ExprRequestFold2(expr, op, leftConst, rightConst) :-
+	DecomposeExpr(expr, op, left, right),
+	IsOperator(op),
+	IsConstantExpr(left, leftConst),
+	IsConstantExpr(right, rightConst).
+
+ExprRequestFold1(expr, op, const) :-
+	DecomposeExpr(expr, op, arg, nil),
+	IsOperator(op),
+	IsConstantExpr(arg, const).
+
+API_RequestConstantFold2(op, left, right) :- ExprRequestFold2(_, op, left, right).
+API_RequestConstantFold1(op, arg) :- ExprRequestFold1(_, op, arg).
+
+IsConstantExpr(foldedExpr, folded),
+OptBaseEquals(expr, foldedExpr) :-
+	ExprRequestFold2(expr, op, left, right),
+	API_RespondConstantFold2(op, left, right, folded),
+	foldedExpr = EX(folded).
+
+IsConstantExpr(foldedExpr, folded),
+OptBaseEquals(expr, foldedExpr) :-
+	ExprRequestFold1(expr, op, const),
+	API_RespondConstantFold1(op, const, folded),
+	foldedExpr = EX(folded).
+
+
+/**
+ * Symbolic simplification used as evaluation of expressions
+ */
+
+// (DESIGN) No primitive is equal to another, even if symbolic
+OptBaseEquals(expr, FALSE_EXPR) :-
+	DecomposeExpr(expr, EQ, left, right),
+    ExprSize(left, 1),
+    ExprSize(right, 1),
+	!API_IsFreeVar(left),
+	!API_IsFreeVar(right),
+	left != right.
+.plan 1:(2,1,3), 2:(3,1,2)
+
+
+/**
+ * Normalizing expressions
+ */
+
+.decl Normalize(expr: Expr, norm: Expr)
+
+// Guarantees unique mapping, but not for all, if Equals not transitively closed
+.decl PreNormalize(expr: Expr, norm: Expr)
+PreNormalize(expr, norm) :- Equals(expr, norm), !EqualsToSmallerExt(norm, _).
+
+Normalize(expr, norm) :- PreNormalize(expr, norm).
+
+// If nothing better, just map an expression to itself
+// Should be a no-op with the current simplification-based logic
+Normalize(expr, expr) :- IsExpr(expr), !PreNormalize(expr, _).
+
+// Expressions that didn't shrink upon normalization
+.decl NonReducedExpr(expr: Expr)
+NonReducedExpr(expr) :-
+	Normalize(expr, norm),
+	!ExprSize(expr, 1),
+	!EqualsToSmallerExt(expr, norm).
+
+
+/**
+ * Also a solver, "suggesting" to the client values for free variables
+ */
+
+// Normalize, so that free vars go left, let associativity take care of the rest
+IsExpr(expr2),
+OptBaseEquals(expr1, expr2) :-
+	DecomposeExpr(expr1, EQ, left, right),
+	ExprHasNoFreeVar(left),
+	ExprHasFreeVar(right),
+	expr2 = [EQ, right, left].
+.plan 1:(2,1,3), 2:(3,1,2)
+
+ValueForFreeVar(left, right, exprSolved) :-
+	DecomposeExpr(exprSolved, EQ, left, right),
+	API_IsFreeVar(left),
+	ExprHasNoFreeVar(right).
+.plan 1:(3,1,2)
+
+// Solve linear equations
+.decl LinearSolutionOperators(op1: Operator, op2: Operator) // order matters
+.decl LinearSolvableExpression(expr: Expr, op: Operator, left: Expr, right: Expr)
+
+LinearSolutionOperators(ADD, SUB).
+LinearSolutionOperators(SUB, ADD).
+LinearSolutionOperators(MUL, DIV).
+LinearSolutionOperators(DIV, MUL).
+LinearSolutionOperators(MOD, ADD).
+LinearSolutionOperators(OR, OR).
+LinearSolutionOperators(XOR, XOR).
+LinearSolutionOperators(SLL, SRL).
+LinearSolutionOperators(SLL, SRA).
+LinearSolutionOperators(SRL, SLL).
+LinearSolutionOperators(SRA, SLL).
+
+LinearSolvableExpression(expr, op, left, right) :-
+	DecomposeExpr(expr, op, left, right),
+	LinearSolutionOperators(op, _),
+	API_IsFreeVar(left),
+	ExprHasNoFreeVar(right).
+.plan 1:(4,1,2,3)
+
+// We don't assert these are always solutions, just posit them as
+// exprs and the simplifier potentially simplifies them to TRUE.
+// Grows the size but eliminates free var, so it won't re-fire.
+// VAR op a == b --> VAR == b opInverse a, (b opInverse a) op a == b
+IsExpr([EQ, [op, exprNew, leftRight], right]),
+ValueForFreeVar(leftLeft, exprNew, exprSolved) :-
+	DecomposeExpr(exprSolved, EQ, left, right),
+	// leftLeft is a free var
+    LinearSolvableExpression(left, op, leftLeft, leftRight),
+	ExprHasNoFreeVar(right),
+	LinearSolutionOperators(op, opInverse),
+	exprNew = [opInverse, right, leftRight].
+.plan 1:(2,1,3,4), 2:(3,1,2,4)
+
+// TODO: add general satisfiability for boolean conditions, not just equality
+// E.g., a plain free variable can always be either false or true.
+
+
+/**
+ * Top-down, on-demand logic.
+ */
+
+// The main reasoning is bottom-up, as in all the rules above. But there is
+// also a top-down component that multiplies the reasoner's power: allow up
+// to twice as large expressions, at least for equality checking.
+
+.decl API_EqualityCheckRequest(expr1: Expr, expr2: Expr)
+.decl EqualityCheckResponse(expr1: Expr, expr2: Expr, result: Expr)
+.decl API_InequalityCheckRequest(op: Operator, expr1: Expr, expr2: Expr)
+.decl InequalityCheckResponse(op: Operator, expr1: Expr, expr2: Expr, result: Expr)
+.decl ExprGreaterThan(expr1: Expr, expr2: Expr)
+
+EqualityCheckResponse(expr1, expr2, result) :-
+	API_EqualityCheckRequest(expr1, expr2),
+	Normalize(expr1, norm1),
+	Normalize(expr2, norm2),
+	((norm1 = norm2, result = TRUE_EXPR) ;
+	 (norm1 != norm2, result = FALSE_EXPR)).
+
+ExprGreaterThan(expr1, expr2) :-
+	(DecomposeExpr(expr1, ADD, expr2, constExpr) ;
+	 DecomposeExpr(expr1, ADD, constExpr, expr2) ;
+	 DecomposeExpr(expr2, SUB, expr1, constExpr)),
+	IsConstantExpr(constExpr, const), to_number(const) > 0.
+
+ExprGreaterThan(expr1, expr2) :-
+	DecomposeExpr(expr2, ADD, expr1, constExpr),
+	IsConstantExpr(constExpr, const), to_number(const) < 0.
+
+// If they normalize to the same value, they don't satisfy the inequality
+InequalityCheckResponse(op, expr1, expr2, FALSE_EXPR) :-
+	API_InequalityCheckRequest(op, expr1, expr2),
+	Normalize(expr1, norm),
+	Normalize(expr2, norm).
+
+InequalityCheckResponse(GT, expr1, expr2, result) :-
+	API_InequalityCheckRequest(GT, expr1, expr2),
+	Normalize(expr1, norm1),
+	Normalize(expr2, norm2),
+	((ExprGreaterThan(norm1, norm2), result = TRUE_EXPR) ;
+	 (ExprGreaterThan(norm2, norm1), result = FALSE_EXPR)).
+
+InequalityCheckResponse(LT, expr1, expr2, result) :-
+	API_InequalityCheckRequest(LT, expr1, expr2),
+	Normalize(expr1, norm1),
+	Normalize(expr2, norm2),
+	((ExprGreaterThan(norm1, norm2), result = FALSE_EXPR) ;
+	 (ExprGreaterThan(norm2, norm1), result = TRUE_EXPR)).
+
+
+/**
+ * Also reasoning about Implies. Currently this works only after all
+ * expressions are normalized and does not generate new ones.
+ */
+
+.decl NormalizedLogicalExpr(expr: Expr)
+.decl NegatedExpr(expr: Expr, negExpr: Expr)
+
+NormalizedLogicalExpr(expr) :- Normalize(_, expr), IsLogicalExpr(expr).
+
+Implies(expr1, expr2) :- OptBaseImplies(expr1, expr2).
+
+// Transitive closure
+Implies(expr1, expr3) :- OptBaseImplies(expr1, expr2), Implies(expr2, expr3).
+.plan 1:(2,1)
+
+// It is doubtful that this is useful
+OptBaseImplies(expr, expr),
+OptBaseImplies(expr, TRUE_EXPR),
+OptBaseImplies(FALSE_EXPR, expr) :-
+	NormalizedLogicalExpr(expr).
+
+// A && B => A and A && B => B
+OptBaseImplies(expr, left),
+OptBaseImplies(expr, right) :-
+	NormalizedLogicalExpr(expr),
+	DecomposeExpr(expr, AND, left, right).
+
+// A => A || B and B => A || B
+OptBaseImplies(left, expr),
+OptBaseImplies(right, expr) :-
+	NormalizedLogicalExpr(expr),
+	DecomposeExpr(expr, OR, left, right).
+
+// A => B and A => C entails A => B && C
+OptBaseImplies(other, expr) :-
+	Implies(other, left),
+	DecomposeExpr(expr, AND, left, right),
+	Implies(other, right).
+.plan 1:(3,2,1)
+
+// B => A and C => A entails B || C => A
+OptBaseImplies(expr, other) :-
+	Implies(left, other),
+	DecomposeExpr(expr, OR, left, right),
+	Implies(right, other).
+.plan 1:(3,2,1)
+
+NegatedExpr(expr, negExpr) :-
+	NormalizedLogicalExpr(expr),
+	negExpr = [NOT, expr, nil].
+
+// Contraposition
+// A => B entails !B => !A
+OptBaseImplies(negWeakerNorm, negStrongerNorm) :-
+	Implies(stronger, weaker),
+	NegatedExpr(stronger, negStronger),
+	Normalize(negStronger, negStrongerNorm),
+	NegatedExpr(weaker, negWeaker),
+	Normalize(negWeaker, negWeakerNorm).
+
+// (L < R1) => (L < R2), if Rconst1 < Rconst2
+OptBaseImplies(expr1, expr2) :-
+	NormalizedLogicalExpr(expr1),
+	DecomposeExpr(expr1, LT, left, right1),
+	DecomposeExpr(expr2, LT, left, right2),
+	expr1 != expr2,
+	NormalizedLogicalExpr(expr2),
+	IsConstantExpr(right1, rightConst1),
+	IsConstantExpr(right2, rightConst2),
+	to_number(rightConst1) < to_number(rightConst2).
+
+// (L > R1) => (L > R2), if Rconst1 > Rconst2
+OptBaseImplies(expr1, expr2) :-
+	NormalizedLogicalExpr(expr1),
+	DecomposeExpr(expr1, GT, left, right1),
+	DecomposeExpr(expr2, GT, left, right2),
+	expr1 != expr2,
+	NormalizedLogicalExpr(expr2),
+	IsConstantExpr(right1, rightConst1),
+	IsConstantExpr(right2, rightConst2),
+	to_number(rightConst1) > to_number(rightConst2).
+
+
+// TODO MAYBE
+// X >= Y -> X > Y || X == Y
+// X >= Y && X <= Y -> X == Y
+// X < Y -> X <= Y
+// X < Y -> X != Y

@@ -117,6 +117,6 @@ Flows(x, z) :- Flows(x, y), OptBaseFlows(y, z).
 SelfFlows(x) :- Flows(x, x).
 
 PointerFlows(x, y) :-
-	VarType(x, xT), isReferenceType(xT),
+	Var_Type(x, xT), isReferenceType(xT),
 	Flows(x, y),
-	VarType(y, yT), isReferenceType(yT).
+	Var_Type(y, yT), isReferenceType(yT).
