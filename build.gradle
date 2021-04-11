@@ -304,6 +304,34 @@ task souffleScript(type: JavaExec) {
         args project.property("args").split()
 }
 
+task xtractor(type: JavaExec) {
+    // We set the DOOP_HOME environment variable (see org.clyze.doop.Main)
+    environment.DOOP_HOME = projectDir
+    description 'Run xTractor logic'
+    group = 'Doop'
+    main = 'org.clyze.doop.utils.XTractor'
+    classpath = sourceSets.main.runtimeClasspath
+    if (project.hasProperty("args"))
+        args project.property("args").split()
+}
+
+def testNames = new File("src/inputTests").list()
+
+sourceSets {
+    testNames.each { t -> "$t" { java { srcDirs = ["src/inputTests/$t"] } } }
+}
+
+testNames.each {name ->
+    task "${name}JAR"(type:Jar, dependsOn: "${name}Classes") {
+        group = 'Input Test'
+        from sourceSets.getByName(name).output.classesDirs
+        archiveFileName.set("${name}.jar")
+        manifest { attributes 'Main-Class': "A" }
+        xtractor.dependsOn it
+    }
+}
+
+
 task createEmptyProperties {
     doLast {
         def urls = sourceSets.main.runtimeClasspath.files.collect { it.toURI().toURL() } as URL[]
