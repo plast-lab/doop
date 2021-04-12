@@ -555,8 +555,8 @@ ForcedReachableAndroidContext(?ctx, ?meth) :-
 //// REVIEW: I'm not sure if the current general-purpose mocking doesn't handle
 ////  most of this anyway. My problem is that this rule creates mock objects based
 ////  on formal types alone--e.g., interfaces or abstract classes.
-// MockValueConsMacro(cat("<Android javascript object ", cat(?formalType, ">")), ?formalType),
-// ReifiedAndroidObjectValue(cat("<Android javascript object ", cat(?formalType, ">")), ?formalType) :-
+// MockValueConsMacro(cat("<Android JavaScript object ", cat(?formalType, ">")), ?formalType),
+// ReifiedAndroidObjectValue(cat("<Android JavaScript object ", cat(?formalType, ">")), ?formalType) :-
 //   _ForcedReachableFromJavascriptContext(_, ?meth),
 //   FormalParam(_, ?meth, ?formal),
 //  Var_Type(?formal, ?formalType).
