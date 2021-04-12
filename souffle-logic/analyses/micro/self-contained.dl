@@ -151,20 +151,20 @@ HeapAllocation_Type(?id, "java.lang.String") :-
 Instruction_Method(?instruction, ?method),
 AssignInstruction_To(?instruction, ?to),
 AssignHeapAllocation_Heap(?instruction, ?heap) :-
-  _AssignHeapAllocation(?instruction, ?index, ?heap, ?to, ?method, ?linenumber).
+  _AssignHeapAllocation(?instruction, _, ?heap, ?to, ?method, _).
 .decl _AssignLocal(?instruction:symbol, ?index:number, ?from:symbol, ?to:symbol, ?inmethod:symbol)
 .input _AssignLocal(IO="file", filename="AssignLocal.facts", delimiter="\t")
 Instruction_Method(?instruction, ?method),
 AssignLocal_From(?instruction, ?from),
 AssignInstruction_To(?instruction, ?to) :-
-  _AssignLocal(?instruction, ?index, ?from, ?to, ?method).
+  _AssignLocal(?instruction, _, ?from, ?to, ?method).
 .decl _AssignCast(?instruction:symbol, ?index:number, ?from:symbol, ?to:symbol, ?type:symbol, ?inmethod:symbol)
 .input _AssignCast(IO="file", filename="AssignCast.facts", delimiter="\t")
 Instruction_Method(?instruction, ?method),
 AssignCast_Type(?instruction, ?type),
 AssignCast_From(?instruction, ?from),
 AssignInstruction_To(?instruction, ?to) :-
-  _AssignCast(?instruction, ?index, ?from, ?to, ?type, ?method).
+  _AssignCast(?instruction, _, ?from, ?to, ?type, ?method).
 .decl _Field(?signature:symbol, ?declaringClass:symbol, ?simplename:symbol, ?type:symbol)
 .input _Field(IO="file", filename="Field.facts", delimiter="\t")
 Field_DeclaringType(?signature, ?declaringType) :-
@@ -177,27 +177,27 @@ MethodInvocation_Base(?invocation, ?base) :-
 Instruction_Method(?instruction, ?method),
 isStaticMethodInvocation_Insn(?instruction),
 MethodInvocation_Method(?instruction, ?signature) :-
-  _StaticMethodInvocation(?instruction, ?index, ?signature, ?method).
+  _StaticMethodInvocation(?instruction, _, ?signature, ?method).
 .decl _SpecialMethodInvocation(?instruction:symbol, ?index:number, ?signature:symbol, ?base:symbol, ?method:symbol)
 .input _SpecialMethodInvocation(IO="file", filename="SpecialMethodInvocation.facts", delimiter="\t")
 Instruction_Method(?instruction, ?method),
 SpecialMethodInvocation_Base(?instruction, ?base),
 MethodInvocation_Method(?instruction, ?signature) :-
-  _SpecialMethodInvocation(?instruction, ?index, ?signature, ?base, ?method).
+  _SpecialMethodInvocation(?instruction, _, ?signature, ?base, ?method).
 .decl _VirtualMethodInvocation(?instruction:symbol, ?index:number, ?signature:symbol, ?base:symbol, ?method:symbol)
 .input _VirtualMethodInvocation(IO="file", filename="VirtualMethodInvocation.facts", delimiter="\t")
 Instruction_Method(?instruction, ?method),
 isVirtualMethodInvocation_Insn(?instruction),
 VirtualMethodInvocation_Base(?instruction, ?base),
 MethodInvocation_Method(?instruction, ?signature) :-
-  _VirtualMethodInvocation(?instruction, ?index, ?signature, ?base, ?method).
+  _VirtualMethodInvocation(?instruction, _, ?signature, ?base, ?method).
 .decl _Method(?method:symbol, ?simplename:symbol, ?descriptor:symbol, ?declaringType:symbol, ?returnType:symbol, ?jvmDescriptor:symbol, ?arity:number)
 .input _Method(IO="file", filename="Method.facts", delimiter="\t")
 Method_SimpleName(?method, ?simplename),
 Method_ParamTypes(?method, ?params),
 Method_DeclaringType(?method, ?declaringType),
 Method_ReturnType(?method, ?returnType) :-
-  _Method(?method, ?simplename, ?params, ?declaringType, ?returnType, ?jvmDescriptor, ?arity).
+  _Method(?method, ?simplename, ?params, ?declaringType, ?returnType, _, _).
 Method_Descriptor(?method, ?descriptor) :-
   Method_ReturnType(?method, ?returnType),
   Method_ParamTypes(?method, ?params),
@@ -208,43 +208,43 @@ Instruction_Method(?instruction, ?method),
 FieldInstruction_Signature(?instruction, ?signature),
 StoreInstanceField_Base(?instruction, ?base),
 StoreInstanceField_From(?instruction, ?from) :-
-  _StoreInstanceField(?instruction, ?index, ?from, ?base, ?signature, ?method).
+  _StoreInstanceField(?instruction, _, ?from, ?base, ?signature, ?method).
 .decl _LoadInstanceField(?instruction:symbol, ?index:number, ?to:symbol, ?base:symbol, ?signature:symbol, ?method:symbol)
 .input _LoadInstanceField(IO="file", filename="LoadInstanceField.facts", delimiter="\t")
 Instruction_Method(?instruction, ?method),
 FieldInstruction_Signature(?instruction, ?signature),
 LoadInstanceField_Base(?instruction, ?base),
 LoadInstanceField_To(?instruction, ?to) :-
-  _LoadInstanceField(?instruction, ?index, ?to, ?base, ?signature, ?method).
+  _LoadInstanceField(?instruction, _, ?to, ?base, ?signature, ?method).
 .decl _StoreStaticField(?instruction:symbol, ?index:number, ?from:symbol, ?signature:symbol, ?method:symbol)
 .input _StoreStaticField(IO="file", filename="StoreStaticField.facts", delimiter="\t")
 Instruction_Method(?instruction, ?method),
 FieldInstruction_Signature(?instruction, ?signature),
 StoreStaticField_From(?instruction, ?from) :-
-  _StoreStaticField(?instruction, ?index, ?from, ?signature, ?method).
+  _StoreStaticField(?instruction, _, ?from, ?signature, ?method).
 .decl _LoadStaticField(?instruction:symbol, ?index:number, ?to:symbol, ?signature:symbol, ?method:symbol)
 .input _LoadStaticField(IO="file", filename="LoadStaticField.facts", delimiter="\t")
 Instruction_Method(?instruction, ?method),
 FieldInstruction_Signature(?instruction, ?signature),
 LoadStaticField_To(?instruction, ?to) :-
-  _LoadStaticField(?instruction, ?index, ?to, ?signature, ?method).
+  _LoadStaticField(?instruction, _, ?to, ?signature, ?method).
 .decl _StoreArrayIndex(?instruction:symbol, ?index:number, ?from:symbol, ?base:symbol, ?method:symbol)
 .input _StoreArrayIndex(IO="file", filename="StoreArrayIndex.facts", delimiter="\t")
 Instruction_Method(?instruction, ?method),
 StoreArrayIndex_Base(?instruction, ?base),
 StoreArrayIndex_From(?instruction, ?from) :-
-  _StoreArrayIndex(?instruction, ?index, ?from, ?base, ?method).
+  _StoreArrayIndex(?instruction, _, ?from, ?base, ?method).
 .decl _LoadArrayIndex(?instruction:symbol, ?index:number, ?to:symbol, ?base:symbol, ?method:symbol)
 .input _LoadArrayIndex(IO="file", filename="LoadArrayIndex.facts", delimiter="\t")
 Instruction_Method(?instruction, ?method),
 LoadArrayIndex_Base(?instruction, ?base),
 LoadArrayIndex_To(?instruction, ?to) :-
-  _LoadArrayIndex(?instruction, ?index, ?to, ?base, ?method).
+  _LoadArrayIndex(?instruction, _, ?to, ?base, ?method).
 .decl _Return(?instruction:symbol, ?index:number, ?var:symbol, ?method:symbol)
 .input _Return(IO="file", filename="Return.facts", delimiter="\t")
 Instruction_Method(?instruction, ?method),
 ReturnNonvoid_Var(?instruction, ?var) :-
-  _Return(?instruction, ?index, ?var, ?method).
+  _Return(?instruction, _, ?var, ?method).
 
 // fat schema population
 LoadInstanceField(?base, ?sig, ?to, ?inmethod) :-
