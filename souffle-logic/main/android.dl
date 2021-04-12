@@ -666,11 +666,10 @@ VarPointsTo(?hctx, ?value, ?ctx, ?formal) :-
 VarPointsTo(?hctx, ?value, ?ctx, ?formal) :-
   FormalOfForcedReachableContext(?ctx, ?formal, ?formalType),
   basic.SubtypeOf(?type, ?formalType),
-  isReferenceType(?type),
   !_NotMostRefinedType(?type),
   ApplicationObjectFlowingToLibrary(?hctx, ?value, ?type).
 #ifndef X_CONTEXT_REMOVER
- .plan 1:(4,3,2,1)
+ .plan 1:(3,2,1)
 #endif // X_CONTEXT_REMOVER
 
 //// REVIEW Ad hoc, but useful?
