@@ -68,8 +68,8 @@ ReifiedAndroidObjectValue(?value, ?type) :-
 
 // Create a new heap object per component declared in layout
 // (XML) resources. (REVIEW) These are normal heap objects.
-MockValueConsMacro(cat("<android component object ", cat(?type, ">")), ?type),
-ReifiedComponent(?type, cat("<android component object ", cat(?type, ">"))) :-
+MockValueConsMacro(cat("<Android component object ", cat(?type, ">")), ?type),
+ReifiedComponent(?type, cat("<Android component object ", cat(?type, ">"))) :-
   AndroidOriginalAppComponent(?type),
   isReferenceType(?type).
 
@@ -239,8 +239,8 @@ ImplicitlyInstantiatedLibraryType(?type) :-
    ?type = "android.os.Bundle"),
   isReferenceType(?type).
 
-MockValueConsMacro(cat("<android library object ", cat(?type, ">")), ?type),
-ReifiedLibraryObject(?type, cat("<android library object ", cat(?type, ">"))) :-
+MockValueConsMacro(cat("<Android library object ", cat(?type, ">")), ?type),
+ReifiedLibraryObject(?type, cat("<Android library object ", cat(?type, ">"))) :-
   ImplicitlyInstantiatedLibraryType(?type),
   isReferenceType(?type).
 
@@ -259,8 +259,8 @@ AndroidViewType(?type) :-
 
 // anantoni: Make the getters and setters of classes extending View reachable
 //// REVIEW: this seems pretty liberal
-MockValueConsMacro(cat("<android view object ", cat(?viewType, ">")), ?viewType),
-ReifiedAndroidObjectValue(cat("<android view object ", cat(?viewType, ">")), ?viewType),
+MockValueConsMacro(cat("<Android view object ", cat(?viewType, ">")), ?viewType),
+ReifiedAndroidObjectValue(cat("<Android view object ", cat(?viewType, ">")), ?viewType),
 ForcedReachableAndroidContext(?ctx, ?meth) :-
   Method_SimpleName(?meth, ?simplename),
   (match("set.*", ?simplename);
@@ -271,8 +271,8 @@ ForcedReachableAndroidContext(?ctx, ?meth) :-
 
 
 // Keep Activity methods for onClick behavior.
-MockValueConsMacro(cat("<android activity object ", cat(?type, ">")), ?type),
-ReifiedAndroidObjectValue(cat("<android activity object ", cat(?type, ">")), ?type),
+MockValueConsMacro(cat("<Android activity object ", cat(?type, ">")), ?type),
+ReifiedAndroidObjectValue(cat("<Android activity object ", cat(?type, ">")), ?type),
 ForcedReachableAndroidContext(?ctx, ?method) :-
   basic.SubtypeOf(?type, "android.app.Activity"),
   Method_DeclaringType(?method, ?type),
@@ -283,8 +283,8 @@ ForcedReachableAndroidContext(?ctx, ?method) :-
 
 
 // Recognize "Keep" annotations on methods.
-MockValueConsMacro(cat("<android keep object ", cat(?type, ">")), ?type),
-ReifiedAndroidObjectValue(cat("<android keep object ", cat(?type, ">")), ?type),
+MockValueConsMacro(cat("<Android keep object ", cat(?type, ">")), ?type),
+ReifiedAndroidObjectValue(cat("<Android keep object ", cat(?type, ">")), ?type),
 ForcedReachableAndroidContext(?ctx, ?method) :-
   Method_Annotation(?method, "android.support.annotation.Keep"),
   Method_DeclaringType(?method, ?type),
@@ -365,7 +365,7 @@ ApplicationObjectFlowingToLibrary(?hctx, ?mockListener, ?type),
 MockValueConsMacro(?mockListener, ?type) :-
   ListenerClassConstantValue(?classHeap, ?type),
   ReachableValue(?hctx, ?classHeap),
-  ?mockListener = cat("<mock android listener-like object ", cat(?type, ">")).
+  ?mockListener = cat("<mock Android listener-like object ", cat(?type, ">")).
 
 TypeHasApplicationObjectFlowingToLibrary(?type),
 LibraryReachableAppListenerType(?type) :-
@@ -512,7 +512,7 @@ ReifiedAndroidObjectValue(?value, ?concreteType) :-
   VarPointsTo(?hctx, ?specialvalue, ?ctx, ?from),
   AssignCast(?concreteType, ?from, ?to, _),
   isClassType(?concreteType),
-  ?value = cat("<android inferred object of type ", cat(?concreteType, ">")).
+  ?value = cat("<Android inferred object of type ", cat(?concreteType, ">")).
 // REVIEW: Just one globally? No invo?
 
 
@@ -555,8 +555,8 @@ ForcedReachableAndroidContext(?ctx, ?meth) :-
 //// REVIEW: I'm not sure if the current general-purpose mocking doesn't handle
 ////  most of this anyway. My problem is that this rule creates mock objects based
 ////  on formal types alone--e.g., interfaces or abstract classes.
-// MockValueConsMacro(cat("<android javascript object ", cat(?formalType, ">")), ?formalType),
-// ReifiedAndroidObjectValue(cat("<android javascript object ", cat(?formalType, ">")), ?formalType) :-
+// MockValueConsMacro(cat("<Android javascript object ", cat(?formalType, ">")), ?formalType),
+// ReifiedAndroidObjectValue(cat("<Android javascript object ", cat(?formalType, ">")), ?formalType) :-
 //   _ForcedReachableFromJavascriptContext(_, ?meth),
 //   FormalParam(_, ?meth, ?formal),
 //  Var_Type(?formal, ?formalType).
