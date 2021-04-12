@@ -405,7 +405,9 @@ Server_LeakingTaintedInformation(?fromLabel, ?toLabel, ?invocation, ?value) :-
 .output mainAnalysis.SpecialMissingPackableValue
 .output mainAnalysis.ForcedReachableFromJavascriptContext
 .output mainAnalysis.ArgToAddJavascriptInterface
+#ifndef DISABLE_POINTS_TO
 .output mainAnalysis.ReifiedApplicationAndCompatibleVar
+#endif // DISABLE_POINTS_TO
 .output mainAnalysis.ActivityVar
 .output mainAnalysis.BindFragment
 .output mainAnalysis.ActivityVarInType
