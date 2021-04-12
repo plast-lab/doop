@@ -293,7 +293,8 @@ class FactWriter extends JavaFactWriter {
 
         _db.add(NORMAL_HEAP, heap, writeType(arrayType));
         _db.add(ASSIGN_HEAP_ALLOC, ii.insn, str(ii.index), heap, assignTo, methodId, ""+getLineNumberFromStmt(stmt));
-        writeArraySize(m, ii, expr.getSize(pos), pos, heap);
+        if (pos < expr.getSizeCount())
+            writeArraySize(m, ii, expr.getSize(pos), pos, heap);
 
         Type componentType = getComponentType(arrayType);
         if (componentType instanceof ArrayType) {

@@ -12,6 +12,9 @@ class Main {
 		int bla = 4;
 		char[] bezbez = new char[bla];
 
+		short bleble[][][][] = new short[2][3][4][5];
+		short blebleFOO[][][] = new short[3][3][];
+
 		//Create a 3x3 array that represents our tic tac toe board
 		char[][] board = new char[3][3];
 
