@@ -17,8 +17,7 @@ class DryRuns extends DoopSpec {
         List<String> args = ['-i', Artifacts.HELLO_JAR,
                              '-a', analysisName,
                              '--id', "dry-run-${analysisName}", '--cache',
-                             '--dry-run', '--souffle-force-recompile',
-                             '--souffle-mode', 'translated', '-Ldebug']
+                             '--dry-run', '--souffle-mode', 'translated', '-Ldebug']
         // Some analyses do not support full stats or server logic.
         switch (analysisName) {
             case 'micro':

@@ -36,9 +36,10 @@ class InformationFlowTest extends DoopSpec {
     def "Test all information flow profiles"(String profile) {
         when:
         // Some profiles may not support full stats or server logic.
-        Main.main((String[])(["-i", Artifacts.HELLO_JAR,
-                              "-a", "context-insensitive", "-Ldebug", "--dry-run",
-                              "--id", "dry-run-infoflow-${profile}", "--cache"]))
+        Main.main((String[])(['-i', Artifacts.HELLO_JAR,
+                              '-a', 'context-insensitive', '-Ldebug', '--dry-run',
+                              '--souffle-mode', 'translated',
+                              '--id', "dry-run-infoflow-${profile}", '--cache']))
         Analysis analysis = Main.analysis
 
         then:
