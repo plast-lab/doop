@@ -508,7 +508,7 @@ ReachableValue(?hctx, ?value) :-
 MockValueConsMacro(?value, ?concreteType),
 VarPointsTo(?hctx, ?value, ?ctx, ?to),
 ReifiedAndroidObjectValue(?value, ?concreteType) :-
-  SpecialMissingPackableValue(?invo, ?specialvalue),
+  SpecialMissingPackableValue(_, ?specialvalue),
   VarPointsTo(?hctx, ?specialvalue, ?ctx, ?from),
   AssignCast(?concreteType, ?from, ?to, _),
   isClassType(?concreteType),
