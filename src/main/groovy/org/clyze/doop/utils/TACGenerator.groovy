@@ -247,7 +247,10 @@ class TACGenerator {
 		}
 	}
 
-	static def V(String v) { v.split('/').last() }
+	static def V(String v) {
+		def parts = v.split('/')
+		v.contains("/intermediate/") ? parts.takeRight(3).join("/") : parts.last()
+	}
 
 	static def INS(def index, String id, def body) { sprintf("%2s: %-60s   // ${id.split('\\)>/').last()}", index, body) }
 }
