@@ -14,7 +14,7 @@ class OpenProgramsTest extends DoopSpec {
     @Unroll
     def "Testing support for open programs"(String profile) {
         when:
-        List<String> options = ['--cache', '--open-programs', profile, '--stats', 'full', '--platform', 'java_7', '--no-standard-exports'] + testExports
+        List<String> options = ['--cache', '--open-programs', profile, '--platform', 'java_7', '--no-standard-exports'] + testExports
         Analysis analysis = analyzeTest('ivy-open-programs', 'org.apache.ivy:ivy:2.3.0', options, 'context-insensitive')
 
         then:
@@ -25,6 +25,6 @@ class OpenProgramsTest extends DoopSpec {
         metricIsApprox(analysis, "var points-to (INS)", 69_132_048)
 
 	where:
-	profile << ['concrete-types', 'servlets-only']
+	    profile << ['concrete-types', 'servlets-only']
     }
 }
