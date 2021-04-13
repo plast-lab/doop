@@ -185,14 +185,12 @@ _VarDeclaringClass(?var, ?class) :-
 Server_Var_Values(?class, ?var, ?value) :-
   _VPT(?var, ?value),
   _VarUnderThreshold(?var),
-//  isValue(?value),
   !isStringConstant(?value),
   _VarDeclaringClass(?var, ?class).
 
 Server_Var_Values(?class, ?var, STRING_CONSTANT(?value)) :-
   _VPT(?var, ?value),
   _VarUnderThreshold(?var),
-//  isValue(?value),
   isStringConstant(?value),
   _VarDeclaringClass(?var, ?class).
 
@@ -391,6 +389,7 @@ Server_LeakingTaintedInformation(?fromLabel, ?toLabel, ?invocation, ?value) :-
 .output BroadcastReceiver
 .output ContentProvider
 .output AndroidApplication
+.output mainAnalysis.AndroidAppComponent
 .output mainAnalysis.AndroidOriginalAppComponent
 .output mainAnalysis.RegisterBroadCastReceiverVar
 .output mainAnalysis.OnEventMethod
@@ -422,4 +421,6 @@ Server_LeakingTaintedInformation(?fromLabel, ?toLabel, ?invocation, ?value) :-
 .output mainAnalysis.AndroidLibraryVar
 .output mainAnalysis.AndroidReachableLibraryVarOfType
 .output mainAnalysis.ForcedReachableAndroidClass
+.output mainAnalysis.ReifiedAndroidObjectValue
+.output mainAnalysis.ReifiedComponent
 #endif // ANDROID
