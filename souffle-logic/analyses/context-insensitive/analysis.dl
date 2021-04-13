@@ -10,9 +10,9 @@
 
 .comp ContextInsensitiveConfiguration : AbstractConfiguration {
 
-  .type Context
-  .type HContext
-         
+  .type Context = symbol
+  .type HContext = symbol
+
   ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, ?calleeCtx) :-
     ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, _),
     ?calleeCtx = ?callerCtx.
