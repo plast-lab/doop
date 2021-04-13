@@ -283,7 +283,7 @@ ReachableContext(?calleeCtx, ?method) :-
 .decl BoxTypeConversion(?original:Type, ?new:Type)
 // Create a new allocation in the case of boxing.
 .decl BoxAllocation(?value:Value, ?type:Type)
-#define BOX_ALLOC(t) cat("mock box allocation for type ", t)
+#define BOX_ALLOC(t) cat("<mock box allocation for type ", cat(t, ">"))
 
 BoxTypeConversion(?t1, ?t2),
 MockValueConsMacro(?mockAlloc, ?t2),
@@ -383,7 +383,7 @@ MethodHandle_MethodType(?adapterMH, ?mt) :-
  *************************************************************/
 
 .decl MHLookup_Type(?value:Value, ?type:Type)
-#define MOCK_MH_LOOKUP(t) cat("mock method handles lookup object for type ", t)
+#define MOCK_MH_LOOKUP(t) cat("<mock method handles lookup object for type ", cat(t, ">"))
 
 #ifdef REFLECTION_METHOD_HANDLES
 
@@ -670,7 +670,7 @@ MethodVarArgs(?method, ?idx, ?formal, ?type) :-
   isArrayType(?type).
 
 // Use a mock array to fix calls to a bootstrap method accepting varargs.
-#define MOCK_ARRAY(invokedynamic) cat("bootstrap varargs array for ", invokedynamic)
+#define MOCK_ARRAY(invokedynamic) cat("<bootstrap varargs array for ", cat(invokedynamic, ">"))
 
 #ifndef DISABLE_POINTS_TO
 ArrayIndexPointsTo(?immHctx, ?val, ?immHctx, ?mockArray),
@@ -989,7 +989,7 @@ MockValueConsMacro(?mockObj, ?type) :-
   basic.ClassConstructor(?implMethod, ?type),
   AssignReturnValue(?i, ?var),
   ThisVar(?implMethod, ?thisVar),
-  ?mockObj = cat("mock ", cat(?type, cat(" constructed by constructor reference at ", ?i))),
+  ?mockObj = cat("<mock object of type ", cat(?type, cat(" constructed by constructor reference at ", cat(?i, ">")))),
   isImmutableHContext(?hctx).
 #endif // DISABLE_POINTS_TO
 
@@ -1024,7 +1024,7 @@ FillConstructorsFromClass(?hctx, ?mockConstructors, ?class) :-
   Class_getMembers(GET_DECLARED_CONSTRUCTORS, ?hctx, ?ctx, ?ret, ?class),
   Var_Type(?ret, ?retType),
   (isArrayType(?retType) ; ?retType = "java.lang.Object"),
-  ?mockConstructors = cat("mock constructors array for ", ?class).
+  ?mockConstructors = cat("<mock constructors array for ", cat(?class, ">")).
 
 ArrayIndexPointsTo(?immHctx, ?constructor, ?hctx, ?mockConstructors) :-
   FillConstructorsFromClass(?hctx, ?mockConstructors, ?class),
@@ -1038,7 +1038,7 @@ FillConstructorsFromClass(?hctx, ?mockMethods, ?class) :-
   Class_getMembers(GET_DECLARED_METHODS, ?hctx, ?ctx, ?ret, ?class),
   Var_Type(?ret, ?retType),
   (isArrayType(?retType) ; ?retType = "java.lang.Object"),
-  ?mockMethods = cat("mock methods array for ", ?class).
+  ?mockMethods = cat("<mock methods array for ", cat(?class, ">")).
 
 ArrayIndexPointsTo(?immHctx, ?methodValue, ?hctx, ?mockMethods) :-
   FillConstructorsFromClass(?hctx, ?mockMethods, ?class),
