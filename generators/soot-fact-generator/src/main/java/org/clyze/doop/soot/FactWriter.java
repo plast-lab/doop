@@ -392,7 +392,7 @@ class FactWriter extends JavaFactWriter {
 	paramTypes = paramTypesList.toArray(paramTypes);
         writeMethodTypeConstant(retType, paramTypes, null);
         String params = concatenate(paramTypes);
-        String mt = "(" + params + ")" + retType;
+        String mt = "<method type (" + params + ")" + retType + ">";
         _db.add(ASSIGN_HEAP_ALLOC, ii.insn, str(ii.index), mt, _rep.local(m, l), ii.methodId, "0");
     }
 

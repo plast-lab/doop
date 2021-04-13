@@ -23,7 +23,7 @@ MethodType_ReturnType(?mt, ?retType)    :- MethodTypeConstant_ReturnType(?mt, ?r
 MethodType_ParamTypes(?mt, ?paramTypes) :- MethodTypeConstant_ParamTypes(?mt, ?paramTypes).
 
 #define METHOD_TYPE(paramTypes, retType) \
-  cat("method type (", cat(paramTypes, cat(")", retType)))
+  cat("<method type (", cat(paramTypes, cat(")", cat(retType, ">"))))
 
 #ifdef REFLECTION_METHOD_HANDLES
 
