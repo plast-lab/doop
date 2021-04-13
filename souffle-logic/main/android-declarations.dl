@@ -8,7 +8,7 @@
 .decl AndroidViewType(?type:ReferenceType)
 .decl AndroidLibraryListenerType(?type:ReferenceType)
 .decl ListenerType(?type:ReferenceType)
-.decl AndroidCallbackMethod(?method:Method)
+.decl AndroidCallbackMethod(?method:Method, ?type:ReferenceType)
 .decl AndroidApplicationListenerClass(?class:ClassType)
 .decl PublicMethodOfComponent(?meth:Method)
 .decl ProtectedMethodOfComponent(?meth:Method)

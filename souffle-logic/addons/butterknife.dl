@@ -73,9 +73,10 @@ StaticFieldPointsTo(?hctx, ?controlValue, ?field) :-
  * Callback methods
  ***************************************************/
 
-AndroidCallbackMethod(?method),
+AndroidCallbackMethod(?method, ?type),
 LayoutControl_CallbackMethod(?controlId, ?method) :-
   Method_Annotation(?method, ?annot),
+  Method_DeclaringType(?method, ?type),
   ( ?annot = "butterknife.OnCheckedChanged"
   ; ?annot = "butterknife.OnClick"
   ; ?annot = "butterknife.OnEditorAction"

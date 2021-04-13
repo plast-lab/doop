@@ -104,7 +104,7 @@ ForcedReachableAndroidContext(?ctx, ?meth) :-
 //  (PublicMethodOfComponent(?meth);
 //   OverridingProtectedMethodOfComponent(?meth);
   (NonPrivateConcreteMethodOfComponent(?meth);
-   AndroidCallbackMethod(?meth)),
+   AndroidCallbackMethod(?meth, _)),
   isImmutableContext(?ctx).
 
 // By marking them "ForcedReachable" we enable their mocking, not just reachability.
@@ -274,11 +274,7 @@ ForcedReachableAndroidContext(?ctx, ?meth) :-
 MockValueConsMacro(cat("<Android activity object ", cat(?type, ">")), ?type),
 ReifiedAndroidObjectValue(cat("<Android activity object ", cat(?type, ">")), ?type),
 ForcedReachableAndroidContext(?ctx, ?method) :-
-  basic.SubtypeOf(?type, "android.app.Activity"),
-  Method_DeclaringType(?method, ?type),
-  Method_Arity(?method, 1),
-  FormalParam(0, ?method, ?formal),
-  Var_Type(?formal, "android.view.View"),
+  AndroidCallbackMethod(?method, ?type),
   isImmutableContext(?ctx).
 
 

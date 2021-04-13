@@ -120,16 +120,17 @@ Activity_Alias(?activity, ?alias) :-
 AndroidCallbackMethodName(?methodName) :-
   XMLNodeAttribute(_, _, _, _, "android:onClick", ?methodName).
 
-// Types-only: for a callback method that is just a name, consider as
-// callbacks all methods whose names match that name.
-#ifdef DISABLE_POINTS_TO
-AndroidCallbackMethod(?method) :-
+// For a callback method that is just a name, consider as callbacks
+// all methods whose names match that name. For more information, see:
+// https://developer.android.com/guide/topics/ui/controls/button#HandlingEvents
+AndroidCallbackMethod(?method, ?type) :-
   AndroidCallbackMethodName(?name),
   Method_SimpleName(?method, ?name),
+  basic.SubtypeOf(?type, "android.app.Activity"),
+  Method_DeclaringType(?method, ?type),
   Method_Modifier("public", ?method),
   Method_ReturnType(?method, "void"),
   Method_ParamTypes(?method, "android.view.View").
-#endif // DISABLE_POINTS_TO
 
 .decl LayoutControl_CallbackMethod(?controlId:symbol, ?method:symbol)
 LayoutControl_CallbackMethod(?controlId, ?method) :-
