@@ -152,21 +152,16 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		else {
 			if (options.PYTHON.value) {
 				return new SoufflePythonAnalysis(options, context, commandsEnv)
+			} else if (options.USER_DEFINED_PARTITIONS.value) {
+				return new SoufflePartitionedAnalysis(options, context, commandsEnv)
+			} else if (options.ANALYSIS.value == "fully-guided-context-sensitive") {
+				return new SouffleScalerMultiPhaseAnalysis(options, context, commandsEnv)
 			}
+//			else if (options.ANALYSIS.value == "adaptive-2-object-sensitive+heap") {
+//				return new SouffleGenericsMultiPhaseAnalysis(options, context, commandsEnv)
+//			}
 			else {
-				if (options.USER_DEFINED_PARTITIONS.value)
-					return new SoufflePartitionedAnalysis(options, context, commandsEnv)
-				else {
-					if (options.ANALYSIS.value == "fully-guided-context-sensitive") {
-						return new SouffleScalerMultiPhaseAnalysis(options, context, commandsEnv)
-					}
-//					else if (options.ANALYSIS.value == "adaptive-2-object-sensitive+heap") {
-//						return new SouffleGenericsMultiPhaseAnalysis(options, context, commandsEnv)
-//					}
-					else {
-						return new SouffleAnalysis(options, context, commandsEnv)
-					}
-				}
+				return new SouffleAnalysis(options, context, commandsEnv)
 			}
 		}
 	}
