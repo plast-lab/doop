@@ -27,8 +27,7 @@ class AndroidTests extends DoopSpec {
 					 "-a", "context-insensitive",
 					 "--platform", "android_25_fulljars",
 					 "--id", "test-android-androidterm",
-					 "--keep-spec", keepSpec,
-					 "--stats", "full", "-Ldebug"] + defaultArgs + sanityOpts
+					 "--keep-spec", keepSpec, "-Ldebug"] + defaultArgs + sanityOpts
 		Main.main((String[])args)
 		Analysis analysis = Main.analysis
 
@@ -54,7 +53,7 @@ class AndroidTests extends DoopSpec {
 					 "--extra-logic", "${Doop.souffleLogicPath}/addons/testing/AndroidTests_TypesOnly_androidterm.dl",
 					 "--scan-native-code", "--simulate-native-returns",
 					 "--no-standard-exports",
-					 "--stats", "full", "--Xlow-mem", "-Ldebug"] + defaultArgs
+					 "--Xlow-mem", "-Ldebug"] + defaultArgs
 		Main.main((String[])args)
 		Analysis analysis = Main.analysis
 
@@ -118,7 +117,7 @@ class AndroidTests extends DoopSpec {
 					 "--platform", "android_25_fulljars",
 					 "--id", "test-android-signal-types-only",
 					 "--scan-native-code", "--simulate-native-returns",
-					 "--stats", "full", "-Ldebug"] + defaultArgs + sanityOpts
+					 "-Ldebug"] + defaultArgs + sanityOpts
 		Main.main((String[])args)
 		Analysis analysis = Main.analysis
 
@@ -164,8 +163,7 @@ class AndroidTests extends DoopSpec {
 					 "--featherweight-analysis",
 					 "--heapdl-file", Artifacts.ANDROIDTERM_HPROF,
 					 "--id", "test-android-androidterm-fw-heapdl",
-					 "--thorough-fact-gen",
-					 "--stats", "full", "-Ldebug"] + defaultArgs
+					 "--thorough-fact-gen", "-Ldebug"] + defaultArgs
 		Main.main((String[])args)
 		Analysis analysis = Main.analysis
 
@@ -185,10 +183,8 @@ class AndroidTests extends DoopSpec {
         List args = ["-i", Artifacts.ANDROIDTERM_APK,
                      "-a", "context-insensitive",
                      "--platform", "android_25_fulljars",
-                     "--id", id,
-                     "--facts-only",
-                     "--Xdex", "--stats", "full", "-Ldebug",
-                     "--dry-run"] + testExports + mode
+                     "--id", id, "--facts-only",
+                     "--Xdex", "-Ldebug"] + testExports + mode
         Main.main((String[])args)
         Analysis analysis = Main.analysis
 

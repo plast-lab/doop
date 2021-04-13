@@ -19,7 +19,7 @@ abstract class DoopSpec extends Specification {
                              "--id", analysisId,
                              "-Ldebug"] + extraArgs
         if (!extraArgs.contains("stats"))
-            args.addAll(['--stats', 'full'])
+            args.addAll(['--stats', 'default'])
         Main.main2(args as String[])
         return Main.analysis
     }

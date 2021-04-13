@@ -21,7 +21,7 @@ class InformationFlowTest extends DoopSpec {
                      "--information-flow", "android", "--sarif",
                      "--information-flow-extra-controls", "7878787878,android.widget.EditText,2131296798",
                      "--id", "test-android-androidterm-information-flow",
-                     "--generate-jimple", "--stats", "full", "-Ldebug"] + testExports
+                     "--generate-jimple", "-Ldebug"] + testExports
         Main.main((String[])args)
         Analysis analysis = Main.analysis
 
@@ -35,7 +35,7 @@ class InformationFlowTest extends DoopSpec {
     @Unroll
     def "Test all information flow profiles"(String profile) {
         when:
-        // Some analyses do not support full stats or server logic.
+        // Some profiles may not support full stats or server logic.
         Main.main((String[])(["-i", Artifacts.HELLO_JAR,
                               "-a", "context-insensitive", "-Ldebug", "--dry-run",
                               "--id", "dry-run-infoflow-${profile}", "--cache"]))
