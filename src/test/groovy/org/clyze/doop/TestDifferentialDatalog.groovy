@@ -8,7 +8,7 @@ import static org.clyze.doop.TestUtils.*
  * Test Differential Datalog (ddlog) mode.
  */
 class TestDifferentialDatalog extends DoopSpec {
-	@spock.lang.Ignore
+	// @spock.lang.Ignore
 	@Unroll
 	def "Differential Datalog test"() {
 		when:
