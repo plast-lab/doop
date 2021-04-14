@@ -1,0 +1,61 @@
+#pragma once
+
+.decl Schema_ClassInfo(class:symbol, kind:symbol, field:symbol, fieldType:symbol)
+.output Schema_ClassInfo
+
+Schema_ClassInfo(class, "r", fldName, type) :-
+	ApplicationClass(class),
+	Field_DeclaringType(fld, class),
+	Field_Type(fld, type),
+	Field_SimpleName(fld, fldName),
+	!Field_Modifier(fld, "static").
+
+Schema_ClassInfo(class, "R", fldName, type) :-
+	ApplicationClass(class),
+	Field_DeclaringType(fld, class),
+	Field_Type(fld, type),
+	Field_SimpleName(fld, fldName),
+	Field_Modifier(fld, "static").
+
+Schema_ClassInfo(class, cat(kind, "[]"), fldName, type) :-
+	Schema_ClassInfo(class, kind, fldName, type),
+	isArrayType(type),
+	kind != "r[]", kind != "R[]".
+
+
+.decl Schema_META_ArrayRelation(relName:symbol, array:Var, types:symbol)
+.decl Schema_META_ArraySizes(relName:symbol, array:Var, pos:number, size:number)
+.decl __ArrayHasSize(baseArray:Var, array:Var, pos:number, size:number)
+
+.output Schema_META_ArrayRelation
+.output Schema_META_ArraySizes
+.output __ArrayHasSize
+
+Schema_META_ArrayRelation(relName, array, type) :-
+	InterestingStmt(stmt),
+	AssignInstruction_To(stmt, array),
+	Var_Type(array, type),
+	isArrayType(type),
+	!StoreArrayIndex_From(_, array),
+	relName = cat("ArrayRelation_", to_string(ord(array))).
+
+.decl AllocArraySize_EXT(stmt:Instruction, pos:number, size:number) inline
+AllocArraySize_EXT(stmt, pos, size) :-
+	AllocArraySize_NUM(stmt, pos, size) ;
+	(AllocArraySize_VAR(stmt, pos, _), size = -1).
+
+__ArrayHasSize(array, array, 0, size) :-
+	Schema_META_ArrayRelation(_, array, _),
+	AllocArraySize_EXT(stmt, _, size),
+	AssignInstruction_To(stmt, array).
+
+__ArrayHasSize(baseBaseArray, array, pos+1, size) :-
+	__ArrayHasSize(baseBaseArray, baseArray, pos, _),
+	AllocArraySize_EXT(stmt, _, size),
+	AssignInstruction_To(stmt, array),
+	StoreArrayIndex_From(stmt2, array),
+	StoreArrayIndex_Base(stmt2, baseArray).
+
+Schema_META_ArraySizes(relName, baseArray, pos, size) :-
+	Schema_META_ArrayRelation(relName, baseArray, _),
+	__ArrayHasSize(baseArray, _, pos, size).

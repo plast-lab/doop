@@ -11,8 +11,8 @@ class XTractor {
 				"-a", "data-flow",
 				"-id", "data-flow",
 				"--extra-logic", "${Doop.souffleLogicPath}/addons/xtractor/analysis.dl",
-				"--generate-tac"
 		]
+		// Pass the rest of the arguments to doop directly
 		doopArgs.addAll(args.drop(1))
 		Main.main(doopArgs.toArray() as String[])
 

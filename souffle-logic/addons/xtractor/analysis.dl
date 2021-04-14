@@ -1,4 +1,4 @@
-#include "schema-static.dl"
+#include "out-schema.dl"
 #include "theorem-prover.dl"
 #include "expr-client.dl"
 
