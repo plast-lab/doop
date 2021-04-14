@@ -120,9 +120,10 @@ public class PackageUtil {
 	}
 
 	static Regex getPackageFromClassName(String className) {
-		if (className.indexOf("/") > 0)
-			return Regex.prefix(FilenameUtils.getPath(className).replace('/', '.'));
-		else
+		if (className.indexOf("/") > 0) {
+			String pre = FilenameUtils.getPath(className).replace('/', '.');
+			return Regex.prefix(pre.endsWith(".") ? pre.substring(0, pre.length() - 1) : pre);
+		} else
 			return Regex.exact(FilenameUtils.getBaseName(className));
 	}
 
