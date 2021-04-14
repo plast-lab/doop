@@ -389,11 +389,11 @@ HeapAllocation_EmptyArray(?id) :-
 
 // Array Allocation
 
-.decl _ArrayAllocation(?instruction:Instruction, ?sizeVar:Var)
+.decl _ArrayAllocation(?instruction:Instruction, ?pos:number, ?sizeVar:Var)
 .input _ArrayAllocation(filename="ArrayAllocation.facts")
 
-ArrayAllocation(?insn, ?sizeVar) :-
-  _ArrayAllocation(?insn, ?sizeVar).
+ArrayAllocation(?insn, ?pos, ?sizeVar) :-
+  _ArrayAllocation(?insn, ?pos, ?sizeVar).
 
 
 // AssignHeapAllocation

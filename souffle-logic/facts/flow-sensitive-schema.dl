@@ -355,7 +355,7 @@
 .decl StoreArrayIndex_From(?insn:StoreArrayIndex_Insn, ?var:Var)
 .decl StoreArrayIndex_Base(?insn:StoreArrayIndex_Insn, ?var:Var)
 
-.decl ArrayAllocation(?insn:Instruction, ?sizeVar:Var)
+.decl ArrayAllocation(?insn:Instruction, ?pos:number, ?sizeVar:Var)
 
 
 //-----------------------------------------------------------------------------

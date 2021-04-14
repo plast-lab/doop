@@ -248,7 +248,7 @@ class FactWriter extends JavaFactWriter {
             if(size.value == 0) _db.add(EMPTY_ARRAY, heap);
         }
         else if (sizeVal instanceof Local)
-            _db.add(ARRAY_ALLOC, ii.insn, _rep.local(m, (Local)sizeVal));
+            _db.add(ARRAY_ALLOC, ii.insn, str(pos), _rep.local(m, (Local)sizeVal));
     }
 
     void writeAssignHeapAllocation(SootMethod m, Stmt stmt, Local l, Value expr, Session session) {
