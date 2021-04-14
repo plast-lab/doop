@@ -90,12 +90,12 @@ class TestLambdasMethodReferences extends DoopSpec {
 
 		feature 'Constructor references.'
 		lambdaCGE(analysis, '<Main: void main(java.lang.String[])>/java.util.function.Supplier.get/1', '<A: void <init>()>')
-		varPointsToQ(analysis, '<A: void <init>()>/@this', 'mock A constructed by constructor reference at <Main: void main(java.lang.String[])>/java.util.function.Supplier.get/1')
-		varPointsToQ(analysis, '<MethodReferencesTest: java.util.Collection transferElements(java.util.Collection,java.util.function.Supplier)>/result#_53', 'mock java.util.HashSet constructed by constructor reference at <MethodReferencesTest: java.util.Collection transferElements(java.util.Collection,java.util.function.Supplier)>/java.util.function.Supplier.get/0')
+		varPointsToQ(analysis, '<A: void <init>()>/@this', '<mock object of type A constructed by constructor reference at <Main: void main(java.lang.String[])>/java.util.function.Supplier.get/1>')
+		varPointsToQ(analysis, '<MethodReferencesTest: java.util.Collection transferElements(java.util.Collection,java.util.function.Supplier)>/result#_53', '<mock object of type java.util.HashSet constructed by constructor reference at <MethodReferencesTest: java.util.Collection transferElements(java.util.Collection,java.util.function.Supplier)>/java.util.function.Supplier.get/0>')
 
 		feature 'Auto-boxing conversions.'
 		varPointsToQ(analysis, '<Main: void main(java.lang.String[])>/$stack55', '<Main: void main(java.lang.String[])>/invokedynamic_metafactory::applyAsInt/0::: java.util.function.IntUnaryOperator::: (Mock)::: reference A::meth5678 from <A: java.lang.Integer meth5678(java.lang.Integer)> wrapped as java.util.function.IntUnaryOperator.applyAsInt')
-		varPointsToQ(analysis, '<A: java.lang.Integer meth5678(java.lang.Integer)>/x#_0', 'mock box allocation for type java.lang.Integer')
+		varPointsToQ(analysis, '<A: java.lang.Integer meth5678(java.lang.Integer)>/x#_0', '<mock box allocation for type java.lang.Integer>')
 
 		noSanityErrors(analysis)
 
