@@ -30,7 +30,10 @@
 
 .decl InterestingStmt(stmt:Instruction)
 .decl InterestingMethod(method: Method) inline
-.decl AllocArraySize_VAR(stmt: Instruction, sizeVar: Var) inline
+.decl AllocArraySize_VAR(stmt: Instruction, pos:number, sizeVar: Var) inline
+.decl AllocArraySize_NUM(stmt: Instruction, pos:number, size:number)
+.input AllocArraySize_NUM(filename="ArrayAllocationConstSize.facts")
+
 // Encodes a CHA callgraph, effectively
 .decl RESOLVE_CALL(stmt:MethodInvocation, method:Method)
 
@@ -48,7 +51,7 @@ InterestingStmt(stmt) :-
 
 InterestingMethod(method) :- InterestingStmt(stmt), Instruction_Method(stmt, method).
 
-AllocArraySize_VAR(stmt, var) :- ArrayAllocation(stmt, var).
+AllocArraySize_VAR(stmt, pos, var) :- ArrayAllocation(stmt, pos, var).
 
 INIT_VAR(stmt, to, value) :-
 	AssignNumConstant_Id(stmt, value),

@@ -150,7 +150,7 @@ VarHasExpr(ret, expr) :-
 VarHasExpr(arr, expr) :-
 	InterestingStmt(stmt),
 	ALLOC(stmt, arr, _),
-	AllocArraySizeVar(stmt, sizeVar),
+	AllocArraySize_VAR(stmt, _, sizeVar),
 	expr = [ARR_NEW, EX(sizeVar), nil].
 
 // Piggyback on Expr to create more complex locations -- not actual expressions
