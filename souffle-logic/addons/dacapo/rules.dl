@@ -4,7 +4,7 @@
 
 StringConstantConsMacro(?heap, "java.lang.String"),
 HeapAllocation_Keep(?heap) :-
-  Dacapo(?heap, ?method).
+  Dacapo(?heap, _).
 
 /**
  * Extra logic to handle a specific value read from a configuration file for
