@@ -23,15 +23,15 @@ Schema_ClassInfo(class, cat(kind, "[]"), fldName, type) :-
 	kind != "r[]", kind != "R[]".
 
 
-.decl Schema_META_ArrayRelation(relName:symbol, array:Var, types:symbol)
-.decl Schema_META_ArraySizes(relName:symbol, array:Var, pos:number, size:number)
+.decl Schema_ArrayRelation(relName: symbol, array: Var, types: symbol)
+.decl Schema_ArraySizes(relName: symbol, array: Var, pos: number, size: number)
 .decl __ArrayHasSize(baseArray:Var, array:Var, pos:number, size:number)
 
-.output Schema_META_ArrayRelation
-.output Schema_META_ArraySizes
+.output Schema_ArrayRelation
+.output Schema_ArraySizes
 .output __ArrayHasSize
 
-Schema_META_ArrayRelation(relName, array, type) :-
+Schema_ArrayRelation(relName, array, type) :-
 	InterestingStmt(stmt),
 	AssignInstruction_To(stmt, array),
 	Var_Type(array, type),
@@ -45,7 +45,7 @@ AllocArraySize_EXT(stmt, pos, size) :-
 	(AllocArraySize_VAR(stmt, pos, _), size = -1).
 
 __ArrayHasSize(array, array, 0, size) :-
-	Schema_META_ArrayRelation(_, array, _),
+	Schema_ArrayRelation(_, array, _),
 	AllocArraySize_EXT(stmt, _, size),
 	AssignInstruction_To(stmt, array).
 
@@ -56,6 +56,6 @@ __ArrayHasSize(baseBaseArray, array, pos+1, size) :-
 	StoreArrayIndex_From(stmt2, array),
 	StoreArrayIndex_Base(stmt2, baseArray).
 
-Schema_META_ArraySizes(relName, baseArray, pos, size) :-
-	Schema_META_ArrayRelation(relName, baseArray, _),
+Schema_ArraySizes(relName, baseArray, pos, size) :-
+	Schema_ArrayRelation(relName, baseArray, _),
 	__ArrayHasSize(baseArray, _, pos, size).

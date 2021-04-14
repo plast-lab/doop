@@ -4,15 +4,27 @@ import org.clyze.doop.core.DoopAnalysis
 
 class XTractor {
 	static void run(DoopAnalysis analysis) {
-		def inFile = new File("${analysis.database}/Schema_ClassInfo.csv")
+		def outFile = new File(analysis.database, "xtractor-out.dl")
+		outFile.text = ""
+
 		Map<String, List<String[]>> classInfo = [:].withDefault { [] }
-		inFile.eachLine { line ->
+		new File(analysis.database, "Schema_ClassInfo.csv").eachLine { line ->
 			def (klass, kind, field, fieldType) = line.split("\t")
 			classInfo[klass] << [kind, field, fieldType]
 		}
 
-		def outFile = new File(analysis.database, "xtractor-out.dl")
-		outFile.text = ""
+		outFile << ".decl ArrayRelation_Meta(relName:symbol, var:symbol, dimensions:number)\n"
+		outFile << ".decl ArrayRelation_Dimension(relName:symbol, pos:number, size:number)\n"
+		new File(analysis.database, "Schema_ArrayRelation.csv").eachLine {
+			def (String relName, array, String types) = it.split("\t")
+			def dimensions = types.count("[]")
+			outFile << ".decl $relName(${(1..dimensions).collect { "i$it:symbol" }.join(", ")}, value:symbol)\n"
+			outFile << "ArrayRelation_Meta(\"$relName\", \"$array\", $dimensions).\n"
+		}
+		new File(analysis.database, "Schema_ArraySizes.csv").eachLine {
+			def (String relName, array, pos, size) = it.split("\t")
+			outFile << "ArrayRelation_Dimension(\"$relName\", $pos, $size).\n"
+		}
 
 		def dlTypes = [] as Set
 		def dlDecls = []
