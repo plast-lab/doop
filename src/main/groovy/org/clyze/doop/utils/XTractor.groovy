@@ -1,31 +1,17 @@
 package org.clyze.doop.utils
 
-import org.clyze.doop.Main
-import org.clyze.doop.core.Doop
+import org.clyze.doop.core.DoopAnalysis
 
 class XTractor {
-	static void main(String[] args) {
-		Doop.initDoopFromEnv()
-		def doopArgs = [
-				"-i", new File(args[0]),
-				"-a", "data-flow",
-				"-id", "data-flow",
-				"--extra-logic", "${Doop.souffleLogicPath}/addons/xtractor/analysis.dl",
-		]
-		// Pass the rest of the arguments to doop directly
-		doopArgs.addAll(args.drop(1))
-		Main.main(doopArgs.toArray() as String[])
-
-
-		def runDir = new File("${Doop.doopOut}/data-flow/database")
-		def inFile = new File("$runDir/Schema_ClassInfo.csv")
+	static void run(DoopAnalysis analysis) {
+		def inFile = new File("${analysis.database}/Schema_ClassInfo.csv")
 		Map<String, List<String[]>> classInfo = [:].withDefault { [] }
 		inFile.eachLine { line ->
 			def (klass, kind, field, fieldType) = line.split("\t")
 			classInfo[klass] << [kind, field, fieldType]
 		}
 
-		def outFile = new File(runDir, "xtractor-out.dl")
+		def outFile = new File(analysis.database, "xtractor-out.dl")
 		outFile.text = ""
 
 		def dlTypes = [] as Set

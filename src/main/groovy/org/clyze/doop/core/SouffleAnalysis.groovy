@@ -10,6 +10,7 @@ import org.clyze.doop.utils.DDlog
 import org.clyze.doop.utils.SouffleOptions
 import org.clyze.doop.utils.SouffleScript
 import org.clyze.doop.utils.TACGenerator
+import org.clyze.doop.utils.XTractor
 import org.clyze.utils.Executor
 import org.clyze.utils.JHelper
 
@@ -119,6 +120,8 @@ class SouffleAnalysis extends DoopAnalysis {
 				runtimeMetricsFile.append("disk footprint (KB)\t${dbSize}\n")
 				postprocess()
 			}
+
+			if (analysis.name == "xtractor") XTractor.run(this)
 
 			Files.move(runtimeMetricsFile.toPath(), new File(database, "Stats_Runtime.csv").toPath(), StandardCopyOption.REPLACE_EXISTING)
 		} finally {

@@ -1,14 +1,15 @@
 package org.clyze.doop.command
 
 import groovy.util.logging.Log4j
-import java.nio.file.Files
-import java.nio.file.Path
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
 import org.clyze.analysis.AnalysisPostProcessor
 import org.clyze.doop.core.Doop
 import org.clyze.doop.core.DoopAnalysis
 import org.clyze.utils.OS
+
+import java.nio.file.Files
+import java.nio.file.Path
 
 @Log4j
 class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor<DoopAnalysis> {

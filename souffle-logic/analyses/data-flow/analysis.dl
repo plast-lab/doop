@@ -1,3 +1,4 @@
+#pragma once
 #include "setup.dl"
 #define MK_INDEX_VAR(v, i) cat(v, cat("[", cat(to_string(i), "]")))
 #define MK_SFLD_VAR(fld) cat("@", fld)

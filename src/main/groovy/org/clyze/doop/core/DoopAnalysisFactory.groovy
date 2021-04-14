@@ -348,7 +348,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		def analysisName = options.ANALYSIS.value
 		if (analysisName == "sound-may-point-to" || analysisName == "dependency-analysis" || options.SYMBOLIC_REASONING.value)
 			options.CFG_ANALYSIS.value = true
-		if (analysisName == "basic-only" || analysisName == "data-flow")
+		if (analysisName == "basic-only" || analysisName == "data-flow" || analysisName == "xtractor")
 			options.X_STATS_NONE.value = true
 
 		try {
