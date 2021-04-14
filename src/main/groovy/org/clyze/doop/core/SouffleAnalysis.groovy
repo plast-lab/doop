@@ -121,7 +121,7 @@ class SouffleAnalysis extends DoopAnalysis {
 				postprocess()
 			}
 
-			if (analysis.name == "xtractor") XTractor.run(this)
+			if (this.name == "xtractor") XTractor.run(this)
 
 			Files.move(runtimeMetricsFile.toPath(), new File(database, "Stats_Runtime.csv").toPath(), StandardCopyOption.REPLACE_EXISTING)
 		} finally {
