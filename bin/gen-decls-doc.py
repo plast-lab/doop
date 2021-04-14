@@ -51,7 +51,7 @@ def endDoc(outDoc):
 
 def writeDoc(outDoc, rules):
     startDoc(outDoc)
-    for logicFile in sorted(rules.iterkeys()):
+    for logicFile in sorted(rules.keys()):
         decls = rules[logicFile]
         decls.sort()
         startNewFile(outDoc, logicFile)
@@ -72,7 +72,7 @@ def parseLogicDir(logicDir):
                     content = ""
                     decls = []
                     # Ignore lines containing '//' (commented-out .decl lines).
-                    with open(path, 'rb') as f:
+                    with open(path, 'r') as f:
                         for line in f.readlines():
                             if not ('//' in line):
                                 content += line

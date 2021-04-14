@@ -832,6 +832,113 @@
 <li> .decl JUnitTestMethod(?m:Method, ?tInstance:Value)</li>
 <li> .decl TestNGAnnotatedMethod(?m:Method)</li>
 </ul>
+<h2> addons/xtractor/analysis.dl </h2>
+<ul>
+<li> .decl ArrayHasExprSymbol(out1: symbol, out2: symbol, out3: symbol)</li>
+<li> .decl FldHasExprSymbol(base: symbol, fld: symbol, out: symbol)</li>
+<li> .decl HeapHasExprSymbol(heap: symbol, fld: symbol, out: symbol)</li>
+<li> .decl Sanity_ToSymbolConflict(expr1: Expr, expr2: Expr, out: symbol)</li>
+<li> .decl Sanity_ToSymbolMissing(expr: Expr)</li>
+<li> .decl Sanity_WrongSizedExpr(out: symbol, size: number)</li>
+<li> .decl VarHasExprSymbol(loc: symbol, out: symbol)</li>
+<li> .decl rel##Symbol(out1: symbol, out2: symbol)</li>
+<li> .decl rel##Symbol(out: symbol)</li>
+</ul>
+<h2> addons/xtractor/constant-folding.dl </h2>
+<ul>
+<li> .decl API_RequestConstantFold1(op: Operator, arg: symbol)</li>
+<li> .decl API_RequestConstantFold2(op: Operator, left: symbol, right: symbol)</li>
+<li> .decl API_RespondConstantFold1(op: Operator, arg: symbol, folded: symbol)</li>
+<li> .decl API_RespondConstantFold2(op: Operator, left: symbol, right: symbol, folded: symbol)</li>
+</ul>
+<h2> addons/xtractor/expr-client.dl </h2>
+<ul>
+<li> .decl ArrayHasExpr(arrExpr: Expr, index: symbol, expr: Expr)</li>
+<li> .decl FldHasExpr(base: symbol, fld: Field, expr: Expr)</li>
+<li> .decl FormalToActualExpr(x:MethodInvocation, formal: Var, actualExpr: Expr)</li>
+<li> .decl HeapHasExpr(heapExpr: Expr, fld: Field, expr: Expr)</li>
+<li> .decl InputMethod(method: Method)</li>
+<li> .decl InterestingConstrStmt(x: Instruction, method: Method)</li>
+<li> .decl MapOperator(op: Operator, mapped: Operator)</li>
+<li> .decl MarkedForMapping(x:MethodInvocation, base: Var, fld: Field, expr: Expr)</li>
+<li> .decl OperandExpr(stmt: Instruction, pos: number, expr: Expr, size: number, var: Var)</li>
+<li> .decl OutputMethod(method: Method)</li>
+<li> .decl PassThroughMethod(method: Method, pos: number)</li>
+<li> .decl REQ_Mapping(x:Instruction, expr: Expr)</li>
+<li> .decl RES_Mapping(x:Instruction, expr: Expr, mapped: Expr)</li>
+<li> .decl RequestExpr_BINOP(to: Var, op: Operator, left: Expr, right: Expr, leftVar: Var, rightVar: Var, lrSize: number)</li>
+<li> .decl VarHasExpr(loc: Var, expr: Expr)</li>
+<li> .decl isEffectivelyEmptyConstructor(m: Method)</li>
+<li> .decl isRefHeapExpr(heap: HeapAllocation, expr: Expr)</li>
+</ul>
+<h2> addons/xtractor/schema-static.dl </h2>
+<ul>
+<li> .decl Schema_ClassInfo(class:symbol, kind:symbol, field:symbol, fieldType:symbol)</li>
+</ul>
+<h2> addons/xtractor/symbolic.dl </h2>
+<ul>
+<li> .decl API_IsBoundVar(expr: Expr)</li>
+<li> .decl API_IsFreeVar(expr: Expr)</li>
+<li> .decl API_IsInitialConstantExpr(const: Expr)</li>
+<li> .decl API_IsInitialExpr(expr: Expr)</li>
+<li> .decl AbsorbingOperators(op1: Operator, op2: Operator)</li>
+<li> .decl AssociativeOperator(op: Operator)</li>
+<li> .decl CancelingOperator(op: Operator, const: Expr)</li>
+<li> .decl CommutativeOperator(op: Operator)</li>
+<li> .decl CommutativePairOperators(op1: Operator, op2: Operator)</li>
+<li> .decl DeMorganOperators(op1: Operator, op2: Operator)</li>
+<li> .decl DecomposeExpr(expr: Expr, base: Base, left: Expr, right: Expr)</li>
+<li> .decl DualAssociativeOperators(op1: Operator, op2: Operator)</li>
+<li> .decl ExprHasBoundVar(expr: Expr)</li>
+<li> .decl ExprHasFreeVar(expr: Expr)</li>
+<li> .decl ExprHasNoFreeVar(expr: Expr)</li>
+<li> .decl ExprSize(expr: Expr, size: number)</li>
+<li> .decl ExprSymbol(out: symbol)</li>
+<li> .decl IdempotentOperator(op: Operator)</li>
+<li> .decl InfixSymbol(op: Operator, out: symbol)</li>
+<li> .decl IsArithmeticOperator(op: Operator)</li>
+<li> .decl IsBinaryOperator(op: Operator)</li>
+<li> .decl IsConstantExpr(expr: Expr, const: PrimitiveExpr)</li>
+<li> .decl IsExpr(expr: Expr)</li>
+<li> .decl IsLogicalExpr(expr: Expr)</li>
+<li> .decl IsLogicalOperator(op: Operator)</li>
+<li> .decl IsOperator(op: Operator)</li>
+<li> .decl IsUnaryOperator(op: Operator)</li>
+<li> .decl LeftAnnihilator(op: Operator, const: Expr, result: Expr)</li>
+<li> .decl LeftIdentityElement(op: Operator, id: Expr)</li>
+<li> .decl MaybeLogicalOperator(op: Operator)</li>
+<li> .decl MutuallyExclusiveOperators(op1: Operator, op2: Operator)</li>
+<li> .decl RightAnnihilator(op: Operator, const: Expr, result: Expr)</li>
+<li> .decl RightIdentityElement(op: Operator, id: Expr)</li>
+<li> .decl SelfInverseOperator(op: Operator)</li>
+<li> .decl ToSymbol(expr: Expr, out: symbol)</li>
+<li> .decl UnarySymbol(op: Operator, out: symbol)</li>
+</ul>
+<h2> addons/xtractor/theorem-prover.dl </h2>
+<ul>
+<li> .decl API_EqualityCheckRequest(expr1: Expr, expr2: Expr)</li>
+<li> .decl API_InequalityCheckRequest(op: Operator, expr1: Expr, expr2: Expr)</li>
+<li> .decl CompareOperator(op: Operator)</li>
+<li> .decl EqualityCheckResponse(expr1: Expr, expr2: Expr, result: Expr)</li>
+<li> .decl Equals(expr1: Expr, expr2: Expr)</li>
+<li> .decl EqualsToNotLarger(expr1: Expr, size1: number, expr2: Expr, size2: number)</li>
+<li> .decl EqualsToSmallerExt(expr1: Expr, expr2: Expr)</li>
+<li> .decl ExprGreaterThan(expr1: Expr, expr2: Expr)</li>
+<li> .decl ExprRequestFold1(expr: Expr, op: symbol, const: symbol)</li>
+<li> .decl ExprRequestFold2(expr: Expr, op: symbol, leftConst: symbol, rightConst: symbol)</li>
+<li> .decl Implies(expr1: Expr, expr2: Expr)</li>
+<li> .decl InequalityCheckResponse(op: Operator, expr1: Expr, expr2: Expr, result: Expr)</li>
+<li> .decl LinearSolvableExpression(expr: Expr, op: Operator, left: Expr, right: Expr)</li>
+<li> .decl NegatedExpr(expr: Expr, negExpr: Expr)</li>
+<li> .decl NonReducedExpr(expr: Expr)</li>
+<li> .decl Normalize(expr: Expr, norm: Expr)</li>
+<li> .decl NormalizedLogicalExpr(expr: Expr)</li>
+<li> .decl OptBaseEquals(expr1: Expr, expr2: Expr)</li>
+<li> .decl OptBaseImplies(expr1: Expr, expr2: Expr)</li>
+<li> .decl PreNormalize(expr: Expr, norm: Expr)</li>
+<li> .decl RequestDistributivityEQ(expr1: Expr, op1Size: number, expr2: Expr)</li>
+<li> .decl ValueForFreeVar(freeVar: Expr, expr: Expr, exprSolved: Expr)</li>
+</ul>
 <h2> analyses/1-call-site-sensitive+heap/analysis.dl </h2>
 <ul>
 <li> .decl StartupInvocation(?invocation:MethodInvocation)</li>
@@ -891,6 +998,9 @@
 <h2> analyses/data-flow/analysis.dl </h2>
 <ul>
 <li> .decl Flows(x:Var, y:Var)</li>
+<li> .decl FlowsIntoConstArrayIndex(x:Var, arr:Var, index:number)</li>
+<li> .decl FlowsIntoInstanceFieldBase(x:Var, base:Var)</li>
+<li> .decl FlowsIntoStaticField(x:Var, fld:Field)</li>
 <li> .decl OptBaseFlows(x:Var, y:Var)</li>
 <li> .decl OptMethodRetFormal(m:Method, nth:number)</li>
 <li> .decl PointerFlows(x:Var, y:Var)</li>
@@ -898,16 +1008,32 @@
 </ul>
 <h2> analyses/data-flow/setup.dl </h2>
 <ul>
+<li> .decl ALLOC(stmt:AssignHeapAllocation_Insn, to:Var, h:HeapAllocation)</li>
 <li> .decl ALOAD_NUM(stmt:LoadArrayIndex_Insn, to:Var, arr:Var, i:number)</li>
+<li> .decl ALOAD_VAR(stmt:LoadArrayIndex_Insn, to:Var, arr:Var, i:Var)</li>
 <li> .decl ASTORE_NUM(stmt:StoreArrayIndex_Insn, arr:Var, i:number, from:Var)</li>
+<li> .decl ASTORE_VAR(stmt:StoreArrayIndex_Insn, arr:Var, i:Var, from:Var)</li>
 <li> .decl BINOP(stmt:AssignBinop_Insn, to:Var, op:symbol)</li>
+<li> .decl CAST(stmt:AssignCast_Insn, to:Var, type:Type, from:Var)</li>
+<li> .decl FORMAL_RET(stmt:ReturnNonvoid_Insn, ret:Var)</li>
+<li> .decl IF(stmt:If_Insn, op:symbol, label:number)</li>
 <li> .decl ILOAD(stmt:LoadInstanceField_Insn, to:Var, base:Var, fld:Field)</li>
+<li> .decl INIT_VAR(stmt:AssignNumConstant_Insn, to:Var, value:NumConstant)</li>
 <li> .decl ISTORE(stmt:StoreInstanceField_Insn, base:Var, fld:Field, from:Var)</li>
 <li> .decl InterestingStmt(stmt:Instruction)</li>
+<li> .decl MOVE(stmt:AssignLocal_Insn, to:Var, from:Var)</li>
+<li> .decl OPERAND_NUM(stmt:Instruction, pos:number, oper:number)</li>
+<li> .decl OPERAND_VAR(stmt:Instruction, pos:number, oper:Var)</li>
 <li> .decl RESOLVE_CALL(stmt:MethodInvocation, method:Method)</li>
+<li> .decl RET(stmt:ReturnInstruction)</li>
+<li> .decl SCALL(stmt:StaticMethodInvocation_Insn, m:Method)</li>
 <li> .decl SLOAD(stmt:LoadStaticField_Insn, to:Var, fld:Field)</li>
+<li> .decl SPCALL(stmt:SpecialMethodInvocation_Insn, base:Var, m:Method)</li>
 <li> .decl SSTORE(stmt:StoreStaticField_Insn, fld:Field, from:Var)</li>
 <li> .decl UNOP(stmt:AssignUnop_Insn, to:Var, op:symbol)</li>
+<li> .decl VCALL(stmt:VirtualMethodInvocation_Insn, base:Var, m:Method)</li>
+<li> .decl __Operand_ValidStr(stmt:Instruction, pos:number, oper:symbol)</li>
+<li> .decl __OperatorAt(stmt:Instruction, op:symbol)</li>
 </ul>
 <h2> analyses/dependency-analysis/declarations.dl </h2>
 <ul>
@@ -2208,7 +2334,7 @@
 <li> .decl AndroidAppComponent(?type:symbol)</li>
 <li> .decl AndroidApplicationClass(?class:ReferenceType)</li>
 <li> .decl AndroidApplicationListenerClass(?class:ClassType)</li>
-<li> .decl AndroidCallbackMethod(?method:Method)</li>
+<li> .decl AndroidCallbackMethod(?method:Method, ?type:ReferenceType)</li>
 <li> .decl AndroidLibraryListenerType(?type:ReferenceType)</li>
 <li> .decl AndroidLibraryType(?type:ReferenceType)</li>
 <li> .decl AndroidViewType(?type:ReferenceType)</li>
@@ -2260,10 +2386,14 @@
 </ul>
 <h2> main/android.dl </h2>
 <ul>
+<li> .decl ActivityVar(?var:Var)</li>
 <li> .decl ActivityVarInType(?var:Var, ?ctx:configuration.Context, ?type:Type)</li>
 <li> .decl AndroidApplicationPackableClass(?class:ClassType)</li>
+<li> .decl AndroidApplicationValue(?value:Value, ?ofType:Type)</li>
+<li> .decl AndroidLibraryVar(?var:Var)</li>
 <li> .decl AndroidOriginalAppComponent(?type:ReferenceType)</li>
 <li> .decl AndroidPackableType(?type:ReferenceType)</li>
+<li> .decl AndroidReachableLibraryVarOfType(?var:Var, ?varType:Type)</li>
 <li> .decl AppClassSubtypesLibClass(?type:ReferenceType, ?libType:ReferenceType)</li>
 <li> .decl AppInvoReturningLibraryPackable(?invo:Instruction, ?retType:ReferenceType)</li>
 <li> .decl ApplicationPackageRegex(?regex:symbol)</li>
@@ -2271,6 +2401,7 @@
 <li> .decl AsynchTaskExecute(?param:Var, ?base:Var)</li>
 <li> .decl BindFragment(?activityThis:Var, ?fragmentParam:Var)</li>
 <li> .decl ForcedReachableAndroidClass(?ctx:configuration.Context, ?type:ReferenceType)</li>
+<li> .decl ForcedReachableFromJavascriptContext(?ctx:configuration.Context, ?meth:Method)</li>
 <li> .decl LibraryMethodReturningPackable(?method:Method, ?retType:ReferenceType)</li>
 <li> .decl LibraryReachableAppPackableClass(?class:ClassType)</li>
 <li> .decl ListenerClassConstantValue(?classHeap:Value, ?type:ReferenceType)</li>
@@ -2278,6 +2409,7 @@
 <li> .decl NonPrivateConcreteMethodOfComponent(?meth:Method)</li>
 <li> .decl ObfuscatedApplicationClass(?type:ReferenceType)</li>
 <li> .decl ObfuscationOn()</li>
+<li> .decl OnEventMethod(?meth:Method)</li>
 <li> .decl ReachableAppPackableMethodOverridingLib(?methConcrete:Method)</li>
 <li> .decl ReachableLayoutControl(?type:ReferenceType)</li>
 <li> .decl RegisterBroadCastReceiverVar(?var:Var)</li>
@@ -2285,13 +2417,7 @@
 <li> .decl SpecialMissingPackableValue(?invocation:MethodInvocation, ?value:Value)</li>
 <li> .decl UnobfuscatedApplicationClass(?type:ReferenceType)</li>
 <li> .decl UnobfuscatedMethod(?meth:Method)</li>
-<li> .decl _ActivityVar(?var:Var)</li>
-<li> .decl _AndroidApplicationValue(?value:Value, ?ofType:Type)</li>
-<li> .decl _AndroidLibraryVar(?var:Var)</li>
-<li> .decl _AndroidReachableLibraryVarOfType(?var:Var, ?varType:Type)</li>
-<li> .decl _ForcedReachableFromJavascriptContext(?ctx:configuration.Context, ?meth:Method)</li>
 <li> .decl _NotMostRefinedType(?type:ReferenceType)</li>
-<li> .decl _OnEventMethod(?meth:Method)</li>
 </ul>
 <h2> main/basic-context-sensitivity.dl </h2>
 <ul>
@@ -2840,7 +2966,7 @@
 <li> .decl InvocationActualParam(?invo:MethodInvocation, ?var:Var)</li>
 <li> .decl InvocationHasMethodArgumentAsReceiver(?invo:MethodInvocation)</li>
 <li> .decl InvocationHasMethodReceiverAsArgument(?invo:MethodInvocation)</li>
-<li> .decl InvocationHasMethodReceiverasArgument(?invo)</li>
+<li> .decl InvocationHasMethodReceiverasArgument(?invo:MethodInvocation)</li>
 <li> .decl InvocationReceiver(?invo:MethodInvocation, ?method:Method, ?var:Var)</li>
 <li> .decl InvokedMethod(method:Method)</li>
 <li> .decl MethodCallsOthers(?method:Method)</li>
@@ -3616,4 +3742,4 @@
 <li> .decl isUnboundMethodOrFunctionObjectAllocation(?h: FunctionObjectAllocation)</li>
 <li> .decl isValue(?value:Value)</li>
 </ul>
-<p>Timestamp: 2021-04-05 15:03:01.026648</p></body></html>
+<p>Timestamp: 2021-04-14 12:24:08.249706</p></body></html>
