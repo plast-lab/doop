@@ -24,7 +24,7 @@ public class PackageUtil {
 	private static final boolean debug = false;
 
 	/**
-	 * Returns a set of the packages contained in the given JAR.
+	 * Returns a set of the packages contained in the given archive.
 	 * Any classes that are not included in packages are also retrieved.
 	 */
 	public static Set<String> getPackages(File archive) throws IOException {
@@ -56,13 +56,16 @@ public class PackageUtil {
 		// Traverse regex entries and mark as 'deleted' the entries that are
 		// covered by other prefixes.
 		for (Map.Entry<String, Regex> regexEntry : trie.entrySet()) {
-			String prefix = regexEntry.getKey();
-			SortedMap<String, Regex> prefixMap = trie.prefixMap(prefix);
+			String regexStr = regexEntry.getKey();
+			SortedMap<String, Regex> prefixMap = trie.prefixMap(regexStr);
 			// If this prefix matches many regex entries, keep only the entry
-			// with this prefix.
+			// with this prefix (and mark it as a prefix regex).
 			if (prefixMap.size() > 1)
-				prefixMap.entrySet().stream().filter(entryToMark -> !prefix.equals(entryToMark.getKey()))
-						.forEach(entryToMark -> entryToMark.getValue().deleted = true);
+				for (Map.Entry<String, Regex> entryToMark : prefixMap.entrySet())
+					if (regexStr.equals(entryToMark.getKey()))
+						entryToMark.getValue().isPrefix = true;
+					else
+						entryToMark.getValue().deleted = true;
 		}
 		// Add regex entries, ignoring 'deleted' ones.
 		for (Regex r : trie.values())
@@ -78,11 +81,11 @@ public class PackageUtil {
 		return ret;
 	}
 
-	public static Set<Regex> getPackagesForBytecode(File f) throws IOException {
+	private static Set<Regex> getPackagesForBytecode(File f) throws IOException {
 		return new HashSet<>(Collections.singletonList(getPackageFromDots(BytecodeUtil.getClassName(f))));
 	}
 
-	public static Set<Regex> getPackagesForAPK(File apk) throws IOException {
+	private static Set<Regex> getPackagesForAPK(File apk) throws IOException {
 		Set<Regex> pkgs = new HashSet<>();
 		MultiDexContainer<?> multiDex = loadDexContainer(apk, null);
 		for (String dex : multiDex.getDexEntryNames()) {
@@ -99,18 +102,18 @@ public class PackageUtil {
 		return pkgs;
 	}
 
-	public static Regex getPackageFromSlashes(String s) {
+	private static Regex getPackageFromSlashes(String s) {
 		int idx = s.lastIndexOf('/');
 		s = s.replaceAll("/", ".");
-		return idx == -1 ? Regex.exact(s) : Regex.prefix(s.substring(0, idx));
+		return idx == -1 ? Regex.exact(s) : Regex.wild(s.substring(0, idx));
 	}
 
-	public static Regex getPackageFromDots(String s) {
+	private static Regex getPackageFromDots(String s) {
 		int idx = s.lastIndexOf('.');
-		return idx == -1 ? Regex.exact(s) : Regex.prefix(s.substring(0, idx));
+		return idx == -1 ? Regex.exact(s) : Regex.wild(s.substring(0, idx));
 	}
 
-	public static Set<Regex> getPackagesForAAR(File aar) throws IOException {
+	private static Set<Regex> getPackagesForAAR(File aar) throws IOException {
 		Set<Regex> ret = new HashSet<>();
 		Set<String> tmpDirs = new HashSet<>();
 		for (String jar : ContainerUtils.toJars(Collections.singletonList(aar.getCanonicalPath()), true, tmpDirs))
@@ -119,15 +122,15 @@ public class PackageUtil {
 		return ret;
 	}
 
-	static Regex getPackageFromClassName(String className) {
+	private static Regex getPackageFromClassName(String className) {
 		if (className.indexOf("/") > 0) {
 			String pre = FilenameUtils.getPath(className).replace('/', '.');
-			return Regex.prefix(pre.endsWith(".") ? pre.substring(0, pre.length() - 1) : pre);
+			return Regex.wild(pre.endsWith(".") ? pre.substring(0, pre.length() - 1) : pre);
 		} else
 			return Regex.exact(FilenameUtils.getBaseName(className));
 	}
 
-	static Set<Regex> getPackagesForJAR(File jar) throws IOException {
+	private static Set<Regex> getPackagesForJAR(File jar) throws IOException {
 		ZipFile zip = new ZipFile(jar);
 		Enumeration<? extends ZipEntry> entries = zip.entries();
 		Set<Regex> packages = new HashSet<>();
@@ -148,6 +151,8 @@ class Regex {
 	public final String text;
 	/** If true, this is a wildcard-ending expression. */
 	public final boolean isWildcard;
+	/** If true, this wildcard is a package prefix, otherwise it matches packages exactly. */
+	public boolean isPrefix = false;
 	/** Set to true during reduction. */
 	public boolean deleted = false;
 
@@ -166,16 +171,16 @@ class Regex {
 	}
 
 	/**
-	 * Create a regex matching a string prefix.
-	 * @param text   the string prefix to match
+	 * Create a regex ending in a wildcard.
+	 * @param text   the string to match
 	 * @return       the regex object
 	 */
-	static Regex prefix(String text) {
+	static Regex wild(String text) {
 		return new Regex(text, true);
 	}
 
 	@Override
 	public String toString() {
-		return isWildcard ? (text + ".*") : text;
+		return isWildcard ? (text + (isPrefix ? ".**" : ".*")) : text;
 	}
 }
