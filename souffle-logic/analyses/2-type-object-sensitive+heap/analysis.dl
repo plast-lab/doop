@@ -4,8 +4,8 @@
 .comp TwoTypeObjectSensitivePlusHeapConfiguration : AbstractConfiguration {
 // In this analysis, the real context is a Type and a Value and the
 // real heap context a single Value.
-.type Context  = [ type:Type, value:mainAnalysis.Value ]
-.type HContext = [ value:mainAnalysis.Value ]
+.type Context  = [ type:Type, value:Value ]
+.type HContext = [ value:Value ]
          
 // .decl CachedMerge(?hctx:HContext, ?value:Value, ?calleeCtx:Context)
 // .decl CachedMergeStatic(?callerCtx:Context, ?invo:MethodInvocation, ?calleeCtx:Context)

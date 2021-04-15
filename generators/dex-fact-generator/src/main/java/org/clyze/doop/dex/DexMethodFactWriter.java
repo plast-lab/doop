@@ -745,8 +745,16 @@ class DexMethodFactWriter extends JavaFactWriter {
             int originalIndex = entry.index;
             String insn = instructionId("assign", originalIndex);
             String heapId = entry.newArrayInfo.heapId;
-            for (int idx = 0; idx < numbersSize; idx++)
-                _db.add(ARRAY_INITIAL_VALUE_FROM_CONST, insn, str(originalIndex), local(regDest), str(idx), numbers.get(idx).toString(), heapId, methId);
+            for (int idx = 0; idx < numbersSize; idx++) {
+                Number number = numbers.get(idx);
+                String value = number.toString();
+                String className = number.getClass().getSimpleName();
+                // Due to the many subclasses of Number (possibly coming from
+                // libraries), check type name instead of using instanceof.
+                if (className.contains("Integer") || className.contains("Long") || className.contains("Short") || className.contains("Byte"))
+                    writeNumConstantRawInt(value);
+                _db.add(ARRAY_INITIAL_VALUE_FROM_CONST, insn, str(originalIndex), local(regDest), str(idx), value, heapId, methId);
+            }
         } catch (Exception ex) {
             logError(logger, "Error in array payload handling: " + ex.getMessage());
         }

@@ -70,7 +70,7 @@ VarPointsTo(?hctx, ?null, ?toCtx, ?to) :-
 
 /**
  * Assignment of numeric constant. Currently context-insensitive and
- * only used for android analyses, hence the ad hoc logic to match
+ * only used for Android analyses, hence the ad hoc logic to match
  * a specific host class (R).
  */
 
@@ -78,9 +78,11 @@ VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
    ReachableContext(?toCtx, ?inmethod),
    Instruction_Method(?insn, ?inmethod),
    (AssignNumConstant_Id(?insn, ?const);
-    AssignCastNumConstant_Id(?insn, ?const)), // TODO: check the cast?
+    AssignCastNumConstant_Id(?insn, ?const)),
    AssignInstruction_To(?insn, ?to),
-   Value_Num(?value, ?const),
+   NumConstantRawInt(?const),
+   Var_Type(?to, ?toType),
+   Value_Num(?value, ?const, ?toType),
    isImmutableHContext(?hctx).
 
 #endif // DISABLE_POINTS_TO
@@ -257,7 +259,9 @@ ReachableStoreStaticFieldFrom(?from) :-
  */
 StaticFieldPointsTo(?hctx, ?value, ?signature) :-
   FieldInitialValue(?signature, ?const),
-  Value_Num(?value, ?const),
+  NumConstantRawInt(?const),
+  Field_Type(?signature, ?fieldType),
+  Value_Num(?value, ?const, ?fieldType),
   isImmutableHContext(?hctx).
 
 /**
@@ -277,7 +281,9 @@ ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?baseHeap) :-
   ReachableContext(?ctx, ?inMethod),
   Instruction_Method(?i, ?inMethod),
   ArrayInitialValueFromConst(?i, _, ?to, _, ?const, ?baseHeap, _),
-  Value_Num(?value, ?const),
+  NumConstantRawInt(?const),
+  Var_Type(?to, ?toType),
+  Value_Num(?value, ?const, ?toType),
   isImmutableHContext(?hctx).
 
 #endif // ANDROID, DISABLE_POINTS_TO
@@ -327,6 +333,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
 
 NotEmptyArrayValue(?heapValue) :-
   Value_isHeap(?heapValue),
+  isHeapAllocation(?heapValue),
   !HeapAllocation_EmptyArray(?heapValue).
 NotEmptyArrayValue(?value) :-
   Value_isNonHeap(?value).
@@ -717,3 +724,14 @@ ReachableValue(?hctx, ?value) :-
   isImmutableHContext(?hctx),
   ?value = cat("<Annotation ", cat(?annotation, ">")).
 #endif // DISABLE_POINTS_TO
+
+#ifdef ANDROID
+// Constant integer values, used on Android to find component ids.
+Value_Num(?constValue, ?n, ?type),
+isValue(?constValue),
+Value_Type(?constValue, ?type),
+Value_DeclaringType(?constValue, ?declaringType) :-
+  CreateIntValue(?n, ?declaringType),
+  isIntegerType(?type),
+  ?constValue = NUM_CONSTANT(?n, ?type).
+#endif // ANDROID

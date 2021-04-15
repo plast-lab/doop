@@ -329,7 +329,7 @@ HeapAllocation_ContextInsensitive(?heap) :-
   isStringConstant(?heap),
   !HeapRepresentative(_, ?heap).
 
-.decl NonTrivialStringConstant(?heap:HeapAllocation)
+.decl NonTrivialStringConstant(?heap:StringConstant)
 
 NonTrivialStringConstant(?heap) :-
   isStringConstant(?heap),
@@ -700,8 +700,8 @@ HeapRepresentative(?representativeHeap, ?heap) :-
 // Now, per-class merging. This is more rare and should be requested
 // explicitly for a given type. Again, does not apply to types with
 // special merging policies.
-.decl ClassAndTypeToHeap(?heap:HeapAllocation, ?heaptype:Type, ?class:ClassType)
-.decl AllocationsPerClassAndType(?type:Type, ?class:ClassType, ?n:number)
+.decl ClassAndTypeToHeap(?heap:HeapAllocation, ?heaptype:Type, ?class:ReferenceType)
+.decl AllocationsPerClassAndType(?type:Type, ?class:ReferenceType, ?n:number)
 
 ClassAndTypeToHeap(?heap, ?heaptype, ?class) :-
   MethodAndTypeToHeap(?heap, ?heaptype, ?meth),
@@ -1082,7 +1082,7 @@ ReflectionStringConstant("void").
 _StringIterationTrick(0).
 _StringIterationTrick(?pos + 1) :- _StringIterationTrick(?pos), ?pos < 256.
 
-.decl RelevantSuffixPosition(?typeName: symbol, ?pos:number)
+.decl RelevantSuffixPosition(?typeName: Type, ?pos:number)
 RelevantSuffixPosition(?typeName, ?pos) :-
   isType(?typeName),
   _StringIterationTrick(?pos), ?pos < strlen(?typeName).

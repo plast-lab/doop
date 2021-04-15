@@ -48,7 +48,7 @@ class SimpleAnalysisTests extends ServerAnalysisTests {
 	def "Server analysis test 013-enums (reflection, jphantom, default stats)"() {
 		when:
 		Analysis analysis = analyzeTest("013-enums", ["--reflection-classic", "--generate-jimple",
-													  "--stats", "default", "--no-standard-exports",
+													  "--no-standard-exports",
 													  "--run-jphantom"] + testExports)
 
 		then:

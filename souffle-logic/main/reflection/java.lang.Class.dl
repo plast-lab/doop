@@ -558,7 +558,7 @@ ReflectiveBaseVar(?invocation, ?to) :-
 
 #define PrimitiveClassForParam(className, primitiveName) \
 VarPointsTo(?hctx, ?classValue, ?ctx, ?to) :- \
-  java_lang_Class_getPrimitiveClass(?invocation, ?to, ?param), \
+  java_lang_Class_getPrimitiveClass(?to, ?param), \
   VarPointsTo(?hctx, ?heap, ?ctx, ?param), \
   (?heap = "<<string-constant>>" ; ?heap = primitiveName), \
   ReifiedClass(className, ?classValue)
@@ -621,9 +621,9 @@ ArrayIndexPointsTo(?hctx, ?annotationValue, ?hctx, ?annotationsArray) :-
 /*************************************************************
  * Auxiliaries
  *************************************************************/
-.decl NumberOfClassesMatchingConstant(?constant:StringConstant, ?n:number)
-.decl NumberOfMethodsMatchingConstant(?constant:StringConstant, ?n:number)
-.decl NumberOfFieldsMatchingConstant(?constant:StringConstant, ?n:number)
+.decl NumberOfClassesMatchingConstant(?constant:HeapAllocation, ?n:number)
+.decl NumberOfMethodsMatchingConstant(?constant:HeapAllocation, ?n:number)
+.decl NumberOfFieldsMatchingConstant(?constant:HeapAllocation, ?n:number)
 
 NumberOfClassesMatchingConstant(?constant, ?n) :-
   ClassNameMatchingStringConstant_Type(_, ?constant),

@@ -1,0 +1,412 @@
+#pragma once
+// Logic for symbolic expressions. The intent is for this logic to be
+// agnostic to the way symbolic expressions are created. External
+// clients (possibly many different ones) will provide their own
+// primitive expressions, complex expressions, etc., based on whatever
+// logic suits them. E.g., in one case there may be symbolic
+// expressions for all numeric expressions appearing in the program
+// text; in another, there will be symbolic expressions for symbolic
+// values of interest to an analysis (e.g., "SHA3(externlInput0x34)");
+// in yet another there will be predicate abstraction expressions or
+// path expressions for the conjunction of predicates appearing in
+// control statements.
+
+// Of particular interest is the relationship between symbolic
+// expressions and "values" in the value-flow logic. A value is not
+// necessarily a symbolic expression but symbolic expressions can be
+// used as values.
+
+// Weak typing. A primitive symbolic expression can be many things:
+// a var, a constant, an invented symbolic name, etc.
+.type PrimitiveExpr = symbol
+.type Operator = symbol
+.type Base = PrimitiveExpr | Operator
+
+// Unary, ternary, etc. expressions are represented via binary ones
+.type Expr = [ base: Base, left: Expr, right: Expr ]
+
+// API: These relations are supplid externally
+.decl API_IsInitialConstantExpr(const: Expr)
+.decl API_IsInitialExpr(expr: Expr)
+.decl API_IsFreeVar(expr: Expr)
+.decl API_IsBoundVar(expr: Expr)
+
+#define TRUE "1"
+#define FALSE "0"
+#define ZERO "0"
+#define ONE "1"
+#define MINUS_ONE "-1"
+#define MAX_32 "0xFFFFFFFF"
+#define EX(c) [(c), nil, nil]
+#define FALSE_EXPR EX(FALSE)
+#define TRUE_EXPR EX(TRUE)
+#define ZERO_EXPR EX(ZERO)
+#define ONE_EXPR EX(ONE)
+#define MINUS_ONE_EXPR EX(MINUS_ONE)
+#define MAX_32_EXPR EX(MAX_32)
+
+// Redundant conceptually, but valuable for efficient joins
+.decl DecomposeExpr(expr: Expr, base: Base, left: Expr, right: Expr)
+.decl ExprSize(expr: Expr, size: number)
+.decl IsExpr(expr: Expr)
+.decl IsConstantExpr(expr: Expr, const: PrimitiveExpr)
+.decl IsLogicalExpr(expr: Expr)
+
+.decl IsOperator(op: Operator)
+.decl IsUnaryOperator(op: Operator)
+.decl IsBinaryOperator(op: Operator)
+.decl IsLogicalOperator(op: Operator)
+.decl MaybeLogicalOperator(op: Operator)
+.decl IsArithmeticOperator(op: Operator)
+// General concepts for operator algebraic properties
+.decl AssociativeOperator(op: Operator)
+.decl CommutativeOperator(op: Operator)
+.decl IdempotentOperator(op: Operator)
+.decl CancelingOperator(op: Operator, const: Expr)
+.decl SelfInverseOperator(op: Operator)
+.decl LeftDistributiveOperators(op1: Operator, op2: Operator)  // order matters
+.decl RightDistributiveOperators(op1: Operator, op2: Operator) // order matters
+.decl LeftIdentityElement(op: Operator, id: Expr)
+.decl RightIdentityElement(op: Operator, id: Expr)
+.decl LeftAnnihilator(op: Operator, const: Expr, result: Expr)
+.decl RightAnnihilator(op: Operator, const: Expr, result: Expr)
+.decl DualAssociativeOperators(op1: Operator, op2: Operator)
+// Not the best name. Associativity + commutativity + inverse operators
+//.decl TripleAssociativeOperators(op1: Operator, op2: Operator, op3: Operator)
+// NOTE: ADDITION
+.decl AbsorbingOperators(op1: Operator, op2: Operator)
+.decl DeMorganOperators(op1: Operator, op2: Operator)
+.decl CommutativePairOperators(op1: Operator, op2: Operator)
+
+.decl MutuallyExclusiveOperators(op1: Operator, op2: Operator)
+
+// Textual (flat) representation of operators and expressions
+.decl UnarySymbol(op: Operator, out: symbol)
+.decl InfixSymbol(op: Operator, out: symbol)
+.decl ToSymbol(expr: Expr, out: symbol)
+.decl ExprSymbol(out: symbol)
+
+.decl ExprHasNoFreeVar(expr: Expr)
+.decl ExprHasFreeVar(expr: Expr)
+.decl ExprHasBoundVar(expr: Expr)
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+// Java (Jimple) operators
+#define GT ">"
+#define GEQ ">="
+#define LT "<"
+#define LEQ "<="
+#define EQ "=="
+#define NEQ "!="
+#define CMP "cmp"
+#define ADD "+"
+#define SUB "-"
+#define MUL "*"
+#define DIV "/"
+#define MOD "%"
+#define AND "&"
+#define OR "|"
+#define XOR "^"
+#define SLL "<<"
+#define SRA ">>"
+#define SRL ">>>"
+#define COMPL "~" // not found in actual code: turned to ^ -1
+#define NOT "!"   // not found in actual code: turned to != 0
+#define FAIL EX("FAIL")
+
+IsExpr(expr) :- API_IsInitialConstantExpr(expr).
+IsExpr(expr) :- API_IsInitialExpr(expr).
+IsExpr(expr) :- API_IsFreeVar(expr).
+IsExpr(expr) :- API_IsBoundVar(expr).
+
+DecomposeExpr(expr, op, left, right) :- IsExpr(expr), expr = [op, left, right].
+
+IsOperator(op) :- IsUnaryOperator(op) ; IsBinaryOperator(op).
+IsUnaryOperator(op) :- UnarySymbol(op, _).
+IsBinaryOperator(op) :- InfixSymbol(op, _).
+
+IsExpr(expr) :- IsConstantExpr(expr, _).
+
+IsConstantExpr(FALSE_EXPR, FALSE).
+IsConstantExpr(TRUE_EXPR, TRUE).
+IsConstantExpr(ZERO_EXPR, ZERO).
+IsConstantExpr(ONE_EXPR, ONE).
+IsConstantExpr(MINUS_ONE_EXPR, MINUS_ONE).
+IsConstantExpr(MAX_32_EXPR, MAX_32).
+
+IsConstantExpr(expr, const) :-
+	API_IsInitialConstantExpr(expr),
+	DecomposeExpr(expr, const, nil, nil).
+
+IsLogicalExpr(TRUE_EXPR).
+IsLogicalExpr(FALSE_EXPR).
+
+// If a complex expression arises, its constituents also should
+IsExpr(left) :- IsExpr([_, left, _]), left != nil.
+IsExpr(right) :- IsExpr([_, _, right]), right != nil.
+
+IsLogicalExpr(expr) :-
+	DecomposeExpr(expr, op, _, _),
+	IsLogicalOperator(op).
+
+IsLogicalExpr(expr) :-
+	DecomposeExpr(expr, op, left, right),
+	MaybeLogicalOperator(op),
+	IsLogicalExpr(left),
+	IsLogicalExpr(right).
+
+ExprSize(nil, 0).
+
+ExprSize(expr, leftSize + rightSize + 1) :-
+	DecomposeExpr(expr, _, left, right),
+	ExprSize(left, leftSize),
+	ExprSize(right, rightSize).
+.plan 1:(2,1,3), 2:(3,1,2)
+
+// Each constant is equal to itself; good for completeness of reasoning
+IsExpr([EQ, cexpr, cexpr]) :- IsConstantExpr(cexpr, _).
+
+
+ExprHasNoFreeVar(expr) :-
+	DecomposeExpr(expr, _, nil, nil),
+	!API_IsFreeVar(expr).
+
+ExprHasNoFreeVar(expr) :-
+	DecomposeExpr(expr, _, left, right),
+	ExprHasNoFreeVar(left),
+	ExprHasNoFreeVar(right).
+.plan 1:(2,1,3), 2:(3,1,2)
+
+ExprHasFreeVar(expr) :- API_IsFreeVar(expr).
+
+ExprHasFreeVar(expr) :-
+	DecomposeExpr(expr, _, left, _),
+	ExprHasFreeVar(left).
+.plan 1:(2,1)
+
+ExprHasFreeVar(expr) :-
+	DecomposeExpr(expr, _, _, right),
+	ExprHasFreeVar(right).
+.plan 1:(2,1)
+
+ExprHasBoundVar(expr) :- API_IsBoundVar(expr).
+
+ExprHasBoundVar(expr) :-
+	DecomposeExpr(expr, _, left, _),
+	ExprHasBoundVar(left).
+.plan 1:(2,1)
+
+ExprHasBoundVar(expr) :-
+	DecomposeExpr(expr, _, _, right),
+	ExprHasBoundVar(right).
+.plan 1:(2,1)
+
+
+// At low level logical and arithmetic values are merged.
+// true := 1, false := 0
+IsLogicalOperator(op), InfixSymbol(op, out) :- op = GT, out = " > ".
+IsLogicalOperator(op), InfixSymbol(op, out) :- op = GEQ, out = " >= ".
+IsLogicalOperator(op), InfixSymbol(op, out) :- op = LT, out = " < ".
+IsLogicalOperator(op), InfixSymbol(op, out) :- op = LEQ, out = " <= ".
+IsLogicalOperator(op), InfixSymbol(op, out) :- op = EQ, out = " == ".
+IsLogicalOperator(op), InfixSymbol(op, out) :- op = NEQ, out = " != ".
+IsLogicalOperator(op), UnarySymbol(op, out) :- op = NOT, out = "! ".
+
+IsArithmeticOperator(op), InfixSymbol(op, out) :- op = CMP, out = " cmp ".
+IsArithmeticOperator(op), InfixSymbol(op, out) :- op = ADD, out = " + ".
+IsArithmeticOperator(op), InfixSymbol(op, out) :- op = SUB, out = " - ".
+IsArithmeticOperator(op), InfixSymbol(op, out) :- op = MUL, out = " * ".
+IsArithmeticOperator(op), InfixSymbol(op, out) :- op = DIV, out = " / ".
+IsArithmeticOperator(op), InfixSymbol(op, out) :- op = MOD, out = "% ".
+IsArithmeticOperator(op), InfixSymbol(op, out) :- op = AND, out = " & ".
+IsArithmeticOperator(op), InfixSymbol(op, out) :- op = OR, out = " | ".
+IsArithmeticOperator(op), InfixSymbol(op, out) :- op = XOR, out = " ^ ".
+IsArithmeticOperator(op), InfixSymbol(op, out) :- op = SLL,  out = " << ".
+IsArithmeticOperator(op), InfixSymbol(op, out) :- op = SRA,  out = " >> ".
+IsArithmeticOperator(op), InfixSymbol(op, out) :- op = SRL, out = " >>> ".
+IsArithmeticOperator(op), UnarySymbol(op, out) :- op = COMPL, out = "~ ".
+
+// Conditionally logical operators return 0 or 1
+// if both their arguments are also either 0 or 1
+MaybeLogicalOperator(op) :-
+  op = AND ; op = OR ; op = XOR.
+
+// (x op y) op z == x op (y op z)
+AssociativeOperator(op) :-
+  op = ADD ; op = MUL ; op = AND ; op = OR ; op = XOR.
+
+// x op y == y op x
+CommutativeOperator(op) :-
+  op = ADD ; op = MUL ; op = AND ; op = OR ; op = XOR ; op = EQ ; op = NEQ.
+
+// x op x == x
+// Holds conditionally when the operand is 0 or 1
+// since they are arithmetic operations in general
+IdempotentOperator(op) :-
+  op = AND ; op = OR.
+
+// Common complementary notion of idempotency (does it have a name?)
+// Applied to the same argument on both sides yields a known constant.
+CancelingOperator(GT, FALSE_EXPR).
+CancelingOperator(LT, FALSE_EXPR).
+CancelingOperator(EQ, TRUE_EXPR).
+CancelingOperator(NEQ, FALSE_EXPR).
+CancelingOperator(CMP, ZERO_EXPR).
+CancelingOperator(SUB, ZERO_EXPR).
+//CancelingOperator(DIV, ONE_EXPR). // No! Div by zero!
+//CancelingOperator(MOD, ZERO_EXPR).
+CancelingOperator(XOR, ZERO_EXPR).
+
+// Applying twice returns the original arg
+SelfInverseOperator(COMPL).
+SelfInverseOperator(NOT).
+
+// x op1 (y op2 z) == (x op1 y) op2 (x op1 z)
+LeftDistributiveOperators(MUL, ADD).
+LeftDistributiveOperators(MUL, SUB).
+LeftDistributiveOperators(AND, OR).
+LeftDistributiveOperators(OR, AND).
+LeftDistributiveOperators(AND, XOR).
+
+// (x op1 y) op2 z == (x op2 z) op1 (y op2 z)
+RightDistributiveOperators(ADD, MUL).
+RightDistributiveOperators(SUB, MUL).
+RightDistributiveOperators(OR, AND).
+RightDistributiveOperators(AND, OR).
+RightDistributiveOperators(XOR, AND).
+
+RightDistributiveOperators(ADD, SLL).
+RightDistributiveOperators(SUB, SLL).
+RightDistributiveOperators(ADD, SRA).
+RightDistributiveOperators(SUB, SRA).
+
+// ID op x == x
+LeftIdentityElement(ADD, ZERO_EXPR).
+LeftIdentityElement(MUL, ONE_EXPR).
+LeftIdentityElement(AND, MAX_32_EXPR).
+LeftIdentityElement(OR, ZERO_EXPR).
+LeftIdentityElement(XOR, ZERO_EXPR).
+
+// x op ID == x
+RightIdentityElement(ADD, ZERO_EXPR).
+RightIdentityElement(MUL, ONE_EXPR).
+RightIdentityElement(AND, MAX_32_EXPR).
+RightIdentityElement(OR, ZERO_EXPR).
+RightIdentityElement(XOR, ZERO_EXPR).
+
+RightIdentityElement(SUB, ZERO_EXPR).
+RightIdentityElement(DIV, ONE_EXPR).
+RightIdentityElement(SLL, ZERO_EXPR).
+RightIdentityElement(SRA, ZERO_EXPR).
+RightIdentityElement(SRL, ZERO_EXPR).
+
+// Constant that, when applied to an operation, always produces a known result
+LeftAnnihilator(MUL, ZERO_EXPR, ZERO_EXPR).
+LeftAnnihilator(AND, ZERO_EXPR, ZERO_EXPR).
+LeftAnnihilator(OR, MAX_32_EXPR, MAX_32_EXPR).
+
+RightAnnihilator(MUL, ZERO_EXPR, ZERO_EXPR).
+RightAnnihilator(AND, ZERO_EXPR, ZERO_EXPR).
+RightAnnihilator(OR, MAX_32_EXPR, MAX_32_EXPR).
+
+LeftAnnihilator(MOD, ZERO_EXPR, ZERO_EXPR).
+LeftAnnihilator(SLL, ZERO_EXPR, ZERO_EXPR).
+LeftAnnihilator(SRA, ZERO_EXPR, ZERO_EXPR).
+LeftAnnihilator(SRA, MAX_32_EXPR, MAX_32_EXPR).
+LeftAnnihilator(SRL, ZERO_EXPR, ZERO_EXPR).
+
+// Error states
+RightAnnihilator(DIV, ZERO_EXPR, FAIL).
+RightAnnihilator(MOD, ZERO_EXPR, FAIL).
+
+// Errors annihilate everything
+LeftAnnihilator(op, FAIL, FAIL),
+RightAnnihilator(op, FAIL, FAIL) :- IsBinaryOperator(op).
+
+// e.g., (x+y)-z = (x-z)+y, or (x-y)-z = (x-z)-y
+DualAssociativeOperators(ADD, SUB).
+DualAssociativeOperators(SUB, SUB).
+DualAssociativeOperators(DIV, DIV).
+
+// e.g., (x-y)-z = x-(z+y), but also x-y>z = x>z+y
+//TripleAssociativeOperators(SUB, SUB, ADD).
+//
+//TripleAssociativeOperators(SUB, op, ADD),
+//TripleAssociativeOperators(ADD, op, SUB) :-
+//  IsLogicalOperator(op), IsBinaryOperator(op).
+
+// Operators for which the truth of one implies the falsity of the other
+MutuallyExclusiveOperators(GT, LT).
+MutuallyExclusiveOperators(GT, EQ).
+MutuallyExclusiveOperators(LT, EQ).
+MutuallyExclusiveOperators(EQ, NEQ).
+
+MutuallyExclusiveOperators(op2, op1) :-
+	MutuallyExclusiveOperators(op1, op2).
+
+// NOTE: ADDITION
+// e.g., x & (x | y) = x
+AbsorbingOperators(AND, OR).
+AbsorbingOperators(OR, AND).
+
+DeMorganOperators(AND, OR).
+DeMorganOperators(OR, AND).
+
+// Operators that resemble commutativity, if the operator changes as well
+CommutativePairOperators(GT, LT).
+CommutativePairOperators(LT, GT).
+CommutativePairOperators(GEQ, LEQ).
+CommutativePairOperators(LEQ, GEQ).
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+ExprSymbol(out) :- ToSymbol(_, out).
+
+#define MK_UN(op, str) cat(cat("(", op), cat(str, ")"))
+#define MK_INF(str1, op, str2) cat(cat("(", str1), cat(op, cat(str2, ")")))
+#define MK_PREF2(op, str1, str2) cat(op, cat(cat("(", str1), cat(", ", cat(str2, ")"))))
+#define MK_PREF1(op, str) cat(op, cat("(", cat(str, ")")))
+
+// The flat representations are built bottom-up
+ToSymbol(expr, base0) :-
+	DecomposeExpr(expr, base, nil, nil),
+	((!Var_SimpleName(as(base, Var), _), base0 = base) ; Var_SimpleName(base, base0)),
+	//base0 = base,
+	!IsOperator(base).
+
+ToSymbol(expr, MK_UN(outOp, outLeft)) :-
+	ToSymbol(left, outLeft),
+	DecomposeExpr(expr, op, left, nil),
+	UnarySymbol(op, outOp).
+
+ToSymbol(expr, MK_INF(outLeft, outOp, outRight)) :-
+	ToSymbol(left, outLeft),
+	DecomposeExpr(expr, op, left, right),
+	InfixSymbol(op, outOp),
+	ToSymbol(right, outRight).
+.plan 1:(4,2,3,1)
+
+ToSymbol(expr, MK_PREF2(op, outLeft, outRight)) :-
+	ToSymbol(left, outLeft),
+	DecomposeExpr(expr, op, left, right),
+	IsOperator(op),
+	ToSymbol(right, outRight),
+	!IsUnaryOperator(op),
+	!IsBinaryOperator(op).
+.plan 1:(4,2,3,1)
+
+// Deal with non-operator cases
+ToSymbol(expr, MK_PREF1(base, outLeft)) :-
+	ToSymbol(left, outLeft),
+	DecomposeExpr(expr, base, left, nil),
+	!IsOperator(base).
+
+ToSymbol(expr, MK_PREF2(base, outLeft, outRight)) :-
+	ToSymbol(left, outLeft),
+	DecomposeExpr(expr, base, left, right),
+	ToSymbol(right, outRight),
+	!IsOperator(base).
+.plan 1:(3,2,1)

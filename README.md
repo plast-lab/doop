@@ -18,7 +18,7 @@ At its core, Doop is a collection of various analyses expressed in the form of D
    [repo](https://github.com/souffle-lang/souffle) and follow the
    instructions found on [this
    page](https://souffle-lang.github.io/build). Doop is currently
-   tested with Souffle 1.5.1.
+   tested with Souffle 1.5.1 and Souffle 2.0.2.
 
 2. The legacy (unmaintained) version uses **LogiQL**, a Datalog
    dialect developed by [LogicBlox](http://www.logicblox.com/). For a
@@ -170,7 +170,7 @@ In order to use LogicBlox instead of the Soufflé engine you can provide the --X
 
     $ ./doop -i ../doop-benchmarks/dacapo-2006/antlr.jar -a context-insensitive --dacapo --id lb-antlr --Xlb
 ##### Warning: For the latest features we recommend using Souffle    
-    
+
 ### Android Analysis
 
 You can select to run an Android-specific analysis on an Android application by providing the `--android` option.

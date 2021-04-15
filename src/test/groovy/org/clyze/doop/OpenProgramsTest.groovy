@@ -10,18 +10,21 @@ import static org.clyze.doop.TestUtils.*
  */
 class OpenProgramsTest extends DoopSpec {
 
-	// @spock.lang.Ignore
-	@Unroll
-	def "Testing support for open programs"() {
-		when:
-		List<String> options = ['--open-programs', 'concrete-types', '--stats', 'full', '--platform', 'java_7', '--no-standard-exports'] + testExports
-		Analysis analysis = analyzeTest('ivy-open-programs', 'org.apache.ivy:ivy:2.3.0', options, 'context-insensitive')
+    // @spock.lang.Ignore
+    @Unroll
+    def "Testing support for open programs"(String profile) {
+        when:
+        List<String> options = ['--cache', '--open-programs', profile, '--platform', 'java_7', '--no-standard-exports']
+        Analysis analysis = analyzeTest('ivy-open-programs', 'org.apache.ivy:ivy:2.3.0', options, 'context-insensitive')
 
-		then:
-		metricIsApprox(analysis, "call graph edges (INS)", 449_742)
-		metricIsApprox(analysis, "reachable methods (INS)", 67_412)
-		metricIsApprox(analysis, "array index points-to (INS)", 531_103)
-		metricIsApprox(analysis, "instance field points-to (INS)", 6_055_773)
-		metricIsApprox(analysis, "var points-to (INS)", 69_132_048)
-	}
+        then:
+        metricIsApprox(analysis, "call graph edges (INS)", 449_742)
+        metricIsApprox(analysis, "reachable methods (INS)", 67_412)
+        metricIsApprox(analysis, "array index points-to (INS)", 531_103)
+        metricIsApprox(analysis, "instance field points-to (INS)", 6_055_773)
+        metricIsApprox(analysis, "var points-to (INS)", 69_132_048)
+
+	where:
+	    profile << ['concrete-types'] // 'servlets-only']
+    }
 }

@@ -89,7 +89,7 @@ Put the following logic in file extra.dl:
 
 ```
 #!java
-.decl Temp(v: Var, h: mainAnalysis.Value)
+.decl Temp(v: Var, h: Value)
 
 Temp(v, h) :-
   mainAnalysis.VarPointsTo(_, h, _, v),

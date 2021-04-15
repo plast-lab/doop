@@ -1,7 +1,6 @@
 package org.clyze.doop
 
 import org.clyze.analysis.Analysis
-import org.clyze.doop.core.Doop
 import org.clyze.doop.core.DoopAnalysisFamily
 import spock.lang.Unroll
 import static org.clyze.doop.TestUtils.*
@@ -11,32 +10,31 @@ import static org.clyze.doop.TestUtils.*
  */
 class DryRuns extends DoopSpec {
 
-	// @spock.lang.Ignore
-	@Unroll
-	def "Test analysis compilation"(String analysisName) {
-		when:
-		// Some analyses do not support full stats or server logic.
-		List<String> extraOpts
-		switch (analysisName) {
-		case 'micro':
-		case 'sound-may-point-to':
-			extraOpts = ["--stats", "none" ]
-			break
-		case 'types-only':
-			extraOpts = ['--stats', 'full', '--server-logic', '--disable-points-to' ]
-			break
-		default:
-			extraOpts = ["--stats", "full", "--server-logic" ]
-		}
-		Main.main((String[])(["-i", Artifacts.HELLO_JAR,
-							  "-a", analysisName,
-							  "--id", "dry-run-${analysisName}", "--cache",
-							  "--dry-run", "--souffle-force-recompile"] +
-							  extraOpts + "-Ldebug"))
-		Analysis analysis = Main.analysis
+    // @spock.lang.Ignore
+    @Unroll
+    def "Test analysis compilation"(String analysisName) {
+        when:
+        List<String> args = ['-i', Artifacts.HELLO_JAR,
+                             '-a', analysisName,
+                             '--id', "dry-run-${analysisName}", '--cache',
+                             '--dry-run', '--souffle-mode', 'translated', '-Ldebug']
+        // Some analyses do not support full stats or server logic.
+        switch (analysisName) {
+            case 'micro':
+            case 'sound-may-point-to':
+                args.addAll(['--stats', 'none' ])
+                break
+            case 'types-only':
+                args.addAll(['--stats', 'full', '--server-logic', '--disable-points-to' ])
+                break
+            default:
+                args.addAll(['--stats', 'full', '--server-logic' ])
+        }
+        Main.main(args as String[])
+        Analysis analysis = Main.analysis
 
         then:
-        execExists(analysis)
+        cppExists(analysis)
 
         where:
         // Omit analyses tested elsewhere or having problems with dry runs.

@@ -241,6 +241,16 @@ class FactWriter extends JavaFactWriter {
         _db.add(ASSIGN_RETURN_VALUE, insn, _rep.local(inMethod, to));
     }
 
+    private void writeArraySize(SootMethod m, InstrInfo ii, Value sizeVal, int pos, String heap) {
+        if (sizeVal instanceof IntConstant) {
+            IntConstant size = (IntConstant) sizeVal;
+            _db.add(ARRAY_ALLOC_CONST_SIZE, ii.insn, str(pos), str(size.value));
+            if(size.value == 0) _db.add(EMPTY_ARRAY, heap);
+        }
+        else if (sizeVal instanceof Local)
+            _db.add(ARRAY_ALLOC, ii.insn, str(pos), _rep.local(m, (Local)sizeVal));
+    }
+
     void writeAssignHeapAllocation(SootMethod m, Stmt stmt, Local l, Value expr, Session session) {
         String heap = _rep.heapAlloc(m, expr, session);
         _db.add(NORMAL_HEAP, heap, writeType(expr.getType()));
@@ -251,16 +261,7 @@ class FactWriter extends JavaFactWriter {
 
         if (expr instanceof NewArrayExpr) {
             NewArrayExpr newArray = (NewArrayExpr) expr;
-            Value sizeVal = newArray.getSize();
-
-            if (sizeVal instanceof IntConstant) {
-                IntConstant size = (IntConstant) sizeVal;
-
-                if(size.value == 0)
-                    _db.add(EMPTY_ARRAY, heap);
-            }
-            else if (sizeVal instanceof Local)
-                _db.add(ARRAY_ALLOC, ii.insn, _rep.local(m, (Local)sizeVal));
+            writeArraySize(m, ii, newArray.getSize(), 0, heap);
         }
     }
 
@@ -282,26 +283,29 @@ class FactWriter extends JavaFactWriter {
      * be allocated separately for every dimension of the array.
      */
     void writeAssignNewMultiArrayExpr(SootMethod m, Stmt stmt, Local l, NewMultiArrayExpr expr, Session session) {
-        writeAssignNewMultiArrayExprHelper(m, stmt, l, _rep.local(m,l), expr, (ArrayType) expr.getType(), session);
+        writeAssignNewMultiArrayExprHelper(m, stmt, l, _rep.local(m,l), expr, (ArrayType) expr.getType(), session, 0);
     }
 
-    private void writeAssignNewMultiArrayExprHelper(SootMethod m, Stmt stmt, Local l, String assignTo, NewMultiArrayExpr expr, ArrayType arrayType, Session session) {
+    private void writeAssignNewMultiArrayExprHelper(SootMethod m, Stmt stmt, Local l, String assignTo, NewMultiArrayExpr expr, ArrayType arrayType, Session session, int pos) {
         String heap = _rep.heapMultiArrayAlloc(m, /* expr, */ arrayType, session);
         InstrInfo ii = calcInstrInfo(m, stmt, session);
         String methodId = ii.methodId;
 
         _db.add(NORMAL_HEAP, heap, writeType(arrayType));
         _db.add(ASSIGN_HEAP_ALLOC, ii.insn, str(ii.index), heap, assignTo, methodId, ""+getLineNumberFromStmt(stmt));
+        if (pos < expr.getSizeCount())
+            writeArraySize(m, ii, expr.getSize(pos), pos, heap);
 
         Type componentType = getComponentType(arrayType);
         if (componentType instanceof ArrayType) {
             String childAssignTo = _rep.newLocalIntermediate(m, l, session);
-            writeAssignNewMultiArrayExprHelper(m, stmt, l, childAssignTo, expr, (ArrayType) componentType, session);
+            writeAssignNewMultiArrayExprHelper(m, stmt, l, childAssignTo, expr, (ArrayType) componentType, session, pos+1);
             int storeInsnIndex = session.calcUnitNumber(stmt);
             String storeInsn = _rep.instruction(m, stmt, storeInsnIndex);
 
             _db.add(STORE_ARRAY_INDEX, storeInsn, str(storeInsnIndex), childAssignTo, assignTo, methodId);
             writeLocal(childAssignTo, writeType(componentType), methodId);
+            _db.add(ARRAY_INSN_INDEX, ii.insn, childAssignTo);
         }
     }
 
@@ -388,7 +392,7 @@ class FactWriter extends JavaFactWriter {
 	paramTypes = paramTypesList.toArray(paramTypes);
         writeMethodTypeConstant(retType, paramTypes, null);
         String params = concatenate(paramTypes);
-        String mt = "(" + params + ")" + retType;
+        String mt = "<method type (" + params + ")" + retType + ">";
         _db.add(ASSIGN_HEAP_ALLOC, ii.insn, str(ii.index), mt, _rep.local(m, l), ii.methodId, "0");
     }
 
@@ -415,7 +419,10 @@ class FactWriter extends JavaFactWriter {
 
     void writeAssignCastNumericConstant(SootMethod m, Stmt stmt, Local to, NumericConstant constant, Type t, Session session) {
         InstrInfo ii = calcInstrInfo(m, stmt, session);
-        _db.add(ASSIGN_CAST_NUM_CONST, ii.insn, str(ii.index), constant.toString(), _rep.local(m, to), writeType(t), ii.methodId);
+        String val = constant.toString();
+        if (constant instanceof ArithmeticConstant)
+            writeNumConstantRawInt(val);
+        _db.add(ASSIGN_CAST_NUM_CONST, ii.insn, str(ii.index), val, _rep.local(m, to), writeType(t), ii.methodId);
     }
 
     void writeAssignCastNull(SootMethod m, Stmt stmt, Local to, Type t, Session session) {
@@ -599,7 +606,7 @@ class FactWriter extends JavaFactWriter {
     }
 
     void writeTableSwitch(SootMethod inMethod, TableSwitchStmt stmt, Session session) {
-        Value v = writeImmediate(inMethod, stmt, stmt.getKey(), session);
+        Value v = writeImmediate(inMethod, stmt, stmt.getKey(), null, session);
         if(!(v instanceof Local))
             throw new RuntimeException("Unexpected key for TableSwitch statement " + v + " " + v.getClass());
 
@@ -623,7 +630,7 @@ class FactWriter extends JavaFactWriter {
     void writeLookupSwitch(SootMethod inMethod, LookupSwitchStmt stmt, Session session) {
         int stmtIndex = session.getUnitNumber(stmt);
 
-        Value v = writeImmediate(inMethod, stmt, stmt.getKey(), session);
+        Value v = writeImmediate(inMethod, stmt, stmt.getKey(), null, session);
 
         if(!(v instanceof Local))
             throw new RuntimeException("Unexpected key for TableSwitch statement " + v + " " + v.getClass());
@@ -759,9 +766,11 @@ class FactWriter extends JavaFactWriter {
         return l;
     }
 
-    Local writeNumConstantExpression(SootMethod inMethod, Stmt stmt, NumericConstant constant, Session session) {
+    Local writeNumConstantExpression(SootMethod inMethod, Stmt stmt, NumericConstant constant,
+                                     Type explicitType, Session session) {
+        Type constantType = (explicitType == null) ? constant.getType() : explicitType;
         // introduce a new temporary variable
-        Local l = freshLocal(inMethod, "$numconstant", constant.getType(), session);
+        Local l = freshLocal(inMethod, "$numconstant", constantType, session);
         writeAssignNumConstant(inMethod, stmt, l, constant, session);
         return l;
     }
@@ -796,7 +805,7 @@ class FactWriter extends JavaFactWriter {
         else if (v instanceof ClassConstant)
             return writeClassConstantExpression(inMethod, stmt, (ClassConstant) v, session);
         else if (v instanceof NumericConstant)
-            return writeNumConstantExpression(inMethod, stmt, (NumericConstant) v, session);
+            return writeNumConstantExpression(inMethod, stmt, (NumericConstant) v, null, session);
         else if (v instanceof MethodHandle)
             return writeMethodHandleConstantExpression(inMethod, stmt, (MethodHandle) v, session);
         else if (v instanceof NullConstant) {
@@ -909,14 +918,14 @@ class FactWriter extends JavaFactWriter {
         writeInvokedynamic(insn, index, getBootstrapSig(di), dynInfo.getName(), dynSig.retType, dynSig.arity, dynSig.paramTypes, di.getHandleTag(), methodId);
     }
 
-    private Value writeImmediate(SootMethod inMethod, Stmt stmt, Value v, Session session) {
+    private Value writeImmediate(SootMethod inMethod, Stmt stmt, Value v, Type vType, Session session) {
         if (v instanceof Constant) {
             if (v instanceof StringConstant)
                 v = writeStringConstantExpression(inMethod, stmt, (StringConstant) v, session);
             else if (v instanceof ClassConstant)
                 v = writeClassConstantExpression(inMethod, stmt, (ClassConstant) v, session);
             else if (v instanceof NumericConstant)
-                v = writeNumConstantExpression(inMethod, stmt, (NumericConstant) v, session);
+                v = writeNumConstantExpression(inMethod, stmt, (NumericConstant) v, vType, session);
             else
                 System.err.println("ERROR: unknown type of immediate: " + v.getClass());
         }
@@ -1028,7 +1037,7 @@ class FactWriter extends JavaFactWriter {
                     int len = val.length();
                     if (!Character.isDigit(val.charAt(len-1)))
                         val = val.substring(0, len-1);
-                    _db.add(NUM_CONSTANT_RAW, val);
+                    writeNumConstantRawInt(val);
                 } else if (tag instanceof StringConstantValueTag) {
                     writeStringConstant(val);
                 } else

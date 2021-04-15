@@ -7,7 +7,7 @@
  * @BindView
  ***************************************************/
 
-.decl FieldBindView(?field:Field, ?controlValue:Value, ?controlType:Type, ?ctx:configuration.Context, ?hctx:configuration.HContext)
+.decl FieldBindView(?field:Field, ?controlValue:Value, ?controlType:ReferenceType, ?ctx:configuration.Context, ?hctx:configuration.HContext)
 
 // When a constructor is made reachable in a type containing a
 // @BindView-annotated field, instantiate that field.
@@ -18,15 +18,16 @@ FieldBindView(?field, ?controlValue, ?controlType, ?ctx, ?hctx) :-
   LayoutControl(?id, ?controlType, _),
   Field_DeclaringType(?field, ?type),
   basic.ClassConstructor(?method, ?type),
-  ReachableContext(?ctx, ?meth),
+  ReachableContext(?ctx, ?method),
   isImmutableHContext(?hctx),
   ?controlValue = cat("@BindView: <", cat(?controlType, cat(" control for field ", ?field))).
 
-.decl ViewBinder(?value:Value, ?type:Type, ?hctx:configuration.HContext)
+.decl ViewBinder(?value:Value, ?type:ReferenceType, ?hctx:configuration.HContext)
 
 // Recognize butterknife view binders.
 ViewBinder(?value, ?type, ?hctx) :-
   basic.SubtypeOf(?type, "butterknife.ButterKnife$ViewBinder"),
+  isReferenceType(?type),
   ?value = cat("<butterknife ViewBinder of type ", cat(?type, ">")),
   isImmutableHContext(?hctx).
 
@@ -72,9 +73,10 @@ StaticFieldPointsTo(?hctx, ?controlValue, ?field) :-
  * Callback methods
  ***************************************************/
 
-CallbackMethod(?method),
+AndroidCallbackMethod(?method, ?type),
 LayoutControl_CallbackMethod(?controlId, ?method) :-
   Method_Annotation(?method, ?annot),
+  Method_DeclaringType(?method, ?type),
   ( ?annot = "butterknife.OnCheckedChanged"
   ; ?annot = "butterknife.OnClick"
   ; ?annot = "butterknife.OnEditorAction"

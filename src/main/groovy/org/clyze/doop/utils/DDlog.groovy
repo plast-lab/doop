@@ -66,34 +66,30 @@ class DDlog extends SouffleScript {
     /*
      * Check that unsupported options are not enabled.
      */
-    void checkOptions(boolean debug, boolean provenance, boolean liveProf,
-                      boolean removeContext, boolean useFunctors) {
-        if (debug) {
+    void checkOptions(org.clyze.doop.utils.SouffleOptions options) {
+        if (options.debug) {
             throw new DoopErrorCodeException(27, "Option 'debug' is not supported.")
-        } else if (provenance) {
+        } else if (options.provenance) {
             throw new DoopErrorCodeException(27, "Option 'provenance' is not supported.")
-        } else if (liveProf) {
+        } else if (options.liveProf) {
             throw new DoopErrorCodeException(27, "Option 'liveProf' is not supported.")
-        } else if (removeContext) {
+        } else if (options.removeContexts) {
             throw new DoopErrorCodeException(27, "Option 'removeContext' is not supported.")
-        } else if (useFunctors) {
+        } else if (options.useFunctors) {
             throw new DoopErrorCodeException(27, "Option 'useFunctors' is not supported.")
         }
     }
 
     @Override
-	File compile(File origScriptFile, File outDir,
-                 boolean profile = false, boolean debug = false,
-                 boolean provenance = false, boolean liveProf = false,
-                 boolean forceRecompile = true, boolean removeContext = false, boolean useFunctors = false) {
+	File compile(File origScriptFile, File outDir, SouffleOptions options) {
 
-        checkOptions(debug, provenance, liveProf, removeContext, useFunctors)
+        checkOptions(options)
 
         setScriptFileViaCPP(origScriptFile, outDir)
 
-        def checksum = calcChecksum(profile, provenance, liveProf)
+        def checksum = calcChecksum(options.profile, options.provenance, options.liveProf)
 		def cacheFile = new File(cacheDir, checksum)
-		if (!cacheFile.exists() || forceRecompile) {
+		if (!cacheFile.exists() || options.forceRecompile) {
             def jobs = ((Runtime.runtime.availableProcessors() / 2) + 1) as Integer
             log.info "Compiling Datalog to Rust program and executable using ${jobs} jobs"
             def executable = compileWithDDlog(jobs, outDir)
@@ -158,12 +154,10 @@ class DDlog extends SouffleScript {
     }
 
     @Override
-    def run(File cacheFile, File factsDir, File outDir,
-            int jobs, long monitoringInterval, Closure monitorClosure,
-            boolean provenance = false, boolean liveProf = false,
-            boolean profile = false) {
+    def run(File cacheFile, File factsDir, File outDir, int jobs, long monitoringInterval,
+            Closure monitorClosure, SouffleOptions options) {
 
-        checkOptions(false, provenance, liveProf, false, false)
+        checkOptions(options)
 	    def db = new File(outDir, "database")
         log.info "Running the analysis (using ${jobs} jobs)..."
         try {
@@ -173,7 +167,7 @@ class DDlog extends SouffleScript {
                 def dat = "${convertedLogicPrefix}.dat"
                 // Hack: use script to get away with redirection.
                 def analysisBinary = cacheFile.absolutePath
-                def cmdRun = ((profile && new File(SouffleScript.TIME_UTIL).exists()) ? [SouffleScript.TIME_UTIL] : []) as List
+                def cmdRun = ((options.profile && new File(SouffleScript.TIME_UTIL).exists()) ? [SouffleScript.TIME_UTIL] : []) as List
                 cmdRun += "${Doop.doopHome}/bin/run-with-redirection.sh ${dat} ${dump} ${analysisBinary} -w ${jobs} --no-print".split().toList()
                 executeCmd(cmdRun, null)
             }
@@ -224,8 +218,7 @@ class DDlog extends SouffleScript {
 
     @Override
     def interpretScript(File origScriptFile, File outDir, File factsDir,
-                        int jobs, boolean profile = false, boolean debug = false,
-                        boolean removeContext = false) {
+                        int jobs, org.clyze.doop.utils.SouffleOptions options) {
         throw new DoopErrorCodeException(27, "Option 'interpret' is not supported.")
     }
 }

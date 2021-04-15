@@ -9,7 +9,7 @@
  * ?hctx        The heap context
  * ?value       The value containing the field
  */
-.decl AllCtxDependentStoreHeapFld(?fld: Field, ?hctx: mainAnalysis.configuration.HContext, ?value: mainAnalysis.Value)
+.decl AllCtxDependentStoreHeapFld(?fld: Field, ?hctx: mainAnalysis.configuration.HContext, ?value: Value)
 
 /**
  * LoadArrayHeapInsn(?ctx, ?insn, ?value)
@@ -21,7 +21,7 @@
  * ?hctx        The heap context
  * ?value       The value that can be loaded
  */
-.decl LoadArrayHeapInsn(?ctx: mainAnalysis.configuration.Context, ?insn: Instruction, ?hctx: mainAnalysis.configuration.HContext, ?value: mainAnalysis.Value)
+.decl LoadArrayHeapInsn(?ctx: mainAnalysis.configuration.Context, ?insn: Instruction, ?hctx: mainAnalysis.configuration.HContext, ?value: Value)
 
 /**
  * Load instruction that loads dependent data

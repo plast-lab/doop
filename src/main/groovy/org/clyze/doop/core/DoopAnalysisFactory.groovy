@@ -152,21 +152,16 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		else {
 			if (options.PYTHON.value) {
 				return new SoufflePythonAnalysis(options, context, commandsEnv)
+			} else if (options.USER_DEFINED_PARTITIONS.value) {
+				return new SoufflePartitionedAnalysis(options, context, commandsEnv)
+			} else if (options.ANALYSIS.value == "fully-guided-context-sensitive") {
+				return new SouffleScalerMultiPhaseAnalysis(options, context, commandsEnv)
 			}
+//			else if (options.ANALYSIS.value == "adaptive-2-object-sensitive+heap") {
+//				return new SouffleGenericsMultiPhaseAnalysis(options, context, commandsEnv)
+//			}
 			else {
-				if (options.USER_DEFINED_PARTITIONS.value)
-					return new SoufflePartitionedAnalysis(options, context, commandsEnv)
-				else {
-					if (options.ANALYSIS.value == "fully-guided-context-sensitive") {
-						return new SouffleScalerMultiPhaseAnalysis(options, context, commandsEnv)
-					}
-//					else if (options.ANALYSIS.value == "adaptive-2-object-sensitive+heap") {
-//						return new SouffleGenericsMultiPhaseAnalysis(options, context, commandsEnv)
-//					}
-					else {
-						return new SouffleAnalysis(options, context, commandsEnv)
-					}
-				}
+				return new SouffleAnalysis(options, context, commandsEnv)
 			}
 		}
 	}
@@ -353,7 +348,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		def analysisName = options.ANALYSIS.value
 		if (analysisName == "sound-may-point-to" || analysisName == "dependency-analysis" || options.SYMBOLIC_REASONING.value)
 			options.CFG_ANALYSIS.value = true
-		if (analysisName == "basic-only" || analysisName == "data-flow")
+		if (analysisName == "basic-only" || analysisName == "data-flow" || analysisName == "xtractor")
 			options.X_STATS_NONE.value = true
 
 		try {
@@ -573,14 +568,6 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		}
 
 		throwIfBothSet(options.APP_REGEX, options.AUTO_APP_REGEX_MODE)
-
-		if (options.X_SERVER_LOGIC.value) {
-			// Turn on optimization outputs.
-			if (!(options.GENERATE_OPTIMIZATION_DIRECTIVES.value)) {
-				println "Server logic enabled, turning on optimization directives"
-				options.GENERATE_OPTIMIZATION_DIRECTIVES.value = true
-			}
-		}
 
 		if (options.X_SERVER_LOGIC.value || options.GENERATE_OPTIMIZATION_DIRECTIVES.value) {
 		   options.GENERATE_ARTIFACTS_MAP.value = true

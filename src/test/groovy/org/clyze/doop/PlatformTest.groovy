@@ -19,7 +19,7 @@ class PlatformTest extends Specification {
                              "-a", "context-insensitive",
                              "--id", "dry-run-${platform}",
                              "--platform", platform,
-                             "--dry-run"])
+                             "--facts-only"])
         Analysis analysis = Main.analysis
 
         then:

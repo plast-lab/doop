@@ -32,7 +32,7 @@ ConcreteMethodDeclared(?meth, ?class) :-
   Method_DeclaringType(?meth, ?class),
   !Method_Modifier("abstract", ?meth).
 
-.decl MethodDeclaredOrInherited(?meth:Method, ?class:ClassType)
+.decl MethodDeclaredOrInherited(?meth:Method, ?class:ReferenceType)
 MethodDeclaredOrInherited(?meth, ?class) :-
 //  isClassType(?class),
   Method_DeclaringType(?meth, ?class).

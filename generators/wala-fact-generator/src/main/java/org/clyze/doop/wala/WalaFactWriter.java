@@ -475,7 +475,11 @@ class WalaFactWriter extends JavaFactWriter {
         String insn = _rep.instruction(m, instruction, index);
         String methodId = _rep.signature(m);
 
-        _db.add(ASSIGN_CAST_NUM_CONST, insn, str(index), from.getValue(), _rep.local(m, to), writeType(t), methodId);
+        String type = from.getType().toString();
+        String value = from.getValue();
+        if (type.equals("int") || type.equals("long"))
+            writeNumConstantRawInt(value);
+        _db.add(ASSIGN_CAST_NUM_CONST, insn, str(index), value, _rep.local(m, to), writeType(t), methodId);
     }
 
     void writeAssignCastNull(IMethod m, SSAInstruction instruction, Local to, TypeReference t, Session session) {

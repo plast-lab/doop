@@ -16,18 +16,18 @@ ServletMethodEP(?method) :-
 mainAnalysis.configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?method, 1) :-
     ServletMethodEP(?method),
     ?value = cat("SERVLET ::: ", ?method),
-    mainAnalysis.isValue(?value),
+    isValue(?value),
     MockInvocationForServletEntryPoint(?value, ?method, ?invo),
     mainAnalysis.isImmutableHContext(?hctx),
     mainAnalysis.isImmutableContext(?callerCtx).
 
-.decl MockInvocationForServletEntryPoint(?value:mainAnalysis.Value, ?method:Method, ?invo:MethodInvocation)
+.decl MockInvocationForServletEntryPoint(?value:Value, ?method:Method, ?invo:MethodInvocation)
 
 MockInvocationForServletEntryPoint(?value, ?method, cat(cat(cat("<mock-invo-ep ", ?value), ?method), ">")),
 PlusMethodInvocation(cat(cat(cat("<mock-invo-ep ", ?value), ?method), ">")) :-
   ServletMethodEP(?method),
   ?value = cat("SERVLET ::: ", ?method),
-  mainAnalysis.isValue(?value).
+  isValue(?value).
 
 // Mark as entry points with above context
 PossibleOpenProgramEntryPoint(?className, ?method),
@@ -35,14 +35,14 @@ mainAnalysis.ReachableContext(?calleeCtx, ?method) :-
     ServletMethodEP(?method),
     Method_DeclaringType(?method, ?className),
     ?value = cat("SERVLET ::: ", ?method),
-    mainAnalysis.isValue(?value),
+    isValue(?value),
     mainAnalysis.isImmutableHContext(?hctx),
     mainAnalysis.isImmutableContext(?callerCtx),
     mainAnalysis.configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?method, 1),
     mainAnalysis.configuration.ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?method, ?calleeCtx).
 
 // Create mock object for the startup context
-mainAnalysis.isValue(cat("SERVLET ::: ", ?method)) :- isMethod(?method), ServletMethodEP(?method).
+isValue(cat("SERVLET ::: ", ?method)) :- isMethod(?method), ServletMethodEP(?method).
 
 // Mock dependency injection through autowired fields
 mainAnalysis_MockValueConsMacro(cat(?fld, " :: AUTOWIRED"), ?type),

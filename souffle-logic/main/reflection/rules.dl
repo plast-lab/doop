@@ -210,7 +210,7 @@ java_lang_Class_getClassLoader(?invocation, ?to, ?from) :-
   ?type = "java.lang.ClassLoader",
   isReferenceType(?type).
 
-java_lang_Class_getPrimitiveClass(?invocation, ?to, ?name) :-
+java_lang_Class_getPrimitiveClass(?to, ?name) :-
   ?sig = "<java.lang.Class: java.lang.Class getPrimitiveClass(java.lang.String)>",
   isMethod(?sig),
   StaticMethodInvocation(?invocation, ?sig, _),
@@ -1111,7 +1111,8 @@ VarPointsTo(?hctx, ?specialvalue, ?ctx, ?to) :-
 
 ClassSubtype(?subtype, ?type) :-
   basic.SubtypeOf(?subtype, ?type),
-  isClassType(?subtype).
+  isClassType(?subtype),
+  isClassType(?type).
 
 .decl NumberOfClassSubtypes(?type:ClassType, ?count:number)
 

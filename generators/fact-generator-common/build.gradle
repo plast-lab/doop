@@ -21,6 +21,7 @@ dependencies {
     implementation "org.antlr:antlr4-runtime:${antlrVersion}"
     api 'org.clyze:native-scanner:0.6.5'
     api "log4j:log4j:${log4jVersion}"            // Logging implementation
+    implementation 'org.apache.commons:commons-collections4:4.1'
 }
 
 compileJava {

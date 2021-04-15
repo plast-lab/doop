@@ -484,7 +484,7 @@ class FactGenerator implements Runnable {
         }
         else if(right instanceof NumericConstant)
         {
-            rightLocal = _writer.writeNumConstantExpression(inMethod, stmt, (NumericConstant) right, session);
+            rightLocal = _writer.writeNumConstantExpression(inMethod, stmt, (NumericConstant) right, left.getType(), session);
         }
         else if(right instanceof NullConstant)
         {
@@ -594,7 +594,7 @@ class FactGenerator implements Runnable {
         }
         else if(v instanceof NumericConstant)
         {
-            Local tmp = _writer.writeNumConstantExpression(inMethod, stmt, (NumericConstant) v, session);
+            Local tmp = _writer.writeNumConstantExpression(inMethod, stmt, (NumericConstant) v, inMethod.getReturnType(), session);
             _writer.writeReturn(inMethod, stmt, tmp, session);
         }
         else if(v instanceof MethodHandle)

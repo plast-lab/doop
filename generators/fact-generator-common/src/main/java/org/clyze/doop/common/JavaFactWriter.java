@@ -114,8 +114,8 @@ public abstract class JavaFactWriter {
         _db.add(BROADCAST_RECEIVER, broadcastReceiver);
     }
 
-    public void writeCallbackMethod(String callbackMethod) {
-        _db.add(CALLBACK_METHOD, callbackMethod);
+    public void writeAndroidCallbackMethodName(String callbackMethodName) {
+        _db.add(ANDROID_CALLBACK_METHOD_NAME, callbackMethodName);
     }
 
     public void writeLayoutControl(Integer id, String viewClassName, Integer parentID, String appRId, String androidRId) {
@@ -124,6 +124,10 @@ public abstract class JavaFactWriter {
 
     public void writeSensitiveLayoutControl(Integer id, String viewClassName, Integer parentID) {
         _db.add(SENSITIVE_LAYOUT_CONTROL, id.toString(), viewClassName, parentID.toString());
+    }
+
+    public void writeNumConstantRawInt(String val) {
+        _db.add(NUM_CONSTANT_RAW_INT, val);
     }
 
     /**

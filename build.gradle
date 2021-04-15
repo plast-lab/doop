@@ -47,7 +47,7 @@ if (project.hasProperty('heapDLVersion'))
     heapDLVersion = project.property('heapDLVersion')
 
 wrapper {
-    gradleVersion = "6.2"
+    gradleVersion = "6.7"
 }
 
 def allGeneratorProjects = subprojects.findAll { it.name.contains('fact-generator') }
@@ -143,7 +143,7 @@ gradle.rootProject.ext.metadataVersion='2.1.0'
 gradle.rootProject.ext.groovyVersion="3.0.6"
 gradle.rootProject.ext.clueCommonVersion='3.24.0'
 gradle.rootProject.ext.log4jVersion='1.2.17'
-gradle.rootProject.ext.spockVersion='2.0-M3-groovy-3.0'
+gradle.rootProject.ext.spockVersion='2.0-M5-groovy-3.0'
 
 dependencies {
     // apktool "ext:apktool:2.4.0"                              // old artifactory dependency
@@ -303,6 +303,34 @@ task souffleScript(type: JavaExec) {
     if (project.hasProperty("args"))
         args project.property("args").split()
 }
+
+task xtractor(type: JavaExec) {
+    // We set the DOOP_HOME environment variable (see org.clyze.doop.Main)
+    environment.DOOP_HOME = projectDir
+    description 'Run xTractor logic'
+    group = 'Doop'
+    main = 'org.clyze.doop.utils.XTractor'
+    classpath = sourceSets.main.runtimeClasspath
+    if (project.hasProperty("args"))
+        args project.property("args").split()
+}
+
+def testNames = new File("src/inputTests").list()
+
+sourceSets {
+    testNames.each { t -> "$t" { java { srcDirs = ["src/inputTests/$t"] } } }
+}
+
+testNames.each {name ->
+    task "${name}JAR"(type:Jar, dependsOn: "${name}Classes") {
+        group = 'Input Test'
+        from sourceSets.getByName(name).output.classesDirs
+        archiveFileName.set("${name}.jar")
+        manifest { attributes 'Main-Class': "A" }
+        xtractor.dependsOn it
+    }
+}
+
 
 task createEmptyProperties {
     doLast {

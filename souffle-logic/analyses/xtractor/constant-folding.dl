@@ -1,0 +1,57 @@
+#pragma once
+
+.decl API_RequestConstantFold2(op: Operator, left: symbol, right: symbol)
+.decl API_RequestConstantFold1(op: Operator, arg: symbol)
+.decl API_RespondConstantFold2(op: Operator, left: symbol, right: symbol, folded: symbol)
+.decl API_RespondConstantFold1(op: Operator, arg: symbol, folded: symbol)
+
+#define FOLD_BIN(opStr, op) \
+API_RespondConstantFold2(opStr, left, right, folded) :- \
+	API_RequestConstantFold2(opStr, left, right), \
+	leftNum = to_number(left), rightNum = to_number(right), \
+	folded = to_string(leftNum op rightNum).
+
+FOLD_BIN(ADD, +)
+FOLD_BIN(SUB, -)
+FOLD_BIN(MUL, *)
+FOLD_BIN(DIV, /)
+FOLD_BIN(MOD, %)
+FOLD_BIN(AND, band)
+FOLD_BIN(OR, bor)
+FOLD_BIN(XOR, bxor)
+
+#define FOLD_COMP(opStr, op) \
+API_RespondConstantFold2(opStr, left, right, TRUE) :- \
+	API_RequestConstantFold2(opStr, left, right), \
+	leftNum = to_number(left), rightNum = to_number(right), \
+	leftNum op rightNum. \
+API_RespondConstantFold2(opStr, left, right, FALSE) :- \
+	API_RequestConstantFold2(opStr, left, right), \
+	leftNum = to_number(left), rightNum = to_number(right), \
+	!(leftNum op rightNum).
+
+FOLD_COMP(GT, >)
+FOLD_COMP(GEQ, >=)
+FOLD_COMP(LT, <)
+FOLD_COMP(LEQ, <=)
+FOLD_COMP(EQ, =)
+FOLD_COMP(NEQ, !=)
+
+API_RespondConstantFold2(CMP, arg, arg, ZERO) :-
+	API_RequestConstantFold2(CMP, arg, arg).
+
+API_RespondConstantFold2(CMP, left, right, folded) :-
+	API_RequestConstantFold2(CMP, left, right), left != right,
+	leftNum = to_number(left), rightNum = to_number(right),
+	folded = to_string(leftNum - rightNum).
+
+// Simulate "~A" with "A ^ -1"
+API_RespondConstantFold1(COMPL, arg, folded) :-
+	API_RequestConstantFold1(COMPL, arg),
+	argNum = to_number(arg),
+	folded = to_string(argNum bxor -1).
+
+API_RespondConstantFold1(NOT, ONE, ZERO).
+API_RespondConstantFold1(NOT, ZERO, ONE).
+
+// TODO missing SLL, SRA, SRL

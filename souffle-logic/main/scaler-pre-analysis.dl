@@ -1,5 +1,5 @@
 // Compute and output the relations that are needed by Scaler.
-.decl ReceiverOfAllocatingMethod_Object(?receiver:mainAnalysis.Value, ?allocatedObject:mainAnalysis.Value)
+.decl ReceiverOfAllocatingMethod_Object(?receiver:Value, ?allocatedObject:Value)
 .output ReceiverOfAllocatingMethod_Object
 
 ReceiverOfAllocatingMethod_Object(?receiver, ?allocatedObject) :-
@@ -7,13 +7,13 @@ ReceiverOfAllocatingMethod_Object(?receiver, ?allocatedObject) :-
   Instruction_Method(?insn, ?allocatingMethod),
   AssignHeapAllocation_Heap(?insn, ?allocatedObject).
 
-.decl ReceiverOfMethod(?method:Method, ?value:mainAnalysis.Value)
+.decl ReceiverOfMethod(?method:Method, ?value:Value)
 
 ReceiverOfMethod(?method, ?receiver) :-
   ThisVar(?method, ?this),
   mainAnalysis.VarPointsTo(_, ?receiver, _, ?this).
 
-.decl Method_AllPossibleTwoObjContexts(?method:Method, ?receiverOfAllocator:mainAnalysis.Value, ?receiver:mainAnalysis.Value)
+.decl Method_AllPossibleTwoObjContexts(?method:Method, ?receiverOfAllocator:Value, ?receiver:Value)
 .output Method_AllPossibleTwoObjContexts
 
 Method_AllPossibleTwoObjContexts(?method, ?receiverOfAllocator, ?receiver) :-
@@ -134,7 +134,7 @@ Method_TotalVPT(?method, 0) :-
 InvokedMethod(?method) :-
     Stats_Simple_InsensCallGraphEdge(_, ?method).
 
-.ouptput InvokedMethod
+.output InvokedMethod
 
 .decl PolymorphicallyInvokedMethod(?method:Method)
 
@@ -197,7 +197,7 @@ MethodFormalParam(?method, ?formal) :-
 .decl InvocationActualParam(?invo:MethodInvocation, ?var:Var)
 
 InvocationActualParam(?invo, ?actual) :-
-    Actual(_, ?invo, ?actual).
+    ActualParam(_, ?invo, ?actual).
 
 .decl InvocationReceiver(?invo:MethodInvocation, ?method:Method, ?var:Var)
 
@@ -213,7 +213,7 @@ InvocationHasMethodArgumentAsReceiver(?invo) :-
     MethodFormalParam(?method, ?formal),
     VarsInSameMethodHaveSamePointsToSet(?formal, ?receiver).
 
-.decl InvocationHasMethodReceiverasArgument(?invo) :-
+.decl InvocationHasMethodReceiverasArgument(?invo:MethodInvocation)
 
 InvocationHasMethodReceiverAsArgument(?invo) :-
     InvocationActualParam(?invo, ?actual),
@@ -237,7 +237,7 @@ DoubleDispatchInvocation(?invo) :-
 .decl DoubleDispatchInvocation(?invo:MethodInvocation)
 
 DoubleDispatchInvocation(?invo) :-
-    isInstruction(?invo)
+    isInstruction(?invo).
 /*
 .decl EntryNonDataStructureMethod(?method:Method)
 
@@ -370,7 +370,7 @@ Method_NumberOfContexts(?method, ?n) :-
 
 .output Method_NumberOfContexts(IO="file", filename="Method_NumberOfContexts.csv", delimiter="\t")
 
-.decl Prephase_ReceiverOfAllocatingMethod_Object(?receiver:mainAnalysis.Value, ?allocatedObject:mainAnalysis.Value)
+.decl Prephase_ReceiverOfAllocatingMethod_Object(?receiver:Value, ?allocatedObject:Value)
 .output Prephase_ReceiverOfAllocatingMethod_Object
 
 Prephase_ReceiverOfAllocatingMethod_Object(?receiver, ?allocatedObject) :-
@@ -378,7 +378,7 @@ Prephase_ReceiverOfAllocatingMethod_Object(?receiver, ?allocatedObject) :-
   Instruction_Method(?insn, ?allocatingMethod),
   AssignHeapAllocation_Heap(?insn, ?allocatedObject).
 
-.decl ReceiverOfMethod(?method:Method, ?value:mainAnalysis.Value)
+.decl ReceiverOfMethod(?method:Method, ?value:Value)
 
 ReceiverOfMethod(?method, ?receiver) :-
   ThisVar(?method, ?this),
@@ -390,17 +390,17 @@ ReceiverOfMethod(?method, ?receiver) :-
   Instruction_Method(?invo, ?caller),
   ReceiverOfMethod(?caller, ?receiver).
 
-.decl ReceiverOfAllocatingMethod_Object(?receiver:mainAnalysis.Value, ?allocatedObject:mainAnalysis.Value)
+.decl ReceiverOfAllocatingMethod_Object(?receiver:Value, ?allocatedObject:Value)
 .output ReceiverOfAllocatingMethod_Object
 
 ReceiverOfAllocatingMethod_Object(?receiver, ?allocatedObject) :-
   Prephase_ReceiverOfAllocatingMethod_Object(?receiver, ?allocatedObject).
 
 ReceiverOfAllocatingMethod_Object(?allocatedObject, ?allocatedObject) :-
-  mainAnalysis.isValue(?allocatedObject),
+  isValue(?allocatedObject),
   !Prephase_ReceiverOfAllocatingMethod_Object(_, ?allocatedObject).
 
-.decl Method_AllPossibleTwoObjContexts(?method:Method, ?receiverOfAllocator:mainAnalysis.Value, ?receiver:mainAnalysis.Value)
+.decl Method_AllPossibleTwoObjContexts(?method:Method, ?receiverOfAllocator:Value, ?receiver:Value)
 .output Method_AllPossibleTwoObjContexts
 
 Method_AllPossibleTwoObjContexts(?method, ?receiverOfAllocator, "<immutable-hcontext>"),
@@ -494,7 +494,7 @@ VariableValueEscapesMethod(?var) :-
   VarTransitivelyPointsTo(?heap, ?external).
 .plan 1:(1,4,3,2)
 
-.decl VarTransitivelyPointsTo(?heap:mainAnalysis.Value, ?var:Var)
+.decl VarTransitivelyPointsTo(?heap:Value, ?var:Var)
 
 VarTransitivelyPointsTo(?heap, ?var) :-
   Stats_Simple_InsensVarPointsTo(?heap, ?var).

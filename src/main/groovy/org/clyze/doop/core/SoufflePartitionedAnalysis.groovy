@@ -4,13 +4,12 @@ import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 import groovy.transform.TypeChecked
 import groovy.util.logging.Log4j
-import org.clyze.doop.utils.SouffleScript
-
 import java.nio.file.Files
 import java.util.concurrent.Callable
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
+import org.clyze.doop.utils.SouffleOptions
 
 import static groovy.io.FileType.FILES
 import static org.apache.commons.io.FileUtils.*
@@ -34,16 +33,13 @@ class SoufflePartitionedAnalysis extends SouffleAnalysis {
 
         Future<File> compilationFuture = null
         def executorService = Executors.newSingleThreadExecutor()
+        SouffleOptions souffleOpts = new SouffleOptions(options)
         if (!options.FACTS_ONLY.value) {
             compilationFuture = executorService.submit(new Callable<File>() {
                 @Override
                 File call() {
                     log.info "[Task COMPILE...]"
-                    def generatedFile = script.compile(analysis, outDir,
-                            options.SOUFFLE_PROFILE.value as boolean,
-                            options.SOUFFLE_DEBUG.value as boolean,
-                            options.SOUFFLE_FORCE_RECOMPILE.value as boolean,
-                            options.X_CONTEXT_REMOVER.value as boolean)
+                    def generatedFile = script.compile(analysis, outDir, souffleOpts)
                     log.info "[Task COMPILE Done]"
                     return generatedFile
                 }
@@ -118,7 +114,7 @@ class SoufflePartitionedAnalysis extends SouffleAnalysis {
                     void run() {
                         def childScript = newScriptForAnalysis(executor)
                         childScript.run(generatedFile, childFactsDir, childOutDir, options.SOUFFLE_JOBS.value as int,
-                                        (options.X_MONITORING_INTERVAL.value as long) * 1000, monitorClosure)
+                                        (options.X_MONITORING_INTERVAL.value as long) * 1000, monitorClosure, souffleOpts)
                         runtimeMetricsFile.append("analysis execution time (sec)\t${childScript.executionTime}\n")
                     }
                 })

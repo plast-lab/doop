@@ -1,8 +1,7 @@
 package org.clyze.doop.core
 
+import groovy.transform.CompileStatic
 import org.apache.commons.io.FileUtils
-
-// import groovy.transform.TypeChecked
 import org.clyze.analysis.*
 import org.clyze.doop.common.Parameters
 
@@ -10,8 +9,7 @@ import static DoopAnalysis.INFORMATION_FLOW_SUFFIX
 import static org.apache.commons.io.FilenameUtils.getExtension
 import static org.apache.commons.io.FilenameUtils.removeExtension
 
-@Singleton
-// @TypeChecked
+@CompileStatic
 class DoopAnalysisFamily implements AnalysisFamily {
 
 	public static final String DOOP_PLATFORMS_LIB_ENV = "DOOP_PLATFORMS_LIB"
@@ -27,18 +25,26 @@ class DoopAnalysisFamily implements AnalysisFamily {
 	private static final String GROUP_STATS = "Statistics"
 	private static final String GROUP_ENTRY_POINTS = "Entry points"
 	private static final String GROUP_SERVER = "Server logic"
+	private static final String GROUP_DATA_FLOW = "Data flow"
 	private static final String GROUP_EXPERIMENTAL = "Xtras"
 
 	private static final int SERVER_DEFAULT_THRESHOLD = 1000
 	private static final int DEFAULT_JOBS = 4
 	private static final String DEFAULT_NATIVE_BACKEND = ''
+
 	static final String NATIVE_BACKEND_BINUTILS = 'binutils'
 	static final String NATIVE_BACKEND_BUILTIN = 'builtin'
 	static final String NATIVE_BACKEND_RADARE = 'radare'
+
 	static final String USE_ANALYSIS_BINARY_NAME = 'use-analysis-binary'
+
 	static final String STATS_NONE = 'none'
 	static final String STATS_DEFAULT = 'default'
 	static final String STATS_FULL = 'full'
+
+	static final String SOUFFLE_COMPILED = 'compiled'
+	static final String SOUFFLE_INTERPRETED = 'interpreted'
+	static final String SOUFFLE_TRANSLATED = 'translated'
 
 	@Override
 	String getName() { "doop" }
@@ -53,7 +59,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 	List<AnalysisOption<?>> supportedOptions() { SUPPORTED_OPTIONS }
 
 	@Override
-	Map<String, AnalysisOption<?>> supportedOptionsAsMap() { SUPPORTED_OPTIONS.collectEntries { [(it.id): it] } }
+	Map<String, AnalysisOption<?>> supportedOptionsAsMap() { supportedOptions().collectEntries { [(it.id): it] } }
 
 	@Override
 	void cleanDeploy() {
@@ -292,6 +298,12 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forCacheID: true
 			),
 			new BooleanAnalysisOption(
+					id: "GENERATE_TAC",
+					name: "generate-tac",
+					group: GROUP_FACTS,
+					description: "Generate Three Address Code experimental representation, along with .facts files.",
+			),
+			new BooleanAnalysisOption(
 					id: "GENERATE_ARTIFACTS_MAP",
 					name: "generate-artifacts-map",
 					group: GROUP_FACTS,
@@ -320,7 +332,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					group: GROUP_NATIVE,
 					argName: "BACKEND",
 					description: "Use back-end to scan native code (portable built-in, system binutils, Radare2).",
-					validValues: [NATIVE_BACKEND_BUILTIN, NATIVE_BACKEND_BINUTILS, NATIVE_BACKEND_RADARE],
+					validValues: [NATIVE_BACKEND_BUILTIN, NATIVE_BACKEND_BINUTILS, NATIVE_BACKEND_RADARE] as Set<String>,
 					value: DEFAULT_NATIVE_BACKEND,
 					forCacheID: true
 			),
@@ -665,6 +677,20 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Discover main() methods.",
 					forPreprocessor: true
 			),
+			new BooleanAnalysisOption(
+					id: "DATA_FLOW_GOTO_LIB",
+					name: "data-flow-goto-lib",
+					group: GROUP_DATA_FLOW,
+					description: "Allow data-flow logic to go into library code using CHA.",
+					forPreprocessor: true
+			),
+			new BooleanAnalysisOption(
+					id: "DATA_FLOW_ONLY_LIB",
+					name: "data-flow-only-lib",
+					group: GROUP_DATA_FLOW,
+					description: "Run data-flow logic only for library code.",
+					forPreprocessor: true
+			),
 			/* End preprocessor normal flags */
 			/* Start Souffle related options */
 			new IntegerAnalysisOption(
@@ -712,11 +738,14 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Use precompiled analysis binary (for Windows compatibility).",
 					argName: "PATH"
 			),
-			new BooleanAnalysisOption(
-					id: "SOUFFLE_RUN_INTERPRETED",
-					name: "souffle-run-interpreted",
+			new AnalysisOption<String>(
+					id: "SOUFFLE_MODE",
+					name: "souffle-mode",
 					group: GROUP_ENGINE,
-					description: "Run souffle in interpreted mode (currently only for Python analyses)."
+					description: "How to run Souffle: compile to binary, use interpreter, only translate to C++.",
+					validValues: [SOUFFLE_COMPILED, SOUFFLE_INTERPRETED, SOUFFLE_TRANSLATED] as Set<String>,
+					value: SOUFFLE_COMPILED,
+					argName: "MODE"
 			),
 			new BooleanAnalysisOption(
 					id: "SOUFFLE_USE_FUNCTORS",
@@ -771,7 +800,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					group: GROUP_INFORMATION_FLOW,
 					argName: "APPLICATION_PLATFORM",
 					description: "Load additional logic to perform information flow analysis.",
-					validValues: informationFlowPlatforms("${Doop.lbLogicPath}/addons", "${Doop.souffleLogicPath}/addons"),
+					validValues: informationFlowPlatforms(Doop.lbLogicPath, Doop.souffleLogicPath),
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
@@ -896,7 +925,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					group: GROUP_STATS,
 					argName: "LEVEL",
 					description: "Set statistics collection logic.",
-					validValues: [STATS_NONE, STATS_DEFAULT, STATS_FULL]
+					validValues: [STATS_NONE, STATS_DEFAULT, STATS_FULL] as Set<String>
 			),
 			new BooleanAnalysisOption(
 					id: "X_STATS_FULL",
@@ -1103,19 +1132,19 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forPreprocessor: true,
 					cli: false
 			),
-	]
+	] as List<AnalysisOption<?>>
 
 	private static List<String> analysesFor(File path, String fileToLookFor) {
 		if (!path) {
 			println "ERROR: Doop was not initialized correctly, could not read analyses names. Is environment variable DOOP_HOME set?"
 			return []
 		}
-		def analyses = []
+		List<String> analyses = []
 		path.eachDir { File dir ->
 			def f = new File(dir, fileToLookFor)
 			if (f.exists() && f.file) analyses << dir.name
 		}
-		analyses.sort()
+		return analyses.sort()
 	}
 
 	private static List<String> getValidAnalyses() {
@@ -1155,12 +1184,12 @@ class DoopAnalysisFamily implements AnalysisFamily {
 		return []
 	}
 
-	private static SortedSet<String> informationFlowPlatforms(String lbDir, String souffleDir) {
+	static SortedSet<String> informationFlowPlatforms(String lbDir, String souffleDir) {
 		SortedSet<String> platforms_LB = new TreeSet<>()
 		SortedSet<String> platforms_Souffle = new TreeSet<>()
 		Closure scan = { ifDir ->
 			if (ifDir) {
-				File ifSubDir = new File("${ifDir}/information-flow")
+				File ifSubDir = new File("${ifDir}/addons/information-flow")
 				if (!ifSubDir || !ifSubDir.exists()) {
 					println "WARNING: cannot process information flow directory: ${ifSubDir}"
 					return
@@ -1189,11 +1218,12 @@ class DoopAnalysisFamily implements AnalysisFamily {
 	}
 
     static Collection<File> getAllInputs(Map<String, AnalysisOption<?>> options) {
-        Collection<File> inputs = [] as List
-        inputs += options.INPUTS.value
-        inputs += options.LIBRARIES.value
-        inputs += options.HEAPDLS.value
-        inputs += options.PLATFORMS.value
+        Collection<File> inputs = [] as List<File>
+        Closure collector = { l -> (l as List<String>).collect { new File(it) }}
+        inputs += collector(options.INPUTS.value)
+        inputs += collector(options.LIBRARIES.value)
+        inputs += collector(options.HEAPDLS.value)
+        inputs += collector(options.PLATFORMS.value)
         return inputs
     }
 }

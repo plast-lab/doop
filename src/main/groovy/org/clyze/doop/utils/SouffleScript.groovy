@@ -2,6 +2,11 @@ package org.clyze.doop.utils
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Log4j
+import java.nio.file.FileAlreadyExistsException
+import java.nio.file.Files
+import java.nio.file.FileSystems
+import java.nio.file.Path
+import java.nio.file.StandardCopyOption
 import org.clyze.doop.common.DoopErrorCodeException
 import org.clyze.doop.core.DoopAnalysisFactory
 import org.clyze.doop.core.DoopAnalysisFamily
@@ -9,14 +14,6 @@ import org.clyze.utils.CheckSum
 import org.clyze.utils.Executor
 import org.clyze.utils.Helper
 import org.clyze.utils.OS
-
-import java.nio.file.FileAlreadyExistsException
-import java.nio.file.Files
-import java.nio.file.FileSystems
-import java.nio.file.Path
-import java.nio.file.StandardCopyOption
-
-import static org.apache.commons.io.FileUtils.deleteQuietly
 
 @Log4j
 @CompileStatic
@@ -73,21 +70,19 @@ class SouffleScript {
 	}
 
 	File compile(File origScriptFile, File outDir,
-                 boolean profile = false, boolean debug = false,
-                 boolean provenance = false, boolean liveProf = false,
-                 boolean forceRecompile = true, boolean removeContext = false, boolean useFunctors = false) {
+                 SouffleOptions options) {
 
 		setScriptFileViaCPP(origScriptFile, outDir)
 
-		if (useFunctors) {
+		if (options.useFunctors) {
 			detectFunctors(outDir)
 		}
 
-		def checksum = calcChecksum(profile, provenance, liveProf)
+		def checksum = calcChecksum(options.profile, options.provenance, options.liveProf)
 		def cacheFile = new File(cacheDir, checksum)
-		if (!cacheFile.exists() || debug || forceRecompile) {
+		if (!cacheFile.exists() || options.debug || options.forceRecompile) {
 
-			if (removeContext) {
+			if (options.removeContexts) {
 				removeContexts(scriptFile)
 			}
 
@@ -95,28 +90,30 @@ class SouffleScript {
 			String executablePath = executable.canonicalPath
 			String scriptFilePath = scriptFile.canonicalPath
 			String souffleCmd = 'souffle'
-			String output = "-c -o ${executablePath}"
+			String outputCpp = "${executablePath}.cpp"
+			String outputCppOpts = "-g ${outputCpp}"
+			String outputOpts = options.translateOnly ? outputCppOpts : "-c -o ${executablePath}"
 			// On Windows, compile logic to C++ via WSL/Souffle.
 			if (OS.win) {
 				log.warn("WARNING: Windows detected, using experimental WSL/Cygwin mode.")
 				souffleCmd = 'wsl souffle'
 				executablePath = makePathWsl(executablePath)
 				scriptFilePath = makePathWsl(scriptFilePath)
-				output = "-g ${executablePath}.cpp"
+				outputOpts = outputCppOpts
 			}
 
-			def compilationCommand = "${souffleCmd} ${output} ${scriptFilePath}".split().toList()
-			if (profile)
+			def compilationCommand = "${souffleCmd} ${outputOpts} ${scriptFilePath}".split().toList()
+			if (options.profile)
 				compilationCommand << ("-p${outDir}/profile.txt" as String)
-			if (debug)
+			if (options.debug)
 				compilationCommand << ("-r${outDir}/report.html" as String)
-			if (provenance)
+			if (options.provenance)
 			// Another possible mode is 'explore' but does not support history.
 				compilationCommand << ("--provenance=explain" as String)
-			if (liveProf)
+			if (options.liveProf)
 				compilationCommand << ("--live-profile" as String)
 
-			log.info "Compiling Datalog to C++ program and executable"
+			log.info "Compiling Datalog..."
 			log.debug "Compilation command: $compilationCommand"
 
 			def ignoreCounter = 0
@@ -135,11 +132,15 @@ class SouffleScript {
 				}
 				if (OS.win) {
 					prepareSourcesForWindowsCompilation(executable, tmpFile0)
-					System.exit(0)
+					return null
 				}
 				Files.delete(tmpFile)
 			}
 			log.info "Analysis compilation time (sec): $compilationTime"
+			if (options.translateOnly) {
+				log.info "Stopping at C++ translation: ${outputCpp}"
+				return null
+			}
 			cacheCompiledBinary(executable, cacheFile, checksum)
 		} else {
 			logCachedExecutable(cacheFile)
@@ -170,8 +171,12 @@ class SouffleScript {
 
 	def run(File analysisBinary, File factsDir, File outDir,
 	        int jobs, long monitoringInterval, Closure monitorClosure,
-			boolean provenance = false, boolean liveProf = false,
-			boolean profile = false) {
+			SouffleOptions options) {
+
+		if (analysisBinary == null) {
+			log.info "No binary found, aborting."
+			return [compilationTime, executionTime]
+		}
 
 		def db = new File(outDir, "database")
 		def baseCommand = "${analysisBinary} -j${jobs} -F${factsDir.canonicalPath} -D${db.canonicalPath}"
@@ -181,12 +186,12 @@ class SouffleScript {
 		}
 
 		def executionCommand = baseCommand.split().toList()
-		if (profile)
+		if (options.profile)
 			executionCommand << ("-p${outDir}/profile.txt" as String)
 
 		def cmd = executionCommand.join(" ")
-		if (provenance || liveProf) {
-			def mode = provenance ? "provenance" : (liveProf ? "live profiling" : "unknown")
+		if (options.provenance || options.liveProf) {
+			def mode = options.provenance ? "provenance" : (options.liveProf ? "live profiling" : "unknown")
 			println "This process will now exit, run this command to run the analysis with the requested interactive mode (${mode}): rlwrap ${cmd}"
 			throw new DoopErrorCodeException(22)
 		}
@@ -202,20 +207,19 @@ class SouffleScript {
 	}
 
     def interpretScript(File origScriptFile, File outDir, File factsDir,
-                        int jobs, boolean profile = false, boolean debug = false,
-                        boolean removeContext = false) {
+                        int jobs, SouffleOptions options) {
 
 		setScriptFileViaCPP(origScriptFile, outDir)
 
 	    def db = new File(outDir, "database")
 
-        if (removeContext)
+        if (options.removeContexts)
             removeContexts(scriptFile)
 
         def interpretationCommand = "souffle ${scriptFile} -j${jobs} -F${factsDir.canonicalPath} -D${db.canonicalPath}".split().toList()
-        if (profile)
+        if (options.profile)
             interpretationCommand<< ("-p${outDir}/profile.txt" as String)
-        if (debug)
+        if (options.debug)
             interpretationCommand << ("-r${outDir}/report.html" as String)
 
         log.info "Interpreting analysis script"

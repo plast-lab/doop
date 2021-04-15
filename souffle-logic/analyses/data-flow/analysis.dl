@@ -1,3 +1,4 @@
+#pragma once
 #include "setup.dl"
 #define MK_INDEX_VAR(v, i) cat(v, cat("[", cat(to_string(i), "]")))
 #define MK_SFLD_VAR(fld) cat("@", fld)
@@ -12,12 +13,21 @@
 .decl SelfFlows(x:Var)
 // Flows between reference typed vars
 .decl PointerFlows(x:Var, y:Var)
+
+.decl FlowsIntoConstArrayIndex(x:Var, arr:Var, index:number)
+.decl FlowsIntoStaticField(x:Var, fld:Field)
+.decl FlowsIntoInstanceFieldBase(x:Var, base:Var)
+
 .output Flows
 .output SelfFlows
 .output PointerFlows
+.output FlowsIntoConstArrayIndex
+.output FlowsIntoStaticField
+.output FlowsIntoInstanceFieldBase
+
 
 OptBaseFlows(from, to) :-
-	//InterestingStmt(stmt),
+	InterestingStmt(stmt),
 	(MOVE(stmt, to, from) ; CAST(stmt, to, _, from)).
 
 OptBaseFlows(from, to) :-
@@ -26,6 +36,7 @@ OptBaseFlows(from, to) :-
 	OPERAND_VAR(stmt, _, from).
 
 // Array STORE with const index
+FlowsIntoConstArrayIndex(from, arr, i),
 OptBaseFlows(from, v) :-
 	InterestingStmt(stmt),
 	ASTORE_NUM(stmt, arr, i, from),
@@ -38,6 +49,7 @@ OptBaseFlows(v, to) :-
 	v = MK_INDEX_VAR(arr, i).
 
 // Static field STORE
+FlowsIntoStaticField(from, fld),
 OptBaseFlows(from, v) :-
 	InterestingStmt(stmt),
 	SSTORE(stmt, fld, from),
@@ -63,6 +75,10 @@ OptBaseFlows(from, to) :-
 	ILOAD(stmt2, to, base, fld),
 	InterestingStmt(stmt2).
 
+FlowsIntoInstanceFieldBase(from, base) :-
+	Flows(from, base),
+	(ISTORE(_, base, _, _) ; ILOAD(_, _, base, _)).
+
 // Interprocedural: actual param -> formal param
 OptBaseFlows(actual, formal) :-
 	InterestingStmt(stmt),
@@ -85,6 +101,14 @@ OptBaseFlows(actual, to) :-
 	ACTUAL_PARAM(callStmt, nth, actual),
 	ACTUAL_RET(callStmt, to).
 
+#ifdef DATA_FLOW_GOTO_LIB
+InterestingStmt(stmt) :-
+	InterestingStmt(callStmt),
+	RESOLVE_CALL(callStmt, meth),
+	Instruction_Method(stmt, meth).
+#endif
+
+
 Flows(x, y) :- OptBaseFlows(x, y).
 
 // Transitive closure
@@ -94,6 +118,6 @@ Flows(x, z) :- Flows(x, y), OptBaseFlows(y, z).
 SelfFlows(x) :- Flows(x, x).
 
 PointerFlows(x, y) :-
-	VarType(x, xT), isReferenceType(xT),
+	Var_Type(x, xT), isReferenceType(xT),
 	Flows(x, y),
-	VarType(y, yT), isReferenceType(yT).
+	Var_Type(y, yT), isReferenceType(yT).

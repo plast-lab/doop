@@ -47,7 +47,7 @@ java_lang_reflect_Proxy_newProxyInstance(?invo, ?ret, ?handler, ?interfaces) :-
    ActualParam(2, ?invo, ?handler),
    AssignReturnValue(?invo, ?ret).
 
-.decl ArrayContentsPointToInterface(?iface:ClassType, ?hctx:configuration.HContext, ?arrayValue:Value)
+.decl ArrayContentsPointToInterface(?iface:InterfaceType, ?hctx:configuration.HContext, ?arrayValue:Value)
 
 ArrayContentsPointToInterface(?iface, ?hctx, ?arrayValue) :-
    ArrayIndexPointsTo(_, ?interfaceVal, ?hctx, ?arrayValue),
@@ -216,7 +216,7 @@ ProxyInvoke(?invokeMethName, ?invokeMethDescriptor) :-
    Method_Descriptor(?invoke, ?invokeMethDescriptor).
 
 // Helper relation to connect context requests with responses.
-.decl ProxyCallGraphEdgeCandidate(?callerCtx:configuration.Context, ?hctx:configuration.HContext, ?invo:MethodInvocation, ?handlerObj:Value, ?handlerInvokeMeth:Method, ?value:Value, ?handlerType:Type)
+.decl ProxyCallGraphEdgeCandidate(?callerCtx:configuration.Context, ?hctx:configuration.HContext, ?invo:MethodInvocation, ?handlerObj:Value, ?handlerInvokeMeth:Method, ?value:Value, ?handlerType:ReferenceType)
 
 ProxyCallGraphEdgeCandidate(?callerCtx, ?hctx, ?invo, ?handlerObj, ?handlerInvokeMeth, ?value, ?handlerType),
 configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?handlerObj, ?handlerInvokeMeth, 0) :-
@@ -227,7 +227,7 @@ configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?handlerObj, ?handlerInvo
    basic.MethodLookup(?invokeMethName, ?invokeMethDescriptor, ?handlerType, ?handlerInvokeMeth).
 
 .decl ProxyCallGraphEdge(?callerCtx:configuration.Context, ?invo:MethodInvocation, ?calleeCtx:configuration.Context, ?handlerInvokeMeth:Method)
-.decl HandledProxy(?newProxyInstanceInvo:MethodInvocation, ?handlerType:Type)
+.decl HandledProxy(?newProxyInstanceInvo:MethodInvocation, ?handlerType:ReferenceType)
 
 ProxyCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?handlerInvokeMeth),
 HandledProxy(?newProxyInstanceInvo, ?handlerType) :-

@@ -33,3 +33,9 @@ SARIF_InterestingRelation("AppTaintedVarPointsTo", 1, "JvmVariable", "Variable i
 #ifdef X_SERVER_LOGIC
 SARIF_InterestingRelation("Server_Field_ShadowedBy", 0, "JvmField", "Field is shadowed by field @@1", "Field is shadowed.", "warning").
 #endif // X_SERVER_LOGIC
+
+#ifndef DISABLE_POINTS_TO
+#if STATS_LEVEL == full
+SARIF_InterestingRelation("Stats_Simple_PotentiallyFailingCast", 2, "JvmVariable", "Reachable cast may fail: @@2 = (@@0) @@1 ", "Reachable cast may fail.", "warning").
+#endif // STATS_LEVEL == full
+#endif // DISABLE_POINTS_TO

@@ -39,19 +39,20 @@ try {
 }
 
 def script = SouffleScript.newScript(new Executor(outDir, env), cacheDir, viaDDlog.toBoolean())
-def prof = profile.toBoolean()
-def prov = provenance.toBoolean()
-def dbg = debug.toBoolean()
+SouffleOptions souffleOpts = new SouffleOptions()
+souffleOpts.profile = profile.toBoolean()
+souffleOpts.provenance = provenance.toBoolean()
+souffleOpts.debug = debug.toBoolean()
+souffleOpts.forceRecompile = recompile.toBoolean()
 File scriptFile = new File(scriptFilePath)
 File factsDir = new File(factsDirPath)
 
 if (interpret && interpret.toBoolean()) {
-    script.interpretScript(scriptFile, outDir, factsDir, jobs.toInteger(), prof, dbg, false)
+    script.interpretScript(scriptFile, outDir, factsDir, jobs.toInteger(), souffleOpts)
     return
 } else {
-    def liveProf = false
-    def generatedFile = script.compile(scriptFile, outDir, prof, dbg, prov, liveProf, recompile.toBoolean())
+    def generatedFile = script.compile(scriptFile, outDir, souffleOpts)
     println "Compilation time (sec)\t${script.compilationTime}\n"
-    script.run(generatedFile, factsDir, outDir, jobs.toInteger(), 5000, null, prov, liveProf, prof)
+    script.run(generatedFile, factsDir, outDir, jobs.toInteger(), 5000, null, souffleOpts)
 }
 println "Execution time (sec)\t${script.executionTime}\n"

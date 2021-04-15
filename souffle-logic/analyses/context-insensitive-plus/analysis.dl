@@ -11,7 +11,7 @@
 .comp ContextInsensitivePlusConfiguration : AbstractConfiguration {
 
 .type Context = MethodInvocation | UniqueContext
-.type HContext
+.type HContext = symbol
 
 .decl UContext(?ctx:UniqueContext)
 .decl UHContext(?hctx:HContext)

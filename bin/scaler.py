@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 import os
 import shutil
 import sys
@@ -25,12 +25,12 @@ BOLD = '\033[1m'
 def run_pre_analysis(args):
     args = [DOOP] + args
     args = args + ['-a', PRE_ANALYSIS]
-    args = args + ['--scaler-pre']
+    args = args + ['--Xscaler-pre']
     args = args + ['--id', APP + "-scaler-ci"]
     args = args + ['--input-id', APP+"-facts"]
     args = args + ['--Xsymlink-cached-facts']
     cmd = ' '.join(args)
-    print YELLOW + BOLD + 'Running pre-analysis ...' + RESET
+    print YELLOW + BOLD + 'Running pre-analysis ... ' + RESET
     # print cmd
     os.system(cmd)
        
@@ -97,7 +97,7 @@ def run(args):
     if not os.path.exists(os.path.join(SCALER_CACHE, APP)):
         os.mkdir(os.path.join(SCALER_CACHE, APP))
     run_pre_analysis(args)
-    ci_analysis_database = os.path.join(DOOP_OUT, 'context-insensitive', APP + '-scaler-ci', 'database')
+    ci_analysis_database = os.path.join(DOOP_OUT, APP + '-scaler-ci', 'database')
     dump_required_doop_results(APP, ci_analysis_database, os.path.join(SCALER_CACHE, APP))
     scaler_file = run_scaler(APP, os.path.join(SCALER_CACHE, APP), os.path.join(SCALER_OUT, APP))
     run_main_analysis(args, scaler_file)

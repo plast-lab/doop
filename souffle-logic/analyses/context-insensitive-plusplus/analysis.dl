@@ -8,7 +8,7 @@
 
 .type UniqueContext
 .type UniqueHContext
-.type ContextInsensitivePlusPlusComponent = MethodInvocation | mainAnalysis.Value | UniqueContext | UniqueHContext
+.type ContextInsensitivePlusPlusComponent = MethodInvocation | Value | UniqueContext | UniqueHContext
 
 .comp ContextInsensitivePlusPlusConfiguration : AbstractConfiguration {
 

@@ -1,7 +1,7 @@
 /**
  * An interface type K is a superinterface of class (or interface) type C
  */
-.decl Superinterface(?k:Type, ?c:Type)
+.decl Superinterface(?k:InterfaceType, ?c:ReferenceType)
 
 /**
  * An interface type K is a superinterface of class type C if one of the
@@ -28,7 +28,7 @@ Superinterface(?k, ?c) :-
 /**
  * A class ?a is a direct subclass of class ?c
  */
-.decl DirectSubclass(?a:Type, ?c:Type)
+.decl DirectSubclass(?a:ClassType, ?c:ClassType)
 
 /**
  * A class ?a is a subclass of class ?c
@@ -36,7 +36,7 @@ Superinterface(?k, ?c) :-
  * NOTE: the ordering might be unnatural, so pay attention when you use this
  * predicate.
  */
-.decl Subclass(?c:Type, ?a:Type)
+.decl Subclass(?c:ClassType, ?a:ClassType)
 
 /**
  * A class ?a is a superclass of class ?c
@@ -44,7 +44,7 @@ Superinterface(?k, ?c) :-
  * NOTE: The ordering might be unnatural, so pay attention when you use this
  * predicate.
  */
-.decl Superclass(?c:Type, ?a:Type)
+.decl Superclass(?c:ClassType, ?a:ClassType)
 
 DirectSubclass(?a, ?c) :-
     DirectSuperclass(?a, ?c).
@@ -71,10 +71,10 @@ Superclass(?c, ?a) :-
 
 .decl SubtypeOf(?subtype:Type, ?type:Type)
 .decl SupertypeOf(?supertype:Type, ?type:Type)
-.decl Unsubclassable(?type:Type)
-.decl Subclassable(?type:Type)
+.decl Unsubclassable(?type:ReferenceType)
+.decl Subclassable(?type:ReferenceType)
 .decl SubtypeOfDifferent(?subtype:Type, ?type:Type)
-.decl ClassConstructor(?method:Method, ?type:Type)
+.decl ClassConstructor(?method:Method, ?type:ClassType)
 
 /**
  * The following rules check whether type S can be cast to type T. Implicitly,
@@ -250,6 +250,7 @@ Subclassable(?type) :-
     ! Unsubclassable(?type).
 
 ClassConstructor(method, type) :-
+    isClassType(type),
     MethodLookup(_, _, type, method),
     isMethod(method),
     match(".*<init>.*", method).
@@ -265,5 +266,7 @@ Class_InterestingSubtype(?class, ?subClass) :-
 
 _Valid_Type(?type) :-
   isReferenceType(?type),
-  !Type_null(?type),
-  !isArrayType(?type).
+  (isClassType(?type) ; isInterfaceType(?type)).
+
+isIntegerType(?type) :-
+  Type_byte(?type) ; Type_short(?type) ; Type_int(?type) ; Type_long(?type).

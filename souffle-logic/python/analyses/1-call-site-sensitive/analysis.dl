@@ -13,7 +13,7 @@
   // This analysis has no context for heap objects.
   // This is emulated by creating a single HContext object,
   // which is used everywhere.
-  .type HContext
+  .type HContext = symbol
 
   ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?calleeCtx) :-
     ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod),

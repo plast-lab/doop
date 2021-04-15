@@ -4,16 +4,15 @@ import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 import groovy.transform.TypeChecked
 import groovy.util.logging.Log4j
-import org.clyze.analysis.AnalysisOption
-import org.clyze.doop.utils.CPreprocessor
-import org.clyze.doop.utils.DDlog
-import org.clyze.doop.utils.SouffleScript
-import org.clyze.utils.Executor
-
 import java.nio.file.Files
 import java.util.concurrent.Callable
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
+import org.clyze.analysis.AnalysisOption
+import org.clyze.doop.utils.CPreprocessor
+import org.clyze.doop.utils.DDlog
+import org.clyze.doop.utils.SouffleOptions
+import org.clyze.utils.Executor
 
 import static org.apache.commons.io.FileUtils.deleteQuietly
 import static org.apache.commons.io.FileUtils.sizeOfDirectory
@@ -50,9 +49,7 @@ class SouffleGenericsMultiPhaseAnalysis extends SouffleAnalysis {
 
 		Future<File> compilationFuture = null
 		def executorService = Executors.newSingleThreadExecutor()
-		boolean provenance = options.SOUFFLE_PROVENANCE.value as boolean
-		boolean profiling = options.SOUFFLE_PROFILE.value as boolean
-		boolean liveProf = options.SOUFFLE_LIVE_PROFILE.value as boolean
+		SouffleOptions souffleOpts = new SouffleOptions(options)
 		if (!options.FACTS_ONLY.value) {
 			if (options.VIA_DDLOG.value) {
 				// Copy the DDlog converter, needed both for logic
@@ -63,14 +60,7 @@ class SouffleGenericsMultiPhaseAnalysis extends SouffleAnalysis {
 				@Override
 				File call() {
 					log.info "[Task COMPILE...]"
-					def generatedFile0 = script.compile(preAnalysis, outDir,
-							profiling,
-							options.SOUFFLE_DEBUG.value as boolean,
-							provenance,
-							liveProf,
-							options.SOUFFLE_FORCE_RECOMPILE.value as boolean,
-							options.X_CONTEXT_REMOVER.value as boolean,
-							options.SOUFFLE_USE_FUNCTORS.value as boolean)
+					def generatedFile0 = script.compile(preAnalysis, outDir, souffleOpts)
 					log.info "[Task COMPILE Done]"
 					return generatedFile0
 				}
@@ -88,7 +78,7 @@ class SouffleGenericsMultiPhaseAnalysis extends SouffleAnalysis {
 		try {
 			log.info "[Task FACTS...]"
 			generateFacts()
-			script.postprocessFacts(outDir, profiling)
+			script.postprocessFacts(outDir, souffleOpts.profile)
 			log.info "[Task FACTS Done]"
 
 			if (options.FACTS_ONLY.value) return
@@ -97,7 +87,7 @@ class SouffleGenericsMultiPhaseAnalysis extends SouffleAnalysis {
 			    generatedFile0 = compilationFuture.get()
             }
 			script.run(generatedFile0, factsDir, outDir, options.SOUFFLE_JOBS.value as int,
-					(options.X_MONITORING_INTERVAL.value as long) * 1000, monitorClosure)
+					(options.X_MONITORING_INTERVAL.value as long) * 1000, monitorClosure, souffleOpts)
 
 			int dbSize = (sizeOfDirectory(database) / 1024).intValue()
 			runtimeMetricsFile.createNewFile()
@@ -166,14 +156,7 @@ class SouffleGenericsMultiPhaseAnalysis extends SouffleAnalysis {
 				@Override
 				File call() {
 					log.info "[Task COMPILE...]"
-					def generatedFile = script.compile(analysis, outDir,
-							profiling,
-							options.SOUFFLE_DEBUG.value as boolean,
-							provenance,
-							liveProf,
-							options.SOUFFLE_FORCE_RECOMPILE.value as boolean,
-							options.X_CONTEXT_REMOVER.value as boolean,
-							options.SOUFFLE_USE_FUNCTORS.value as boolean)
+					def generatedFile = script.compile(analysis, outDir, souffleOpts)
 					log.info "[Task COMPILE Done]"
 					return generatedFile
 				}
@@ -194,8 +177,7 @@ class SouffleGenericsMultiPhaseAnalysis extends SouffleAnalysis {
 				generatedFile = compilationFuture.get()
 			}
 			script.run(generatedFile, factsDir, outDir, options.SOUFFLE_JOBS.value as int,
-					   (options.X_MONITORING_INTERVAL.value as long) * 1000, monitorClosure,
-					   provenance, liveProf, profiling)
+					   (options.X_MONITORING_INTERVAL.value as long) * 1000, monitorClosure, souffleOpts)
 
 			int dbSize = (sizeOfDirectory(database) / 1024).intValue()
 			runtimeMetricsFile.createNewFile()

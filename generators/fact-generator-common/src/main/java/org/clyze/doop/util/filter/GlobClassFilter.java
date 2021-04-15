@@ -2,6 +2,8 @@ package org.clyze.doop.util.filter;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Locale;
+
 import org.clyze.doop.util.PackageUtils;
 
 public class GlobClassFilter implements ClassFilter {
@@ -66,19 +68,17 @@ public class GlobClassFilter implements ClassFilter {
         if (otherPatterns != null)
             for (String pattern : otherPatterns) {
                 if (pattern.equals("*")) {
-                    pkgName = PackageUtils.getPackageName(className);
-                    return pkgName.isEmpty();
+                    return PackageUtils.getPackageName(className).isEmpty();
                 } else if (className.equalsIgnoreCase(pattern))
                     return true;
             }
 
         if (packages != null) {
             pkgName = PackageUtils.getPackageName(className);
-            for (String pkg : packages) {
-                if (pkgName.equalsIgnoreCase(pkg))
+            for (String pkg : packages)
+                if (pkgName.toLowerCase(Locale.ROOT).startsWith(pkg))
                     return true;
-            }
-	}
+	    }
         return false;
     }
 }
