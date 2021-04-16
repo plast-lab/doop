@@ -73,14 +73,6 @@ CreateIntValue(?const, "java.lang.Object") :-
 .decl ArrayInitialValueFromLocal(?instruction:Instruction, ?index:number, ?to:Var, ?arrayIndex:number, ?from:Var, ?baseHeap:HeapAllocation, ?method:Method)
 .input ArrayInitialValueFromLocal(filename="ArrayInitialValueFromLocal.facts")
 
-// XML facts.
-.decl XMLNode(?file:symbol, ?nodeId:symbol, ?parentNodeId:symbol, ?namespaceURI:symbol, ?localName:symbol, ?qName:symbol)
-.input XMLNode(filename="XMLNode.facts")
-.decl XMLNodeAttribute(?file:symbol, ?nodeId:symbol, ?index:symbol, ?localName:symbol, ?qName:symbol, ?value:symbol)
-.input XMLNodeAttribute(filename="XMLNodeAttribute.facts")
-.decl XMLNodeData(?file:symbol, ?nodeId:symbol, ?data:symbol)
-.input XMLNodeData(filename="XMLNodeData.facts")
-
 // Note that this is more than a straightforward import of generated facts into
 // a DB relation. It filters out the guessed control types that do not
 // correspond to existing types. Relations LayoutControl0 and

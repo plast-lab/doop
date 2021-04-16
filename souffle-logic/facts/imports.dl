@@ -1178,3 +1178,11 @@ MockHeapConsMacro(?heap, ?type) :-
 
 // Assume that raw constants are created by java.lang.Object (which is always reachable).
 CreateIntValue(?const, "java.lang.Object") :- NumConstantRawInt(?const).
+
+// XML facts.
+.decl XMLNode(?file:symbol, ?nodeId:symbol, ?parentNodeId:symbol, ?namespaceURI:symbol, ?localName:symbol, ?qName:symbol)
+.input XMLNode(filename="XMLNode.facts")
+.decl XMLNodeAttribute(?file:symbol, ?nodeId:symbol, ?index:symbol, ?localName:symbol, ?qName:symbol, ?value:symbol)
+.input XMLNodeAttribute(filename="XMLNodeAttribute.facts")
+.decl XMLNodeData(?file:symbol, ?nodeId:symbol, ?data:symbol)
+.input XMLNodeData(filename="XMLNodeData.facts")
