@@ -606,7 +606,7 @@ mainAnalysis_MockValueConsMacro(?nodeMockObject, ?nodeType) :-
   BeanMapEntry(?id, ?entryBeanId, ?entryBeanMockObject),
   //?arrayMockObject = cat(cat(cat(?entryBeanId, ": "), ?mapClass), "$Node[]"),
   ?nodeMockObject = cat(cat(cat(?entryBeanId, ": "), ?mapClass), "$Node"),
-  Field_DeclaringType(?tableField, ?mapClass),
+  Field_DeclaringType(_, ?mapClass),
   Field_SimpleName(?contentsField, "contents"),
   Field_DeclaringType(?keyField, ?nodeType),
   Field_SimpleName(?keyField, "key"),
