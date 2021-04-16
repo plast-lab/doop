@@ -538,7 +538,8 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
 			if (!options.MAIN_CLASS.value && !options.TAMIFLEX.value &&
 				!options.HEAPDLS.value && !options.ANDROID.value &&
-				!options.DACAPO.value && !options.DACAPO_BACH.value) {
+				!options.DACAPO.value && !options.DACAPO_BACH.value &&
+				analysisName != "data-flow") {
 				if (options.DISCOVER_MAIN_METHODS.value) {
 					log.warn "WARNING: No main class was found. Using option --${options.DISCOVER_MAIN_METHODS.name} to discover main methods."
 				} else if (options.INPUT_ID.value || options.CACHE.value) {
