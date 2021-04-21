@@ -28,13 +28,12 @@ class JimpleProcessor extends SARIFGenerator {
      * Main entry point.
      */
     void process() {
-        boolean metadataExist = metadataExist()
         List<Result> results = new LinkedList<>()
         AtomicInteger elements = new AtomicInteger(0)
         File jimpleDir = new File(jimplePath)
         if (jimpleDir.exists() && jimpleDir.directory) {
             jimpleDir.eachFileRecurse(FILES) { JimpleListenerImpl.parseJimple(it as String, jimplePath, {
-                Element e -> processElement(metadataExist, results, e, elements)
+                Element e -> processElement(results, e, elements)
             })}
 
             println "Elements processed: ${elements}"

@@ -315,7 +315,7 @@ task xtractor(type: JavaExec) {
         args project.property("args").split()
 }
 
-def testNames = new File("src/inputTests").list()
+def testNames = new File(this.projectDir, "src/inputTests").list()
 
 sourceSets {
     testNames.each { t -> "$t" { java { srcDirs = ["src/inputTests/$t"] } } }
@@ -323,7 +323,7 @@ sourceSets {
 
 testNames.each {name ->
     task "${name}JAR"(type:Jar, dependsOn: "${name}Classes") {
-        group = 'Input Test'
+        group = 'other'
         from sourceSets.getByName(name).output.classesDirs
         archiveFileName.set("${name}.jar")
         manifest { attributes 'Main-Class': "A" }

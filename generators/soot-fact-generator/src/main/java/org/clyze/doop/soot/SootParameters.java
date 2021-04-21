@@ -2,6 +2,7 @@ package org.clyze.doop.soot;
 
 import java.util.Collection;
 import java.util.ArrayList;
+import java.util.Arrays;
 import org.clyze.doop.common.DoopErrorCodeException;
 import org.clyze.doop.common.Parameters;
 import soot.SootClass;
@@ -97,7 +98,7 @@ public class SootParameters extends Parameters {
         System.err.println("  -l <archive>                          Find library classes in <archive>.");
         System.err.println("  -ld <archive>                         Find dependency classes in <archive>.");
         System.err.println("  -lsystem                              Find classes in default system classes.");
-        System.err.println("  --facts-subset                        Produce facts only for a subset of the given classes.");
+        System.err.println("  --facts-subset <subset>               Produce facts only for a subset of the given classes " + Arrays.asList(Parameters.FactsSubSet.values()) + ".");
         System.err.println("  --ignore-factgen-errors               Continue with the analysis even if fact generation fails.");
         System.err.println("  --legacy-android-processing           Enable legacy Android XML processing.");
         System.err.println("  --no-facts                            Don't generate facts (just empty files -- used for debugging).");
