@@ -67,7 +67,7 @@ class SARIFGenerator {
     boolean metadataExist() {
         boolean metadataExist = false
         if (!parseOnly) {
-            metadataExist = readDatabase()
+            metadataExist = readSARIFRelations()
             boolean mkdir = out.mkdirs()
             if (standalone && !mkdir)
                 println "WARNING: directory ${out} already exists."
@@ -79,9 +79,12 @@ class SARIFGenerator {
      * Reads the analysis output database to gather relation data and metadata.
      * @return   true if interesting relations were found
      */
-    private boolean readDatabase() {
+    private boolean readSARIFRelations() {
         int ruleIndex = 0
-        for (String line : new File(db, SARIF_DESC).readLines()) {
+        File sarifDesc = new File(db, SARIF_DESC)
+        if (!sarifDesc.exists())
+            return false
+        for (String line : sarifDesc.readLines()) {
             String[] parts = line.tokenize('\t')
             if (parts.length != 6)
                 throw new RuntimeException("ERROR: bad relation arity in ${SARIF_DESC}")
@@ -143,14 +146,13 @@ class SARIFGenerator {
 
     /**
      * Processes one code element to find relevant analysis results for this symbol.
-     * @param metadataExist    if false, this method only counts elements, without processing them
      * @param results          a list to used for adding analysis results
      * @param e                the code element to process
      * @param elements         a mutable counter for reporting the total number of elements processed
      */
-    void processElement(boolean metadataExist, List<Result> results, Element e, AtomicInteger elements) {
+    void processElement(List<Result> results, Element e, AtomicInteger elements) {
         elements.incrementAndGet()
-        if (parseOnly || !metadataExist)
+        if (parseOnly || !metadataExist())
             return
         if (e instanceof SymbolWithId) {
             SymbolWithId sym = e as SymbolWithId
