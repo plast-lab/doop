@@ -141,7 +141,7 @@ gradle.rootProject.ext.antlrVersion='4.9.1'
 gradle.rootProject.ext.commonsCliVersion='1.2'
 gradle.rootProject.ext.metadataVersion='2.1.0'
 gradle.rootProject.ext.groovyVersion="3.0.6"
-gradle.rootProject.ext.clueCommonVersion='3.24.0'
+gradle.rootProject.ext.clueCommonVersion='3.24.1'
 gradle.rootProject.ext.log4jVersion='1.2.17'
 gradle.rootProject.ext.spockVersion='2.0-M5-groovy-3.0'
 
