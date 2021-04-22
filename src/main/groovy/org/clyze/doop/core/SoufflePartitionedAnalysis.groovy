@@ -216,7 +216,7 @@ class SoufflePartitionedAnalysis extends SouffleAnalysis {
 
             runtimeMetricsFile.append("analysis compilation time (sec)\t${script.compilationTime}\n")
             runtimeMetricsFile.append("disk footprint (KB)\t$dbSize\n")
-            runtimeMetricsFile.append("soot-fact-generation time (sec)\t$factGenTime\n")
+            runtimeMetricsFile.append("fact generation time (sec)\t$factGenTime\n")
         } finally {
             executorService.shutdownNow()
         }
