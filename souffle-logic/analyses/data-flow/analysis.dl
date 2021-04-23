@@ -121,3 +121,11 @@ PointerFlows(x, y) :-
 	Var_Type(x, xT), isReferenceType(xT),
 	Flows(x, y),
 	Var_Type(y, yT), isReferenceType(yT).
+
+#ifdef X_SERVER_LOGIC
+.output ApplicationClass
+.output ApplicationField
+.output ApplicationMethod
+.output ApplicationInvocation
+.output ApplicationAllocation
+#endif // X_SERVER_LOGIC
