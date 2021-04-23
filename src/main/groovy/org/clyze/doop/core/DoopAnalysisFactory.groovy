@@ -570,10 +570,6 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
 		throwIfBothSet(options.APP_REGEX, options.AUTO_APP_REGEX_MODE)
 
-		if (options.X_SERVER_LOGIC.value || options.GENERATE_OPTIMIZATION_DIRECTIVES.value) {
-		   options.GENERATE_ARTIFACTS_MAP.value = true
-		}
-
 		if (options.SARIF.value) {
 			if (options.WALA_FACT_GEN.value || options.X_DEX_FACT_GEN.value)
 				log.warn "WARNING: SARIF mode is only supported for the Soot-based fact generator"
