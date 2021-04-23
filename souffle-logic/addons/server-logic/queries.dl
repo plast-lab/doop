@@ -387,6 +387,7 @@ Server_LeakingTaintedInformation(?fromLabel, ?toLabel, ?invocation, ?value) :-
 .output ApplicationMethod
 .output ApplicationInvocation
 .output ApplicationAllocation
+.output ApplicationVar
 
 // Android //
 

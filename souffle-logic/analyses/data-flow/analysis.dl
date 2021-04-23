@@ -128,4 +128,5 @@ PointerFlows(x, y) :-
 .output ApplicationMethod
 .output ApplicationInvocation
 .output ApplicationAllocation
+.output ApplicationVar
 #endif // X_SERVER_LOGIC
