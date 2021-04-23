@@ -1085,6 +1085,17 @@ ApplicationVar(?var) :-
   Var_DeclaringMethod(?var, ?method),
   ApplicationMethod(?method).
 
+ApplicationInvocation(?invocation) :-
+  isMethodInvocation(?invocation),
+  Instruction_Method(?invocation, ?method),
+  ApplicationMethod(?method).
+
+ApplicationAllocation(?heap) :-
+  isAssignHeapAllocation_Insn(?insn),
+  Instruction_Method(?insn, ?method),
+  ApplicationMethod(?method),
+  AssignHeapAllocation_Heap(?insn, ?heap).
+
 ConcreteClass(?class) :-
   isClassType(?class),
   !ClassModifier("abstract", ?class).

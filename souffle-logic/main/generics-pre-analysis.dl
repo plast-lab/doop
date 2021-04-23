@@ -74,9 +74,7 @@ GetNotFollowedByDownCast(?invo) :-
 
 .decl SensitiveMethod(?method:Method)
 
-SensitiveMethod(?method) :-
-  ApplicationClass(?type),
-  Method_DeclaringType(?method, ?type).
+SensitiveMethod(?method) :- ApplicationMethod(?method).
 
 .decl InsensitiveMethod(?method:Method)
 

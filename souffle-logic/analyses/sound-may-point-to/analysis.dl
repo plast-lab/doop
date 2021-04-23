@@ -106,7 +106,7 @@
   // for final stats
   AppAllCtxIntraproceduralMustPointTo(?hctx, ?heap, ?var) :-
     AllCtxIntraproceduralMustPointToInMethod(?hctx, ?heap, ?var, ?method),
-    Method_DeclaringType(?method, ?class), ApplicationClass(?class).
+    ApplicationMethod(?method).
 }
 
 #include "must-point-to.dl"
@@ -145,8 +145,8 @@
 
   AppAllCtxMayPointTo(?hctx, ?heap, ?var) :-
     MayReachableMethodUnderMayContext(?ctx, ?meth),
-	InitialMayContext(?ctx),
-    Method_DeclaringType(?meth, ?class), ApplicationClass(?class),
+    InitialMayContext(?ctx),
+    ApplicationMethod(?meth),
     MayPointTo(?hctx, ?heap, ?ctx, ?var).
 
   //// END final stats
@@ -999,8 +999,7 @@
   // // method, start a new search (with zero context depth) from it.
   // RootMethodForMayAnalysis(?meth) :-
   //    MayReachableMethodUnderMayContext(_, ?meth),
-  //    Method_DeclaringType(?meth, ?class),
-  //    ApplicationClass(?class).
+  //    ApplicationMethod(?meth).
 
   // //// END configuration
   // //// ====================================
@@ -1663,7 +1662,7 @@ IntraprocMustForStats.MayReachableMethodUnderMayContext(?ctx, ?meth) :-
 
 InitialRootMethodForMayAnalysis(?meth) :-
 //  Reachable(?meth), // just for benchmarking against unsound VPT analysis
-  Method_DeclaringType(?meth, ?class), ApplicationClass(?class).
+  ApplicationMethod(?meth).
 
 //// END configuration
 
@@ -2162,8 +2161,7 @@ NextInvocationInSameMethod(?invo1, ?invo2, ?meth) :-
 // Try to discover hidden "main" heuristically
 AppMainMethod(?mainMeth) :-
   Method_SimpleName(?mainMeth, "main"),
-  Method_DeclaringType(?mainMeth, ?class),
-  ApplicationClass(?class).
+  ApplicationMethod(?mainMeth).
 
 // Heuristic: if you can reach it in the analysis and it's a static
 // initializer, start a new search (with zero context depth) from it.
@@ -2456,10 +2454,6 @@ StaticMethodInvocation_SimpleName(?invocation, ?simplename) :-
 // ApplicationField(?fld) :-
 //    Field_DeclaringType(?fld, ?class),
 //    ApplicationClass(?class).
-
-// ApplicationMethod(?meth) :-
-//    Method_DeclaringType(?meth, ?declaringType),
-//    ApplicationClass(?declaringType).
 
 // MethodCallsReflection(?meth) :-
 //    Instruction_Method(?invo, ?meth),

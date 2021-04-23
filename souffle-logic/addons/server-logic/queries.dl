@@ -381,6 +381,13 @@ Server_LeakingTaintedInformation(?fromLabel, ?toLabel, ?invocation, ?value) :-
 
 #endif // INFORMATION_FLOW
 
+// Application-marking relations
+.output ApplicationClass
+.output ApplicationField
+.output ApplicationMethod
+.output ApplicationInvocation
+.output ApplicationAllocation
+
 // Android //
 
 #ifdef ANDROID
