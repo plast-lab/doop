@@ -42,7 +42,8 @@ ReachableClass(?class) :-
 
 ReachableApplicationClass(?class) :-
     mainAnalysis.Reachable(?method),
-    ApplicationMethod(?method).
+    Method_DeclaringType(?method, ?class),
+    ApplicationClass(?class).
 
 ReachableSDKClass(?class) :-
     mainAnalysis.Reachable(?method),
