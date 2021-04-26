@@ -226,7 +226,7 @@ class SouffleAnalysis extends DoopAnalysis {
 				new ConfigurationGenerator(outDir.canonicalPath, configurationsDir.canonicalPath).generateConfigurations()
 			}
 		} catch (Throwable t) {
-			log.error "ERROR: configuration generation failed."
+			log.error "ERROR: configuration generation failed: ${t.message}"
 		}
 
 		try {
