@@ -8,6 +8,7 @@ import org.clyze.persistent.model.SymbolWithId
 import org.clyze.persistent.model.Usage
 import org.clyze.persistent.model.jvm.JvmClass
 import org.clyze.persistent.model.jvm.JvmField
+import org.clyze.persistent.model.jvm.JvmHeapAllocation
 import org.clyze.persistent.model.jvm.JvmMethod
 import org.clyze.persistent.model.jvm.JvmMethodInvocation
 import org.clyze.persistent.model.jvm.JvmVariable
@@ -50,6 +51,9 @@ abstract class SARIFGenerator {
     private final Map<String, Map<String, String[]>> relationLines = new HashMap<>()
     /** List of all metadata, to be used to generate the rules list for SARIF. */
     private final List<RMetadata> allMetadata = new LinkedList<>()
+    /** The JVM metadata symbols supported. */
+    private static final List<Class> JVM_SYMBOLS = Arrays.asList(JvmClass.class, JvmField.class, JvmMethod.class,
+            JvmMethodInvocation.class, JvmHeapAllocation.class, JvmVariable.class, Usage.class)
 
     protected SARIFGenerator(File db, File out, String version, boolean standalone) {
         this.db = db
@@ -162,37 +166,14 @@ abstract class SARIFGenerator {
             Set<RMetadata> metadataTable = doopIds.get(symbolId)
             if (metadataTable != null) {
                 for (RMetadata metadata : metadataTable) {
-                    switch (metadata.contentType) {
-                        case 'JvmMethod':
-                            if (sym instanceof JvmMethod)
-                                results.add resultForSymbol(symbolId, sym, metadata)
-                            else
-                                println "ERROR: wrong content type for element ${metadata.contentType}"
-                            break
-                        case 'JvmMethodInvocation':
-                            if (sym instanceof JvmMethodInvocation)
-                                results.add resultForSymbol(symbolId, sym, metadata)
-                            else
-                                println "ERROR: wrong content type for element ${metadata.contentType}"
-                            break
-                        case 'JvmVariable':
-                            if (sym instanceof JvmVariable)
+                    for (Class<?> c : JVM_SYMBOLS) {
+                        if (metadata.contentType == c.simpleName) {
+                            if (c.isInstance(sym))
                                 results.add resultForSymbol(symbolId, sym, metadata)
                             else if (!(sym instanceof Usage))
-                                println "ERROR: wrong content type for element ${metadata.contentType}"
+                                println "ERROR: wrong content type for element ${metadata.contentType}, class = ${c}"
                             break
-                        case 'JvmField':
-                            if (sym instanceof JvmField)
-                                results.add resultForSymbol(symbolId, sym, metadata)
-                            else if (!(sym instanceof Usage))
-                                println "ERROR: wrong content type for element ${metadata.contentType}"
-                            break
-                        case 'JvmClass':
-                            if (sym instanceof JvmClass)
-                                results.add resultForSymbol(symbolId, sym, metadata)
-                            else if (!(sym instanceof Usage))
-                                println "ERROR: wrong content type for element ${metadata.contentType}"
-                            break
+                        }
                     }
                 }
             }
