@@ -18,8 +18,12 @@ class Main {
 		char[][] FOO = new char[2][];
 		FOO[0] = new char[3];
 		FOO[1] = new char[4];
+		int ble = bla + 4;
 
-		char[][][] FOOwat = new char[2][bla][5];
+		char[][][] BAR = new char[2][4][5];
+
+		char[][][] BABBAR = new char[10][ble][4];
+		BABBAR[1][3][ble] = '*';
 
 		//Create a 3x3 array that represents our tic tac toe board
 		char[][] board = new char[3][3];
@@ -30,13 +34,5 @@ class Main {
 				board[i][j] = '-';
 			}
 		}
-
-		int I = 2;
-		int foo = board[I][1];
-		int bar = board[0][I];
-
-		B b1 = new B();
-		B b2 = b1;
-		b2.x = I;
 	}
 }
