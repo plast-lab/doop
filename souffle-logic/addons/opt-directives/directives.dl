@@ -590,6 +590,31 @@ NI_ReachableField(?field) :-
   !Field_Modifier("public", ?field),
   !NI_AllPublicFields(?type).
 
+.decl ReachableAppField(?fld:Field)
+.output ReachableAppField
+ReachableAppField(?fld) :- ReachableField(?fld), ApplicationField(?fld).
+.decl ReachableAppMethod(?method:Method)
+.output ReachableAppMethod
+ReachableAppMethod(?method) :- mainAnalysis.Reachable(?method), ApplicationMethod(?method).
+
+#define REL_COUNT(rel, relCount) .decl relCount(?n:number) \
+.output relCount \
+relCount(?n) :- ?n = count:{rel(_)}
+
+REL_COUNT(ReachableAppField, ReachableAppField_Count).
+REL_COUNT(ApplicationField, ApplicationField_Count).
+REL_COUNT(ReachableAppMethod, ReachableAppMethod_Count).
+REL_COUNT(ApplicationMethod, ApplicationMethod_Count).
+
+.decl NI_Stats(?label:symbol, ?f:symbol)
+.output NI_Stats
+NI_Stats("Reachable app fields", cat(to_string((100 * ?c1) / ?c2), "%")) :-
+  ReachableAppField_Count(?c1),
+  ApplicationField_Count(?c2).
+NI_Stats("Reachable app methods", cat(to_string((100 * ?c1) / ?c2), "%")) :-
+  ReachableAppMethod_Count(?c1),
+  ApplicationField_Count(?c2).
+
 #ifdef SCAN_NATIVE_CODE
 .decl AppReachableMethodFromNativeCode(?method:Method)
 .output AppReachableMethodFromNativeCode
