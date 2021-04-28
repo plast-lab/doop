@@ -27,11 +27,10 @@ public abstract class JavaFactWriter {
     private final Set<String> methodStrings;
     private final Logger logger = Logger.getLogger(getClass());
 
-    protected JavaFactWriter(Database db, Parameters params,
-                             boolean writeArtifactsMap) {
+    protected JavaFactWriter(Database db, Parameters params) {
         this._db = db;
         this._extractMoreStrings = params._extractMoreStrings;
-        this._writeArtifactsMap = writeArtifactsMap;
+        this._writeArtifactsMap = params._writeArtifactsMap;
         this._regMethods = params._scanNativeCode;
         this.methodStrings = _regMethods ? new HashSet<>() : null;
     }

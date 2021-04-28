@@ -348,8 +348,12 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		def analysisName = options.ANALYSIS.value
 		if (analysisName == "sound-may-point-to" || analysisName == "dependency-analysis" || options.SYMBOLIC_REASONING.value)
 			options.CFG_ANALYSIS.value = true
-		if (analysisName == "basic-only" || analysisName == "data-flow" || analysisName == "xtractor")
+		if (analysisName == "basic-only" || analysisName == "data-flow")
 			options.X_STATS_NONE.value = true
+		if (analysisName == "xtractor") {
+			options.CFG_ANALYSIS.value = true
+			options.X_STATS_NONE.value = true
+		}
 
 		try {
 			setOptionsForPlatform(options, platformName)
@@ -569,10 +573,6 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		}
 
 		throwIfBothSet(options.APP_REGEX, options.AUTO_APP_REGEX_MODE)
-
-		if (options.X_SERVER_LOGIC.value || options.GENERATE_OPTIMIZATION_DIRECTIVES.value) {
-		   options.GENERATE_ARTIFACTS_MAP.value = true
-		}
 
 		if (options.SARIF.value) {
 			if (options.WALA_FACT_GEN.value || options.X_DEX_FACT_GEN.value)

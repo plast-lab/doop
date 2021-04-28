@@ -1,5 +1,7 @@
 #pragma once
 #include "../data-flow/analysis.dl"
+#include "arrays.dl"
+#include "loops.dl"
 #include "out-schema.dl"
 #include "theorem-prover.dl"
 #include "expr-client.dl"

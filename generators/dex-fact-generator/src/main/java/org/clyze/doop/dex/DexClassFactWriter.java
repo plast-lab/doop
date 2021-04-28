@@ -34,7 +34,7 @@ class DexClassFactWriter extends JavaFactWriter {
     public @Nullable String superClass;
 
     DexClassFactWriter(Database db, DexParameters params) {
-        super(db, params, true);
+        super(db, params);
     }
 
     public void generateFacts(DexBackedClassDef dexClass, String className,

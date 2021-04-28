@@ -8,6 +8,7 @@ import org.clyze.persistent.model.SymbolWithId
 import org.clyze.persistent.model.Usage
 import org.clyze.persistent.model.jvm.JvmClass
 import org.clyze.persistent.model.jvm.JvmField
+import org.clyze.persistent.model.jvm.JvmHeapAllocation
 import org.clyze.persistent.model.jvm.JvmMethod
 import org.clyze.persistent.model.jvm.JvmMethodInvocation
 import org.clyze.persistent.model.jvm.JvmVariable
@@ -20,9 +21,12 @@ import org.clyze.sarif.SARIFWriter
 
 /**
  * This class writes analysis results in the SARIF format.
+ * This is an abstract class: concrete subclasses must
+ * call processElement() for every code element identified
+ * and finally call generateSARIF() to generate the SARIF output.
  */
 @CompileStatic
-class SARIFGenerator {
+abstract class SARIFGenerator {
     /** The name of the Doop relation that informs the processor. */
     private static final String SARIF_DESC = 'SARIF_InterestingRelation.csv'
     /** The name of the output file. */
@@ -31,7 +35,7 @@ class SARIFGenerator {
     private static final String PLACEHOLDER_PRE = '@@'
     /** If true, the processor only parses the input (used for debugging or
      *  by clients using this code as a library). */
-    protected final boolean parseOnly = false
+    protected final boolean parseOnly
     /** The output directory. */
     protected final File out
     /** A Doop analysis database. */
@@ -47,35 +51,33 @@ class SARIFGenerator {
     private final Map<String, Map<String, String[]>> relationLines = new HashMap<>()
     /** List of all metadata, to be used to generate the rules list for SARIF. */
     private final List<RMetadata> allMetadata = new LinkedList<>()
+    /** The JVM metadata symbols supported. */
+    private static final List<Class> JVM_SYMBOLS = Arrays.asList(JvmClass.class, JvmField.class, JvmMethod.class,
+            JvmMethodInvocation.class, JvmHeapAllocation.class, JvmVariable.class, Usage.class)
 
-    SARIFGenerator(File db, File out, String version, boolean standalone) {
-        if (db == null || out == null) {
-            this.parseOnly = true
-            if (standalone)
-                println "WARNING: running parsing check only, see usage help for more options."
-        }
+    protected SARIFGenerator(File db, File out, String version, boolean standalone) {
         this.db = db
         this.out = out
         this.version = version
         this.standalone = standalone
-    }
-
-    /**
-     * Checks if analysis metadata exist.
-     * @return true when the analysis database (containing the metadata) exists
-     */
-    boolean metadataExist() {
-        boolean metadataExist = false
-        if (!parseOnly) {
-            metadataExist = readSARIFRelations()
+        if (db == null || out == null) {
+            this.parseOnly = true
+            if (standalone)
+                println "WARNING: running parsing check only, see usage help for more options."
+        } else {
+            this.parseOnly = !readSARIFRelations()
             boolean mkdir = out.mkdirs()
             if (standalone && !mkdir)
                 println "WARNING: directory ${out} already exists."
         }
-        return metadataExist
     }
 
     /**
+     * The main method that generates SARIF output.
+     */
+    abstract void process()
+
+        /**
      * Reads the analysis output database to gather relation data and metadata.
      * @return   true if interesting relations were found
      */
@@ -116,6 +118,10 @@ class SARIFGenerator {
      * @param results   the list of analysis results
      */
     void generateSARIF(List<Result> results) {
+        if (parseOnly) {
+            println "Parse only mode, no SARIF output will be generated."
+            return
+        }
         File sarifOut = new File(out, SARIF_OUT)
         int counter = 0
         List<Rule> rules = allMetadata.collect {new Rule("rule-${counter++}", "rule-${it.name}", it.ruleDescription, it.ruleDescription, it.level)} as List<Rule>
@@ -146,13 +152,13 @@ class SARIFGenerator {
 
     /**
      * Processes one code element to find relevant analysis results for this symbol.
-     * @param results          a list to used for adding analysis results
+     * @param results          a list to use for adding analysis results
      * @param e                the code element to process
      * @param elements         a mutable counter for reporting the total number of elements processed
      */
     void processElement(List<Result> results, Element e, AtomicInteger elements) {
         elements.incrementAndGet()
-        if (parseOnly || !metadataExist())
+        if (parseOnly)
             return
         if (e instanceof SymbolWithId) {
             SymbolWithId sym = e as SymbolWithId
@@ -160,37 +166,14 @@ class SARIFGenerator {
             Set<RMetadata> metadataTable = doopIds.get(symbolId)
             if (metadataTable != null) {
                 for (RMetadata metadata : metadataTable) {
-                    switch (metadata.contentType) {
-                        case 'JvmMethod':
-                            if (sym instanceof JvmMethod)
-                                results.add resultForSymbol(symbolId, sym, metadata)
-                            else
-                                println "ERROR: wrong content type for element ${metadata.contentType}"
-                            break
-                        case 'JvmMethodInvocation':
-                            if (sym instanceof JvmMethodInvocation)
-                                results.add resultForSymbol(symbolId, sym, metadata)
-                            else
-                                println "ERROR: wrong content type for element ${metadata.contentType}"
-                            break
-                        case 'JvmVariable':
-                            if (sym instanceof JvmVariable)
+                    for (Class<?> c : JVM_SYMBOLS) {
+                        if (metadata.contentType == c.simpleName) {
+                            if (c.isInstance(sym))
                                 results.add resultForSymbol(symbolId, sym, metadata)
                             else if (!(sym instanceof Usage))
-                                println "ERROR: wrong content type for element ${metadata.contentType}"
+                                println "ERROR: wrong content type for element ${metadata.contentType}, class = ${c}"
                             break
-                        case 'JvmField':
-                            if (sym instanceof JvmField)
-                                results.add resultForSymbol(symbolId, sym, metadata)
-                            else if (!(sym instanceof Usage))
-                                println "ERROR: wrong content type for element ${metadata.contentType}"
-                            break
-                        case 'JvmClass':
-                            if (sym instanceof JvmClass)
-                                results.add resultForSymbol(symbolId, sym, metadata)
-                            else if (!(sym instanceof Usage))
-                                println "ERROR: wrong content type for element ${metadata.contentType}"
-                            break
+                        }
                     }
                 }
             }

@@ -27,6 +27,7 @@ class JimpleProcessor extends SARIFGenerator {
     /**
      * Main entry point.
      */
+    @Override
     void process() {
         List<Result> results = new LinkedList<>()
         AtomicInteger elements = new AtomicInteger(0)
@@ -35,10 +36,7 @@ class JimpleProcessor extends SARIFGenerator {
             jimpleDir.eachFileRecurse(FILES) { JimpleListenerImpl.parseJimple(it as String, jimplePath, {
                 Element e -> processElement(results, e, elements)
             })}
-
             println "Elements processed: ${elements}"
-            if (parseOnly)
-                return
             generateSARIF(results)
         } else
             println "ERROR: ${jimplePath} is not a directory."

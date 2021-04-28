@@ -81,7 +81,7 @@ class SouffleAnalysis extends DoopAnalysis {
 			generateFacts()
 			script.postprocessFacts(outDir, souffleOpts.profile)
 			log.info "[Task FACTS Done]"
-			runtimeMetricsFile.append("soot-fact-generation time (sec)\t${factGenTime}\n")
+			runtimeMetricsFile.append("fact generation time (sec)\t${factGenTime}\n")
 
 			if (options.X_SERVER_CHA.value) {
 				log.info "[CHA...]"
@@ -226,7 +226,7 @@ class SouffleAnalysis extends DoopAnalysis {
 				new ConfigurationGenerator(outDir.canonicalPath, configurationsDir.canonicalPath).generateConfigurations()
 			}
 		} catch (Throwable t) {
-			log.error "ERROR: configuration generation failed."
+			log.error "ERROR: configuration generation failed: ${t.message}"
 		}
 
 		try {

@@ -70,7 +70,7 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor<DoopAnal
 	void linkResult(DoopAnalysis analysis) {
 		def factsOnly = analysis.options.get('FACTS_ONLY').value
 		if (factsOnly) {
-			log.info "Making facts available at ${factsOnly}"
+			log.info "Making facts available at ${analysis.database}"
 			return
 		}
 

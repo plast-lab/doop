@@ -30,7 +30,6 @@ class CrudeMicroTest extends Specification {
                                Doop.souffleLogicPath + '/analyses/micro/self-contained.dl'] as String[], 'SELF-CONTAINED')
 
         then:
-        relationHasApproxSize(analysis, "ApplicationMethod", 2680)
         relationHasApproxSize(analysis, "ArrayIndexPointsTo", 7497)
         relationHasApproxSize(analysis, "Assign", 32658)
         relationHasApproxSize(analysis, "CallGraphEdge", 13873)

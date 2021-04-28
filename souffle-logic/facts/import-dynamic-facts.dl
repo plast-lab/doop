@@ -311,10 +311,8 @@ DynamicCallGraphEdgeFromNative(?toMethod, ?fromMethod) :-
 .decl DynamicAppCallGraphEdgeFromNative(?toMethod:Method, ?fromMethod:Method)
 DynamicAppCallGraphEdgeFromNative(?toMethod, ?fromMethod) :-
   DynamicCallGraphEdgeFromNative(?toMethod, ?fromMethod),
-  Method_DeclaringType(?toMethod, ?toClass),
-  ApplicationClass(?toClass),
-  Method_DeclaringType(?fromMethod, ?fromClass),
-  ApplicationClass(?fromClass).
+  ApplicationMethod(?toMethod),
+  ApplicationMethod(?fromMethod).
 
 // All methods called dynamically by native code.
 .decl DynamicNativeCodeTarget(?toMethod:Method)

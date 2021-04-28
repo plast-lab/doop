@@ -61,8 +61,7 @@ ReachableDependencyClass(?class) :-
 
 DependencyMethodDirectlyReachableFromApplication(?depMethod) :-
     mainAnalysis.Reachable(?appMethod),
-    Method_DeclaringType(?appMethod, ?appClass),
-    ApplicationClass(?appClass),
+    ApplicationMethod(?appMethod),
     MethodInvocation_Method(?invo, ?appMethod),
     mainAnalysis.CallGraphEdge(_, ?invo, _, ?depMethod),
     Method_DeclaringType(?depMethod, ?depClass),
@@ -88,8 +87,7 @@ DependencyMethodDirectlyReachableFromSDK(?depMethod) :-
 
 SDKMethodDirectlyReachableFromApplication(?sdkMethod) :-
     mainAnalysis.Reachable(?appMethod),
-    Method_DeclaringType(?appMethod, ?appClass),
-    ApplicationClass(?appClass),
+    ApplicationMethod(?appMethod),
     MethodInvocation_Method(?invo, ?appMethod),
     mainAnalysis.CallGraphEdge(_, ?invo, _, ?sdkMethod),
     Method_DeclaringType(?sdkMethod, ?sdkClass),

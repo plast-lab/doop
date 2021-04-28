@@ -263,11 +263,10 @@ public class Main {
 
         boolean reportPhantoms = sootParameters._reportPhantoms;
         boolean moreStrings = sootParameters._extractMoreStrings;
-        boolean artifacts = sootParameters._writeArtifactsMap;
         Representation rep = new Representation();
 
         Phantoms phantoms = new Phantoms(reportPhantoms);
-        FactWriter writer = new FactWriter(db, sootParameters, artifacts, rep, phantoms);
+        FactWriter writer = new FactWriter(db, sootParameters, rep, phantoms);
         SootDriver driver = new SootDriver(classes.size(), sootParameters._cores, sootParameters._ignoreFactGenErrors, writer, sootParameters, phantoms);
 
         if (writeFacts) {

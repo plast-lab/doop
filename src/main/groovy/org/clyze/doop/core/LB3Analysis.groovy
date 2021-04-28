@@ -97,7 +97,7 @@ class LB3Analysis extends DoopAnalysis {
 //            lbBuilder.addBlock("""MainClass(x) <- ClassType(x), Type:Id(x:"${options.MAIN_CLASS.value}").""")
 
 		lbBuilder
-				.addBlock("""Stats:Runtime("soot-fact-generation time (sec)", $factGenTime).""")
+				.addBlock("""Stats:Runtime("fact generation time (sec)", $factGenTime).""")
 				.commit()
 				.elapsedTime()
 				.timedTransaction("-- Init DB (post) --")

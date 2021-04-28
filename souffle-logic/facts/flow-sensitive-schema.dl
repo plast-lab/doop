@@ -33,7 +33,6 @@
 
 // Important class subsets
 
-.decl ApplicationClass(?ref:ReferenceType)
 .decl ConcreteClass(?ref:ClassType)
 .decl MainClass(?class:ClassType)
 
@@ -59,7 +58,6 @@
 
 .type Field = symbol
 .decl isField(?field:Field)
-.decl ApplicationField(?field:Field)
 
 .decl Field_DeclaringType(?field:Field, ?declaringClass:ReferenceType)
 .decl Field_SimpleName(?field:Field, ?simpleName:symbol)
@@ -107,8 +105,6 @@
 .decl Var_Type(?var:Var, ?type:Type)
 .decl Var_DeclaringMethod(?var:Var, ?method:Method)
 .decl Var_SimpleName(?var:Var, ?simplename:symbol)
-
-.decl ApplicationVar(?var:Var)
 
 
 //-----------------------------------------------------------------------------
@@ -413,9 +409,6 @@
 // The signature of the method being called
 .decl MethodInvocation_Method(?invocation:MethodInvocation, ?signature:Method)
 
-.decl ApplicationMethod(?method:Method)
-.output ApplicationMethod
-
 // The (call-site) variable that holds the result of the invocation
 .decl AssignReturnValue(?invocation:MethodInvocation, ?to:Var)
 
@@ -486,6 +479,14 @@
 
 // Previous exception handler (handlers are ordered inside a method)
 .decl ExceptionHandler_Previous(?handler:ExceptionHandler, ?previous:ExceptionHandler)
+
+// Application subsets
+.decl ApplicationClass(?ref:ReferenceType)
+.decl ApplicationField(?field:Field)
+.decl ApplicationMethod(?method:Method)
+.decl ApplicationVar(?var:Var)
+.decl ApplicationInvocation(?invocation:MethodInvocation)
+.decl ApplicationAllocation(?allocation:HeapAllocation)
 
 
 //-----------------------------------------------------------------------------

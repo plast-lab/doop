@@ -40,6 +40,7 @@ class Doop {
 	static String souffleAnalysesCache
  	static String lbAnalysesPath
 	static String souffleAnalysesPath
+	static boolean initialized = false
 
 	/**
 	 * Initializes Doop.
@@ -50,6 +51,11 @@ class Doop {
 	 * @param tmpPath	The Doop tmp directory (sets the doopTmp variable, optional, defaults to 'tmp' under doopHome).
 	 */
 	static void initDoop(String homePath, String outPath, String cachePath, String logPath, String tmpPath) {
+		if (initialized)
+			log.warn "WARNING: Doop has already been initialized!"
+		else
+			initialized = true
+
 		doopHome = homePath
 		if (!doopHome) throw new RuntimeException("DOOP_HOME environment variable is not set")
 		FileOps.findDirOrThrow(doopHome, "DOOP_HOME environment variable is invalid: $doopHome")

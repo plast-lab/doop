@@ -1,6 +1,8 @@
 package org.clyze.doop.soot;
 
 import com.google.common.collect.Lists;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import org.clyze.doop.common.BasicJavaSupport;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.common.JavaFactWriter;
@@ -15,9 +17,6 @@ import soot.jimple.toolkits.typing.fast.BottomType;
 import soot.tagkit.*;
 import soot.util.backend.ASMBackendUtils;
 
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-
 import static org.clyze.doop.common.JavaRepresentation.*;
 import static org.clyze.doop.common.PredicateFile.*;
 
@@ -31,9 +30,8 @@ class FactWriter extends JavaFactWriter {
     private final Phantoms phantoms;
     private final Collection<Object> seenPhantoms = new HashSet<>();
 
-    FactWriter(Database db, SootParameters params, boolean artifacts,
-               Representation rep, Phantoms phantoms) {
-        super(db, params, artifacts);
+    FactWriter(Database db, SootParameters params, Representation rep, Phantoms phantoms) {
+        super(db, params);
         this._rep = rep;
         this.phantoms = phantoms;
     }

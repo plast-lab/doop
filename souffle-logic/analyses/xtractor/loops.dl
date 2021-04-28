@@ -1,0 +1,75 @@
+#pragma once
+
+.decl LocalBlockEdge(fromBB:Instruction, toBB:Instruction)
+.decl StructuredLoopBackEdge(fromBB:Instruction, toBB:Instruction)
+.decl StructuredLoopHead(bb:Instruction)
+.decl BlockInStructuredLoop(bb:Instruction, loophead:Instruction)
+.decl StatementInStructuredLoop(stmt:Instruction, loophead:Instruction)
+.decl ContainsInnerStructuredLoop(loophead:Instruction, innerLoopHead:Instruction)
+.decl InnermostStructuredLoop(loophead:Instruction)
+.decl LoopExitCond(condVar:Var, loopHead:Instruction)
+// A variable that is monotonically changes with each successive iteration in loop
+.decl InductionVariable(var:Var, loophead:Instruction)
+
+.output LocalBlockEdge
+.output StructuredLoopBackEdge
+.output StructuredLoopHead
+.output BlockInStructuredLoop
+.output StatementInStructuredLoop
+.output ContainsInnerStructuredLoop
+.output InnermostStructuredLoop
+.output LoopExitCond
+.output InductionVariable
+
+LocalBlockEdge(fromBB, toBB) :-
+    InterestingStmt(fromBB),
+    BasicBlockTail(fromBB, endStmt),
+    MaySuccessorModuloThrow(toBB, endStmt).
+
+StructuredLoopBackEdge(fromBB, toBB),
+StructuredLoopHead(toBB) :-
+    InterestingStmt(fromBB),
+    LocalBlockEdge(fromBB, toBB),
+    Dominates(toBB, fromBB).
+
+BlockInStructuredLoop(backEdge, loophead) :- StructuredLoopBackEdge(backEdge, loophead).
+
+BlockInStructuredLoop(loophead, loophead) :- StructuredLoopHead(loophead).
+
+BlockInStructuredLoop(block, loophead) :-
+    BlockInStructuredLoop(other, loophead),
+    LocalBlockEdge(block, other),
+    other != loophead.
+
+StatementInStructuredLoop(stmt, loophead) :-
+    BlockInStructuredLoop(block, loophead),
+    BasicBlockHead(stmt, block).
+
+ContainsInnerStructuredLoop(loophead, innerLoopHead) :-
+    StructuredLoopHead(loophead),
+    StructuredLoopHead(innerLoopHead),
+    BlockInStructuredLoop(innerLoopHead, loophead),
+    loophead != innerLoopHead.
+
+InnermostStructuredLoop(loophead) :-
+    StructuredLoopHead(loophead),
+    !ContainsInnerStructuredLoop(loophead, _).
+
+// If statement has one edge jumping inside the loop,
+// and another outside of it
+LoopExitCond(condVar, loopHead) :-
+    BlockInStructuredLoop(jumpBlock, loopHead),
+    BasicBlockTail(jumpBlock, jumpStmt),
+    If_Var(jumpStmt, _, condVar),
+    LocalBlockEdge(jumpBlock, out),
+    !BlockInStructuredLoop(out, loopHead),
+    LocalBlockEdge(jumpBlock, in),
+    BlockInStructuredLoop(in, loopHead).
+
+// Strictly speaking, adding does not guarantee increasing...
+InductionVariable(inductionVar, loophead) :-
+    StatementInStructuredLoop(stmt, loophead),
+    ((BINOP(stmt, to, "+"), OPERAND_VAR(stmt, _, v)) ;
+     (BINOP(stmt, to, "-"), OPERAND_VAR(stmt, 0, v))),
+	Flows(to, v),
+    Flows(to, inductionVar).
