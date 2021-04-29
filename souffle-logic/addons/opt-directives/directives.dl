@@ -613,7 +613,7 @@ NI_Stats("Reachable app fields", cat(to_string((100 * ?c1) / ?c2), "%")) :-
   ApplicationField_Count(?c2).
 NI_Stats("Reachable app methods", cat(to_string((100 * ?c1) / ?c2), "%")) :-
   ReachableAppMethod_Count(?c1),
-  ApplicationField_Count(?c2).
+  ApplicationMethod_Count(?c2).
 
 #ifdef SCAN_NATIVE_CODE
 .decl AppReachableMethodFromNativeCode(?method:Method)
