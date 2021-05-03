@@ -22,8 +22,10 @@ class Main {
 
 		char[][][] BAR = new char[2][4][5];
 
-		char[][][] BABBAR = new char[10][ble][4];
+		char[][][] BABBAR = new char[10][ble][40];
 		BABBAR[1][3][ble] = '*';
+		BABBAR[1][5][ble] = 'A';
+		BABBAR[1][5][9] = '?';
 
 		//Create a 3x3 array that represents our tic tac toe board
 		char[][] board = new char[3][3];

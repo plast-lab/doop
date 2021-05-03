@@ -7,23 +7,70 @@ class XTractor {
 		def outFile = new File(analysis.database, "xtractor-out.dl")
 		outFile.text = ""
 
+		def arrayMeta = [:].withDefault { [] }
+		outFile << ".decl arr_META(name:symbol, types:symbol, dimensions:number)\n"
+		new File(analysis.database, "Meta_ArrayInfo.csv").eachLine {
+			def (String array, String name, String types) = it.split("\t")
+			def dimensions = types.count("[]")
+			def relName = "${name.split("#").first()}"
+			def dims = (1..dimensions).collect { "i$it:symbol" }.join(", ")
+			outFile << ".decl $relName($dims, value:symbol)\n"
+			outFile << ".decl ${relName}_DimSizes(dim:number, size:number)\n"
+			def metaRule = "arr_META(\"$array\", \"$types\", $dimensions)."
+			arrayMeta[array] = [relName, metaRule, name, types, dimensions]
+		}
+		def arraySizes = [:].withDefault { [:] }
+		new File(analysis.database, "Meta_ArraySizes.csv").eachLine {
+			def (String array, pos, size) = it.split("\t")
+			arraySizes[array][pos as int] = size
+		}
+		arrayMeta.each { array, meta ->
+			def (String relName, metaRule, name, types, int dimensions) = meta
+			def sizes = arraySizes[array]
+			def allSizes = (0..(dimensions-1)).collect {sizes[it] ?: -1 }
+			outFile << "$metaRule\n"
+			outFile << "${relName}_DimSizes(${allSizes.join(", ")}).\n"
+		}
+		arraySizes = null
+
+		def arrayFrom2Index2Var = [:].withDefault { [:].withDefault { [] } }
+		new File(analysis.database, "ArrayVarFromIndex.csv").eachLine {
+			def (String to, String from, index) = it.split("\t")
+			arrayFrom2Index2Var[from][index as int] << to
+		}
+		def arrayToIndexHasValue = [:].withDefault { [:] }
+		new File(analysis.database, "ArrayToIndexHasValue.csv").eachLine {
+			def (String to, index, value) = it.split("\t")
+			arrayToIndexHasValue[to][index as int] = value
+		}
+
+		def appendToIndices
+		appendToIndices = { String array, List indices, String currVar ->
+			def nextIndicesAndVars = arrayFrom2Index2Var[currVar]
+			if (nextIndicesAndVars.isEmpty()) {
+				def relName = arrayMeta[array].first()
+				arrayToIndexHasValue[currVar].each { lastIndex, value ->
+					outFile << "$relName(${(indices + [lastIndex, value]).join(", ")}).\n"
+				}
+				return
+			}
+			nextIndicesAndVars.each { index, vars ->
+				indices << index
+				vars.each { appendToIndices(array, indices, it) }
+				indices.removeLast()
+			}
+		}
+		arrayMeta.keySet().each { appendToIndices(it, [], it) }
+		arrayMeta = null
+		arrayFrom2Index2Var = null
+		arrayToIndexHasValue = null
+
+
+
 		Map<String, List<String[]>> classInfo = [:].withDefault { [] }
 		new File(analysis.database, "Schema_ClassInfo.csv").eachLine { line ->
 			def (klass, kind, field, fieldType) = line.split("\t")
 			classInfo[klass] << [kind, field, fieldType]
-		}
-
-		outFile << ".decl ArrayRelation_Meta(relName:symbol, var:symbol, dimensions:number)\n"
-		outFile << ".decl ArrayRelation_Dimension(relName:symbol, pos:number, size:number)\n"
-		new File(analysis.database, "Schema_ArrayRelation.csv").eachLine {
-			def (String relName, array, String types) = it.split("\t")
-			def dimensions = types.count("[]")
-			outFile << ".decl $relName(${(1..dimensions).collect { "i$it:symbol" }.join(", ")}, value:symbol)\n"
-			outFile << "ArrayRelation_Meta(\"$relName\", \"$array\", $dimensions).\n"
-		}
-		new File(analysis.database, "Schema_ArraySizes.csv").eachLine {
-			def (String relName, array, pos, size) = it.split("\t")
-			outFile << "ArrayRelation_Dimension(\"$relName\", $pos, $size).\n"
 		}
 
 		def dlTypes = [] as Set

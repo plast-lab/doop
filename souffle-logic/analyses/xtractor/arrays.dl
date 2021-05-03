@@ -1,22 +1,39 @@
 #pragma once
 
-.decl Schema_ArrayRelation(relName:symbol, array:Var, types:symbol)
-.decl Schema_ArraySizes(relName:symbol, array:Var, dim:number, size:number)
+.decl Meta_ArrayInfo(array:Var, name:symbol, types:symbol)
+.decl Meta_ArraySizes(array:Var, dim:number, size:number)
+.decl VarToIntValue_EXT(var:Var, value:number)
+.decl VarToIntValue(var:Var, value:number)
 .decl AllocArraySize_EXT(stmt:Instruction, size:number)
-.decl ArrayDimSize(array:Var, dim:number, size:number)
+.decl ArrayIndex_EXT(stmt:Instruction, index:number)
+.decl ArrayVarFromIndex(to:Var, from:Var, index:number)
+.decl ArrayToIndexHasValue(to:Var, index:number, value:number)
 
-.output Schema_ArrayRelation
-.output Schema_ArraySizes
-.output AllocArraySize_EXT
-.output ArrayDimSize
+.output Meta_ArrayInfo
+.output Meta_ArraySizes
+.output ArrayVarFromIndex
+.output ArrayToIndexHasValue
 
-Schema_ArrayRelation(relName, array, type) :-
+Meta_ArrayInfo(array, name, type) :-
 	InterestingStmt(stmt),
 	AssignInstruction_To(stmt, array),
 	Var_Type(array, type),
+	Var_SimpleName(array, name),
 	isArrayType(type),
-	!StoreArrayIndex_From(_, array),
-	relName = cat("ArrayRelation_", to_string(ord(array))).
+	!StoreArrayIndex_From(_, array).
+
+VarToIntValue(var, to_number(const)),
+VarToIntValue_EXT(var, to_number(const)) :-
+	VarHasExpr(var, expr),
+	Normalize(expr, normExpr),
+	IsConstantExpr(normExpr, const).
+
+VarToIntValue_EXT(var, -1) :-
+	isVar(var),
+	(!VarHasExpr(var, _) ;
+	 (VarHasExpr(var, expr),
+	  Normalize(expr, normExpr),
+	  !IsConstantExpr(normExpr, _))).
 
 AllocArraySize_EXT(stmt, size) :-
 	InterestingStmt(stmt),
@@ -25,41 +42,18 @@ AllocArraySize_EXT(stmt, size) :-
 AllocArraySize_EXT(stmt, size) :-
 	InterestingStmt(stmt),
 	AllocArraySize_VAR(stmt, _, var),
-	VarToIntValue(var, size).
+	VarToIntValue_EXT(var, size).
 
-ArrayDimSize(array, 0, size) :-
+Meta_ArraySizes(array, 0, size) :-
 	InterestingStmt(stmt),
 	AssignInstruction_To(stmt, array),
 	AllocArraySize_EXT(stmt, size).
 
-ArrayDimSize(baseArray, dim + 1, size) :-
+Meta_ArraySizes(baseArray, dim + 1, size) :-
 	InterestingStmt(stmt),
 	StoreArrayIndex_Base(stmt, baseArray),
 	StoreArrayIndex_From(stmt, array),
-	ArrayDimSize(array, dim, size).
-
-Schema_ArraySizes(relName, array, dim, size) :-
-	Schema_ArrayRelation(relName, array, _),
-	ArrayDimSize(array, dim, size).
-
-
-.decl VarToIntValue(var:Var, value:number)
-
-VarToIntValue(var, to_number(const)) :-
-	VarHasExpr(var, expr),
-	Normalize(expr, normExpr),
-	IsConstantExpr(normExpr, const).
-
-VarToIntValue(var, -1) :-
-	isVar(var),
-	(!VarHasExpr(var, _) ;
-	 (VarHasExpr(var, expr),
-	  Normalize(expr, normExpr),
-	  !IsConstantExpr(normExpr, _))).
-
-
-.decl ArrayIndex_EXT(stmt:Instruction, index:number)
-.output ArrayIndex_EXT
+	Meta_ArraySizes(array, dim, size).
 
 ArrayIndex_EXT(stmt, index) :-
 	InterestingStmt(stmt),
@@ -68,22 +62,20 @@ ArrayIndex_EXT(stmt, index) :-
 ArrayIndex_EXT(stmt, index) :-
 	InterestingStmt(stmt),
 	ArrayInsnIndex(stmt, var),
-	VarToIntValue(var, index).
+	VarToIntValue_EXT(var, index).
 
-.decl ArrayIndexHasValue(array:Var, dim:number, index:number, value:number)
-.output ArrayIndexHasValue
-
-ArrayIndexHasValue(array, 0, index, value) :-
+// to = from[index]
+// Due to SSA, to will appear only once
+ArrayVarFromIndex(to, from, index) :-
 	InterestingStmt(stmt),
-	StoreArrayIndex_Base(stmt, array),
+	LoadArrayIndex_To(stmt, to),
+	LoadArrayIndex_Base(stmt, from),
+	ArrayIndex_EXT(stmt, index).
+
+// to[index] = value
+ArrayToIndexHasValue(to, index, value) :-
+	InterestingStmt(stmt),
+	StoreArrayIndex_Base(stmt, to),
 	ArrayIndex_EXT(stmt, index),
 	StoreArrayIndex_From(stmt, valueVar),
 	VarToIntValue(valueVar, value).
-
-ArrayIndexHasValue(baseArray, 0, index, value),
-ArrayIndexHasValue(baseArray, dim + 1, dimIndex, value) :-
-	InterestingStmt(stmt),
-	LoadArrayIndex_Base(stmt, baseArray),
-	ArrayIndex_EXT(stmt, index),
-	LoadArrayIndex_To(stmt, array),
-	ArrayIndexHasValue(array, dim, dimIndex, value).

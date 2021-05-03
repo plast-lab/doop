@@ -18,10 +18,7 @@ plugins {
 repositories {
     // Uncomment to be able to use Doop's "publishToMavenLocal" task.
     mavenLocal()
-
     mavenCentral()
-
-    maven { url 'https://dl.bintray.com/gfour/plast-lab' }
     maven { url "http://centauri.di.uoa.gr:8081/artifactory/plast-deps" }
     maven { url "http://centauri.di.uoa.gr:8081/artifactory/plast-public" }
 }

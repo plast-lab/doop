@@ -64,8 +64,7 @@ def codeProcessorProject = project(':generators:code-processor')
         repositories {
             mavenLocal()
             mavenCentral()
-            // maven { url "http://centauri.di.uoa.gr:8081/artifactory/plast-public" }
-            maven { url 'https://dl.bintray.com/gfour/plast-lab' }
+            maven { url "http://centauri.di.uoa.gr:8081/artifactory/plast-public" }
         }
     }
 }
@@ -104,9 +103,8 @@ repositories {
     mavenLocal()
     mavenCentral()
     // maven { url "http://centauri.di.uoa.gr:8081/artifactory/plast-deps" }
-    // maven { url "http://centauri.di.uoa.gr:8081/artifactory/plast-public" }
+    maven { url "http://centauri.di.uoa.gr:8081/artifactory/plast-public" }
     maven { url 'https://jitpack.io' }
-    maven { url "https://dl.bintray.com/gfour/plast-lab" }
     maven {
         name "soot-snapshot"
         url "https://soot-build.cs.uni-paderborn.de/nexus/repository/soot-snapshot"
