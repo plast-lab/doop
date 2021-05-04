@@ -13,6 +13,8 @@
 .decl SelfFlows(x:Var)
 // Flows between reference typed vars
 .decl PointerFlows(x:Var, y:Var)
+// Resolve a method invocation
+.decl ResolveCall(stmt: MethodInvocation, method: Method)
 
 .decl FlowsIntoConstArrayIndex(x:Var, arr:Var, index:number)
 .decl FlowsIntoStaticField(x:Var, fld:Field)
@@ -27,86 +29,104 @@
 
 
 OptBaseFlows(from, to) :-
-	InterestingStmt(stmt),
-	(MOVE(stmt, to, from) ; CAST(stmt, to, _, from)).
+	(MOVE(stmt, to, from) ; CAST(stmt, to, _, from)),
+	InterestingStmt(stmt).
 
 OptBaseFlows(from, to) :-
-	InterestingStmt(stmt),
 	(UNOP(stmt, to, _) ; BINOP(stmt, to, _)),
+	InterestingStmt(stmt),
 	OPERAND_VAR(stmt, _, from).
 
 // Array STORE with const index
 FlowsIntoConstArrayIndex(from, arr, i),
 OptBaseFlows(from, v) :-
-	InterestingStmt(stmt),
 	ASTORE_NUM(stmt, arr, i, from),
+	InterestingStmt(stmt),
 	v = MK_INDEX_VAR(arr, i).
 
 // Array LOAD with const index
 OptBaseFlows(v, to) :-
-	InterestingStmt(stmt),
 	ALOAD_NUM(stmt, to, arr, i),
+	InterestingStmt(stmt),
 	v = MK_INDEX_VAR(arr, i).
 
 // Static field STORE
 FlowsIntoStaticField(from, fld),
 OptBaseFlows(from, v) :-
-	InterestingStmt(stmt),
 	SSTORE(stmt, fld, from),
+	InterestingStmt(stmt),
 	v = MK_SFLD_VAR(fld).
 
 // Static field LOAD
 OptBaseFlows(v, to) :-
-	InterestingStmt(stmt),
 	SLOAD(stmt, to, fld),
+	InterestingStmt(stmt),
 	v = MK_SFLD_VAR(fld).
 
 // Instance field STORE/LOAD
 OptBaseFlows(from, to) :-
-	Flows(base, base2),
 	ISTORE(stmt1, base, fld, from),
 	InterestingStmt(stmt1),
+	Flows(base, base2),
 	ILOAD(stmt2, to, base2, fld),
 	InterestingStmt(stmt2).
 
 OptBaseFlows(from, to) :-
-	InterestingStmt(stmt1),
 	ISTORE(stmt1, base, fld, from),
+	InterestingStmt(stmt1),
 	ILOAD(stmt2, to, base, fld),
 	InterestingStmt(stmt2).
 
 FlowsIntoInstanceFieldBase(from, base) :-
-	Flows(from, base),
-	(ISTORE(_, base, _, _) ; ILOAD(_, _, base, _)).
+	(ISTORE(_, base, _, _) ; ILOAD(_, _, base, _)),
+	Flows(from, base).
 
 // Interprocedural: actual param -> formal param
 OptBaseFlows(actual, formal) :-
+	ResolveCall(stmt, meth),
 	InterestingStmt(stmt),
-	RESOLVE_CALL(stmt, meth),
 	ACTUAL_PARAM(stmt, nth, actual),
 	FORMAL_PARAM(meth, nth, formal).
 
 // Intraprocedural: formal param -> formal ret
 OptMethodRetFormal(meth, nth) :-
-	Flows(formal, ret),
 	FORMAL_RET(retStmt, ret),
 	InterestingStmt(retStmt),
+	Flows(formal, ret),
 	FORMAL_PARAM(meth, nth, formal).
 
 // Interprocedural: actual param -> (formal param -> formal ret ->) actual ret
 OptBaseFlows(actual, to) :-
+	ResolveCall(callStmt, meth),
 	InterestingStmt(callStmt),
-	RESOLVE_CALL(callStmt, meth),
 	OptMethodRetFormal(meth, nth),
 	ACTUAL_PARAM(callStmt, nth, actual),
 	ACTUAL_RET(callStmt, to).
 
 #ifdef DATA_FLOW_GOTO_LIB
 InterestingStmt(stmt) :-
+	ResolveCall(callStmt, meth),
 	InterestingStmt(callStmt),
-	RESOLVE_CALL(callStmt, meth),
 	Instruction_Method(stmt, meth).
 #endif
+
+
+ResolveCall(stmt, method) :-
+	isStaticMethodInvocation_Insn(stmt),
+	InterestingStmt(stmt),
+	MethodInvocation_Method(stmt, method).
+
+ResolveCall(stmt, method) :-
+	(VirtualMethodInvocation_Base(stmt, base) ;
+	 SpecialMethodInvocation_Base(stmt, base)),
+	InterestingStmt(stmt),
+	MethodInvocation_Method(stmt, sigMethod),
+	Method_SimpleName(sigMethod, name),
+	Method_Descriptor(sigMethod, desc),
+	Flows(allocVar, base),
+	ALLOC(_, allocVar, heap),
+	HeapAllocation_Type(heap, heapType),
+	basic.MethodLookup(name, desc, heapType, method).
 
 
 Flows(x, y) :- OptBaseFlows(x, y).

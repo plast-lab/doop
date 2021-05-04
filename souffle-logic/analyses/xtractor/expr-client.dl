@@ -132,7 +132,7 @@ OutputMethod(m) :- Method_SimpleName(m, "println"), Method_DeclaringType(m, "jav
 
 VarHasExpr(ret, EX(name)) :-
 	InterestingStmt(stmt),
-	RESOLVE_CALL(stmt, toMethod),
+	ResolveCall(stmt, toMethod),
 	InputMethod(toMethod),
 	Method_SimpleName(toMethod, name),
 	ACTUAL_RET(stmt, ret).
@@ -141,7 +141,7 @@ VarHasExpr(ret, EX(name)) :-
 VarHasExpr(ret, expr) :-
 	VarHasExpr(param, expr),
 	ACTUAL_PARAM(stmt, pos, param),
-	RESOLVE_CALL(stmt, toMethod),
+	ResolveCall(stmt, toMethod),
 	PassThroughMethod(toMethod, pos),
 	InterestingStmt(stmt),
 	ACTUAL_RET(stmt, ret).
