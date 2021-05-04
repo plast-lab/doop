@@ -65,7 +65,9 @@ public abstract class Driver<C> {
     public static void waitForExecutorShutdown(ExecutorService executor) throws DoopErrorCodeException {
         executor.shutdown();
         try {
-            executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+            boolean res = executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+            if (!res)
+                System.out.println("Executor timeout elapsed.");
         } catch (InterruptedException e) {
             System.err.println(e.getMessage());
             throw new DoopErrorCodeException(10);
