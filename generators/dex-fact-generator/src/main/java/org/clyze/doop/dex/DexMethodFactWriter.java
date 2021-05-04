@@ -365,7 +365,7 @@ class DexMethodFactWriter extends JavaFactWriter {
             }
             case CONST_WIDE_HIGH16: {
                 int reg = ((OneRegisterInstruction) instr).getRegisterA();
-                @SuppressWarnings("UnnecessaryLocalVariable") long signExtendedVal64 = ((LongHatLiteralInstruction) instr).getHatLiteral();
+                long signExtendedVal64 = ((LongHatLiteralInstruction) instr).getHatLiteral();
                 writeAssignNumConstant(reg, String.valueOf(signExtendedVal64), index, op);
                 break;
             }
@@ -989,7 +989,6 @@ class DexMethodFactWriter extends JavaFactWriter {
             in_type = InferType.BITS64; out_type = InferType.BITS64; break;
         }
 
-        //noinspection ConstantConditions
         if (in_type == null || out_type == null)
             System.err.println("Cannot determine statement type for instruction " + insn + " (opcode: " + op + ")");
         else
