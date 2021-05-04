@@ -114,11 +114,7 @@ public abstract class AndroidSupport {
         if (rLinker != null)
             rLinker.readRConstants(input, pkgs.get(input));
 
-        try {
-            appUserControls.addAll(manifest.getUserControls());
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
+        appUserControls.addAll(manifest.getUserControls());
     }
 
     public void printCollectedComponents() {

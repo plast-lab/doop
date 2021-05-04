@@ -17,7 +17,7 @@ public interface AppResources {
     Set<String> getProviders();
     Set<String> getReceivers();
     Set<String> getCallbackMethods() throws IOException;
-    Set<LayoutControl> getUserControls() throws IOException;
+    Set<LayoutControl> getUserControls();
 
     // Adapted from Soot's ProcessManifest.
     default String expandClassName(String className) {
