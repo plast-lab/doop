@@ -59,6 +59,7 @@ public class Regex {
      * @param s  the string to parse
      * @return   the regex objects contained in the string
      */
+    @SuppressWarnings("unused")
     public static Collection<Regex> fromAppRegex(String s) {
         Collection<Regex> ret = new ArrayList<>();
         for (String r : s.split(":")) {

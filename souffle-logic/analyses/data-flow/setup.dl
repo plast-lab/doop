@@ -34,9 +34,6 @@
 .decl AllocArraySize_NUM(stmt: Instruction, pos:number, size:number)
 .input AllocArraySize_NUM(filename="ArrayAllocationConstSize.facts")
 
-// Encodes a CHA callgraph, effectively
-.decl RESOLVE_CALL(stmt:MethodInvocation, method:Method)
-
 
 //InterestingStmt(stmt) :- isInstruction(stmt)
 InterestingStmt(stmt) :-
@@ -176,17 +173,3 @@ IF(stmt, op, label) :-
 	isIf_Insn(stmt),
 	If_Target(stmt, label),
 	__OperatorAt(stmt, op).
-
-RESOLVE_CALL(stmt, method) :-
-	isStaticMethodInvocation_Insn(stmt),
-	MethodInvocation_Method(stmt, method).
-
-RESOLVE_CALL(stmt, method) :-
-	(VirtualMethodInvocation_Base(stmt, base) ;
-	 SpecialMethodInvocation_Base(stmt, base)),
-	MethodInvocation_Method(stmt, sigMethod),
-	Method_SimpleName(sigMethod, name),
-	Method_Descriptor(sigMethod, desc),
-	Var_Type(base, baseType),
-	basic.SubtypeOf(type, baseType),
-	basic.MethodLookup(name, desc, type, method).
