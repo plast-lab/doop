@@ -1,75 +1,176 @@
 #pragma once
+#include "expr-values.dl"
+#include "arrays.dl"
 
 .decl LocalBlockEdge(fromBB:Instruction, toBB:Instruction)
 .decl StructuredLoopBackEdge(fromBB:Instruction, toBB:Instruction)
-.decl StructuredLoopHead(bb:Instruction)
-.decl BlockInStructuredLoop(bb:Instruction, loophead:Instruction)
-.decl StatementInStructuredLoop(stmt:Instruction, loophead:Instruction)
-.decl ContainsInnerStructuredLoop(loophead:Instruction, innerLoopHead:Instruction)
-.decl InnermostStructuredLoop(loophead:Instruction)
-.decl LoopExitCond(condVar:Var, loopHead:Instruction)
-// A variable that is monotonically changes with each successive iteration in loop
-.decl InductionVariable(var:Var, loophead:Instruction)
+.decl StructuredloopHead(bb:Instruction)
+.decl BlockInStructuredLoop(bb:Instruction, loopHead:Instruction)
+.decl StmtInStructuredLoop(stmt: Instruction, loopHead: Instruction)
+.decl ContainsInnerStructuredLoop(loopHead:Instruction, innerloopHead:Instruction)
+.decl InnermostStructuredLoop(loopHead:Instruction)
 
 .output LocalBlockEdge
 .output StructuredLoopBackEdge
-.output StructuredLoopHead
+.output StructuredloopHead
 .output BlockInStructuredLoop
-.output StatementInStructuredLoop
+.output StmtInStructuredLoop
 .output ContainsInnerStructuredLoop
 .output InnermostStructuredLoop
-.output LoopExitCond
-.output InductionVariable
 
 LocalBlockEdge(fromBB, toBB) :-
-    InterestingStmt(fromBB),
-    BasicBlockTail(fromBB, endStmt),
-    MaySuccessorModuloThrow(toBB, endStmt).
+	InterestingStmt(fromBB),
+	BasicBlockTail(fromBB, endStmt),
+	MaySuccessorModuloThrow(toBB, endStmt).
 
 StructuredLoopBackEdge(fromBB, toBB),
-StructuredLoopHead(toBB) :-
-    InterestingStmt(fromBB),
-    LocalBlockEdge(fromBB, toBB),
-    Dominates(toBB, fromBB).
+StructuredloopHead(toBB) :-
+	InterestingStmt(fromBB),
+	LocalBlockEdge(fromBB, toBB),
+	Dominates(toBB, fromBB).
 
-BlockInStructuredLoop(backEdge, loophead) :- StructuredLoopBackEdge(backEdge, loophead).
+BlockInStructuredLoop(backEdge, loopHead) :-
+	StructuredLoopBackEdge(backEdge, loopHead).
 
-BlockInStructuredLoop(loophead, loophead) :- StructuredLoopHead(loophead).
+BlockInStructuredLoop(loopHead, loopHead) :-
+	StructuredloopHead(loopHead).
 
-BlockInStructuredLoop(block, loophead) :-
-    BlockInStructuredLoop(other, loophead),
-    LocalBlockEdge(block, other),
-    other != loophead.
+BlockInStructuredLoop(block, loopHead) :-
+	BlockInStructuredLoop(other, loopHead),
+	LocalBlockEdge(block, other),
+	other != loopHead.
 
-StatementInStructuredLoop(stmt, loophead) :-
-    BlockInStructuredLoop(block, loophead),
-    BasicBlockHead(stmt, block).
+StmtInStructuredLoop(stmt, loopHead) :-
+	BlockInStructuredLoop(block, loopHead),
+	BasicBlockHead(stmt, block).
 
-ContainsInnerStructuredLoop(loophead, innerLoopHead) :-
-    StructuredLoopHead(loophead),
-    StructuredLoopHead(innerLoopHead),
-    BlockInStructuredLoop(innerLoopHead, loophead),
-    loophead != innerLoopHead.
+ContainsInnerStructuredLoop(loopHead, innerloopHead) :-
+	StructuredloopHead(loopHead),
+	StructuredloopHead(innerloopHead),
+	BlockInStructuredLoop(innerloopHead, loopHead),
+	loopHead != innerloopHead.
 
-InnermostStructuredLoop(loophead) :-
-    StructuredLoopHead(loophead),
-    !ContainsInnerStructuredLoop(loophead, _).
+InnermostStructuredLoop(loopHead) :-
+	StructuredloopHead(loopHead),
+	!ContainsInnerStructuredLoop(loopHead, _).
 
-// If statement has one edge jumping inside the loop,
-// and another outside of it
-LoopExitCond(condVar, loopHead) :-
-    BlockInStructuredLoop(jumpBlock, loopHead),
-    BasicBlockTail(jumpBlock, jumpStmt),
-    If_Var(jumpStmt, _, condVar),
-    LocalBlockEdge(jumpBlock, out),
-    !BlockInStructuredLoop(out, loopHead),
-    LocalBlockEdge(jumpBlock, in),
-    BlockInStructuredLoop(in, loopHead).
 
-// Strictly speaking, adding does not guarantee increasing...
-InductionVariable(inductionVar, loophead) :-
-    StatementInStructuredLoop(stmt, loophead),
-    ((BINOP(stmt, to, "+"), OPERAND_VAR(stmt, _, v)) ;
-     (BINOP(stmt, to, "-"), OPERAND_VAR(stmt, 0, v))),
-	Flows(to, v),
-    Flows(to, inductionVar).
+// A variable that is monotonically changes with each successive iteration in loop
+.decl ChangeByOne(stmt:Instruction, to:Var, var:Var)
+.decl InductionVariable(var:Var, loopHead:Instruction)
+.decl ReverseCondition(op:symbol, reverseOp:symbol) inline
+.decl FlippedCondition(op:symbol, flippedOp:symbol) inline
+.decl LoopExitCond_Stmt(jumpStmt:Instruction, loopHead:Instruction)
+.decl LoopExitCond(condVar:Var, op:symbol, rhs:number, loopHead:Instruction)
+.decl LoopInitialValue(condVar: Var, value: number, loopHead: Instruction)
+.decl ArrayUsedInLoop(array:Var, indexVar:Var, loopHead:Instruction)
+.decl ArrayIterated(array:Var, loopHead:Instruction)
+
+.output InductionVariable
+.output LoopExitCond
+.output LoopInitialValue
+.output ArrayUsedInLoop
+.output ArrayIterated
+
+// var + 1
+ChangeByOne(stmt, to, var) :-
+	BINOP(stmt, to, "+"), OPERAND_VAR(stmt, 1, var), IVALUE_OPERAND(stmt, 2, 1).
+// 1 + var
+ChangeByOne(stmt, to, var) :-
+	BINOP(stmt, to, "+"), OPERAND_VAR(stmt, 2, var), IVALUE_OPERAND(stmt, 1, 1).
+// var - (-1)
+ChangeByOne(stmt, to, var) :-
+	BINOP(stmt, to, "-"), OPERAND_VAR(stmt, 1, var), IVALUE_OPERAND(stmt, 2, -1).
+// var - 1
+ChangeByOne(stmt, to, var) :-
+	BINOP(stmt, to, "-"), OPERAND_VAR(stmt, 1, var), IVALUE_OPERAND(stmt, 2, 1).
+// var + (-1)
+ChangeByOne(stmt, to, var) :-
+	BINOP(stmt, to, "+"), OPERAND_VAR(stmt, 1, var), IVALUE_OPERAND(stmt, 2, -1).
+
+InductionVariable(inductionVar, loopHead) :-
+	StmtInStructuredLoop(stmt, loopHead),
+	ChangeByOne(stmt, to, var),
+	Flows(to, var),
+	Flows(to, inductionVar).
+
+ReverseCondition(">", "<=").
+ReverseCondition(">=", "<").
+ReverseCondition("<", ">=").
+ReverseCondition("<=", ">").
+ReverseCondition("==", "!=").
+ReverseCondition("!=", "==").
+
+FlippedCondition(">", "<").
+FlippedCondition(">=", "<=").
+FlippedCondition("<", ">").
+FlippedCondition("<=", ">=").
+FlippedCondition("==", "==").
+FlippedCondition("!=", "!=").
+
+// If statement has one edge jumping inside the loop, and another outside of it
+LoopExitCond_Stmt(jumpStmt, loopHead) :-
+	BlockInStructuredLoop(jumpBlock, loopHead),
+	BasicBlockTail(jumpBlock, jumpStmt),
+	IF(jumpStmt, _, _),
+	LocalBlockEdge(jumpBlock, out),
+	!BlockInStructuredLoop(out, loopHead),
+	LocalBlockEdge(jumpBlock, in),
+	BlockInStructuredLoop(in, loopHead).
+
+LoopExitCond(condVar, reverseOp, value, loopHead) :-
+	LoopExitCond_Stmt(stmt, loopHead),
+	IF(stmt, op, _),
+	ReverseCondition(op, reverseOp),
+	OPERAND_VAR(stmt, 1, condVar),
+	InductionVariable(condVar, loopHead),
+	IVALUE_OPERAND(stmt, 2, value).
+
+LoopExitCond(condVar, flippedOp, value, loopHead) :-
+	LoopExitCond_Stmt(stmt, loopHead),
+	IF(stmt, op, _),
+	ReverseCondition(op, reverseOp),
+	FlippedCondition(reverseOp, flippedOp),
+	OPERAND_VAR(stmt, 2, condVar),
+	InductionVariable(condVar, loopHead),
+	IVALUE_OPERAND(stmt, 1, value).
+
+LoopInitialValue(condVar, value, loopHead) :-
+	LoopExitCond(condVar, _, _, loopHead),
+	StmtInStructuredLoop(stmt, loopHead),
+	MOVE(stmt, condVar, from),
+	IVALUE_Var(from, value).
+
+ArrayUsedInLoop(array, indexVar, loopHead) :-
+	StmtInStructuredLoop(stmt, loopHead),
+	(LoadArrayIndex_Base(stmt, array) ;
+	 StoreArrayIndex_Base(stmt, array)),
+	ArrayInsnIndex(stmt, indexVar),
+	InductionVariable(indexVar, loopHead).
+
+ArrayUsedInLoop(origArray, indexVar, loopHead) :-
+	ArrayUsedInLoop(array, indexVar, loopHead),
+	Flows(origArray, array).
+
+IVALUE_Var(to, size) :-
+	InterestingStmt(stmt),
+	UNOP(stmt, to, "len"),
+	OPERAND_VAR(stmt, 1, array),
+	META_ArraySizes(array, 0, size).
+
+// [0..size)
+ArrayIterated(array, loopHead) :-
+	ArrayUsedInLoop(array, indexVar, loopHead),
+	InductionVariable(indexVar, loopHead),
+	LoopInitialValue(indexVar, 0, loopHead),
+	META_ArraySizes(array, 0, size),
+	(LoopExitCond(indexVar, "<", size, loopHead) ;
+	 LoopExitCond(indexVar, "<=", size - 1, loopHead)).
+
+// (size..0]
+ArrayIterated(array, loopHead) :-
+	ArrayUsedInLoop(array, indexVar, loopHead),
+	InductionVariable(indexVar, loopHead),
+	META_ArraySizes(array, 0, size),
+	LoopInitialValue(indexVar, size - 1, loopHead),
+	LoopExitCond(indexVar, ">=", 0, loopHead).

@@ -9,7 +9,7 @@ class XTractor {
 
 		def arrayMeta = [:].withDefault { [] }
 		outFile << ".decl arr_META(name:symbol, types:symbol, dimensions:number)\n"
-		new File(analysis.database, "Meta_ArrayInfo.csv").eachLine {
+		new File(analysis.database, "META_ArrayInfo.csv").eachLine {
 			def (String array, String name, String types) = it.split("\t")
 			def dimensions = types.count("[]")
 			def relName = "${name.split("#").first()}"
@@ -20,7 +20,7 @@ class XTractor {
 			arrayMeta[array] = [relName, metaRule, name, types, dimensions]
 		}
 		def arraySizes = [:].withDefault { [:] }
-		new File(analysis.database, "Meta_ArraySizes.csv").eachLine {
+		new File(analysis.database, "META_ArraySizes.csv").eachLine {
 			def (String array, pos, size) = it.split("\t")
 			arraySizes[array][pos as int] = size
 		}
@@ -34,12 +34,12 @@ class XTractor {
 		arraySizes = null
 
 		def arrayFrom2Index2Var = [:].withDefault { [:].withDefault { [] } }
-		new File(analysis.database, "ArrayVarFromIndex.csv").eachLine {
+		new File(analysis.database, "META_ArrayLoad.csv").eachLine {
 			def (String to, String from, index) = it.split("\t")
 			arrayFrom2Index2Var[from][index as int] << to
 		}
 		def arrayToIndexHasValue = [:].withDefault { [:] }
-		new File(analysis.database, "ArrayToIndexHasValue.csv").eachLine {
+		new File(analysis.database, "META_ArrayStore.csv").eachLine {
 			def (String to, index, value) = it.split("\t")
 			arrayToIndexHasValue[to][index as int] = value
 		}

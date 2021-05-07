@@ -1,20 +1,17 @@
 #pragma once
+#include "expr-values.dl"
 
-.decl Meta_ArrayInfo(array:Var, name:symbol, types:symbol)
-.decl Meta_ArraySizes(array:Var, dim:number, size:number)
-.decl VarToIntValue_EXT(var:Var, value:number)
-.decl VarToIntValue(var:Var, value:number)
-.decl AllocArraySize_EXT(stmt:Instruction, size:number)
-.decl ArrayIndex_EXT(stmt:Instruction, index:number)
-.decl ArrayVarFromIndex(to:Var, from:Var, index:number)
-.decl ArrayToIndexHasValue(to:Var, index:number, value:number)
+.decl META_ArrayInfo(array: Var, name: symbol, types: symbol)
+.decl META_ArraySizes(array: Var, dim: number, size: number)
+.decl META_ArrayLoad(to: Var, from: Var, index: number)
+.decl META_ArrayStore(to: Var, index: number, value: number)
 
-.output Meta_ArrayInfo
-.output Meta_ArraySizes
-.output ArrayVarFromIndex
-.output ArrayToIndexHasValue
+.output META_ArrayInfo
+.output META_ArraySizes
+.output META_ArrayLoad
+.output META_ArrayStore
 
-Meta_ArrayInfo(array, name, type) :-
+META_ArrayInfo(array, name, type) :-
 	InterestingStmt(stmt),
 	AssignInstruction_To(stmt, array),
 	Var_Type(array, type),
@@ -22,60 +19,33 @@ Meta_ArrayInfo(array, name, type) :-
 	isArrayType(type),
 	!StoreArrayIndex_From(_, array).
 
-VarToIntValue(var, to_number(const)),
-VarToIntValue_EXT(var, to_number(const)) :-
-	VarHasExpr(var, expr),
-	Normalize(expr, normExpr),
-	IsConstantExpr(normExpr, const).
-
-VarToIntValue_EXT(var, -1) :-
-	isVar(var),
-	(!VarHasExpr(var, _) ;
-	 (VarHasExpr(var, expr),
-	  Normalize(expr, normExpr),
-	  !IsConstantExpr(normExpr, _))).
-
-AllocArraySize_EXT(stmt, size) :-
-	InterestingStmt(stmt),
-	AllocArraySize_NUM(stmt, _, size).
-
-AllocArraySize_EXT(stmt, size) :-
-	InterestingStmt(stmt),
-	AllocArraySize_VAR(stmt, _, var),
-	VarToIntValue_EXT(var, size).
-
-Meta_ArraySizes(array, 0, size) :-
+META_ArraySizes(array, 0, size) :-
 	InterestingStmt(stmt),
 	AssignInstruction_To(stmt, array),
-	AllocArraySize_EXT(stmt, size).
+	IVALUE_ArraySize_EXT(stmt, size).
 
-Meta_ArraySizes(baseArray, dim + 1, size) :-
+META_ArraySizes(baseArray, dim + 1, size) :-
 	InterestingStmt(stmt),
 	StoreArrayIndex_Base(stmt, baseArray),
 	StoreArrayIndex_From(stmt, array),
-	Meta_ArraySizes(array, dim, size).
+	META_ArraySizes(array, dim, size).
 
-ArrayIndex_EXT(stmt, index) :-
-	InterestingStmt(stmt),
-	ArrayNumIndex(stmt, index).
-
-ArrayIndex_EXT(stmt, index) :-
-	InterestingStmt(stmt),
-	ArrayInsnIndex(stmt, var),
-	VarToIntValue_EXT(var, index).
+META_ArraySizes(otherArray, dim, size) :-
+	META_ArraySizes(array, dim, size),
+	Flows(array, otherArray).
 
 // to = from[index]
-// Due to SSA, to will appear only once
-ArrayVarFromIndex(to, from, index) :-
+// Due to SSA, `to` will appear only once
+META_ArrayLoad(to, from, index) :-
 	InterestingStmt(stmt),
 	LoadArrayIndex_To(stmt, to),
 	LoadArrayIndex_Base(stmt, from),
-	ArrayIndex_EXT(stmt, index).
+	IVALUE_ArrayIndex_EXT(stmt, index).
 
 // to[index] = value
-ArrayToIndexHasValue(to, index, value) :-
+META_ArrayStore(to, index, value) :-
 	InterestingStmt(stmt),
 	StoreArrayIndex_Base(stmt, to),
-	ArrayIndex_EXT(stmt, index),
+	IVALUE_ArrayIndex_EXT(stmt, index),
 	StoreArrayIndex_From(stmt, valueVar),
-	VarToIntValue(valueVar, value).
+	IVALUE_Var(valueVar, value).
