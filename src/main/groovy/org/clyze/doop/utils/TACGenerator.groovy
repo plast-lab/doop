@@ -156,7 +156,7 @@ class TACGenerator {
 		}
 		new File("$runDir/AssignUnop.facts").eachLine {
 			def (stmt, index, to, inmethod) = it.split("\t")
-			method2Stmt[inmethod][index as int] = INS(index, stmt, "${V(to)} = ${operand[stmt][1]}")
+			method2Stmt[inmethod][index as int] = INS(index, stmt, "${V(to)} = ${oper[stmt]} ${operand[stmt][1]}")
 		}
 		new File("$runDir/AssignBinop.facts").eachLine {
 			def (stmt, index, to, inmethod) = it.split("\t")
