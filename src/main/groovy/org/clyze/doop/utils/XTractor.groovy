@@ -19,19 +19,19 @@ class XTractor {
 			def metaRule = "arr_META(\"$array\", \"$types\", $dimensions)."
 			arrayMeta[array] = [relName, metaRule, name, types, dimensions]
 		}
-		def arraySizes = [:].withDefault { [:] }
-		new File(analysis.database, "META_ArraySizes.csv").eachLine {
+		def arrayDims = [:].withDefault { [:] }
+		new File(analysis.database, "META_ArrayDims.csv").eachLine {
 			def (String array, pos, size) = it.split("\t")
-			arraySizes[array][pos as int] = size
+			arrayDims[array][pos as int] = size
 		}
 		arrayMeta.each { array, meta ->
 			def (String relName, metaRule, name, types, int dimensions) = meta
-			def sizes = arraySizes[array]
+			def sizes = arrayDims[array]
 			def allSizes = (0..(dimensions-1)).collect {sizes[it] ?: -1 }
 			outFile << "$metaRule\n"
 			outFile << "${relName}_DimSizes(${allSizes.join(", ")}).\n"
 		}
-		arraySizes = null
+		arrayDims = null
 
 		def arrayFrom2Index2Var = [:].withDefault { [:].withDefault { [] } }
 		new File(analysis.database, "META_ArrayLoad.csv").eachLine {

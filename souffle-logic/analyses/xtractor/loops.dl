@@ -2,13 +2,13 @@
 #include "expr-values.dl"
 #include "arrays.dl"
 
-.decl LocalBlockEdge(fromBB:Instruction, toBB:Instruction)
-.decl StructuredLoopBackEdge(fromBB:Instruction, toBB:Instruction)
-.decl StructuredloopHead(bb:Instruction)
-.decl BlockInStructuredLoop(bb:Instruction, loopHead:Instruction)
+.decl LocalBlockEdge(fromBB: Instruction, toBB: Instruction)
+.decl StructuredLoopBackEdge(fromBB: Instruction, toBB: Instruction)
+.decl StructuredloopHead(bb: Instruction)
+.decl BlockInStructuredLoop(bb: Instruction, loopHead: Instruction)
 .decl StmtInStructuredLoop(stmt: Instruction, loopHead: Instruction)
-.decl ContainsInnerStructuredLoop(loopHead:Instruction, innerloopHead:Instruction)
-.decl InnermostStructuredLoop(loopHead:Instruction)
+.decl ContainsInnerStructuredLoop(loopHead: Instruction, innerloopHead: Instruction)
+.decl InnermostStructuredLoop(loopHead: Instruction)
 
 .output LocalBlockEdge
 .output StructuredLoopBackEdge
@@ -56,21 +56,21 @@ InnermostStructuredLoop(loopHead) :-
 
 
 // A variable that is monotonically changes with each successive iteration in loop
-.decl ChangeByOne(stmt:Instruction, to:Var, var:Var)
-.decl InductionVariable(var:Var, loopHead:Instruction)
-.decl ReverseCondition(op:symbol, reverseOp:symbol) inline
-.decl FlippedCondition(op:symbol, flippedOp:symbol) inline
-.decl LoopExitCond_Stmt(jumpStmt:Instruction, loopHead:Instruction)
-.decl LoopExitCond(condVar:Var, op:symbol, rhs:number, loopHead:Instruction)
+.decl ChangeByOne(stmt: Instruction, to: Var, var: Var)
+.decl InductionVariable(var: Var, loopHead: Instruction)
+.decl ReverseCondition(op: symbol, reverseOp: symbol) inline
+.decl FlippedCondition(op: symbol, flippedOp: symbol) inline
+.decl LoopExitCond_Stmt(jumpStmt: Instruction, loopHead: Instruction)
+.decl LoopExitCond(condVar: Var, op: symbol, rhs: number, loopHead: Instruction)
 .decl LoopInitialValue(condVar: Var, value: number, loopHead: Instruction)
-.decl ArrayUsedInLoop(array:Var, indexVar:Var, loopHead:Instruction)
-.decl ArrayIterated(array:Var, loopHead:Instruction)
+.decl ArrayUsedInLoop(array: Var, indexVar: Var, loopHead: Instruction)
+.decl ArrayDimIterated(array: Var, dim: number, loopHead: Instruction)
 
 .output InductionVariable
 .output LoopExitCond
 .output LoopInitialValue
 .output ArrayUsedInLoop
-.output ArrayIterated
+.output ArrayDimIterated
 
 // var + 1
 ChangeByOne(stmt, to, var) :-
@@ -143,9 +143,8 @@ LoopInitialValue(condVar, value, loopHead) :-
 
 ArrayUsedInLoop(array, indexVar, loopHead) :-
 	StmtInStructuredLoop(stmt, loopHead),
-	(LoadArrayIndex_Base(stmt, array) ;
-	 StoreArrayIndex_Base(stmt, array)),
-	ArrayInsnIndex(stmt, indexVar),
+	(ALOAD_VAR(stmt, _, array, indexVar) ;
+	 ASTORE_VAR(stmt, array, indexVar, _)),
 	InductionVariable(indexVar, loopHead).
 
 ArrayUsedInLoop(origArray, indexVar, loopHead) :-
@@ -156,21 +155,27 @@ IVALUE_Var(to, size) :-
 	InterestingStmt(stmt),
 	UNOP(stmt, to, "len"),
 	OPERAND_VAR(stmt, 1, array),
-	META_ArraySizes(array, 0, size).
+	ArrayDims(array, 0, size).
 
 // [0..size)
-ArrayIterated(array, loopHead) :-
+ArrayDimIterated(array, 0, loopHead) :-
 	ArrayUsedInLoop(array, indexVar, loopHead),
 	InductionVariable(indexVar, loopHead),
 	LoopInitialValue(indexVar, 0, loopHead),
-	META_ArraySizes(array, 0, size),
-	(LoopExitCond(indexVar, "<", size, loopHead) ;
+	ArrayDims(array, 0, size),
+	(LoopExitCond(indexVar, "<", size, loopHead);
 	 LoopExitCond(indexVar, "<=", size - 1, loopHead)).
 
 // (size..0]
-ArrayIterated(array, loopHead) :-
+ArrayDimIterated(array, 0, loopHead) :-
 	ArrayUsedInLoop(array, indexVar, loopHead),
 	InductionVariable(indexVar, loopHead),
-	META_ArraySizes(array, 0, size),
+	ArrayDims(array, 0, size),
 	LoopInitialValue(indexVar, size - 1, loopHead),
 	LoopExitCond(indexVar, ">=", 0, loopHead).
+
+// toArray = baseArray[..]
+ArrayDimIterated(baseArray, dim + 1, loopHead) :-
+	ArrayDimIterated(toArray, dim, loopHead),
+	(ALOAD_VAR(_, toArray, baseArray, _) ;
+	 ALOAD_NUM(_, toArray, baseArray, _)).
