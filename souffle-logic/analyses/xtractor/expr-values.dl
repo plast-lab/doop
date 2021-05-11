@@ -1,0 +1,53 @@
+#pragma once
+
+// For _EXT relations, use -1 for value, if no value available
+.decl IVALUE_Var(var: Var, value: number)
+.decl IVALUE_Var_EXT(var: Var, value: number)
+.decl IVALUE_ArraySize_EXT(stmt: Instruction, size: number)
+.decl IVALUE_ArrayIndex_EXT(stmt: Instruction, index: number)
+.decl IVALUE_OPERAND(stmt: Instruction, pos: number, value: number)
+
+IVALUE_Var(var, to_number(const)),
+IVALUE_Var_EXT(var, to_number(const)) :-
+	VarHasExpr(var, expr),
+	Normalize(expr, normExpr),
+	IsConstantExpr(normExpr, const).
+
+IVALUE_Var_EXT(var, -1) :-
+	isVar(var),
+	!VarHasExpr(var, _).
+
+IVALUE_Var_EXT(var, -1) :-
+	isVar(var),
+	VarHasExpr(var, expr),
+	Normalize(expr, normExpr),
+	!IsConstantExpr(normExpr, _).
+
+
+IVALUE_ArraySize_EXT(stmt, size) :-
+	InterestingStmt(stmt),
+	AllocArraySize_NUM(stmt, _, size).
+
+IVALUE_ArraySize_EXT(stmt, size) :-
+	InterestingStmt(stmt),
+	AllocArraySize_VAR(stmt, _, var),
+	IVALUE_Var_EXT(var, size).
+
+IVALUE_ArrayIndex_EXT(stmt, index) :-
+	InterestingStmt(stmt),
+	ArrayNumIndex(stmt, index).
+
+IVALUE_ArrayIndex_EXT(stmt, index) :-
+	InterestingStmt(stmt),
+	ArrayInsnIndex(stmt, var),
+	IVALUE_Var_EXT(var, index).
+
+
+IVALUE_OPERAND(stmt, pos, value) :-
+	InterestingStmt(stmt),
+	OPERAND_NUM(stmt, pos, value).
+
+IVALUE_OPERAND(stmt, pos, value) :-
+	InterestingStmt(stmt),
+	OPERAND_VAR(stmt, pos, var),
+	IVALUE_Var(var, value).

@@ -118,7 +118,12 @@ class Representation extends JavaRepresentation {
 
     private String getKind(Stmt stmt) {
         String kind = "unknown";
-        if ((stmt instanceof AssignStmt) || (stmt instanceof IdentityStmt))
+        if (stmt instanceof AssignStmt) {
+            if (((AssignStmt) stmt).getRightOp() instanceof CastExpr)
+                kind = "assign-cast";
+            else
+                kind = "assign";
+        } else if ((stmt instanceof AssignStmt) || (stmt instanceof IdentityStmt))
             kind = "assign";
         else if(stmt instanceof DefinitionStmt)
             kind = "definition";

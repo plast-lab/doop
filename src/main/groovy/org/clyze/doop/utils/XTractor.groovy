@@ -9,7 +9,7 @@ class XTractor {
 
 		def arrayMeta = [:].withDefault { [] }
 		outFile << ".decl arr_META(name:symbol, types:symbol, dimensions:number)\n"
-		new File(analysis.database, "Meta_ArrayInfo.csv").eachLine {
+		new File(analysis.database, "META_ArrayInfo.csv").eachLine {
 			def (String array, String name, String types) = it.split("\t")
 			def dimensions = types.count("[]")
 			def relName = "${name.split("#").first()}"
@@ -19,27 +19,27 @@ class XTractor {
 			def metaRule = "arr_META(\"$array\", \"$types\", $dimensions)."
 			arrayMeta[array] = [relName, metaRule, name, types, dimensions]
 		}
-		def arraySizes = [:].withDefault { [:] }
-		new File(analysis.database, "Meta_ArraySizes.csv").eachLine {
+		def arrayDims = [:].withDefault { [:] }
+		new File(analysis.database, "META_ArrayDims.csv").eachLine {
 			def (String array, pos, size) = it.split("\t")
-			arraySizes[array][pos as int] = size
+			arrayDims[array][pos as int] = size
 		}
 		arrayMeta.each { array, meta ->
 			def (String relName, metaRule, name, types, int dimensions) = meta
-			def sizes = arraySizes[array]
+			def sizes = arrayDims[array]
 			def allSizes = (0..(dimensions-1)).collect {sizes[it] ?: -1 }
 			outFile << "$metaRule\n"
 			outFile << "${relName}_DimSizes(${allSizes.join(", ")}).\n"
 		}
-		arraySizes = null
+		arrayDims = null
 
 		def arrayFrom2Index2Var = [:].withDefault { [:].withDefault { [] } }
-		new File(analysis.database, "ArrayVarFromIndex.csv").eachLine {
+		new File(analysis.database, "META_ArrayLoad.csv").eachLine {
 			def (String to, String from, index) = it.split("\t")
 			arrayFrom2Index2Var[from][index as int] << to
 		}
 		def arrayToIndexHasValue = [:].withDefault { [:] }
-		new File(analysis.database, "ArrayToIndexHasValue.csv").eachLine {
+		new File(analysis.database, "META_ArrayStore.csv").eachLine {
 			def (String to, index, value) = it.split("\t")
 			arrayToIndexHasValue[to][index as int] = value
 		}

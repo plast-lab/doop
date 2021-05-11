@@ -36,5 +36,32 @@ class Main {
 				board[i][j] = '-';
 			}
 		}
+
+		foobar1(FOO1D);
+		foobar2(FOO1D);
+		foobar3(FOO1D);
+		foobar4(FOO1D);
+	}
+
+	static void foobar1(char[] myarr) {
+		for (int i = 0 ; i < 10 ; i++)
+			myarr[i] = 'A' + 1;
+	}
+
+	static void foobar2(char[] myarr) {
+		for (int j = 0 ; j < myarr.length ; j++)
+			myarr[j] = 'a' + 1;
+	}
+
+	static void foobar3(char[] myarr) {
+		int sum = 0;
+		for (int k = 9 ; 0 <= k ; k--)
+			sum += myarr[k];
+	}
+
+	static void foobar4(char[] myarr) {
+		int sum = 0;
+		for (char c : myarr)
+			sum += c;
 	}
 }
