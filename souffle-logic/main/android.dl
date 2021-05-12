@@ -371,7 +371,7 @@ LibraryReachableAppListenerType(?type) :-
 
 //// More precise logic.
 //// Currently this is too conservative. We need to model more of
-//// the environment, such as "getActivity", "getSystemService", for
+//// the environment, such as "getActivity", for
 //// this to work well.
 // LibraryMethodArgAcceptingListeners(?formal) :-
 //   Method:DeclaringType[?meth] = ?type,
@@ -1088,3 +1088,75 @@ ForcedReachableAndroidContext(?ctx, ?method) :-
 
 #include "../addons/butterknife.dl"
 #include "../addons/glide.dl"
+
+// System services are mocked.
+.decl SystemService(?type:ReferenceType)
+.output SystemService
+
+// Classes gathered from https://developer.android.com/reference/android/content/Context#getSystemService(java.lang.String)
+// and https://developer.android.com/reference/android/content/Context#getSystemService(java.lang.Class%3CT%3E)
+SystemService("android.view.WindowManager").
+SystemService("android.view.LayoutInflater").
+SystemService("android.app.ActivityManager").
+SystemService("android.service.wallpaper.WallpaperService").
+SystemService("android.os.PowerManager").
+SystemService("android.app.AlarmManager").
+SystemService("android.app.NotificationManager").
+SystemService("android.app.KeyguardManager").
+SystemService("android.location.LocationManager").
+SystemService("android.app.SearchManager").
+SystemService("android.os.Vibrator").
+SystemService("android.os.VibratorManager").
+SystemService("android.net.ConnectivityManager").
+SystemService("android.net.IpSecManager").
+SystemService("android.net.wifi.WifiManager").
+SystemService("android.net.wifi.aware.WifiAwareManager").
+SystemService("android.net.wifi.p2p.WifiP2pManager").
+SystemService("android.view.inputmethod.InputMethodManager").
+SystemService("android.app.UiModeManager").
+SystemService("android.app.DownloadManager").
+SystemService("android.os.BatteryManager").
+SystemService("android.app.job.JobScheduler").
+SystemService("android.app.usage.NetworkStatsManager").
+SystemService("android.os.HardwarePropertiesManager").
+SystemService("android.content.pm.verify.domain.DomainVerificationManager").
+SystemService("android.media.AudioManager").
+SystemService("android.media.MediaRouter").
+SystemService("android.telephony.TelephonyManager").
+SystemService("android.telephony.SubscriptionManager").
+
+#ifndef DISABLE_POINTS_TO
+// Helper relation: Android method returns a mock value (of some type).
+.decl AndroidMethodReturns(?method:Method, ?value:Value, ?type:ReferenceType)
+.output AndroidMethodReturns
+
+// Core mocking rule.
+MockValueConsMacro(?value, ?type),
+ReifiedAndroidObjectValue(?value, ?type),
+VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
+  Instruction_Method(?invocation, ?inmethod),
+  ReachableContext(?ctx, ?inmethod),
+  MethodInvocation_Method(?invocation, ?method),
+  AndroidMethodReturns(?method, ?value, ?type),
+  AssignReturnValue(?invocation, ?return),
+  isImmutableHContext(?hctx).
+
+// Mock return values of Context.getSystemService().
+AndroidMethodReturns(?method, ?value, ?type) :-
+  SystemService(?type),
+  ( ?method = "<android.content.Context: java.lang.Object getSystemService(java.lang.String)>"
+  ; ?method = "<android.content.Context: java.lang.Object getSystemService(java.lang.Class)>"),
+  ?value = cat("<system service of type ", cat(?type, ">")).
+
+// Mock return values of TelephonyManager.getDeviceId().
+isStringConstant(?value),
+AndroidMethodReturns(?method, ?value, "java.lang.String") :-
+  ( ?method = "<android.telephony.TelephonyManager: java.lang.String getDeviceId()>"
+  ; ?method = "<android.telephony.TelephonyManager: java.lang.String getDeviceId(int)>"
+  ; ?method = "<android.telephony.TelephonyManager: java.lang.String getImei()>"
+  ; ?method = "<android.telephony.TelephonyManager: java.lang.String getImei(int)>"
+  ; ?method = "<android.telephony.TelephonyManager: java.lang.String getMeid()>"
+  ; ?method = "<android.telephony.TelephonyManager: java.lang.String getMeid(int)>"),
+  ?value = "<mock device id>".
+
+#endif // DISABLE_POINTS_TO
