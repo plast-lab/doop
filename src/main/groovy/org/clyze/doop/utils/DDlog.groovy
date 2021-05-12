@@ -85,7 +85,7 @@ class DDlog extends SouffleScript {
 
         checkOptions(options)
 
-        setScriptFileViaCPP(origScriptFile, outDir)
+        setScriptFileViaCPP(origScriptFile, outDir, options.debug)
 
         def checksum = calcChecksum(options.profile, options.provenance, options.liveProf)
 		def cacheFile = new File(cacheDir, checksum)
