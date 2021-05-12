@@ -40,7 +40,7 @@
 
 .decl AndroidOriginalAppComponent(?type:ReferenceType)
 AndroidOriginalAppComponent(?type) :-
-  Activity(?type);
+  (Activity(?type), !DisabledActivity(?type));
   Service(?type);
   BroadcastReceiver(?type);
   ContentProvider(?type);
@@ -215,7 +215,7 @@ ReifiedAndroidObjectValue(?value, ?type) :-
   ?value = cat("<reachable layout control of type ", cat(?type, ">")).
 
 // Make launcher activity methods forced-reachable.
-ReachableLayoutControl(?type) :- LauncherActivity(?type).
+ReachableLayoutControl(?type) :- LauncherActivity(?type), !DisabledActivity(?type).
 
 #ifdef DISABLE_POINTS_TO
 // Crude rule for disabled points-to: make all detected control/fragment
@@ -371,7 +371,7 @@ LibraryReachableAppListenerType(?type) :-
 
 //// More precise logic.
 //// Currently this is too conservative. We need to model more of
-//// the environment, such as "getActivity", "getSystemService", for
+//// the environment, such as "getActivity", for
 //// this to work well.
 // LibraryMethodArgAcceptingListeners(?formal) :-
 //   Method:DeclaringType[?meth] = ?type,
@@ -755,36 +755,47 @@ VarPointsTo(?hctx, ?controlValue, ?ctx, ?ret) :-
 
 
 /**
- * Multi-dimenstional array ?!
- * Neville's code (and spelling :-)), unreviewed by YS.
+ * Multidimensional arrays in Android may use reflection, e.g. this:
+ *   String[][] array = new String[1][1];
+ * is compiled as follows (Jimple):
+ *   $r1 = newarray (int)[2];
+ *   $r1[0] = 1;
+ *   $r1[0] = 1;
+ *   $r2 = staticinvoke <java.lang.reflect.Array: java.lang.Object newInstance(java.lang.Class,int[])>(class "Ljava/lang/String;", $r1);
+ *   $r3 = (java.lang.String[][]) $r2;
+ * The rules below infer this heap allocation (via the type in the last cast),
+ * even when reflection support is off.
 **/
 
-// Special handling for multi-dimensional arrays
-NotSpecialObject(cat(cat(?invocation, ":"), ?type)),
-NotEmptyArrayValue(cat(cat(?invocation, ":"), ?type)),
-MockValueConsMacro(cat(cat(?invocation, ":"), ?type), ?type),
-MultiDimensionalArrayTemp(cat(cat(?invocation, ":"), ?type), ?invocation, ?type, ?ctx, ?from) :-
+#ifndef DISABLE_POINTS_TO
+// Special handling for multidimensional arrays.
+NotSpecialObject(?value),
+NotEmptyArrayValue(?value),
+MockValueConsMacro(?value, ?type),
+configuration.RecordContextRequest(?ctx, ?value, ?from),
+MultiDimensionalArrayTemp(?value, ?invocation, ?type, ?ctx, ?from) :-
   ?method = "<java.lang.reflect.Array: java.lang.Object newInstance(java.lang.Class,int[])>",
   StaticMethodInvocation(?invocation, ?method, ?inmethod),
   ReachableContext(?ctx, ?inmethod),
   AssignReturnValue(?invocation, ?from),
-  OptAssignCast(?type, _, ?from).
+  OptAssignCast(?type, _, ?from),
+  ?value = cat(cat(?invocation, ":"), ?type).
 
-#ifndef DISABLE_POINTS_TO
-UninitialisedArray(?hctx, ?value, ?invocation, ?type),
+UninitializedArray(?hctx, ?value, ?invocation, ?type),
 VarPointsTo(?hctx, ?value, ?ctx, ?from) :-
   MultiDimensionalArrayTemp(?value, ?invocation, ?type, ?ctx, ?from),
   configuration.RecordContextRequest(?ctx, ?value, ?from),
   configuration.RecordContextResponse(?ctx, ?value, ?from, ?hctx).
 
-NotSpecialObject(cat(cat(?invocation, ":"), ?arrayType)),
-NotEmptyArrayValue(cat(cat(?invocation, ":"), ?arrayType)),
-MockValueConsMacro(cat(cat(?invocation, ":"), ?arrayType), ?arrayType),
-UninitialisedArray(?hctx, cat(cat(?invocation, ":"), ?arrayType), ?invocation, ?arrayType),
-ArrayIndexPointsTo(?hctx, cat(cat(?invocation, ":"), ?arrayType), ?hctx, ?basevalue) :-
+NotSpecialObject(?value),
+NotEmptyArrayValue(?value),
+MockValueConsMacro(?value, ?arrayType),
+UninitializedArray(?hctx, ?value, ?invocation, ?arrayType),
+ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?basevalue) :-
   ComponentType(?type, ?arrayType),
   isArrayType(?arrayType),
-  UninitialisedArray(?hctx, ?basevalue, ?invocation, ?type).
+  UninitializedArray(?hctx, ?basevalue, ?invocation, ?type),
+  ?value = cat(cat(?invocation, ":"), ?arrayType).
 #endif // DISABLE_POINTS_TO
 
 
@@ -1088,3 +1099,86 @@ ForcedReachableAndroidContext(?ctx, ?method) :-
 
 #include "../addons/butterknife.dl"
 #include "../addons/glide.dl"
+
+// System services are mocked.
+.decl SystemService(?type:ReferenceType)
+.output SystemService
+
+// Classes gathered from https://developer.android.com/reference/android/content/Context#getSystemService(java.lang.String)
+// and https://developer.android.com/reference/android/content/Context#getSystemService(java.lang.Class%3CT%3E)
+SystemService("android.view.WindowManager").
+SystemService("android.view.LayoutInflater").
+SystemService("android.app.ActivityManager").
+SystemService("android.service.wallpaper.WallpaperService").
+SystemService("android.os.PowerManager").
+SystemService("android.app.AlarmManager").
+SystemService("android.app.NotificationManager").
+SystemService("android.app.KeyguardManager").
+SystemService("android.location.LocationManager").
+SystemService("android.app.SearchManager").
+SystemService("android.os.Vibrator").
+SystemService("android.os.VibratorManager").
+SystemService("android.net.ConnectivityManager").
+SystemService("android.net.IpSecManager").
+SystemService("android.net.wifi.WifiManager").
+SystemService("android.net.wifi.aware.WifiAwareManager").
+SystemService("android.net.wifi.p2p.WifiP2pManager").
+SystemService("android.view.inputmethod.InputMethodManager").
+SystemService("android.app.UiModeManager").
+SystemService("android.app.DownloadManager").
+SystemService("android.os.BatteryManager").
+SystemService("android.app.job.JobScheduler").
+SystemService("android.app.usage.NetworkStatsManager").
+SystemService("android.os.HardwarePropertiesManager").
+SystemService("android.content.pm.verify.domain.DomainVerificationManager").
+SystemService("android.media.AudioManager").
+SystemService("android.media.MediaRouter").
+SystemService("android.telephony.TelephonyManager").
+SystemService("android.telephony.SubscriptionManager").
+
+#ifndef DISABLE_POINTS_TO
+// Helper relation: Android method returns a mock value (of some type).
+.decl AndroidMethodReturns(?method:Method, ?value:Value, ?type:ReferenceType)
+.output AndroidMethodReturns
+
+// Core mocking rule.
+MockValueConsMacro(?value, ?type),
+ReifiedAndroidObjectValue(?value, ?type),
+VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
+  Instruction_Method(?invocation, ?inmethod),
+  ReachableContext(?ctx, ?inmethod),
+  MethodInvocation_Method(?invocation, ?method),
+  AndroidMethodReturns(?method, ?value, ?type),
+  AssignReturnValue(?invocation, ?return),
+  isImmutableHContext(?hctx).
+
+// Mock return values of Context.getSystemService().
+AndroidMethodReturns(?method, ?value, ?type) :-
+  SystemService(?type),
+  ( ?method = "<android.content.Context: java.lang.Object getSystemService(java.lang.String)>"
+  ; ?method = "<android.content.Context: java.lang.Object getSystemService(java.lang.Class)>"),
+  ?value = cat("<system service of type ", cat(?type, ">")).
+
+// Mock return values of TelephonyManager.getDeviceId().
+isStringConstant(?value),
+AndroidMethodReturns(?method, ?value, "java.lang.String") :-
+  ( ?method = "<android.telephony.TelephonyManager: java.lang.String getDeviceId()>"
+  ; ?method = "<android.telephony.TelephonyManager: java.lang.String getDeviceId(int)>"
+  ; ?method = "<android.telephony.TelephonyManager: java.lang.String getImei()>"
+  ; ?method = "<android.telephony.TelephonyManager: java.lang.String getImei(int)>"
+  ; ?method = "<android.telephony.TelephonyManager: java.lang.String getMeid()>"
+  ; ?method = "<android.telephony.TelephonyManager: java.lang.String getMeid(int)>"),
+  ?value = "<mock device id>".
+
+// Mock call to Activity.attach().
+ReachableContext(?ctx, ?method),
+VarPointsTo(?hctx, ?value, ?ctx, ?this) :-
+  isMethod(?method),
+  ?method = "<android.app.Activity: void attach(android.content.Context,android.app.ActivityThread,android.app.Instrumentation,android.os.IBinder,int,android.app.Application,android.content.Intent,android.content.pm.ActivityInfo,java.lang.CharSequence,android.app.Activity,java.lang.String,android.app.Activity$NonConfigurationInstances,android.content.res.Configuration,java.lang.String,com.android.internal.app.IVoiceInteractor,android.view.Window)>",
+  AppClassSubtypesLibClass(?activityType, "android.app.Activity"),
+  Value_Type(?value, ?activityType),
+  ThisVar(?method, ?this),
+  isImmutableHContext(?hctx),
+  isImmutableContext(?ctx).
+
+#endif // DISABLE_POINTS_TO

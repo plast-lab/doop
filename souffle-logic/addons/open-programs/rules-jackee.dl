@@ -61,7 +61,7 @@ mainAnalysis.ReachableContext(?ctx, ?method) :-
 /**
  *  Mock receivers for entry points
  **/
-.decl MockObject(?value:Value, ?class:Type)
+.decl MockObject(?value:Value, ?class:ReferenceType)
 .output MockObject
 .decl MockObjFromOpenProgramEntryPointReceiver(?value:Value)
 
