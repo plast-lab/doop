@@ -1170,4 +1170,15 @@ AndroidMethodReturns(?method, ?value, "java.lang.String") :-
   ; ?method = "<android.telephony.TelephonyManager: java.lang.String getMeid(int)>"),
   ?value = "<mock device id>".
 
+// Mock call to Activity.attach().
+ReachableContext(?ctx, ?method),
+VarPointsTo(?hctx, ?value, ?ctx, ?this) :-
+  isMethod(?method),
+  ?method = "<android.app.Activity: void attach(android.content.Context,android.app.ActivityThread,android.app.Instrumentation,android.os.IBinder,int,android.app.Application,android.content.Intent,android.content.pm.ActivityInfo,java.lang.CharSequence,android.app.Activity,java.lang.String,android.app.Activity$NonConfigurationInstances,android.content.res.Configuration,java.lang.String,com.android.internal.app.IVoiceInteractor,android.view.Window)>",
+  AppClassSubtypesLibClass(?activityType, "android.app.Activity"),
+  Value_Type(?value, ?activityType),
+  ThisVar(?method, ?this),
+  isImmutableHContext(?hctx),
+  isImmutableContext(?ctx).
+
 #endif // DISABLE_POINTS_TO
