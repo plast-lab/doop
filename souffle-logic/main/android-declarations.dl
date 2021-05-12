@@ -37,5 +37,5 @@
 .decl WebClientType(?type:Type)
 
 #ifndef DISABLE_POINTS_TO
-.decl UninitialisedArray(?hctx:configuration.HContext, ?value:Value, ?invocation:MethodInvocation, ?type:Type)
+.decl UninitializedArray(?hctx:configuration.HContext, ?value:Value, ?invocation:MethodInvocation, ?type:Type)
 #endif // DISABLE_POINTS_TO

@@ -755,36 +755,47 @@ VarPointsTo(?hctx, ?controlValue, ?ctx, ?ret) :-
 
 
 /**
- * Multi-dimenstional array ?!
- * Neville's code (and spelling :-)), unreviewed by YS.
+ * Multidimensional arrays in Android may use reflection, e.g. this:
+ *   String[][] array = new String[1][1];
+ * is compiled as follows (Jimple):
+ *   $r1 = newarray (int)[2];
+ *   $r1[0] = 1;
+ *   $r1[0] = 1;
+ *   $r2 = staticinvoke <java.lang.reflect.Array: java.lang.Object newInstance(java.lang.Class,int[])>(class "Ljava/lang/String;", $r1);
+ *   $r3 = (java.lang.String[][]) $r2;
+ * The rules below infer this heap allocation (via the type in the last cast),
+ * even when reflection support is off.
 **/
 
-// Special handling for multi-dimensional arrays
-NotSpecialObject(cat(cat(?invocation, ":"), ?type)),
-NotEmptyArrayValue(cat(cat(?invocation, ":"), ?type)),
-MockValueConsMacro(cat(cat(?invocation, ":"), ?type), ?type),
-MultiDimensionalArrayTemp(cat(cat(?invocation, ":"), ?type), ?invocation, ?type, ?ctx, ?from) :-
+#ifndef DISABLE_POINTS_TO
+// Special handling for multidimensional arrays.
+NotSpecialObject(?value),
+NotEmptyArrayValue(?value),
+MockValueConsMacro(?value, ?type),
+configuration.RecordContextRequest(?ctx, ?value, ?from),
+MultiDimensionalArrayTemp(?value, ?invocation, ?type, ?ctx, ?from) :-
   ?method = "<java.lang.reflect.Array: java.lang.Object newInstance(java.lang.Class,int[])>",
   StaticMethodInvocation(?invocation, ?method, ?inmethod),
   ReachableContext(?ctx, ?inmethod),
   AssignReturnValue(?invocation, ?from),
-  OptAssignCast(?type, _, ?from).
+  OptAssignCast(?type, _, ?from),
+  ?value = cat(cat(?invocation, ":"), ?type).
 
-#ifndef DISABLE_POINTS_TO
-UninitialisedArray(?hctx, ?value, ?invocation, ?type),
+UninitializedArray(?hctx, ?value, ?invocation, ?type),
 VarPointsTo(?hctx, ?value, ?ctx, ?from) :-
   MultiDimensionalArrayTemp(?value, ?invocation, ?type, ?ctx, ?from),
   configuration.RecordContextRequest(?ctx, ?value, ?from),
   configuration.RecordContextResponse(?ctx, ?value, ?from, ?hctx).
 
-NotSpecialObject(cat(cat(?invocation, ":"), ?arrayType)),
-NotEmptyArrayValue(cat(cat(?invocation, ":"), ?arrayType)),
-MockValueConsMacro(cat(cat(?invocation, ":"), ?arrayType), ?arrayType),
-UninitialisedArray(?hctx, cat(cat(?invocation, ":"), ?arrayType), ?invocation, ?arrayType),
-ArrayIndexPointsTo(?hctx, cat(cat(?invocation, ":"), ?arrayType), ?hctx, ?basevalue) :-
+NotSpecialObject(?value),
+NotEmptyArrayValue(?value),
+MockValueConsMacro(?value, ?arrayType),
+UninitializedArray(?hctx, ?value, ?invocation, ?arrayType),
+ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?basevalue) :-
   ComponentType(?type, ?arrayType),
   isArrayType(?arrayType),
-  UninitialisedArray(?hctx, ?basevalue, ?invocation, ?type).
+  UninitializedArray(?hctx, ?basevalue, ?invocation, ?type),
+  ?value = cat(cat(?invocation, ":"), ?arrayType).
 #endif // DISABLE_POINTS_TO
 
 
