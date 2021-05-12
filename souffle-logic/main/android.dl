@@ -40,7 +40,7 @@
 
 .decl AndroidOriginalAppComponent(?type:ReferenceType)
 AndroidOriginalAppComponent(?type) :-
-  Activity(?type);
+  (Activity(?type), !DisabledActivity(?type));
   Service(?type);
   BroadcastReceiver(?type);
   ContentProvider(?type);
@@ -215,7 +215,7 @@ ReifiedAndroidObjectValue(?value, ?type) :-
   ?value = cat("<reachable layout control of type ", cat(?type, ">")).
 
 // Make launcher activity methods forced-reachable.
-ReachableLayoutControl(?type) :- LauncherActivity(?type).
+ReachableLayoutControl(?type) :- LauncherActivity(?type), !DisabledActivity(?type).
 
 #ifdef DISABLE_POINTS_TO
 // Crude rule for disabled points-to: make all detected control/fragment

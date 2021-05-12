@@ -253,3 +253,19 @@ LayoutBehavior(?qClass) :-
   XMLNodeData(?file, ?nodeId, ?class),
   APP_QUALIFIED_TYPE(?class, ?qClass),
   isClassType(?qClass).
+
+// Detect disabled activities.
+// Activity XML pattern:
+// <manifest>
+//   <application>
+//     <activity android:name="..." android:enabled="false">
+.decl DisabledActivity(?activityType:ReferenceType)
+.output DisabledActivity
+DisabledActivity(?qType) :-
+  XMLNode(?manifest, ?manifestId, _, _, _, "manifest"),
+  XMLNode(?manifest, ?applicationId, ?manifestId, _, _, "application"),
+  XMLNode(?manifest, ?activityId, ?applicationId, _, _, "activity"),
+  XMLNodeAttribute(?manifest, ?activityId, _, _, "android:enabled", "false"),
+  XMLNodeAttribute(?manifest, ?activityId, _, _, "android:name", ?type),
+  APP_QUALIFIED_TYPE(?type, ?qType),
+  isReferenceType(?qType).
