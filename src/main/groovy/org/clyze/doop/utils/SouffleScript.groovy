@@ -44,10 +44,9 @@ class SouffleScript {
 		return viaDDlog ? new DDlog(executor, new File(cacheDir, "ddlog")) : new SouffleScript(executor, cacheDir)
 	}
 
-	protected void setScriptFileViaCPP(File input, File outDir, boolean debug) {
+	void setScriptFileViaCPP(File input, File outDir) {
 		File output = File.createTempFile("gen_", ".dl", outDir)
-		if (!debug)
-			output.deleteOnExit()
+		// output.deleteOnExit()
 		CPreprocessor cpp = new CPreprocessor(executor)
 		cpp.disableLineMarkers().enableLogOutput()
 		cpp.preprocessIfExists(output.canonicalPath, input.canonicalPath)
@@ -73,7 +72,7 @@ class SouffleScript {
 	File compile(File origScriptFile, File outDir,
                  SouffleOptions options) {
 
-		setScriptFileViaCPP(origScriptFile, outDir, options.debug)
+		setScriptFileViaCPP(origScriptFile, outDir)
 
 		if (options.useFunctors) {
 			detectFunctors(outDir)
@@ -210,7 +209,7 @@ class SouffleScript {
     def interpretScript(File origScriptFile, File outDir, File factsDir,
                         int jobs, SouffleOptions options) {
 
-		setScriptFileViaCPP(origScriptFile, outDir, options.debug)
+		setScriptFileViaCPP(origScriptFile, outDir)
 
 	    def db = new File(outDir, "database")
 
