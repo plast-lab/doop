@@ -1,10 +1,11 @@
 #pragma once
 #include "../data-flow/analysis.dl"
+#include "arrays.dl"
+#include "conditions.dl"
+#include "expr-client.dl"
+#include "loops.dl"
 #include "out-schema.dl"
 #include "theorem-prover.dl"
-#include "expr-client.dl"
-#include "arrays.dl"
-#include "loops.dl"
 
 .decl Sanity_ToSymbolMissing(expr: Expr)
 .decl Sanity_ToSymbolConflict(expr1: Expr, expr2: Expr, out: symbol)
