@@ -1,4 +1,7 @@
 #pragma once
+#ifndef X_STATS_NONE
+#include "../../facts/flow-sensitive-schema.dl"
+#endif
 #include "../data-flow/analysis.dl"
 #include "arrays.dl"
 #include "conditions.dl"

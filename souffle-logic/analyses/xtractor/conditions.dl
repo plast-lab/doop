@@ -6,7 +6,6 @@
 
 .decl ReverseCondition(op: symbol, reverseOp: symbol) inline
 .decl FlippedCondition(op: symbol, flippedOp: symbol) inline
-
 .decl IF_Operand_AUX(stmt: Instruction, pos: number, ap: AccessPath, size: number)
 .decl IF_Operand(stmt: Instruction, pos: number, ap: AccessPath)
 .decl IF_BaseCondition(stmt: Instruction, cond: BaseCondition)
@@ -15,6 +14,8 @@
 .decl IF_JumpToDifferentInBetween(ifStmt1: Instruction, ifStmt2: Instruction)
 .decl IF_SameGroup(ifStmt1: Instruction, ifStmt2: Instruction, index1: number, index2: number)
 .decl IF_GroupNext(ifStmt1: Instruction, ifStmt2: Instruction)
+
+.output IF_Condition
 
 ReverseCondition(">", "<=").
 ReverseCondition(">=", "<").
@@ -128,28 +129,21 @@ IF_GroupNext(ifStmt1, ifStmt2) :-
 isAccessPath(ap) :- IF_Operand(_, _, ap).
 isAccessPath(rest) :- isAccessPath([_, rest]), rest != nil.
 
-AccessPathSymbol(ap, name) :-
-	isAccessPath(ap), ap = [first, nil],
-	(Var_SimpleName(first, name) ; (!Var_SimpleName(first, _), name = first)).
+AccessPathSymbol(ap, first) :- isAccessPath(ap), ap = [first, nil].
 
-AccessPathSymbol(ap, cat("[", out)) :-
-	isAccessPath(ap), ap = ["@", rest], rest != nil,
-	AccessPathSymbol(rest, out).
-
-AccessPathSymbol(ap, cat(name, out)) :-
-	isAccessPath(ap), ap = [first, rest], first != "@", rest != nil,
-	(Var_SimpleName(first, name) ; (!Var_SimpleName(first, _), name = first)),
+AccessPathSymbol(ap, cat(first, out)) :-
+	isAccessPath(ap), ap = [first, rest], rest != nil,
 	AccessPathSymbol(rest, out).
 
 isBaseCondition(cond) :- isCondition([_, cond]).
 
-BaseConditionSymbol(cond, cat(cat(leftOut, cat(" ", cat(op, " "))), rightOut)) :-
+BaseConditionSymbol(cond, cat(cat(leftOut, cat("|", cat(op, "|"))), rightOut)) :-
 	isBaseCondition(cond),
 	cond = [left, op, right],
 	AccessPathSymbol(left, leftOut),
 	AccessPathSymbol(right, rightOut).
 
-isCondition(cond) :- IF_Condition(_, cond).
+isCondition(cond) :- IF_GroupNext(stmt, "-"), IF_Condition(stmt, cond).
 isCondition(rest) :- isCondition([rest, _]), rest != nil.
 
 ConditionSymbol(cond, out) :-
@@ -164,5 +158,6 @@ ConditionSymbol(cond, cat(cat(restOut, " AND "), baseOut)) :-
 	ConditionSymbol(rest, restOut).
 
 IF_ConditionSymbol(stmt, out) :-
+	IF_GroupNext(stmt, "-"),
 	IF_Condition(stmt, cond),
 	ConditionSymbol(cond, out).
