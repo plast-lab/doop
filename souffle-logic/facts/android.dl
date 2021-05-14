@@ -49,7 +49,7 @@ isType(?id) :-
 // SensitiveLayoutControl
 .input SensitiveLayoutControl0(filename="SensitiveLayoutControl.facts")
 
-// FieldInitialVal
+// FieldInitialValue
 .input FieldInitialValue(filename="FieldInitialValue.facts")
 
 .input AndroidId(filename="AndroidId.facts")
@@ -77,10 +77,6 @@ CreateIntValue(?const, "java.lang.Object") :-
 // a DB relation. It filters out the guessed control types that do not
 // correspond to existing types. Relations LayoutControl0 and
 // SensitiveLayoutControl0 may also come from XML facts (see android-xml.dl).
-// Heuristic: if the name is unqualified, it may come from android.view or
-// android.widget ("Android Programming: The Big Nerd Ranch Guide", chapter 32).
-#define QUAL_CONTROL_TYPE(t, qType) \
-  (qType = t ; qType = cat("android.view.", t) ; qType = cat("android.widget.", t))
 
 LayoutControl(?id, ?type, ?parent) :-
   LayoutControl0(?id, ?type, ?parent),
