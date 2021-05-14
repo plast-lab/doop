@@ -1103,38 +1103,40 @@ ForcedReachableAndroidContext(?ctx, ?method) :-
 // System services are mocked.
 .decl SystemService(?type:ReferenceType)
 .output SystemService
+// Ignore non-existent system service types (due to analysis platform version).
+#define SYSTEM_SERVICE(s) SystemService(s) :- isReferenceType(s)
 
 // Classes gathered from https://developer.android.com/reference/android/content/Context#getSystemService(java.lang.String)
 // and https://developer.android.com/reference/android/content/Context#getSystemService(java.lang.Class%3CT%3E)
-SystemService("android.view.WindowManager").
-SystemService("android.view.LayoutInflater").
-SystemService("android.app.ActivityManager").
-SystemService("android.service.wallpaper.WallpaperService").
-SystemService("android.os.PowerManager").
-SystemService("android.app.AlarmManager").
-SystemService("android.app.NotificationManager").
-SystemService("android.app.KeyguardManager").
-SystemService("android.location.LocationManager").
-SystemService("android.app.SearchManager").
-SystemService("android.os.Vibrator").
-SystemService("android.os.VibratorManager").
-SystemService("android.net.ConnectivityManager").
-SystemService("android.net.IpSecManager").
-SystemService("android.net.wifi.WifiManager").
-SystemService("android.net.wifi.aware.WifiAwareManager").
-SystemService("android.net.wifi.p2p.WifiP2pManager").
-SystemService("android.view.inputmethod.InputMethodManager").
-SystemService("android.app.UiModeManager").
-SystemService("android.app.DownloadManager").
-SystemService("android.os.BatteryManager").
-SystemService("android.app.job.JobScheduler").
-SystemService("android.app.usage.NetworkStatsManager").
-SystemService("android.os.HardwarePropertiesManager").
-SystemService("android.content.pm.verify.domain.DomainVerificationManager").
-SystemService("android.media.AudioManager").
-SystemService("android.media.MediaRouter").
-SystemService("android.telephony.TelephonyManager").
-SystemService("android.telephony.SubscriptionManager").
+SYSTEM_SERVICE("android.view.WindowManager").
+SYSTEM_SERVICE("android.view.LayoutInflater").
+SYSTEM_SERVICE("android.app.ActivityManager").
+SYSTEM_SERVICE("android.service.wallpaper.WallpaperService").
+SYSTEM_SERVICE("android.os.PowerManager").
+SYSTEM_SERVICE("android.app.AlarmManager").
+SYSTEM_SERVICE("android.app.NotificationManager").
+SYSTEM_SERVICE("android.app.KeyguardManager").
+SYSTEM_SERVICE("android.location.LocationManager").
+SYSTEM_SERVICE("android.app.SearchManager").
+SYSTEM_SERVICE("android.os.Vibrator").
+SYSTEM_SERVICE("android.os.VibratorManager").
+SYSTEM_SERVICE("android.net.ConnectivityManager").
+SYSTEM_SERVICE("android.net.IpSecManager").
+SYSTEM_SERVICE("android.net.wifi.WifiManager").
+SYSTEM_SERVICE("android.net.wifi.aware.WifiAwareManager").
+SYSTEM_SERVICE("android.net.wifi.p2p.WifiP2pManager").
+SYSTEM_SERVICE("android.view.inputmethod.InputMethodManager").
+SYSTEM_SERVICE("android.app.UiModeManager").
+SYSTEM_SERVICE("android.app.DownloadManager").
+SYSTEM_SERVICE("android.os.BatteryManager").
+SYSTEM_SERVICE("android.app.job.JobScheduler").
+SYSTEM_SERVICE("android.app.usage.NetworkStatsManager").
+SYSTEM_SERVICE("android.os.HardwarePropertiesManager").
+SYSTEM_SERVICE("android.content.pm.verify.domain.DomainVerificationManager").
+SYSTEM_SERVICE("android.media.AudioManager").
+SYSTEM_SERVICE("android.media.MediaRouter").
+SYSTEM_SERVICE("android.telephony.TelephonyManager").
+SYSTEM_SERVICE("android.telephony.SubscriptionManager").
 
 #ifndef DISABLE_POINTS_TO
 // Helper relation: Android method returns a mock value (of some type).
@@ -1161,6 +1163,7 @@ AndroidMethodReturns(?method, ?value, ?type) :-
 
 // Mock return values of TelephonyManager.getDeviceId().
 isStringConstant(?value),
+HeapAllocation_Type(?value, "java.lang.String"),
 AndroidMethodReturns(?method, ?value, "java.lang.String") :-
   ( ?method = "<android.telephony.TelephonyManager: java.lang.String getDeviceId()>"
   ; ?method = "<android.telephony.TelephonyManager: java.lang.String getDeviceId(int)>"
