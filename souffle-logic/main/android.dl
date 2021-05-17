@@ -171,13 +171,23 @@ SensitiveLayoutControlValue(?value) :-
 
 // Create layout controls from XML elements by looking up their
 // Android id (@id/x) in the R resource fields.
+.decl XMLLayoutControl(?file:symbol, ?nodeId:symbol, ?id:symbol)
+.output XMLLayoutControl
+
+XMLLayoutControl(?file, ?nodeId, ?id),
 LayoutControl(?id, ?class, "-") :-
-  XMLAndroidId(_, _, _, "id", ?resourceLabel, ?class),
+  XMLAndroidId(?file, ?nodeId, _, "id", ?resourceLabel, ?class),
   Field_SimpleName(?fld, ?resourceLabel),
   ApplicationPackage(?appPkg),
   Field_DeclaringType(?fld, cat(?appPkg, ".R$id")),
   Field_Modifier("final", ?fld),
   FieldInitialValue(?fld, ?id).
+
+// Make password controls sensitive.
+SensitiveLayoutControl(?id, ?class, "-") :-
+  XMLAndroidId(?file, ?nodeId, _, _, _, ?class),
+  XMLAndroidPasswordControl(?file, ?nodeId),
+  XMLLayoutControl(?file, ?nodeId, ?id).
 
 // Handle library-callable "on*" methods of layout controls
 
