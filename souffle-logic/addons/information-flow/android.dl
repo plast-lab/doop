@@ -1,32 +1,18 @@
 #include "macros.dl"
 
 #ifdef ANDROID
-TaintedValueIntroduced(?declaringType, ?invocation, ?type, "PASSWORD", ValueIdMacro(?invocation, ?type, DEFAULT_BREADCRUMB)),
-mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?invocation, ?type, DEFAULT_BREADCRUMB), ?ctx, ?to) :-
-  ?type = "java.lang.String",
-  PossibleLayoutGetText(?to, ?invocation, ?ctx, ?base),
-  Instruction_Method(?invocation, ?method),
-  Method_DeclaringType(?method, ?declaringType),
+// Handle instance-sensitive tainting: specific methods called on specific values.
+TaintedValueIntroduced(?declaringType, ?invocation, ?type, ?label, ?valueId),
+mainAnalysis.VarPointsTo(?hctx, ?valueId, ?ctx, ?to) :-
+  SensitiveLayoutControlTaintConfig(?label, ?method),
+  MethodInvocationInContextInApplication(?ctx, ?invocation, ?method),
+  MethodInvocationInfo(?invocation, ?type, ?to),
+  Instruction_Method(?invocation, ?inmethod),
+  Method_DeclaringType(?inmethod, ?declaringType),
+  MethodInvocation_Base(?invocation, ?base),
   mainAnalysis.VarPointsTo(_, ?layoutControlValue, ?ctx, ?base),
+  mainAnalysis.SensitiveLayoutControlValue(?layoutControlValue),
   mainAnalysis.isImmutableHContext(?hctx),
-  mainAnalysis.SensitiveLayoutControlValue(?layoutControlValue).
-
-.decl PossibleLayoutGetText(?to:Var, ?invocation:MethodInvocation, ?ctx:mainAnalysis.configuration.Context, ?base:Var)
-
-PossibleLayoutGetText(?to, ?invocation, ?ctx, ?base) :-
-  VirtualMethodInvocation_SimpleName(?invocation, "getText"),
-  VirtualMethodInvocation_Base(?invocation, ?base),
-  AssignReturnValue(?invocation, ?to),
-  Var_Type(?base, ?type),
-  mainAnalysis.AndroidViewType(?type),
-  MethodInvocationInContext(?ctx, ?invocation, _).
+  ?valueId = ValueIdMacro(?invocation, ?type, DEFAULT_BREADCRUMB).
 #endif // ANDROID
 
-VarIsTaintedFromVar("java.lang.String", ?ctx, ?to, ?ctx, ?base) :-
-  basic.SupertypeOf("android.text.Editable", ?type),
-  Var_Type(?base, ?type),
-  VirtualMethodInvocation_Base(?invocation, ?base),
-  VirtualMethodInvocation_SimpleName(?invocation, "toString"),
-  AssignReturnValue(?invocation, ?to),
-  Instruction_Method(?invocation, ?method),
-  mainAnalysis.ReachableContext(?ctx, ?method).

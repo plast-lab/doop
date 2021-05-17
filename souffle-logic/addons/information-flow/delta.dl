@@ -9,3 +9,4 @@ isInformationLabel("Persistence").
 isInformationLabel("IO").
 isInformationLabel("Net").
 isInformationLabel("PASSWORD").
+isInformationLabel("SENSITIVE_CONTROL").

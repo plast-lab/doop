@@ -192,9 +192,9 @@ ParamToRetTaintTransferMethod("<java.util.Arrays: java.util.List asList(java.lan
 ParamToRetTaintTransferMethod("<java.util.Arrays: java.lang.Object[] copyOf(java.lang.Object[],int)>").
 ParamToRetTaintTransferMethod("<java.util.Arrays: java.lang.String toString(java.lang.Object[])>").
 
+BaseToRetTaintTransferMethod("<android.text.Editable: java.lang.String toString()>").
 /*
 BaseToRetTaintTransferMethod("<android.widget.EditText: android.text.Editable getText()>").
-BaseToRetTaintTransferMethod("<android.text.Editable: java.lang.String toString()>").
 BaseToRetTaintTransferMethod("<android.widget.EditText: java.lang.String toString()>").
 BaseToRetTaintTransferMethod("<android.view.View: java.lang.String toString()>").
 */
@@ -288,3 +288,6 @@ ParamToBaseTaintTransferMethod(0, "<java.io.ByteArrayInputStream: void <init>(by
 
 ParamToBaseTaintTransferMethod(0, "<java.io.ObjectInputStream: void <init>(java.io.InputStream)>").
 
+
+// For sensitive layout controls:
+SensitiveLayoutControlTaintConfig("SENSITIVE_CONTROL", "<android.widget.EditText: android.text.Editable getText()>").

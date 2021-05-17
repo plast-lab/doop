@@ -62,3 +62,9 @@
 
 .decl TaintObjTransfer(fromCtx:mainAnalysis.configuration.Context, from:Var, toCtx:mainAnalysis.configuration.Context, to:Var)
 .output TaintObjTransfer
+
+#ifdef ANDROID
+// Taint configurations for sensitive layout controls: calling <method>
+// on a sensitive layout control taints with <label>.
+.decl SensitiveLayoutControlTaintConfig(?label:symbol, ?method:Method)
+#endif // ANDROID
