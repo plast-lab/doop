@@ -15,7 +15,11 @@ TaintSourceMethod("Location", "<android.location.Location: double getLatitude()>
 TaintSourceMethod("Location", "<android.location.Location: double getLongitude()>").
 TaintSourceMethod("Telephony", "<android.telephony.TelephonyManager: java.lang.String getDeviceId()>").
 TaintSourceMethod("Telephony", "<android.telephony.TelephonyManager: java.lang.String getSubscriberId()>").
+TaintSourceMethod("Telephony", "<android.telephony.TelephonyManager: java.lang.String getSubscriberId(int)>".
 TaintSourceMethod("Telephony", "<android.telephony.TelephonyManager: java.lang.String getSimSerialNumber()>").
+TaintSourceMethod("Telephony", "<android.telephony.TelephonyManager: int getSimState()>").
+TaintSourceMethod("Telephony", "<android.telephony.TelephonyManager: int getSimState(int)>").
+TaintSourceMethod("Telephony", "<android.telephony.TelephonyManager: int getSimCount()>").
 TaintSourceMethod("Telephony", "<android.telephony.TelephonyManager: java.lang.String getLine1Number()>").
 TaintSourceMethod("Net", "<java.net.URLConnection: java.io.OutputStream getOutputStream()>").
 TaintSourceMethod("Net", "<java.net.URLConnection: java.io.InputStream getInputStream()>").
