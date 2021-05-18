@@ -18,6 +18,7 @@
 .decl UNOP(stmt:AssignUnop_Insn, to:Var, op:symbol)
 .decl BINOP(stmt:AssignBinop_Insn, to:Var, op:symbol)
 .decl IF(stmt:If_Insn, op:symbol, label:number)
+.decl GOTO(stmt:Goto_Insn, label:number)
 .decl RET(stmt:ReturnInstruction) inline
 
 .decl FORMAL_PARAM(m:Method, pos:number, param:Var) inline
@@ -173,3 +174,6 @@ IF(stmt, op, label) :-
 	isIf_Insn(stmt),
 	If_Target(stmt, label),
 	__OperatorAt(stmt, op).
+
+GOTO(stmt, label) :-
+	Goto_Target(stmt, label).

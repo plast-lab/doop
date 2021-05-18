@@ -37,10 +37,42 @@ class Main {
 			}
 		}
 
+		char result = playerHasWon(board);
+		testfoobar(board);
+
 		foobar1(FOO1D);
 		foobar2(FOO1D);
 		foobar3(FOO1D);
 		foobar4(FOO1D);
+	}
+
+	static char playerHasWon(char[][] board) {
+		//Check each row
+		for (int i = 0; i < 3; i++) {
+			if (board[i][0] == board[i][1] && board[i][1] == board[i][2] && board[i][0] != '-' && board[i][1] != '?') {
+				return board[i][0];
+			}
+		}
+
+		for (int i = 0; i < 3; i++) {
+			if (board[i][0] == board[i][1] || board[i][1] == board[i][2] || board[i][0] != '-' || board[i][1] != '?') {
+				return board[i][0];
+			}
+		}
+
+		//Otherwise nobody has won yet
+		return ' ';
+	}
+
+	static void testfoobar(char[][] board) {
+		int i = 0;
+		int ok = 0;
+		while (i < 3) {
+			if (board[i][0] == '-') ok = 1;
+			else if (board[i][1] == '?') ok = 2;
+			else if (board[i][2] == '-') ok = 3;
+			i++;
+		}
 	}
 
 	static void foobar1(char[] myarr) {

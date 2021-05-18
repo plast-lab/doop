@@ -236,6 +236,26 @@ XMLFragment_Class(?file, ?nodeId, ?qClass) :-
 XMLFragment_Id(?file, ?nodeId, ?id) :-
   XMLNode_Id(?file, ?nodeId, "fragment", ?id).
 
+// Resolve ids of XML elements. The following pattern:
+//   <EditText android:id="@id/password">
+// should produce: category="id", id="password".
+.decl XMLAndroidId(?file:symbol, ?nodeId:symbol, ?parentId:symbol, ?category:symbol, ?id:symbol, ?qClass:ClassType)
+.output XMLAndroidId
+XMLAndroidId(?file, ?nodeId, ?parentId, ?category, ?id, ?qClass) :-
+  XMLNode(?file, ?nodeId, ?parentId, _, _, ?class),
+  XMLNodeAttribute(?file, ?nodeId, _, _, "android:id", ?attrId),
+  substr(?attrId, 0, 4) = "@id/",
+  ?category = "id",
+  ?id = substr(?attrId, 4, strlen(?attrId)),
+  (APP_QUALIFIED_TYPE(?class, ?qClass) ; QUAL_CONTROL_TYPE(?class, ?qClass)),
+  isClassType(?qClass).
+
+// Mark layout control nodes with a password input type.
+.decl XMLAndroidPasswordControl(?file:symbol, ?nodeId: symbol)
+.output XMLAndroidPasswordControl
+XMLAndroidPasswordControl(?file, ?nodeId) :-
+  XMLNodeAttribute(?file, ?nodeId, _, _, "android:inputType", "textPassword").
+
 // Detect types used in action views.
 .decl ActionViewType(?class:ClassType)
 ActionViewType(?class) :-

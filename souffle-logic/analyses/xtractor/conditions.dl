@@ -1,0 +1,163 @@
+#pragma once
+
+.type AccessPath = [first: symbol, rest: AccessPath]
+.type BaseCondition = [left: AccessPath, op: symbol, right: AccessPath]
+.type Condition = [rest: Condition, last: BaseCondition]
+
+.decl ReverseCondition(op: symbol, reverseOp: symbol) inline
+.decl FlippedCondition(op: symbol, flippedOp: symbol) inline
+.decl IF_Operand_AUX(stmt: Instruction, pos: number, ap: AccessPath, size: number)
+.decl IF_Operand(stmt: Instruction, pos: number, ap: AccessPath)
+.decl IF_BaseCondition(stmt: Instruction, cond: BaseCondition)
+.decl IF_Condition(stmt: Instruction, cond: Condition)
+.decl IF_BothGotoSame(ifStmt1: Instruction, ifStmt2: Instruction, index1: number, index2: number, label: number)
+.decl IF_JumpToDifferentInBetween(ifStmt1: Instruction, ifStmt2: Instruction)
+.decl IF_SameGroup(ifStmt1: Instruction, ifStmt2: Instruction, index1: number, index2: number)
+.decl IF_GroupNext(ifStmt1: Instruction, ifStmt2: Instruction)
+
+.output IF_Condition
+
+ReverseCondition(">", "<=").
+ReverseCondition(">=", "<").
+ReverseCondition("<", ">=").
+ReverseCondition("<=", ">").
+ReverseCondition("==", "!=").
+ReverseCondition("!=", "==").
+
+FlippedCondition(">", "<").
+FlippedCondition(">=", "<=").
+FlippedCondition("<", ">").
+FlippedCondition("<=", ">=").
+FlippedCondition("==", "==").
+FlippedCondition("!=", "!=").
+
+IF_Operand_AUX(stmt, pos, [var, nil], 1) :-
+	IF(stmt, _, _),
+	InterestingStmt(stmt),
+	OPERAND_VAR(stmt, pos, var).
+
+IF_Operand_AUX(stmt, pos, [array, ["@", [indexStr, rest]]], size + 3) :-
+	IF_Operand_AUX(stmt, pos, [to, rest], size),
+	((ALOAD_NUM(_, to, array, index), indexStr = to_string(index));
+	 ALOAD_VAR(_, to, array, indexStr)).
+
+IF_Operand(stmt, pos, ap) :-
+	IF_Operand_AUX(stmt, pos, ap, maxSize),
+	maxSize = max size : { IF_Operand_AUX(stmt, pos, _, size) }.
+
+IF_Operand(stmt, pos, [to_string(num), nil]) :-
+	IF(stmt, _, _),
+	InterestingStmt(stmt),
+	OPERAND_NUM(stmt, pos, num).
+
+IF_BaseCondition(stmt, [left, reverseOp, right]) :-
+	IF(stmt, op, _),
+	InterestingStmt(stmt),
+	ReverseCondition(op, reverseOp),
+	IF_Operand(stmt, 1, left),
+	IF_Operand(stmt, 2, right).
+
+IF_Condition(stmt, [nil, cond]) :-
+	IF(stmt, _, _),
+	InterestingStmt(stmt),
+	!IF_GroupNext(_, stmt),
+	!IF_GroupNext(stmt, _),
+	IF_BaseCondition(stmt, cond).
+
+IF_Condition(stmt, [nil, cond]) :-
+	IF_GroupNext("-", stmt),
+	IF_BaseCondition(stmt, cond).
+
+IF_Condition(ifStmt2, [rest, cond]) :-
+	IF_GroupNext(ifStmt1, ifStmt2), ifStmt2 != "-",
+	IF_Condition(ifStmt1, rest),
+	IF_BaseCondition(ifStmt2, cond).
+
+
+IF_BothGotoSame(ifStmt1, ifStmt2, index1, index2, label) :-
+	IF(ifStmt1, _, label),
+	InterestingStmt(ifStmt1),
+	Instruction_Method(ifStmt1, method),
+	Instruction_Index(ifStmt1, index1),
+	IF(ifStmt2, _, label),
+	Instruction_Method(ifStmt2, method),
+	Instruction_Index(ifStmt2, index2),
+	index1 < index2.
+
+IF_JumpToDifferentInBetween(ifStmt1, ifStmt2) :-
+	IF_BothGotoSame(ifStmt1, ifStmt2, index1, index2, label),
+	Instruction_Method(ifStmt1, method),
+	Instruction_Method(stmt, method),
+	(IF(stmt, _, otherLabel); GOTO(stmt, otherLabel)),
+	label != otherLabel,
+	Instruction_Index(stmt, index),
+	index1 < index, index < index2.
+
+IF_SameGroup(ifStmt1, ifStmt2, index1, index2) :-
+	IF_BothGotoSame(ifStmt1, ifStmt2, index1, index2, _),
+	!IF_JumpToDifferentInBetween(ifStmt1, ifStmt2).
+
+IF_GroupNext(stmt, "-"),
+IF_GroupNext("-", stmt) :-
+	IF(stmt, _, _),
+	InterestingStmt(stmt),
+	!IF_SameGroup(stmt, _, _, _),
+	!IF_SameGroup(_, stmt, _, _).
+
+IF_GroupNext("-", stmt) :-
+	IF_SameGroup(stmt, _, _, _),
+	!IF_SameGroup(_, stmt, _, _).
+
+IF_GroupNext(stmt, "-") :-
+	IF_SameGroup(_, stmt, _, _),
+	!IF_SameGroup(stmt, _, _, _).
+
+IF_GroupNext(ifStmt1, ifStmt2) :-
+	IF_SameGroup(ifStmt1, ifStmt2, index1, minMaxIndex2),
+	minMaxIndex2 = min index2 : { IF_SameGroup(ifStmt1, _, index1, index2) }.
+
+
+.decl isAccessPath(ap: AccessPath)
+.decl AccessPathSymbol(ap: AccessPath, out: symbol)
+.decl isBaseCondition(cond: BaseCondition)
+.decl BaseConditionSymbol(cond: BaseCondition, out: symbol)
+.decl isCondition(cond: Condition)
+.decl ConditionSymbol(cond: Condition, out: symbol)
+.decl IF_ConditionSymbol(stmt: Instruction, out: symbol)
+.output IF_ConditionSymbol
+
+isAccessPath(ap) :- IF_Operand(_, _, ap).
+isAccessPath(rest) :- isAccessPath([_, rest]), rest != nil.
+
+AccessPathSymbol(ap, first) :- isAccessPath(ap), ap = [first, nil].
+
+AccessPathSymbol(ap, cat(first, out)) :-
+	isAccessPath(ap), ap = [first, rest], rest != nil,
+	AccessPathSymbol(rest, out).
+
+isBaseCondition(cond) :- isCondition([_, cond]).
+
+BaseConditionSymbol(cond, cat(cat(leftOut, cat("|", cat(op, "|"))), rightOut)) :-
+	isBaseCondition(cond),
+	cond = [left, op, right],
+	AccessPathSymbol(left, leftOut),
+	AccessPathSymbol(right, rightOut).
+
+isCondition(cond) :- IF_GroupNext(stmt, "-"), IF_Condition(stmt, cond).
+isCondition(rest) :- isCondition([rest, _]), rest != nil.
+
+ConditionSymbol(cond, out) :-
+	isCondition(cond),
+	cond = [nil, base],
+	BaseConditionSymbol(base, out).
+
+ConditionSymbol(cond, cat(cat(restOut, " AND "), baseOut)) :-
+	isCondition(cond),
+	cond = [rest, base], rest != nil,
+	BaseConditionSymbol(base, baseOut),
+	ConditionSymbol(rest, restOut).
+
+IF_ConditionSymbol(stmt, out) :-
+	IF_GroupNext(stmt, "-"),
+	IF_Condition(stmt, cond),
+	ConditionSymbol(cond, out).

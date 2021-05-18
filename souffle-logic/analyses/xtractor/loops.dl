@@ -1,6 +1,7 @@
 #pragma once
-#include "expr-values.dl"
 #include "arrays.dl"
+#include "conditions.dl"
+#include "expr-values.dl"
 
 .decl LocalBlockEdge(fromBB: Instruction, toBB: Instruction)
 .decl StructuredLoopBackEdge(fromBB: Instruction, toBB: Instruction)
@@ -58,8 +59,6 @@ InnermostStructuredLoop(loopHead) :-
 // A variable that is monotonically changes with each successive iteration in loop
 .decl ChangeByOne(stmt: Instruction, to: Var, var: Var)
 .decl InductionVariable(var: Var, loopHead: Instruction)
-.decl ReverseCondition(op: symbol, reverseOp: symbol) inline
-.decl FlippedCondition(op: symbol, flippedOp: symbol) inline
 .decl LoopExitCond_Stmt(jumpStmt: Instruction, loopHead: Instruction)
 .decl LoopExitCond(condVar: Var, op: symbol, rhs: number, loopHead: Instruction)
 .decl LoopInitialValue(condVar: Var, value: number, loopHead: Instruction)
@@ -93,20 +92,6 @@ InductionVariable(inductionVar, loopHead) :-
 	ChangeByOne(stmt, to, var),
 	Flows(to, var),
 	Flows(to, inductionVar).
-
-ReverseCondition(">", "<=").
-ReverseCondition(">=", "<").
-ReverseCondition("<", ">=").
-ReverseCondition("<=", ">").
-ReverseCondition("==", "!=").
-ReverseCondition("!=", "==").
-
-FlippedCondition(">", "<").
-FlippedCondition(">=", "<=").
-FlippedCondition("<", ">").
-FlippedCondition("<=", ">=").
-FlippedCondition("==", "==").
-FlippedCondition("!=", "!=").
 
 // If statement has one edge jumping inside the loop, and another outside of it
 LoopExitCond_Stmt(jumpStmt, loopHead) :-

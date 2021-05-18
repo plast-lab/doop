@@ -3,11 +3,22 @@ package org.clyze.doop.utils
 import org.clyze.doop.core.DoopAnalysis
 
 class XTractor {
+	static DoopAnalysis analysis
+	static File outFile
+	static def arrayMeta = [:].withDefault { [] }
+
 	static void run(DoopAnalysis analysis) {
-		def outFile = new File(analysis.database, "xtractor-out.dl")
+		this.analysis = analysis
+		outFile = new File(analysis.database, "xtractor-out.dl")
 		outFile.text = ""
 
-		def arrayMeta = [:].withDefault { [] }
+		arrays()
+		conditions()
+		schema()
+	}
+
+	private static def arrays() {
+		arrayMeta = [:].withDefault { [] }
 		outFile << ".decl arr_META(name:symbol, types:symbol, dimensions:number)\n"
 		new File(analysis.database, "META_ArrayInfo.csv").eachLine {
 			def (String array, String name, String types) = it.split("\t")
@@ -27,11 +38,10 @@ class XTractor {
 		arrayMeta.each { array, meta ->
 			def (String relName, metaRule, name, types, int dimensions) = meta
 			def sizes = arrayDims[array]
-			def allSizes = (0..(dimensions-1)).collect {sizes[it] ?: -1 }
+			def allSizes = (0..(dimensions - 1)).collect { sizes[it] ?: -1 }
 			outFile << "$metaRule\n"
 			outFile << "${relName}_DimSizes(${allSizes.join(", ")}).\n"
 		}
-		arrayDims = null
 
 		def arrayFrom2Index2Var = [:].withDefault { [:].withDefault { [] } }
 		new File(analysis.database, "META_ArrayLoad.csv").eachLine {
@@ -61,12 +71,33 @@ class XTractor {
 			}
 		}
 		arrayMeta.keySet().each { appendToIndices(it, [], it) }
-		arrayMeta = null
-		arrayFrom2Index2Var = null
-		arrayToIndexHasValue = null
+	}
 
+	private static def conditions() {
+		new File(analysis.database, "IF_ConditionSymbol.csv").eachLine {
+			def (String stmt, String complexCond) = it.split("\t")
+			def conditions = complexCond.split(" AND ")
+			outFile << "$stmt\n"
+			conditions.eachWithIndex { cond, index ->
+				def (String left, op, String right) = cond.split("\\|")
+				parseAP(left.split("@"), index, "l")
+				parseAP(right.split("@"), index, "r")
+				outFile << "lVal$index $op rVal$index,\n"
+			}
+		}
+	}
 
+	static def parseAP(def parts, int index, def side) {
+		if (parts.size() == 1) {
+			outFile << "${side}Val$index = ${parts.first()},\n"
+		} else {
+			def rel = arrayMeta[parts.first()].first()
+			def indexes = parts.drop(1).collect{ it.split("/").last().split('_\\$\\$A_').first() }
+			outFile << "$rel(${indexes.join(", ")}, ${side}Val$index),\n"
+		}
+	}
 
+	private static def schema() {
 		Map<String, List<String[]>> classInfo = [:].withDefault { [] }
 		new File(analysis.database, "Schema_ClassInfo.csv").eachLine { line ->
 			def (klass, kind, field, fieldType) = line.split("\t")
