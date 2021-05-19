@@ -119,9 +119,9 @@ class SouffleAnalysis extends DoopAnalysis {
 				int dbSize = (sizeOfDirectory(database) / 1024).intValue()
 				runtimeMetricsFile.append("disk footprint (KB)\t${dbSize}\n")
 				postprocess()
-			}
 
-			if (this.name == "xtractor") XTractor.run(this)
+				if (this.name == "xtractor") XTractor.run(this)
+			}
 
 			Files.move(runtimeMetricsFile.toPath(), new File(database, "Stats_Runtime.csv").toPath(), StandardCopyOption.REPLACE_EXISTING)
 		} finally {
