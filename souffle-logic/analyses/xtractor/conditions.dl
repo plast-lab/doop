@@ -1,4 +1,5 @@
 #pragma once
+#include "loops.dl"
 
 .type AccessPath = [first: symbol, rest: AccessPath]
 .type BaseCondition = [left: AccessPath, op: symbol, right: AccessPath]
@@ -14,6 +15,9 @@
 .decl IF_JumpToDifferentInBetween(ifStmt1: Instruction, ifStmt2: Instruction)
 .decl IF_SameGroup(ifStmt1: Instruction, ifStmt2: Instruction, index1: number, index2: number)
 .decl IF_GroupNext(ifStmt1: Instruction, ifStmt2: Instruction)
+
+.decl API_ResultMethod(method: Method)
+API_ResultMethod("<Main: char playerHasWon(char[][])>").
 
 .output IF_Condition
 
@@ -50,9 +54,13 @@ IF_Operand(stmt, pos, [to_string(num), nil]) :-
 	InterestingStmt(stmt),
 	OPERAND_NUM(stmt, pos, num).
 
+
 IF_BaseCondition(stmt, [left, reverseOp, right]) :-
 	IF(stmt, op, _),
 	InterestingStmt(stmt),
+	!LoopMainExitCond(stmt),
+	Instruction_Method(stmt, method),
+	API_ResultMethod(method),
 	ReverseCondition(op, reverseOp),
 	IF_Operand(stmt, 1, left),
 	IF_Operand(stmt, 2, right).
@@ -161,3 +169,31 @@ IF_ConditionSymbol(stmt, out) :-
 	IF_GroupNext(stmt, "-"),
 	IF_Condition(stmt, cond),
 	ConditionSymbol(cond, out).
+
+
+.decl InterestingReturn_AUX(stmt: Instruction, ap: AccessPath, size: number)
+.decl InterestingReturn(stmt: Instruction, ap: AccessPath)
+.decl InterestingReturnSymbol(stmt: Instruction, out: symbol)
+.output InterestingReturnSymbol
+
+InterestingReturn_AUX(retStmt, [var, nil], 1) :-
+	IF_Condition(condStmt, _),
+	MaySuccessorModuloThrow(toBB, condStmt),
+	BasicBlockTail(toBB, retStmt),
+	RET(retStmt),
+	FORMAL_RET(retStmt, var).
+
+InterestingReturn_AUX(retStmt, [array, ["@", [indexStr, rest]]], size + 3) :-
+	InterestingReturn_AUX(retStmt, [to, rest], size),
+	((ALOAD_NUM(_, to, array, index), indexStr = to_string(index));
+	 ALOAD_VAR(_, to, array, indexStr)).
+
+InterestingReturn(stmt, ap) :-
+	InterestingReturn_AUX(stmt, ap, maxSize),
+	maxSize = max size : { InterestingReturn_AUX(stmt, _, size) }.
+
+isAccessPath(ap) :- InterestingReturn(_, ap).
+
+InterestingReturnSymbol(stmt, out) :-
+	InterestingReturn(stmt, ap),
+	AccessPathSymbol(ap, out).

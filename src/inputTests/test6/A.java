@@ -47,24 +47,34 @@ class Main {
 	}
 
 	static char playerHasWon(char[][] board) {
+
 		//Check each row
 		for (int i = 0; i < 3; i++) {
-			if (board[i][0] == board[i][1] && board[i][1] == board[i][2] && board[i][0] != '-' && board[i][1] != '?') {
+			if (board[i][0] == board[i][1] && board[i][1] == board[i][2] && board[i][0] != '-') {
 				return board[i][0];
 			}
 		}
 
-		for (int i = 0; i < 3; i++) {
-			if (board[i][0] == board[i][1] || board[i][1] == board[i][2] || board[i][0] != '-' || board[i][1] != '?') {
-				return board[i][0];
+		//Check each column
+		for (int j = 0; j < 3; j++) {
+			if (board[0][j] == board[1][j] && board[1][j] == board[2][j] && board[0][j] != '-') {
+				return board[0][j];
 			}
+		}
+
+		//Check the diagonals
+		if (board[0][0] == board[1][1] && board[1][1] == board[2][2] && board[0][0] != '-') {
+			return board[0][0];
+		}
+		if (board[2][0] == board[1][1] && board[1][1] == board[0][2] && board[2][0] != '-') {
+			return board[2][0];
 		}
 
 		//Otherwise nobody has won yet
 		return ' ';
 	}
 
-	static void testfoobar(char[][] board) {
+	static char testfoobar(char[][] board) {
 		int i = 0;
 		int ok = 0;
 		while (i < 3) {
@@ -73,6 +83,13 @@ class Main {
 			else if (board[i][2] == '-') ok = 3;
 			i++;
 		}
+
+		for (i = 0; i < 3; i++) {
+			if (board[i][0] == board[i][1] || board[i][1] == board[i][2] || board[i][0] != '-' || board[i][1] != '?') {
+				return board[i][0];
+			}
+		}
+		return ' ';
 	}
 
 	static void foobar1(char[] myarr) {

@@ -1,6 +1,7 @@
 #pragma once
 #ifndef X_STATS_NONE
 #include "../../facts/flow-sensitive-schema.dl"
+#include "../../addons/cfg-analysis/analysis.dl"
 #endif
 #include "../data-flow/analysis.dl"
 #include "arrays.dl"

@@ -1,5 +1,6 @@
 package org.clyze.doop.utils
 
+import groovy.transform.Canonical
 import org.clyze.doop.core.DoopAnalysis
 
 class XTractor {
@@ -74,26 +75,33 @@ class XTractor {
 	}
 
 	private static def conditions() {
+		def clean = { String s ->
+			s.isNumber() ? s : s.split("/").last().split('_\\$\\$A_').first()
+		}
+
+		def mk = { String s, String tempVar ->
+			def parts = s.split("@")
+			if (parts.length == 1) {
+				return new CompExpr(tempVar, tempVar, "=", clean(parts[0]))
+			} else {
+				def array = arrayMeta[parts[0]].first() as String
+				def indexes = parts.drop(1).collect { clean(it) }
+				return new ArrayExpr(tempVar, array, indexes)
+			}
+		}
+
 		new File(analysis.database, "IF_ConditionSymbol.csv").eachLine {
 			def (String stmt, String complexCond) = it.split("\t")
 			def conditions = complexCond.split(" AND ")
-			outFile << "$stmt\n"
+			outFile << "\n$stmt\n"
+			def res = []
 			conditions.eachWithIndex { cond, index ->
-				def (String left, op, String right) = cond.split("\\|")
-				parseAP(left.split("@"), index, "l")
-				parseAP(right.split("@"), index, "r")
-				outFile << "lVal$index $op rVal$index,\n"
+				def (String left, String op, String right) = cond.split("\\|")
+				def l = mk(left, "tmp1$index")
+				def r = mk(right, "tmp2$index")
+				res += [l, r, new CompExpr(null, l.tempVar, op == "==" ? "=" : op, r.tempVar)]
 			}
-		}
-	}
-
-	static def parseAP(def parts, int index, def side) {
-		if (parts.size() == 1) {
-			outFile << "${side}Val$index = ${parts.first()},\n"
-		} else {
-			def rel = arrayMeta[parts.first()].first()
-			def indexes = parts.drop(1).collect{ it.split("/").last().split('_\\$\\$A_').first() }
-			outFile << "$rel(${indexes.join(", ")}, ${side}Val$index),\n"
+			outFile << "${Expr.opt(res).collect { it.str() }.join(",\n")}\n"
 		}
 	}
 
@@ -158,5 +166,67 @@ class XTractor {
 		dlInputs.each { outFile << "$it\n" }
 
 		println "Static Schema... Result in $outFile"
+	}
+}
+
+@Canonical
+abstract class Expr {
+	String tempVar
+
+	abstract String str()
+
+	boolean eq(Expr o) { false }
+
+	void replace(String orig, String repl) { if (tempVar == orig) tempVar = repl }
+
+	static List<Expr> opt(List<Expr> exprs) {
+		def dupsMap = [:].withDefault { [] }
+		exprs.each {expr ->
+			if (expr !instanceof ArrayExpr || dupsMap.containsKey(expr)) return
+			exprs.eachWithIndex{ Expr e, int i ->
+				if (expr !== e && expr.eq(e)) dupsMap[expr] += i
+			}
+		}
+		dupsMap.findAll{it.value.size() }.each { Expr e, List<Integer> dups ->
+			dups.each { i ->
+				def orig = exprs[i].tempVar
+				exprs.each {it?.replace(orig, e.tempVar) }
+				exprs[i] = null
+			}
+		}
+		exprs.eachWithIndex { Expr e, int i ->
+			if (e == null || e !instanceof CompExpr || e.op != "=") return
+			def (orig, repl) = e.left.isNumber() ? [e.right, e.left] : [e.left, e.right]
+			exprs.each {it?.replace(orig, repl) }
+			exprs[i] = null
+		}
+		return exprs.grep()
+	}
+}
+
+@Canonical(includeSuperProperties = true)
+class ArrayExpr extends Expr {
+	String array
+	List<String> indexes
+
+	String str() { "$array(${indexes.join(", ")}, $tempVar)" }
+
+	boolean eq(Expr o) {
+		if (o !instanceof ArrayExpr || array != o.array) return false
+		indexes == o.indexes
+	}
+}
+
+@Canonical(includeSuperProperties = true)
+class CompExpr extends Expr {
+	String left
+	String op
+	String right
+
+	String str() { "$left $op $right" }
+
+	void replace(String orig, String repl) {
+		if (left == orig) left = repl
+		if (right == orig) right = repl
 	}
 }
