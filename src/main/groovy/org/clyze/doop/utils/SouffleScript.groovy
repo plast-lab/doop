@@ -193,7 +193,7 @@ class SouffleScript {
 		if (options.provenance || options.liveProf) {
 			def mode = options.provenance ? "provenance" : (options.liveProf ? "live profiling" : "unknown")
 			println "This process will now exit, run this command to run the analysis with the requested interactive mode (${mode}): rlwrap ${cmd}"
-			throw new DoopErrorCodeException(22)
+			throw DoopErrorCodeException.error22()
 		}
 
 		log.debug "Execution command: ${cmd}"

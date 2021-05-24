@@ -35,11 +35,11 @@ class DDlog extends SouffleScript {
 		String DDLOG_DIR = "DDLOG_DIR"
 		String ddlogDir = System.getenv(DDLOG_DIR)
 		if (!ddlogDir) {
-			throw new DoopErrorCodeException(24, "Environment variable ${DDLOG_DIR} is empty.")
+			throw DoopErrorCodeException.error24("Environment variable ${DDLOG_DIR} is empty.")
 		} else {
 			File f = new File(ddlogDir)
 			if (!f.exists()) {
-				throw new DoopErrorCodeException(26, "Directory ${DDLOG_DIR}=${ddlogDir} does not exist.")
+				throw DoopErrorCodeException.error26("Directory ${DDLOG_DIR}=${ddlogDir} does not exist.")
 			} else {
 				log.debug "Using DDlog in ${ddlogDir}"
 				return f
@@ -68,15 +68,15 @@ class DDlog extends SouffleScript {
      */
     void checkOptions(org.clyze.doop.utils.SouffleOptions options) {
         if (options.debug) {
-            throw new DoopErrorCodeException(27, "Option 'debug' is not supported.")
+            throw DoopErrorCodeException.error27("Option 'debug' is not supported.")
         } else if (options.provenance) {
-            throw new DoopErrorCodeException(27, "Option 'provenance' is not supported.")
+            throw DoopErrorCodeException.error27("Option 'provenance' is not supported.")
         } else if (options.liveProf) {
-            throw new DoopErrorCodeException(27, "Option 'liveProf' is not supported.")
+            throw DoopErrorCodeException.error27("Option 'liveProf' is not supported.")
         } else if (options.removeContexts) {
-            throw new DoopErrorCodeException(27, "Option 'removeContext' is not supported.")
+            throw DoopErrorCodeException.error27("Option 'removeContext' is not supported.")
         } else if (options.useFunctors) {
-            throw new DoopErrorCodeException(27, "Option 'useFunctors' is not supported.")
+            throw DoopErrorCodeException.error27("Option 'useFunctors' is not supported.")
         }
     }
 
@@ -174,7 +174,7 @@ class DDlog extends SouffleScript {
             log.info "Analysis execution time (sec): ${executionTime}"
             return [compilationTime, executionTime]
         } catch (ex) {
-            throw new DoopErrorCodeException(25, ex)
+            throw DoopErrorCodeException.error25(ex)
         }
     }
 
@@ -219,6 +219,6 @@ class DDlog extends SouffleScript {
     @Override
     def interpretScript(File origScriptFile, File outDir, File factsDir,
                         int jobs, org.clyze.doop.utils.SouffleOptions options) {
-        throw new DoopErrorCodeException(27, "Option 'interpret' is not supported.")
+        throw DoopErrorCodeException.error27("Option 'interpret' is not supported.")
     }
 }

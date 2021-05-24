@@ -35,7 +35,7 @@ public class DexInvoker {
             JHelper.tryInitLogging("DEBUG", dexParams.getLogDir(), true, "dex-fact-generator.log");
         } catch (IOException ex) {
             System.err.println("WARNING: could not initialize logging");
-            throw new DoopErrorCodeException(18, ex, true);
+            throw DoopErrorCodeException.error18(ex);
         }
 
         Logger logger = Logger.getLogger(DexInvoker.class);
@@ -98,7 +98,7 @@ public class DexInvoker {
             cha.conclude(db, writer, dexParams._reportPhantoms);
         } catch (Exception ex) {
             ex.printStackTrace();
-            throw new DoopErrorCodeException(17, ex);
+            throw DoopErrorCodeException.error17(ex);
         } finally {
             Driver.waitForExecutorShutdown(java.getExecutor());
         }

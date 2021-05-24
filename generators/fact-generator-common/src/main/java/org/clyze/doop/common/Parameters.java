@@ -59,7 +59,7 @@ public class Parameters {
         while (i < args.length) {
             last_i = processNextArg(args, i);
             if (last_i == -1)
-                throw new DoopErrorCodeException(32, "Bad argument: " + args[i]);
+                throw DoopErrorCodeException.error32("Bad argument: " + args[i]);
             i = last_i + 1;
         }
     }
@@ -133,7 +133,7 @@ public class Parameters {
     public static int shift(String[] args, int index) throws DoopErrorCodeException {
         if(args.length == index + 1) {
             System.err.println("error: option " + args[index] + " requires an argument");
-            throw new DoopErrorCodeException(9);
+            throw DoopErrorCodeException.error9();
         }
         return index + 1;
     }
@@ -253,7 +253,7 @@ public class Parameters {
     protected void finishArgProcessing() throws DoopErrorCodeException {
         if (getOutputDir() == null) {
             System.err.println("Error: no output facts directory.");
-            throw new DoopErrorCodeException(16);
+            throw DoopErrorCodeException.error16();
         }
 
         if (_logDir == null) {

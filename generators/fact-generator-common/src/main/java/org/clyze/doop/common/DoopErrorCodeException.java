@@ -9,21 +9,161 @@ public class DoopErrorCodeException extends Exception {
     public boolean fatal = false;
     public static final String PREFIX = "Doop error #";
 
-    public DoopErrorCodeException(int errorCode, Throwable original) {
+    public static DoopErrorCodeException error0() {
+        return new DoopErrorCodeException(0);
+    }
+
+    public static DoopErrorCodeException error1() {
+        return new DoopErrorCodeException(1, null, true);
+    }
+
+    public static DoopErrorCodeException error2() {
+        return new DoopErrorCodeException(2, null, true);
+    }
+
+    public static DoopErrorCodeException error3() {
+        return new DoopErrorCodeException(3, null, true);
+    }
+
+    public static DoopErrorCodeException error4(String msg) {
+        return new DoopErrorCodeException(4, msg);
+    }
+
+    public static DoopErrorCodeException error5(String msg) {
+        return new DoopErrorCodeException(5, msg);
+    }
+
+    public static DoopErrorCodeException error6(String msg) {
+        return new DoopErrorCodeException(6, msg);
+    }
+
+    public static DoopErrorCodeException error7() {
+        return new DoopErrorCodeException(7, null, true);
+    }
+
+    public static DoopErrorCodeException error8(Throwable t) {
+        return new DoopErrorCodeException(8, t);
+    }
+
+    public static DoopErrorCodeException error9() {
+        return new DoopErrorCodeException(9);
+    }
+
+    public static DoopErrorCodeException error10() {
+        return new DoopErrorCodeException(10);
+    }
+
+    public static DoopErrorCodeException error11(Throwable t) {
+        return new DoopErrorCodeException(11, t);
+    }
+
+    public static DoopErrorCodeException error12(Throwable t) {
+        return new DoopErrorCodeException(12, t);
+    }
+
+    public static DoopErrorCodeException error13(String msg) {
+        return new DoopErrorCodeException(13, msg);
+    }
+
+    public static DoopErrorCodeException error14(String msg) {
+        return new DoopErrorCodeException(14, msg);
+    }
+
+    public static DoopErrorCodeException error15() {
+        return new DoopErrorCodeException(15);
+    }
+
+    public static DoopErrorCodeException error16() {
+        return new DoopErrorCodeException(16);
+    }
+
+    public static DoopErrorCodeException error17(Throwable t) {
+        return new DoopErrorCodeException(17, t);
+    }
+
+    public static DoopErrorCodeException error18(Throwable t) {
+        return new DoopErrorCodeException(18, t, true);
+    }
+
+    public static DoopErrorCodeException error19() {
+        return new DoopErrorCodeException(19);
+    }
+
+    public static DoopErrorCodeException error20(String msg) {
+        return new DoopErrorCodeException(20, msg);
+    }
+
+    public static DoopErrorCodeException error21() {
+        return new DoopErrorCodeException(21, null, true);
+    }
+
+    public static DoopErrorCodeException error22() {
+        return new DoopErrorCodeException(22);
+    }
+
+    public static DoopErrorCodeException error23() {
+        return new DoopErrorCodeException(23);
+    }
+
+    public static DoopErrorCodeException error24(String msg) {
+        return new DoopErrorCodeException(24, msg);
+    }
+
+    public static DoopErrorCodeException error25(String msg) {
+        return new DoopErrorCodeException(25, msg);
+    }
+
+    public static DoopErrorCodeException error26(String msg) {
+        return new DoopErrorCodeException(26, msg);
+    }
+
+    public static DoopErrorCodeException error27(String msg) {
+        return new DoopErrorCodeException(27, msg);
+    }
+
+    public static DoopErrorCodeException error28(String msg) {
+        return new DoopErrorCodeException(28, msg);
+    }
+
+    public static DoopErrorCodeException error29(String msg) {
+        return new DoopErrorCodeException(29, msg);
+    }
+
+    public static DoopErrorCodeException error30(String msg) {
+        return new DoopErrorCodeException(30, msg);
+    }
+
+    public static DoopErrorCodeException error31(String msg) {
+        return new DoopErrorCodeException(31, msg);
+    }
+
+    public static DoopErrorCodeException error32(String msg) {
+        return new DoopErrorCodeException(32, msg);
+    }
+
+    public static DoopErrorCodeException error33(String msg) {
+        return new DoopErrorCodeException(33, msg);
+    }
+
+    public static DoopErrorCodeException error34(String msg) {
+        return new DoopErrorCodeException(34, msg);
+    }
+
+    private DoopErrorCodeException(int errorCode, Throwable original) {
         super(PREFIX + errorCode, original);
         this.errorCode = errorCode;
     }
 
-    public DoopErrorCodeException(int errorCode, String msg) {
+    private DoopErrorCodeException(int errorCode, String msg) {
         this(errorCode, new RuntimeException(msg));
     }
 
-    public DoopErrorCodeException(int errorCode, Throwable original, boolean fatal) {
+    private DoopErrorCodeException(int errorCode, Throwable original, boolean fatal) {
         this(errorCode, original);
         this.fatal = fatal;
     }
 
-    public DoopErrorCodeException(int errorCode) {
+    private DoopErrorCodeException(int errorCode) {
         this(errorCode, (Throwable)null);
     }
 

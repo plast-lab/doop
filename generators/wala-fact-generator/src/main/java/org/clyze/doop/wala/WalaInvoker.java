@@ -35,7 +35,7 @@ class WalaInvoker {
     public void main(String[] args) throws IOException, DoopErrorCodeException {
         if (args.length == 0) {
             System.err.println("Usage: wala-fact-generator [options] file...");
-            throw new DoopErrorCodeException(0);
+            throw DoopErrorCodeException.error0();
         }
         Parameters walaParameters = new Parameters();
         walaParameters.initFromArgs(args);

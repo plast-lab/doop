@@ -55,7 +55,7 @@ public class Main {
             logger = sootParameters.initLogging(Main.class);
         } catch (IOException ex) {
             System.err.println("WARNING: could not initialize logging");
-            throw new DoopErrorCodeException(18);
+            throw DoopErrorCodeException.error18(ex);
         }
 
         checkJVMArgs();
@@ -130,7 +130,7 @@ public class Main {
             SootDriver.waitForExecutorShutdown(java.getExecutor());
             int numErrors = errors.intValue();
             if (numErrors != 0)
-                throw new DoopErrorCodeException(35, "Fact generation failed with " + numErrors + " errors.");
+                throw DoopErrorCodeException.error34("Fact generation failed with " + numErrors + " errors.");
 
             if (writeFacts && sootParameters._scanNativeCode)
 		ArtifactScanner.scanNativeCode(db, sootParameters, sootData.writer.getMethodStrings());

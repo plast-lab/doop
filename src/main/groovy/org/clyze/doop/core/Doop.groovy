@@ -96,7 +96,7 @@ class Doop {
 			log.debug "logLevel=${logLevel}"
 		} catch (IOException ex) {
 			System.err.println("WARNING: could not initialize logging")
-			throw new DoopErrorCodeException(15)
+			throw DoopErrorCodeException.error15()
 		}
 
 		log.debug "Doop initialized with: doopOut = ${doopOut}, doopCache = ${doopCache}, doopLog = ${doopLog}, doopTmp = ${doopTmp}, souffleAnalysesCache = ${souffleAnalysesCache}, logicPath = ${lbLogicPath}, souffleLogicPath = ${souffleLogicPath}, analysesPath = ${lbAnalysesPath}"
