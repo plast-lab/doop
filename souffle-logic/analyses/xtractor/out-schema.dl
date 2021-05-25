@@ -1,23 +1,23 @@
 #pragma once
 
-.decl Schema_ClassInfo(class:symbol, kind:symbol, field:symbol, fieldType:symbol)
-.output Schema_ClassInfo
+.decl OUT_ClassInfo(class: symbol, kind: symbol, field: symbol, fieldType: symbol)
+.output OUT_ClassInfo
 
-Schema_ClassInfo(class, "r", fldName, type) :-
+OUT_ClassInfo(class, "r", fldName, type) :-
 	ApplicationClass(class),
 	Field_DeclaringType(fld, class),
 	Field_Type(fld, type),
 	Field_SimpleName(fld, fldName),
 	!Field_Modifier(fld, "static").
 
-Schema_ClassInfo(class, "R", fldName, type) :-
+OUT_ClassInfo(class, "R", fldName, type) :-
 	ApplicationClass(class),
 	Field_DeclaringType(fld, class),
 	Field_Type(fld, type),
 	Field_SimpleName(fld, fldName),
 	Field_Modifier(fld, "static").
 
-Schema_ClassInfo(class, cat(kind, "[]"), fldName, type) :-
-	Schema_ClassInfo(class, kind, fldName, type),
+OUT_ClassInfo(class, cat(kind, "[]"), fldName, type) :-
+	OUT_ClassInfo(class, kind, fldName, type),
 	isArrayType(type),
 	kind != "r[]", kind != "R[]".

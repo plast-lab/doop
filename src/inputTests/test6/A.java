@@ -44,6 +44,8 @@ class Main {
 		foobar2(FOO1D);
 		foobar3(FOO1D);
 		foobar4(FOO1D);
+
+		printfoo(board);
 	}
 
 	static char playerHasWon(char[][] board) {
@@ -112,5 +114,13 @@ class Main {
 		int sum = 0;
 		for (char c : myarr)
 			sum += c;
+	}
+
+	static void printfoo(char[][] board) {
+		for (int i = 0; i < board.length ; i++) {
+			for (int j = 0; j < board[i].length; j++) {
+				System.out.println(board[i][j]);
+			}
+		}
 	}
 }

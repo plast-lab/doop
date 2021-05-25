@@ -1,19 +1,17 @@
 #pragma once
-#include "expr-values.dl"
+#include "common.dl"
 
-.decl META_ArrayInfo(array: Var, name: symbol, types: symbol)
-.decl META_ArrayDims(array: Var, dim: number, size: number)
-.decl ArrayDims(array: Var, dim: number, size: number)
-.decl META_ArrayLoad(to: Var, from: Var, index: number)
-.decl META_ArrayStore(to: Var, index: number, value: number)
+.decl OUT_ArrayInfo(array: Var, name: symbol, types: symbol)
+.decl OUT_ArrayDims(array: Var, dim: number, size: number)
+.decl OUT_ArrayLoad(to: Var, from: Var, index: number)
+.decl OUT_ArrayStore(to: Var, index: number, value: number)
 
-.output META_ArrayInfo
-.output META_ArrayDims
-.output ArrayDims
-.output META_ArrayLoad
-.output META_ArrayStore
+.output OUT_ArrayInfo
+.output OUT_ArrayDims
+.output OUT_ArrayLoad
+.output OUT_ArrayStore
 
-META_ArrayInfo(array, name, type) :-
+OUT_ArrayInfo(array, name, type) :-
 	InterestingStmt(stmt),
 	AssignInstruction_To(stmt, array),
 	Var_Type(array, type),
@@ -21,40 +19,39 @@ META_ArrayInfo(array, name, type) :-
 	isArrayType(type),
 	!StoreArrayIndex_From(_, array).
 
-META_ArrayDims(array, 0, size) :-
+// Array Allocation
+OUT_ArrayDims(array, 0, size) :-
 	InterestingStmt(stmt),
 	AssignInstruction_To(stmt, array),
 	IVALUE_ArraySize_EXT(stmt, size).
 
-META_ArrayDims(baseArray, dim + 1, size) :-
+// Allocation of intermediate arrays (for multidimensional arrays)
+OUT_ArrayDims(baseArray, dim + 1, size) :-
 	InterestingStmt(stmt),
 	(ASTORE_VAR(stmt, baseArray, _, array) ;
 	 ASTORE_NUM(stmt, baseArray, _, array)),
-	META_ArrayDims(array, dim, size).
+	OUT_ArrayDims(array, dim, size).
 
-ArrayDims(array, dim, size) :-
-	META_ArrayDims(array, dim, size).
-
-ArrayDims(otherArray, dim, size) :-
-	ArrayDims(array, dim, size),
+OUT_ArrayDims(otherArray, dim, size) :-
+	OUT_ArrayDims(array, dim, size),
 	Flows(array, otherArray).
 
-ArrayDims(toArray, 0, size) :-
+OUT_ArrayDims(toArray, dim - 1, size) :-
 	InterestingStmt(stmt),
 	(ALOAD_VAR(stmt, toArray, baseArray, _) ;
 	 ALOAD_NUM(stmt, toArray, baseArray, _)),
-	ArrayDims(baseArray, 1, size).
+	OUT_ArrayDims(baseArray, dim, size).
 
 // to = from[index]
 // Due to SSA, `to` will appear only once
-META_ArrayLoad(to, from, index) :-
+OUT_ArrayLoad(to, from, index) :-
 	InterestingStmt(stmt),
 	(ALOAD_VAR(stmt, to, from, _) ;
 	 ALOAD_NUM(stmt, to, from, _)),
 	IVALUE_ArrayIndex_EXT(stmt, index).
 
 // to[index] = value
-META_ArrayStore(to, index, value) :-
+OUT_ArrayStore(to, index, value) :-
 	InterestingStmt(stmt),
 	(ASTORE_VAR(stmt, to, _, valueVar) ;
 	 ASTORE_NUM(stmt, to, _, valueVar)),
