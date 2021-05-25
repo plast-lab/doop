@@ -36,7 +36,7 @@ public class SootParameters extends Parameters {
         case "--full":
             if (this._mode != null) {
                 System.err.println("error: duplicate mode argument");
-                throw new DoopErrorCodeException(1, null, true);
+                throw DoopErrorCodeException.error1();
             }
             this._mode = SootParameters.Mode.FULL;
             break;
@@ -79,7 +79,7 @@ public class SootParameters extends Parameters {
         case "--help":
         case "-help":
             showHelp();
-            throw new DoopErrorCodeException(0);
+            throw DoopErrorCodeException.error0();
         default:
             return super.processNextArg(args, i);
         }
@@ -136,17 +136,17 @@ public class SootParameters extends Parameters {
 
         if (_toStdout && !_generateJimple) {
             System.err.println("error: --stdout must be used with --generate-jimple");
-            throw new DoopErrorCodeException(7, null, true);
+            throw DoopErrorCodeException.error7();
         } else if (_toStdout && getOutputDir() != null) {
             System.err.println("error: --stdout and -d options are not compatible");
-            throw new DoopErrorCodeException(2, null, true);
+            throw DoopErrorCodeException.error2();
         } else if ((getInputs().stream().anyMatch(s -> s.endsWith(".apk") || s.endsWith(".aar"))) &&
                 (!_android)) {
             System.err.println("error: the --platform parameter is mandatory for APK/AAR inputs, run 'doop --help' to see the valid Android platform values");
-            throw new DoopErrorCodeException(3, null, true);
+            throw DoopErrorCodeException.error3();
         } else if (_android && _androidJars == null) {
             System.err.println("internal error: bad configuration for Android analysis mode, missing Android .jar");
-            throw new DoopErrorCodeException(21, null, true);
+            throw DoopErrorCodeException.error21();
         }
 
         if (!_toStdout && getOutputDir() == null)

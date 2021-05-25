@@ -1,8 +1,10 @@
 #pragma once
 #ifndef X_STATS_NONE
 #include "../../facts/flow-sensitive-schema.dl"
+#include "../../addons/cfg-analysis/analysis.dl"
 #endif
 #include "../data-flow/analysis.dl"
+#include "common.dl"
 #include "arrays.dl"
 #include "conditions.dl"
 #include "expr-client.dl"
@@ -10,16 +12,17 @@
 #include "out-schema.dl"
 #include "theorem-prover.dl"
 
-.decl Sanity_ToSymbolMissing(expr: Expr)
-.decl Sanity_ToSymbolConflict(expr1: Expr, expr2: Expr, out: symbol)
-.decl Sanity_WrongSizedExpr(out: symbol, size: number)
-.printsize Sanity_ToSymbolMissing
-.printsize Sanity_ToSymbolConflict
-.printsize Sanity_WrongSizedExpr
-.output Sanity_WrongSizedExpr
-Sanity_ToSymbolMissing(expr) :- IsExpr(expr), !ToSymbol(expr, _).
-Sanity_ToSymbolConflict(expr1, expr2, out) :- ToSymbol(expr1, out), ToSymbol(expr2, out), expr1 != expr2.
-Sanity_WrongSizedExpr(out, size) :- ExprSize(expr, size), size > MAX_SIZE, ToSymbol(expr, out).
+API_ResultMethod("<Main: char playerHasWon(char[][])>").
+
+.decl TEST_ToSymbolMissing(expr: Expr)
+.decl TEST_ToSymbolConflict(expr1: Expr, expr2: Expr, out: symbol)
+.decl TEST_WrongSizedExpr(out: symbol, size: number)
+.printsize TEST_ToSymbolMissing
+.printsize TEST_ToSymbolConflict
+.printsize TEST_WrongSizedExpr
+TEST_ToSymbolMissing(expr) :- IsExpr(expr), !ToSymbol(expr, _).
+TEST_ToSymbolConflict(expr1, expr2, out) :- ToSymbol(expr1, out), ToSymbol(expr2, out), expr1 != expr2.
+TEST_WrongSizedExpr(out, size) :- ExprSize(expr, size), size > MAX_SIZE, ToSymbol(expr, out).
 
 #define DEBUG1(rel) \
 .decl rel##Symbol(out: symbol) \
@@ -42,10 +45,8 @@ DEBUG2(Equals)
 DEBUG2(Normalize)
 DEBUG2(Implies)
 
-//.printsize API_RequestConstantFold1
-//.printsize API_RequestConstantFold2
 .decl VarHasExprSymbol(loc: symbol, out: symbol)
-.decl ArrayHasExprSymbol(out1: symbol, out2: symbol, out3: symbol)
+.decl ArrayHasExprSymbol(out1: symbol, index: symbol, out2: symbol)
 .decl FldHasExprSymbol(base: symbol, fld: symbol, out: symbol)
 .decl HeapHasExprSymbol(heap: symbol, fld: symbol, out: symbol)
 .output VarHasExprSymbol
@@ -53,9 +54,7 @@ DEBUG2(Implies)
 .output FldHasExprSymbol
 .output HeapHasExprSymbol
 ArrayHasExprSymbol(out1, i, out2) :- ArrayHasExpr(arr, i, e), ToSymbol(arr, out1), ToSymbol(e, out2).
-//VarHasExprSymbol(v, out) :- VarHasExpr(var, e), VarSimpleName(var, v), ToSymbol(e, out).
 VarHasExprSymbol(var, out) :- VarHasExpr(var, e), ToSymbol(e, out).
-//FldHasExprSymbol(v, fld, out) :- FldHasExpr(base, fld, e), VarSimpleName(base, v), ToSymbol(e, out).
 FldHasExprSymbol(base, fld, out) :- FldHasExpr(base, fld, e), ToSymbol(e, out).
 HeapHasExprSymbol(h, fld, out) :- HeapHasExpr(heap, fld, e), ToSymbol(heap, h), ToSymbol(e, out).
 

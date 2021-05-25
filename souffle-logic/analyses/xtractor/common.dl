@@ -51,3 +51,22 @@ IVALUE_OPERAND(stmt, pos, value) :-
 	InterestingStmt(stmt),
 	OPERAND_VAR(stmt, pos, var),
 	IVALUE_Var(var, value).
+
+.decl API_ResultMethod(method: Method)
+
+.decl ReverseCondition(op: symbol, reverseOp: symbol) inline
+.decl FlippedCondition(op: symbol, flippedOp: symbol) inline
+
+ReverseCondition(">", "<=").
+ReverseCondition(">=", "<").
+ReverseCondition("<", ">=").
+ReverseCondition("<=", ">").
+ReverseCondition("==", "!=").
+ReverseCondition("!=", "==").
+
+FlippedCondition(">", "<").
+FlippedCondition(">=", "<=").
+FlippedCondition("<", ">").
+FlippedCondition("<=", ">=").
+FlippedCondition("==", "==").
+FlippedCondition("!=", "!=").

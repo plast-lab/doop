@@ -251,7 +251,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             } catch (all) {
                 all = StackTraceUtils.deepSanitize all
                 log.info all
-                throw new DoopErrorCodeException(8, all)
+                throw DoopErrorCodeException.error8(all)
             } finally {
                 JHelper.cleanUp(tmpDirs)
             }
@@ -686,7 +686,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         String jarExt = FilenameUtils.getExtension(jar)
         if (!['jar', 'zip'].contains(jarExt.toLowerCase())) {
             log.error "ERROR: jphantom does not support ${jarExt} inputs"
-            throw new DoopErrorCodeException(23)
+            throw DoopErrorCodeException.error23()
         }
         if (inputFiles.size() > 1)
             log.warn "WARNING: jphantom will only run on first input JAR."

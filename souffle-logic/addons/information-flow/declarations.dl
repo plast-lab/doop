@@ -5,63 +5,66 @@
 .type InformationLabel = symbol
 .decl isInformationLabel(?id:symbol)
 
+// Use macro to substitute to handle context types when points-to reasoning is disabled.
+#ifdef DISABLE_POINTS_TO
+#define CONTEXT symbol
+#else
+#define CONTEXT mainAnalysis.configuration.Context
+#endif // DISABLE_POINTS_TO
+
 .decl TaintSourceMethod(?label:InformationLabel, ?method:Method)
 .decl LeakingSinkMethod(?lable:InformationLabel, ?method:Method)
-
 .decl LeakingSinkMethodArg(?label:InformationLabel, ?index:number, ?method:Method)
-.decl LeakingSinkVariable(?label:InformationLabel, ?tomethod:MethodInvocation, ?ctx:mainAnalysis.configuration.Context, ?var:Var)
-.decl LeakingTaintedInformation(?fromLabel:InformationLabel, ?toLabel:InformationLabel, ?ctx:mainAnalysis.configuration.Context,
-                                ?invocation:MethodInvocation, ?value:symbol)
-.output LeakingTaintedInformation                                
-
-.decl LeakingTaintedInformationVars(?fromCtx:mainAnalysis.configuration.Context, ?from:Var, ?toCtx:mainAnalysis.configuration.Context, ?to:Var)
-.output LeakingTaintedInformationVars
-
-.decl VarIsCast(?var:Var)
-.decl VarUse(?var:Var, ?inst:Instruction)
-
+.decl LeakingSinkVariable(?label:InformationLabel, ?tomethod:MethodInvocation, ?ctx:CONTEXT, ?var:Var)
 .decl SanitizationMethod(?method:Method)
-
-.decl TaintedValue(?value:Value)
-.decl CallTaintingMethod(?label:InformationLabel, ?ctx:mainAnalysis.configuration.Context, ?invocation:MethodInvocation)
-
-.decl SourceFromTaintedValue(?value:Value, ?id:symbol)
-.decl LabelFromSource(?source:symbol, ?label:InformationLabel)
-.decl TaintedValueTransferred(?declaringType:Type, ?id:symbol, ?type:Type, ?value:Value)
-
-.decl AnyMethodInvocation(?invocation:MethodInvocation, ?tomethod:Method)
-.decl MethodInvocationInContext(?ctx:mainAnalysis.configuration.Context, ?invocation:MethodInvocation, ?tomethod:Method)
-.decl MethodInvocationInContextInApplication(?ctx:mainAnalysis.configuration.Context, ?invocation:MethodInvocation, ?method:Method)
-
-.decl MethodInvocationInfo(?invocation:MethodInvocation, ?type:Type, ?var:Var)
-.decl TypeForReturnValue(?type:Type, ?ret:Var, ?invocation:MethodInvocation)
-.decl TaintedObjectSerialized(?declaringType:Type, ?source:symbol, ?type:Type, ?hctx:mainAnalysis.configuration.HContext, ?val:Value, ?ctx:mainAnalysis.configuration.Context, ?base:Var)
-
-.decl VarIsTaintedFromValue(?type:Type, ?value:Value, ?ctx:mainAnalysis.configuration.Context, ?var:Var)
-.decl TaintedVarTaintedFromVar(?toCtx:mainAnalysis.configuration.Context, ?to:Var, ?value:Value, ?type:Type)
-
-.decl MethodReturningStringFactory(?tomethod:Method)
-.decl StringFactoryReturnInvocation(?invocation:MethodInvocation)
-
-.decl ParamToBaseTaintTransferMethod(?index:number, ?method:Method)
 .decl BaseToRetTaintTransferMethod(?method:Method)
 .decl BaseToParamTaintTransferMethod(?method:Method)
-.decl TaintTransferMethodInvocationInContext(?ctx:mainAnalysis.configuration.Context, ?index:number, ?invocation:MethodInvocation)
-.decl ParamTaintTransferredToBase(?param:Var, ?ctx:mainAnalysis.configuration.Context, ?base:Var)
-.decl ParamTaintTransferredToRet(?type:Type, ?ret:Var, ?ctx:mainAnalysis.configuration.Context, ?param:Var)
+.decl ParamToBaseTaintTransferMethod(?index:number, ?method:Method)
 .decl ParamIndexToBaseTaintTransferMethod(?index:number, ?method:Method)
 .decl ParamToRetTaintTransferMethod(?method:Method)
 .decl MockBaseToRetTaintTransferMethod(?meth:Method)
 .decl MockParamToRetTaintTransferMethod(?meth:Method)
+.decl VarIsCast(?var:Var)
+.decl VarUse(?var:Var, ?inst:Instruction)
+.decl LabelFromSource(?source:symbol, ?label:InformationLabel)
+.decl AnyMethodInvocation(?invocation:MethodInvocation, ?tomethod:Method)
+.decl MethodInvocationInfo(?invocation:MethodInvocation, ?type:Type, ?var:Var)
+.decl TypeForReturnValue(?type:Type, ?ret:Var, ?invocation:MethodInvocation)
 
+.decl MethodInvocationInContext(?ctx:CONTEXT, ?invocation:MethodInvocation, ?tomethod:Method)
+.decl MethodInvocationInContextInApplication(?ctx:CONTEXT, ?invocation:MethodInvocation, ?method:Method)
+.decl CallTaintingMethod(?label:InformationLabel, ?ctx:CONTEXT, ?invocation:MethodInvocation)
+.decl ParamTaintTransferredToBase(?param:Var, ?ctx:CONTEXT, ?base:Var)
+.decl ParamTaintTransferredToRet(?type:Type, ?ret:Var, ?ctx:CONTEXT, ?param:Var)
+.decl VarIsTaintedFromVar(?type:Type, ?ctx1:CONTEXT, ?var1:Var, ?ctx2:CONTEXT, ?var2:Var)
+.decl VarIsTaintedFromVarIndex(?base:Var, ?ctx1:CONTEXT, ?param:Var)
+.decl TaintTransferMethodInvocationInContext(?ctx:CONTEXT, ?index:number, ?invocation:MethodInvocation)
+.decl LeakingTaintedInformation(?fromLabel:InformationLabel, ?toLabel:InformationLabel, ?ctx:CONTEXT,
+                                ?invocation:MethodInvocation, ?value:symbol)
+.output LeakingTaintedInformation                                
+.decl LeakingTaintedInformationVars(?fromCtx:CONTEXT, ?from:Var, ?toCtx:CONTEXT, ?to:Var)
+.output LeakingTaintedInformationVars
+
+#ifndef DISABLE_POINTS_TO
+
+.decl TaintedValue(?value:Value)
+
+.decl SourceFromTaintedValue(?value:Value, ?id:symbol)
+.decl TaintedValueTransferred(?declaringType:Type, ?id:symbol, ?type:Type, ?value:Value)
+
+.decl TaintedObjectSerialized(?declaringType:Type, ?source:symbol, ?type:Type, ?hctx:mainAnalysis.configuration.HContext, ?val:Value, ?ctx:mainAnalysis.configuration.Context, ?base:Var)
+.decl VarIsTaintedFromValue(?type:Type, ?value:Value, ?ctx:mainAnalysis.configuration.Context, ?var:Var)
+.decl TaintedVarTaintedFromVar(?toCtx:mainAnalysis.configuration.Context, ?to:Var, ?value:Value, ?type:Type)
+.decl MethodReturningStringFactory(?tomethod:Method)
+.decl StringFactoryReturnInvocation(?invocation:MethodInvocation)
 
 .decl TaintedVarPointsTo(?value:Value, ?ctx:mainAnalysis.configuration.Context, ?var:Var)
-.decl VarIsTaintedFromVar(?type:Type, ?ctx1:mainAnalysis.configuration.Context, ?var1:Var, ?ctx2:mainAnalysis.configuration.Context, ?var2:Var)
-.decl VarIsTaintedFromVarIndex(?base:Var, ?ctx1:mainAnalysis.configuration.Context, ?param:Var)
 .decl VarIsTaintedFromValueIndex(?ctx:mainAnalysis.configuration.Context, ?base:Var, ?hctx:mainAnalysis.configuration.HContext, ?value:Value)
 
 .decl TaintObjTransfer(fromCtx:mainAnalysis.configuration.Context, from:Var, toCtx:mainAnalysis.configuration.Context, to:Var)
 .output TaintObjTransfer
+
+#endif // DISABLE_POINTS_TO
 
 #ifdef ANDROID
 // Taint configurations for sensitive layout controls: calling <method>

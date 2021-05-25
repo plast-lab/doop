@@ -1,4 +1,3 @@
-#include "rules.dl"
 #include "common-transfer-methods.dl"
 
 #define TaintSourceMethodPattern(pattern) \

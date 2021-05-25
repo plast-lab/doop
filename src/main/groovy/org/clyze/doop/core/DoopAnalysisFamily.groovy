@@ -821,7 +821,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "open-programs",
 					group: GROUP_OPEN_PROGRAMS,
 					argName: "STRATEGY",
-					description: "Create analysis entry points and environment using various strategies (such as 'servlets-only' or 'concrete-types').",
+					description: "Create analysis entry points and environment using various strategies (such as 'concrete-types' or 'jackee').",
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(

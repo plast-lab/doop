@@ -35,7 +35,7 @@ try {
     JHelper.tryInitLogging("INFO", Doop.doopLog ?: "$outDir/logs", true, Doop.LOG_NAME)
 } catch (IOException ex) {
     System.err.println("WARNING: could not initialize logging")
-    throw new DoopErrorCodeException(19)
+    throw DoopErrorCodeException.error19()
 }
 
 def script = SouffleScript.newScript(new Executor(outDir, env), cacheDir, viaDDlog.toBoolean())

@@ -79,7 +79,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			if (inputs.any {it.endsWith(".apk")} && !platformName.startsWith(ANDROID_PLATFORM_PREFIX)) {
 				Collection<String> androidPlatforms = options.PLATFORM.validValues.findAll { it.startsWith(ANDROID_PLATFORM_PREFIX) }
 				String errorMsg = "Platform '${platformName}' may not be suitable for analysis inputs: ${inputs}. Available Android platforms: ${androidPlatforms}"
-				throw new DoopErrorCodeException(37, errorMsg)
+				throw DoopErrorCodeException.error14(errorMsg)
 			}
 			context = newJavaDefaultInputResolutionContext()
 		}
@@ -106,7 +106,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			}
 			context.add(platformFiles, InputType.PLATFORM)
 		} catch (Exception ex) {
-			throw new DoopErrorCodeException(38, ex.message)
+			throw DoopErrorCodeException.error13(ex.message)
 		}
 
 		context.add(options.HEAPDLS.value as List<String>, InputType.HEAPDL)
@@ -194,7 +194,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 	// Throw an error when two incompatible options are set.
 	static void throwIfBothSet(AnalysisOption opt1, AnalysisOption opt2) {
 		if (opt1?.value && opt2?.value)
-			throw new DoopErrorCodeException(28, "Error: options --${opt1.name} and --${opt2.name} are mutually exclusive.")
+			throw DoopErrorCodeException.error28("Error: options --${opt1.name} and --${opt2.name} are mutually exclusive.")
 	}
 
 	static void checkAnalysis(Map<String, AnalysisOption<?>> options) {
@@ -329,7 +329,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 				log.error "ERROR: Could not resolve files. If platform inputs could not be resolved, you can try the following:"
 				log.error "* Set environment variable ANDROID_SDK to point to an existing Android SDK location (for Android platforms)."
 				log.error "* Set environment variable ${DoopAnalysisFamily.DOOP_PLATFORMS_LIB_ENV} to point to an existing platforms library (such as a clone of the doop-benchmarks repository)."
-				throw new DoopErrorCodeException(36, ex.message)
+				throw DoopErrorCodeException.error20(ex.message)
 			}
 
 			options.INPUTS.value = context.allInputs
@@ -346,22 +346,38 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		}
 
 		def analysisName = options.ANALYSIS.value
-		if (analysisName == 'dependency-analysis' || options.SYMBOLIC_REASONING.value)
+		if (analysisName == 'dependency-analysis' || options.SYMBOLIC_REASONING.value) {
+			log.debug "Enabling CFG analysis."
 			options.CFG_ANALYSIS.value = true
-		else if (analysisName == 'sound-may-point-to') {
+		} else if (analysisName == 'sound-may-point-to') {
+			log.debug "Enabling CFG analysis."
 			options.CFG_ANALYSIS.value = true
+			log.warn "WARNING: Default statistics are not compatible with analysis '${analysisName}', disabling statistics logic."
 			options.X_STATS_NONE.value = true
-		}  else if (analysisName == 'basic-only' || analysisName == 'data-flow')
+		} else if (analysisName == 'basic-only') {
+			log.warn "WARNING: Default statistics are not compatible with analysis '${analysisName}', disabling statistics logic."
 			options.X_STATS_NONE.value = true
-		else if (analysisName == 'xtractor') {
+		} else if (analysisName == 'data-flow') {
+			log.warn "WARNING: Default statistics are not compatible with analysis '${analysisName}', disabling statistics logic."
+			options.X_STATS_NONE.value = true
+			log.debug "Disabling points-to reasoning for analysis '${analysisName}'."
+			options.DISABLE_POINTS_TO.value = true
+		} else if (analysisName == 'xtractor') {
+			log.debug "Enabling CFG analysis."
 			options.CFG_ANALYSIS.value = true
+			log.warn "WARNING: Default statistics are not compatible with analysis '${analysisName}', disabling statistics logic."
 			options.X_STATS_NONE.value = true
+		} else if (options.ANALYSIS.value == 'types-only' && !options.DISABLE_POINTS_TO.value) {
+			if (options.INFORMATION_FLOW.value)
+				throw DoopErrorCodeException.error4("Types-only analysis does not suport information flow.")
+			log.warn 'WARNING: Types-only analysis chosen without disabling points-to reasoning. Disabling it, since this is likely what you want.'
+			options.DISABLE_POINTS_TO.value = true
 		}
 
 		try {
 			setOptionsForPlatform(options, platformName)
 		} catch (Exception ex) {
-			throw new DoopErrorCodeException(29, "Could not process platform ${platformName}, valid platforms are: ${availablePlatforms}")
+			throw DoopErrorCodeException.error29("Could not process platform ${platformName}, valid platforms are: ${availablePlatforms}")
 		}
 
 		if (options.DACAPO.value || options.DACAPO_BACH.value) {
@@ -412,12 +428,6 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			log.warn "WARNING: Possible inconsistency: context-sensitive library analysis with merged objects."
 		}
 
-		if (options.ANALYSIS.value == "types-only" && !options.DISABLE_POINTS_TO.value) {
-			log.warn "WARNING: Types-only analysis chosen without disabling points-to reasoning. Disabling it, since this is likely what you want."
-			options.DISABLE_POINTS_TO.value = true
-		}
-
-		throwIfBothSet(options.DISABLE_POINTS_TO, options.INFORMATION_FLOW)
 		throwIfBothSet(options.SOUFFLE_PROVENANCE, options.SOUFFLE_LIVE_PROFILE)
 
 		if (options.INFORMATION_FLOW.value == 'android' && !options.ANDROID.value) {
@@ -549,19 +559,21 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 				analysisName != "data-flow") {
 				if (options.DISCOVER_MAIN_METHODS.value) {
 					log.warn "WARNING: No main class was found. Using option --${options.DISCOVER_MAIN_METHODS.name} to discover main methods."
-				} else if (options.INPUT_ID.value || options.CACHE.value) {
-					if (!options.OPEN_PROGRAMS.value)
+				} else if (!options.OPEN_PROGRAMS.value) {
+					if (options.INPUT_ID.value || options.CACHE.value)
 						log.warn("WARNING: No main class was found and option --${options.OPEN_PROGRAMS.name} is missing. The reused facts are assumed to declare the correct main class(es).")
-				} else {
-					log.warn "WARNING: No main class was found. This will trigger open-program analysis!"
-					if (!options.OPEN_PROGRAMS.value)
+					else {
+						log.warn "WARNING: No main class was found. This will trigger open-program analysis!"
 						options.OPEN_PROGRAMS.value = "concrete-types"
-				}
+					}
+				} else {
+                    log.info "No main class was found, all entry points will be computed from open programs logic."
+                }
 			}
 		}
 
 		if (options.OPEN_PROGRAMS.value && options.ANALYSIS.value == 'micro')
-			throw new DoopErrorCodeException(30, "Open-program analysis is not compatible with the 'micro' analysis.")
+			throw DoopErrorCodeException.error30("Open-program analysis is not compatible with the 'micro' analysis.")
 
 		if (options.INFORMATION_FLOW.value == 'beans' && !options.OPEN_PROGRAMS.value) {
 			String opProfile = 'beans'
@@ -597,7 +609,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		else if (stats == DoopAnalysisFamily.STATS_FULL)
 			options.X_STATS_FULL.value = true
 		else if (stats != null)
-			throw new DoopErrorCodeException(39, "Invalid stats level: ${stats}")
+			throw DoopErrorCodeException.error6("Invalid stats level: ${stats}")
 		// If no stats option is given, select default stats.
 		if (!options.X_STATS_FULL.value && !options.X_STATS_DEFAULT.value &&
 				!options.X_STATS_NONE.value) {
@@ -639,13 +651,13 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 				if (it.id == 'PLATFORM' && options.USE_LOCAL_JAVA_PLATFORM.value)
 					log.warn "WARNING: Using unsupported custom platform ${it.value}"
 				else
-					throw new DoopErrorCodeException(33, "Invalid value ${it.value} for option: ${it.name}, valid values: ${it.validValues}")
+					throw DoopErrorCodeException.error33("Invalid value ${it.value} for option: ${it.name}, valid values: ${it.validValues}")
 			}
 		}
 
 		options.values().findAll { it.isMandatory }.each {
 			if (!it.value)
-				throw new DoopErrorCodeException(32, "Missing mandatory argument: $it.name")
+				throw DoopErrorCodeException.error32("Missing mandatory argument: $it.name")
 		}
 	}
 
@@ -697,7 +709,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			}
 
 			if (packages.size() == 0)
-				throw new DoopErrorCodeException(34, "Automatic app-regex generation failed, do the inputs contain valid Java code?")
+				throw DoopErrorCodeException.error31("Automatic app-regex generation failed, do the inputs contain valid Java code?")
 
 			options.APP_REGEX.value = packages.sort().join(':')
 			log.debug "APP_REGEX: ${options.APP_REGEX.value}"

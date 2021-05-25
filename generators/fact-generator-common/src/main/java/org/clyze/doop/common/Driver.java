@@ -70,16 +70,17 @@ public abstract class Driver<C> {
                 System.out.println("Executor timeout elapsed.");
         } catch (InterruptedException e) {
             System.err.println(e.getMessage());
-            throw new DoopErrorCodeException(10);
+            throw DoopErrorCodeException.error10();
         }
     }
 
     private void shutdownExecutor() throws DoopErrorCodeException {
         waitForExecutorShutdown(_executor);
         if (errorsExist()) {
-            System.err.println("Fact generation failed (" + errors + " errors).");
+            String msg = "Fact generation failed (" + errors + " errors).";
+            System.err.println(msg);
             if (!_ignoreFactGenErrors)
-                throw new DoopErrorCodeException(5);
+                throw DoopErrorCodeException.error5(msg);
         }
         errors = 0;
     }

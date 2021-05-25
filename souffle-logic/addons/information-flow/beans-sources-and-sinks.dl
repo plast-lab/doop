@@ -1,4 +1,3 @@
-#include "rules.dl"
 #include "spring-sources-and-sinks.dl"
 
 BaseToRetTaintTransferMethod(?dtoMeth),

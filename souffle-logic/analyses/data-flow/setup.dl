@@ -1,4 +1,5 @@
 #pragma once
+#include "../../commonMacros.dl"
 
 .decl INIT_VAR(stmt:AssignNumConstant_Insn, to:Var, value:NumConstant)
 .decl MOVE(stmt:AssignLocal_Insn, to:Var, from:Var)
@@ -177,3 +178,15 @@ IF(stmt, op, label) :-
 
 GOTO(stmt, label) :-
 	Goto_Target(stmt, label).
+
+// Special handling of native clone() methods, handled as allocation sites.
+PlusMethodInvocation(?fakeNewSite),
+ALLOC(?fakeNewSite, ?toObj, ?alloc),
+HeapAllocation_Type(?alloc, ?type) :-
+  MethodInvocation_Method(?invo, ?method),
+  ( ?method = "<java.lang.Object: java.lang.Object clone()>"
+  ; ?method = "<java.util.LinkedList: java.lang.Object clone()>"),
+  AssignReturnValue(?invo, ?toObj),
+  CAST(_, ?to, ?type, ?toObj),
+  ?alloc = cat("<mock clone allocation for type [", cat(?type, "]>")),
+  ?fakeNewSite = cat("<mock clone allocation site for type [", cat(?type, "]>")).

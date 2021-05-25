@@ -21,7 +21,7 @@ public class PythonInvoker {
         try {
             if (args.length == 0) {
                 System.err.println("Usage: wala-fact-generator [options] file...");
-                throw new DoopErrorCodeException(0);
+                throw DoopErrorCodeException.error0();
             }
             parameters.initFromArgs(args);
         } catch(DoopErrorCodeException errCode) {

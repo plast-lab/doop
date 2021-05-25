@@ -93,6 +93,10 @@ ParamToRetTaintTransferMethod("<java.math.BigInteger: java.math.BigInteger or(ja
 ParamToRetTaintTransferMethod("<java.math.BigInteger: java.math.BigInteger xor(java.math.BigInteger)>").
 
 ParamToBaseTaintTransferMethod(0, "<java.io.ByteArrayOutputStream: void write(byte[],int,int)>").
+ParamToBaseTaintTransferMethod(0, "<java.util.Collection: boolean add(java.lang.Object)>").
+ParamToBaseTaintTransferMethod(0, "<java.util.ArrayList: boolean add(java.lang.Object)>").
+ParamToBaseTaintTransferMethod(0, "<java.util.LinkedList: boolean add(java.lang.Object)>").
+ParamToBaseTaintTransferMethod(0, "<java.util.Vector: boolean add(java.lang.Object)>").
 
 ParamToRetTaintTransferMethod("<android.os.Message: android.os.Message obtain(android.os.Handler,int,int,int)>").
 

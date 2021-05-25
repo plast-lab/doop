@@ -1,11 +1,6 @@
-#include "rules.dl"
 #include "common-transfer-methods.dl"
 #include "android.dl"
 #include "android-taint-wrappers.dl"
-
-LeakingSinkMethodArg(?label, ?index, ?method) :-
-  LeakingSinkMethod(?label, ?method),
-  FormalParam(?index, ?method, _).
 
 TaintSourceMethod("Bundle", "<android.content.Intent: android.os.Bundle getExtras()>").
 LeakingSinkMethod("IPC", "<android.content.ContextWrapper: void sendBroadcast(android.content.Intent)>").
@@ -15,7 +10,11 @@ TaintSourceMethod("Location", "<android.location.Location: double getLatitude()>
 TaintSourceMethod("Location", "<android.location.Location: double getLongitude()>").
 TaintSourceMethod("Telephony", "<android.telephony.TelephonyManager: java.lang.String getDeviceId()>").
 TaintSourceMethod("Telephony", "<android.telephony.TelephonyManager: java.lang.String getSubscriberId()>").
+TaintSourceMethod("Telephony", "<android.telephony.TelephonyManager: java.lang.String getSubscriberId(int)>").
 TaintSourceMethod("Telephony", "<android.telephony.TelephonyManager: java.lang.String getSimSerialNumber()>").
+TaintSourceMethod("Telephony", "<android.telephony.TelephonyManager: int getSimState()>").
+TaintSourceMethod("Telephony", "<android.telephony.TelephonyManager: int getSimState(int)>").
+TaintSourceMethod("Telephony", "<android.telephony.TelephonyManager: int getSimCount()>").
 TaintSourceMethod("Telephony", "<android.telephony.TelephonyManager: java.lang.String getLine1Number()>").
 TaintSourceMethod("Net", "<java.net.URLConnection: java.io.OutputStream getOutputStream()>").
 TaintSourceMethod("Net", "<java.net.URLConnection: java.io.InputStream getInputStream()>").
