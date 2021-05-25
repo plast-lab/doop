@@ -23,14 +23,16 @@ class SouffleOptions {
     /** Use custom functors. */
     boolean useFunctors
 
+    SouffleOptions() {}
+
     SouffleOptions(Map<String, AnalysisOption> options) {
-        this.profile = options.SOUFFLE_PROFILE.value as boolean
-        this.debug = options.SOUFFLE_DEBUG.value as boolean
-        this.provenance = options.SOUFFLE_PROVENANCE.value as boolean
-        this.liveProf = options.SOUFFLE_LIVE_PROFILE.value as boolean
-        this.forceRecompile = options.SOUFFLE_FORCE_RECOMPILE.value as boolean
-        this.translateOnly = options.SOUFFLE_MODE.value == DoopAnalysisFamily.SOUFFLE_TRANSLATED
-        this.removeContexts = options.X_CONTEXT_REMOVER.value as boolean
-        this.useFunctors = options.SOUFFLE_USE_FUNCTORS.value as boolean
+        this.profile = options.SOUFFLE_PROFILE?.value as boolean
+        this.debug = options.SOUFFLE_DEBUG?.value as boolean
+        this.provenance = options.SOUFFLE_PROVENANCE?.value as boolean
+        this.liveProf = options.SOUFFLE_LIVE_PROFILE?.value as boolean
+        this.forceRecompile = options.SOUFFLE_FORCE_RECOMPILE?.value as boolean
+        this.translateOnly = options.SOUFFLE_MODE?.value == DoopAnalysisFamily.SOUFFLE_TRANSLATED
+        this.removeContexts = options.X_CONTEXT_REMOVER?.value as boolean
+        this.useFunctors = options.SOUFFLE_USE_FUNCTORS?.value as boolean
     }
 }
