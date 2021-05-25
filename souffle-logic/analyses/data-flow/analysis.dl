@@ -37,6 +37,10 @@ OptBaseFlows(from, to) :-
 	InterestingStmt(stmt),
 	OPERAND_VAR(stmt, _, from).
 
+OptBaseFlows(v, v) :-
+	ALLOC(stmt, v, _),
+	InterestingStmt(stmt).
+
 // Array STORE with const index
 FlowsIntoConstArrayIndex(from, arr, i),
 OptBaseFlows(from, v) :-
