@@ -109,8 +109,8 @@ public class DoopErrorCodeException extends Exception {
         return new DoopErrorCodeException(24, msg);
     }
 
-    public static DoopErrorCodeException error25(String msg) {
-        return new DoopErrorCodeException(25, msg);
+    public static DoopErrorCodeException error25(Throwable t) {
+        return new DoopErrorCodeException(25, t);
     }
 
     public static DoopErrorCodeException error26(String msg) {
