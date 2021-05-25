@@ -143,8 +143,14 @@ class SouffleAnalysis extends DoopAnalysis {
 		cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/basic/basic.dl")
 		cpp.includeAtEnd("$analysis", "${Doop.souffleAnalysesPath}/${getBaseName(analysis.name)}/analysis.dl")
 
-		if (options.INFORMATION_FLOW.value)
-			cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/addons/information-flow/${options.INFORMATION_FLOW.value}${INFORMATION_FLOW_SUFFIX}.dl")
+		if (options.INFORMATION_FLOW.value) {
+			String infoflowDir = "${Doop.souffleLogicPath}/addons/information-flow"
+			if (options.ANALYSIS.value == 'data-flow')
+				cpp.includeAtEnd("$analysis", "${infoflowDir}/rules-data-flow.dl")
+			else
+				cpp.includeAtEnd("$analysis", "${infoflowDir}/rules.dl")
+			cpp.includeAtEnd("$analysis", "${infoflowDir}/${options.INFORMATION_FLOW.value}${INFORMATION_FLOW_SUFFIX}.dl")
+		}
 
 		String openProgramsRules = options.OPEN_PROGRAMS.value
 		if (openProgramsRules) {

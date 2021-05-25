@@ -1,20 +1,14 @@
 #pragma once
+/**
+ * This file contains information flow analysis rules that require
+ * an existing points-to analysis.
+ */
 #include "macros.dl"
 #include "declarations.dl"
 #include "delta.dl"
+#include "core.dl"
 
-AnyMethodInvocation(?invocation, ?tomethod) :-
-  StaticMethodInvocation(?invocation, ?tomethod, _).
-
-AnyMethodInvocation(?invocation, ?tomethod) :-
-  VirtualMethodInvocation(?invocation, ?tomethod, _).
-
-AnyMethodInvocation(?invocation, ?tomethod) :-
-  MethodInvocation_Method(?invocation, ?tomethod),
-  isSpecialMethodInvocation_Insn(?invocation).
-
-VarUse(?from, ?insn) :-
-  AssignOper_From(?insn, _, ?from).
+#ifndef DISABLE_POINTS_TO
 
 TaintObjTransfer(?fromCtx, ?from, ?toCtx, ?to),
 TaintedVarTaintedFromVar(?toCtx, ?to, ?value, ?type) :-
@@ -43,19 +37,6 @@ mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB)
   VarIsTaintedFromValue(?type, ?value, ?toCtx, ?to),
   mainAnalysis.isImmutableHContext(?hctx).
 
-VarIsTaintedFromVar(?type, ?ctx, ?param, ?ctx, ?base) :-
-   MethodInvocationInContextInApplication(?ctx, ?invocation, ?method),
-   BaseToParamTaintTransferMethod(?method),
-   MethodInvocation_Base(?invocation, ?base),
-   ActualParam(_, ?invocation, ?param),
-   Var_Type(?param, ?type).
-
-VarIsTaintedFromVarIndex(?base, ?ctx, ?param) :-
-   MethodInvocationInContext(?ctx, ?invocation, ?method),
-   ParamIndexToBaseTaintTransferMethod(?index, ?method),
-   MethodInvocation_Base(?invocation, ?base),
-   ActualParam(?index, ?invocation, ?param).
-
 // I expect the first rel to be very small, smaller than
 // the deltas of VPT or AIPT
 VarIsTaintedFromValueIndex(?ctx, ?base, ?hctx, ?value) :-
@@ -67,12 +48,7 @@ VarIsTaintedFromValue(?type, ?valueIndex, ?ctx, ?base) :-
   mainAnalysis.ArrayIndexPointsTo(_, ?valueIndex, ?hctx, ?value),
   Var_Type(?base, ?type).
 
-
-CallTaintingMethod(?label, ?ctx, ?invocation) :-
-  TaintSourceMethod(?label, ?tomethod),
-  MethodInvocationInContext(?ctx, ?invocation, ?tomethod),
-  Instruction_Method(?invocation, ?inmethod),
-  ApplicationMethod(?inmethod).
+#endif // DISABLE_POINTS_TO
 
 /**
  * Information flow through complex relations
@@ -89,6 +65,8 @@ mainAnalysis.StringFactoryType("java.lang.String").
 
 mainAnalysis.StringFactoryType(?type) :-
    AppendableType(?type).
+
+#ifndef DISABLE_POINTS_TO
 
 mainAnalysis.StringFactoryVar(?var) :-
   mainAnalysis.StringFactoryType(?type),
@@ -118,6 +96,8 @@ VarIsTaintedFromVar(?type, ?ctx, ?base, ?ctx, ?param) :-
   Var_Type(?base, ?type),
   ActualParam(0, ?invocation, ?param).
 
+#endif // DISABLE_POINTS_TO
+
 MethodReturningStringFactory(?tomethod) :-
   mainAnalysis.StringFactoryType(?stringFactoryType),
   Method_ReturnType(?tomethod, ?stringFactoryType).
@@ -126,6 +106,7 @@ StringFactoryReturnInvocation(?invocation) :-
   MethodReturningStringFactory(?tomethod),
   VirtualMethodInvocation(?invocation, ?tomethod, _).
 
+#ifndef DISABLE_POINTS_TO
 VarIsTaintedFromVar(?type, ?ctx, ?ret, ?ctx, ?base) :-
   mainAnalysis.StringFactoryVarPointsTo(_, _, ?ctx, ?base),
   VirtualMethodInvocation_Base(?invocation, ?base),
@@ -139,50 +120,9 @@ VarIsTaintedFromValue(?componentType, ?basevalue, ?ctx, ?to) :-
   ComponentType(?arrayType, ?componentType),
   mainAnalysis.LoadHeapArrayIndex(?ctx, ?to, _, ?basevalue).
 
-VarIsTaintedFromVar(?type, ?ctx, ?ret, ?ctx, ?base) :-
-  BaseToRetTaintTransferMethod(?method),
-  MethodInvocationInContext(?ctx, ?invocation, ?method),
-  MethodInvocation_Base(?invocation, ?base),
-  TypeForReturnValue(?type, ?ret, ?invocation).
-
-MethodInvocationInfo(?invocation, ?type, ?ret) :-
-  Method_ReturnType(?method, ?type),
-  AnyMethodInvocation(?invocation, ?method),
-  AssignReturnValue(?invocation, ?ret).
-
-VarIsCast(?var) :-
-  AssignCast(_, ?var, _, _).
-
 TypeForReturnValue(?type, ?ret, ?invocation) :-
   mainAnalysis.OptAssignCast(?type, _, ?ret),
   MethodInvocationInfo(?invocation, _, ?ret).
-
-TypeForReturnValue(?type, ?ret, ?invocation) :-
-  MethodInvocationInfo(?invocation, ?type, ?ret),
-  !VarIsCast(?ret).
-
-// Taint transfer through aliasing
-
-TaintTransferMethodInvocationInContext(?ctx, ?index, ?invocation) :-
-  MethodInvocationInContext(?ctx, ?invocation, ?taintTransferMethod),
-  ParamToBaseTaintTransferMethod(?index, ?taintTransferMethod).
-
-ParamTaintTransferredToBase(?param, ?ctx, ?base) :-
-  TaintTransferMethodInvocationInContext(?ctx, ?index, ?invocation),
-  ActualParam(?index, ?invocation, ?param),
-  MethodInvocation_Base(?invocation, ?base),
-  !AssignReturnValue(?invocation, _).
-
-MethodInvocationInContextInApplication(?ctx, ?invocation, ?method) :-
-  ApplicationMethod(?fromMethod),
-  Instruction_Method(?invocation, ?fromMethod),
-  MethodInvocationInContext(?ctx, ?invocation, ?method).
-
-ParamTaintTransferredToRet(?type, ?ret, ?ctx, ?param) :-
-  ParamToRetTaintTransferMethod(?taintTransferMethod),
-  MethodInvocationInContextInApplication(?ctx, ?invocation, ?taintTransferMethod),
-  ActualParam(_, ?invocation, ?param),
-  TypeForReturnValue(?type, ?ret, ?invocation).
 
 TaintObjTransfer(?ctx, ?from, ?ctx, ?to),
 TaintedValueTransferred(?declaringType, ?source, ?type, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB)),
@@ -299,20 +239,8 @@ MethodInvocationInContext(?ctx, ?invocation, ?tomethod) :-
 #endif // INFORMATION_FLOW_HIGH_SOUNDNESS
 
 /**
- * Sinks and leaks
+ * Sinks and leaks (on top of points-to reasoning)
  */
-LeakingSinkVariable(?label, ?invocation, ?ctx, ?var) :-
-  LeakingSinkMethodArg(?label, ?index, ?tomethod),
-  MethodInvocationInContextInApplication(?ctx, ?invocation, ?tomethod),
-  ActualParam(?index, ?invocation, ?var).
-
-// in case method has no arguments, assume base variable 
-LeakingSinkVariable(?label, ?invocation, ?ctx, ?var) :-
-   LeakingSinkMethod(?label, ?tomethod),
-   !FormalParam(_, ?tomethod, _),
-   MethodInvocationInContextInApplication(?ctx, ?invocation, ?tomethod),
-   MethodInvocation_Base(?invocation, ?var).
-
 LeakingTaintedInformation(?sourceLabel, ?destLabel, ?ctx, ?invocation, ?source) :-
   SourceFromTaintedValue(?value, ?source),
   LabelFromSource(?source, ?sourceLabel),
@@ -491,3 +419,5 @@ TaintObjTransfer(?ctx, ?from, ?ctx, ?to) :-
 TaintObjTransfer(?ctx, ?from, ?ctx, ?to) :-
     TaintedVarPointsTo(_, ?ctx, ?from),
     AssignLocal(?from, ?to, _).
+
+#endif // DISABLE_POINTS_TO

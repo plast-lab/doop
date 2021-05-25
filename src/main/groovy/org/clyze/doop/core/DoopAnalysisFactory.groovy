@@ -360,6 +360,8 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		} else if (analysisName == 'data-flow') {
 			log.warn "WARNING: Default statistics are not compatible with analysis '${analysisName}', disabling statistics logic."
 			options.X_STATS_NONE.value = true
+			log.debug "Disabling points-to reasoning for analysis '${analysisName}'."
+			options.DISABLE_POINTS_TO.value = true
 		} else if (analysisName == 'xtractor') {
 			log.debug "Enabling CFG analysis."
 			options.CFG_ANALYSIS.value = true
@@ -426,12 +428,6 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			log.warn "WARNING: Possible inconsistency: context-sensitive library analysis with merged objects."
 		}
 
-		if (options.ANALYSIS.value == "types-only" && !options.DISABLE_POINTS_TO.value) {
-			log.warn "WARNING: Types-only analysis chosen without disabling points-to reasoning. Disabling it, since this is likely what you want."
-			options.DISABLE_POINTS_TO.value = true
-		}
-
-		throwIfBothSet(options.DISABLE_POINTS_TO, options.INFORMATION_FLOW)
 		throwIfBothSet(options.SOUFFLE_PROVENANCE, options.SOUFFLE_LIVE_PROFILE)
 
 		if (options.INFORMATION_FLOW.value == 'android' && !options.ANDROID.value) {

@@ -1,5 +1,6 @@
 /**
  * This file contains information about mocked Android API elements.
+ * This information is reused by both the points-to and the data-flow analyses.
  */
 
 // System services are mocked.
@@ -44,12 +45,22 @@ SYSTEM_SERVICE("android.telephony.SubscriptionManager").
 .decl AndroidMethodReturns(?method:Method, ?alloc:HeapAllocation, ?type:ReferenceType)
 .output AndroidMethodReturns
 
+// Helper releation: getSystemService() methods.
+.decl GetSystemServiceMethod(?method:Method)
+
+GetSystemServiceMethod("<android.content.Context: java.lang.Object getSystemService(java.lang.String)>").
+GetSystemServiceMethod("<android.content.Context: java.lang.Object getSystemService(java.lang.Class)>").
+
+#ifdef DISABLE_POINTS_TO
+// This method must be declared when running very shallow analyses.
+GetSystemServiceMethod("<android.app.Activity: java.lang.Object getSystemService(java.lang.String)>").
+#endif // DISABLE_POINTS_TO
+
 // Mock return values of Context.getSystemService().
 AndroidMethodReturns(?method, ?alloc, ?type),
 HeapAllocation_Type(?alloc, ?type) :-
   SystemService(?type),
-  ( ?method = "<android.content.Context: java.lang.Object getSystemService(java.lang.String)>"
-  ; ?method = "<android.content.Context: java.lang.Object getSystemService(java.lang.Class)>"),
+  GetSystemServiceMethod(?method),
   ?alloc = cat("<system service of type ", cat(?type, ">")).
 
 // Mock return values of TelephonyManager getters.

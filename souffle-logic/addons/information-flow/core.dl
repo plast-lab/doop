@@ -1,0 +1,104 @@
+#pragma once
+/**
+ * This file contains core information flow analysis rules that do not
+ * require an existing points-to infrastructure. Adding points-to support to
+ * this core results in "P/Taint" but these rules are also used by the independent
+ * data-flow taint analysis.
+ */
+
+AnyMethodInvocation(?invocation, ?tomethod) :-
+  StaticMethodInvocation(?invocation, ?tomethod, _).
+
+AnyMethodInvocation(?invocation, ?tomethod) :-
+  VirtualMethodInvocation(?invocation, ?tomethod, _).
+
+AnyMethodInvocation(?invocation, ?tomethod) :-
+  MethodInvocation_Method(?invocation, ?tomethod),
+  isSpecialMethodInvocation_Insn(?invocation).
+
+VarUse(?from, ?insn) :-
+  AssignOper_From(?insn, _, ?from).
+
+LeakingSinkMethodArg(?label, ?index, ?method) :-
+  LeakingSinkMethod(?label, ?method),
+  FormalParam(?index, ?method, _).
+
+MethodInvocationInfo(?invocation, ?type, ?ret) :-
+  Method_ReturnType(?method, ?type),
+  AnyMethodInvocation(?invocation, ?method),
+  AssignReturnValue(?invocation, ?ret).
+
+VarIsCast(?var) :-
+  AssignCast(_, ?var, _, _).
+
+TypeForReturnValue(?type, ?ret, ?invocation) :-
+  MethodInvocationInfo(?invocation, ?type, ?ret),
+  !VarIsCast(?ret).
+
+CallTaintingMethod(?label, ?ctx, ?invocation) :-
+  TaintSourceMethod(?label, ?tomethod),
+  MethodInvocationInContext(?ctx, ?invocation, ?tomethod),
+  Instruction_Method(?invocation, ?inmethod),
+  ApplicationMethod(?inmethod).
+
+/**
+ * Taint transfer through aliasing
+ */
+TaintTransferMethodInvocationInContext(?ctx, ?index, ?invocation) :-
+  MethodInvocationInContext(?ctx, ?invocation, ?taintTransferMethod),
+  ParamToBaseTaintTransferMethod(?index, ?taintTransferMethod).
+
+ParamTaintTransferredToBase(?param, ?ctx, ?base) :-
+  TaintTransferMethodInvocationInContext(?ctx, ?index, ?invocation),
+  ActualParam(?index, ?invocation, ?param),
+  MethodInvocation_Base(?invocation, ?base),
+  !AssignReturnValue(?invocation, _).
+
+MethodInvocationInContextInApplication(?ctx, ?invocation, ?method) :-
+  ApplicationMethod(?fromMethod),
+  Instruction_Method(?invocation, ?fromMethod),
+  MethodInvocationInContext(?ctx, ?invocation, ?method).
+
+ParamTaintTransferredToRet(?type, ?ret, ?ctx, ?param) :-
+  ParamToRetTaintTransferMethod(?taintTransferMethod),
+  MethodInvocationInContextInApplication(?ctx, ?invocation, ?taintTransferMethod),
+  ActualParam(_, ?invocation, ?param),
+  TypeForReturnValue(?type, ?ret, ?invocation).
+
+/**
+ * Variable tainting
+ */
+VarIsTaintedFromVar(?type, ?ctx, ?param, ?ctx, ?base) :-
+   MethodInvocationInContextInApplication(?ctx, ?invocation, ?method),
+   BaseToParamTaintTransferMethod(?method),
+   MethodInvocation_Base(?invocation, ?base),
+   ActualParam(_, ?invocation, ?param),
+   Var_Type(?param, ?type).
+
+VarIsTaintedFromVar(?type, ?ctx, ?ret, ?ctx, ?base) :-
+  BaseToRetTaintTransferMethod(?method),
+  MethodInvocationInContext(?ctx, ?invocation, ?method),
+  MethodInvocation_Base(?invocation, ?base),
+  TypeForReturnValue(?type, ?ret, ?invocation).
+
+VarIsTaintedFromVarIndex(?base, ?ctx, ?param) :-
+   MethodInvocationInContext(?ctx, ?invocation, ?method),
+   ParamIndexToBaseTaintTransferMethod(?index, ?method),
+   MethodInvocation_Base(?invocation, ?base),
+   ActualParam(?index, ?invocation, ?param).
+
+/**
+ * Sinks and leaks
+ */
+LeakingSinkVariable(?label, ?invocation, ?ctx, ?var) :-
+  LeakingSinkMethodArg(?label, ?index, ?tomethod),
+  MethodInvocationInContextInApplication(?ctx, ?invocation, ?tomethod),
+  ActualParam(?index, ?invocation, ?var).
+
+// In case method has no arguments, assume base variable.
+LeakingSinkVariable(?label, ?invocation, ?ctx, ?var) :-
+   LeakingSinkMethod(?label, ?tomethod),
+   !FormalParam(_, ?tomethod, _),
+   MethodInvocationInContextInApplication(?ctx, ?invocation, ?tomethod),
+   MethodInvocation_Base(?invocation, ?var).
+
