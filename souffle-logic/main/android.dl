@@ -33,6 +33,7 @@
 **/
 
 #include "android-xml.dl"
+#include "android-mocking.dl"
 
 /**
  * App Components, in layout resources or dynamically registered
@@ -1120,48 +1121,7 @@ ForcedReachableAndroidContext(?ctx, ?method) :-
 #include "../addons/butterknife.dl"
 #include "../addons/glide.dl"
 
-// System services are mocked.
-.decl SystemService(?type:ReferenceType)
-.output SystemService
-// Ignore non-existent system service types (due to analysis platform version).
-#define SYSTEM_SERVICE(s) SystemService(s) :- isReferenceType(s)
-
-// Classes gathered from https://developer.android.com/reference/android/content/Context#getSystemService(java.lang.String)
-// and https://developer.android.com/reference/android/content/Context#getSystemService(java.lang.Class%3CT%3E)
-SYSTEM_SERVICE("android.view.WindowManager").
-SYSTEM_SERVICE("android.view.LayoutInflater").
-SYSTEM_SERVICE("android.app.ActivityManager").
-SYSTEM_SERVICE("android.service.wallpaper.WallpaperService").
-SYSTEM_SERVICE("android.os.PowerManager").
-SYSTEM_SERVICE("android.app.AlarmManager").
-SYSTEM_SERVICE("android.app.NotificationManager").
-SYSTEM_SERVICE("android.app.KeyguardManager").
-SYSTEM_SERVICE("android.location.LocationManager").
-SYSTEM_SERVICE("android.app.SearchManager").
-SYSTEM_SERVICE("android.os.Vibrator").
-SYSTEM_SERVICE("android.os.VibratorManager").
-SYSTEM_SERVICE("android.net.ConnectivityManager").
-SYSTEM_SERVICE("android.net.IpSecManager").
-SYSTEM_SERVICE("android.net.wifi.WifiManager").
-SYSTEM_SERVICE("android.net.wifi.aware.WifiAwareManager").
-SYSTEM_SERVICE("android.net.wifi.p2p.WifiP2pManager").
-SYSTEM_SERVICE("android.view.inputmethod.InputMethodManager").
-SYSTEM_SERVICE("android.app.UiModeManager").
-SYSTEM_SERVICE("android.app.DownloadManager").
-SYSTEM_SERVICE("android.os.BatteryManager").
-SYSTEM_SERVICE("android.app.job.JobScheduler").
-SYSTEM_SERVICE("android.app.usage.NetworkStatsManager").
-SYSTEM_SERVICE("android.os.HardwarePropertiesManager").
-SYSTEM_SERVICE("android.content.pm.verify.domain.DomainVerificationManager").
-SYSTEM_SERVICE("android.media.AudioManager").
-SYSTEM_SERVICE("android.media.MediaRouter").
-SYSTEM_SERVICE("android.telephony.TelephonyManager").
-SYSTEM_SERVICE("android.telephony.SubscriptionManager").
-
 #ifndef DISABLE_POINTS_TO
-// Helper relation: Android method returns a mock value (of some type).
-.decl AndroidMethodReturns(?method:Method, ?value:Value, ?type:ReferenceType)
-.output AndroidMethodReturns
 
 // Core mocking rule.
 MockValueConsMacro(?value, ?type),
@@ -1173,25 +1133,6 @@ VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
   AndroidMethodReturns(?method, ?value, ?type),
   AssignReturnValue(?invocation, ?return),
   isImmutableHContext(?hctx).
-
-// Mock return values of Context.getSystemService().
-AndroidMethodReturns(?method, ?value, ?type) :-
-  SystemService(?type),
-  ( ?method = "<android.content.Context: java.lang.Object getSystemService(java.lang.String)>"
-  ; ?method = "<android.content.Context: java.lang.Object getSystemService(java.lang.Class)>"),
-  ?value = cat("<system service of type ", cat(?type, ">")).
-
-// Mock return values of TelephonyManager.getDeviceId().
-isStringConstant(?value),
-HeapAllocation_Type(?value, "java.lang.String"),
-AndroidMethodReturns(?method, ?value, "java.lang.String") :-
-  ( ?method = "<android.telephony.TelephonyManager: java.lang.String getDeviceId()>"
-  ; ?method = "<android.telephony.TelephonyManager: java.lang.String getDeviceId(int)>"
-  ; ?method = "<android.telephony.TelephonyManager: java.lang.String getImei()>"
-  ; ?method = "<android.telephony.TelephonyManager: java.lang.String getImei(int)>"
-  ; ?method = "<android.telephony.TelephonyManager: java.lang.String getMeid()>"
-  ; ?method = "<android.telephony.TelephonyManager: java.lang.String getMeid(int)>"),
-  ?value = "<mock device id>".
 
 // Mock call to Activity.attach().
 ReachableContext(?ctx, ?method),
