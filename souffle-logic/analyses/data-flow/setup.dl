@@ -1,43 +1,46 @@
 #pragma once
 #include "../../commonMacros.dl"
 
-.decl INIT_VAR(stmt:AssignNumConstant_Insn, to:Var, value:NumConstant)
-.decl MOVE(stmt:AssignLocal_Insn, to:Var, from:Var)
-.decl CAST(stmt:AssignCast_Insn, to:Var, type:Type, from:Var)
-.decl ALOAD_VAR(stmt:LoadArrayIndex_Insn, to:Var, arr:Var, i:Var)
-.decl ALOAD_NUM(stmt:LoadArrayIndex_Insn, to:Var, arr:Var, i:number)
-.decl ASTORE_VAR(stmt:StoreArrayIndex_Insn, arr:Var, i:Var, from:Var)
-.decl ASTORE_NUM(stmt:StoreArrayIndex_Insn, arr:Var, i:number, from:Var)
-.decl ILOAD(stmt:LoadInstanceField_Insn, to:Var, base:Var, fld:Field)
-.decl ISTORE(stmt:StoreInstanceField_Insn, base:Var, fld:Field, from:Var)
-.decl SLOAD(stmt:LoadStaticField_Insn, to:Var, fld:Field)
-.decl SSTORE(stmt:StoreStaticField_Insn, fld:Field, from:Var)
-.decl ALLOC(stmt:AssignHeapAllocation_Insn, to:Var, h:HeapAllocation)
-.decl VCALL(stmt:VirtualMethodInvocation_Insn, base:Var, m:Method)
-.decl SPCALL(stmt:SpecialMethodInvocation_Insn, base:Var, m:Method)
-.decl SCALL(stmt:StaticMethodInvocation_Insn, m:Method)
-.decl UNOP(stmt:AssignUnop_Insn, to:Var, op:symbol)
-.decl BINOP(stmt:AssignBinop_Insn, to:Var, op:symbol)
-.decl IF(stmt:If_Insn, op:symbol, label:number)
-.decl GOTO(stmt:Goto_Insn, label:number)
-.decl RET(stmt:ReturnInstruction) inline
+.decl INIT_VAR(stmt: AssignNumConstant_Insn, to: Var, value: NumConstant)
+.decl MOVE(stmt: AssignLocal_Insn, to: Var, from: Var)
+.decl CAST(stmt: AssignCast_Insn, to: Var, type: Type, from: Var)
+.decl ALOAD(stmt: LoadArrayIndex_Insn, to: Var, arr: Var)
+.decl ALOAD_VAR(stmt: LoadArrayIndex_Insn, to: Var, arr: Var, i: Var)
+.decl ALOAD_NUM(stmt: LoadArrayIndex_Insn, to: Var, arr: Var, i: number)
+.decl ASTORE(stmt: StoreArrayIndex_Insn, arr: Var, from: Var)
+.decl ASTORE_VAR(stmt: StoreArrayIndex_Insn, arr: Var, i: Var, from: Var)
+.decl ASTORE_NUM(stmt: StoreArrayIndex_Insn, arr: Var, i: number, from: Var)
+.decl ILOAD(stmt: LoadInstanceField_Insn, to: Var, base: Var, fld: Field)
+.decl ISTORE(stmt: StoreInstanceField_Insn, base: Var, fld: Field, from: Var)
+.decl SLOAD(stmt: LoadStaticField_Insn, to: Var, fld: Field)
+.decl SSTORE(stmt: StoreStaticField_Insn, fld: Field, from: Var)
+.decl ALLOC(stmt: AssignHeapAllocation_Insn, to: Var, h: HeapAllocation)
+.decl VCALL(stmt: VirtualMethodInvocation_Insn, base: Var, m: Method)
+.decl SPCALL(stmt: SpecialMethodInvocation_Insn, base: Var, m: Method)
+.decl SCALL(stmt: StaticMethodInvocation_Insn, m: Method)
+.decl UNOP(stmt: AssignUnop_Insn, to: Var, op: symbol)
+.decl BINOP(stmt: AssignBinop_Insn, to: Var, op: symbol)
+.decl IF(stmt: If_Insn, op: symbol, label: number)
+.decl GOTO(stmt: Goto_Insn, label: number)
+.decl RET(stmt: ReturnInstruction) inline
 
-.decl FORMAL_PARAM(m:Method, pos:number, param:Var) inline
-.decl ACTUAL_PARAM(stmt:MethodInvocation, pos:number, param:Var) inline
-.decl FORMAL_RET(stmt:ReturnNonvoid_Insn, ret:Var)
-.decl ACTUAL_RET(stmt:ReturnInstruction, to:Var) inline
+.decl FORMAL_PARAM(m: Method, pos: number, param: Var) inline
+.decl ACTUAL_PARAM(stmt: MethodInvocation, pos: number, param: Var) inline
+.decl FORMAL_RET(stmt: ReturnNonvoid_Insn, ret: Var)
+.decl ACTUAL_RET(stmt: ReturnInstruction, to: Var) inline
 // pos starts from 1
-.decl OPERAND_VAR(stmt:Instruction, pos:number, oper:Var)
-.decl OPERAND_NUM(stmt:Instruction, pos:number, oper:number)
+.decl OPERAND_VAR(stmt: Instruction, pos: number, oper: Var)
+.decl OPERAND_NUM(stmt: Instruction, pos: number, oper: number)
 
-.decl InterestingStmt(stmt:Instruction)
-.decl InterestingMethod(method: Method) inline
-.decl AllocArraySize_VAR(stmt: Instruction, pos:number, sizeVar: Var) inline
-.decl AllocArraySize_NUM(stmt: Instruction, pos:number, size:number)
+.decl AllocArray(stmt: AssignHeapAllocation_Insn, arr: Var, types: Type) inline
+.decl AllocArraySize_VAR(stmt: Instruction, pos: number, sizeVar: Var) inline
+.decl AllocArraySize_NUM(stmt: Instruction, pos: number, size: number)
 .input AllocArraySize_NUM(filename="ArrayAllocationConstSize.facts")
 
+.decl InterestingStmt(stmt: Instruction)
+.decl InterestingMethod(method: Method) inline
 
-//InterestingStmt(stmt) :- isInstruction(stmt)
+
 InterestingStmt(stmt) :-
 #ifdef DATA_FLOW_ONLY_LIB
 	isInstruction(stmt),
@@ -49,6 +52,12 @@ InterestingStmt(stmt) :-
 #endif
 
 InterestingMethod(method) :- InterestingStmt(stmt), Instruction_Method(stmt, method).
+
+AllocArray(stmt, array, types) :-
+	AssignInstruction_To(stmt, array),
+	isAssignHeapAllocation_Insn(stmt),
+	Var_Type(array, types),
+	isArrayType(types).
 
 AllocArraySize_VAR(stmt, pos, var) :- ArrayAllocation(stmt, pos, var).
 
@@ -65,6 +74,10 @@ CAST(stmt, to, type, from) :-
 	AssignCast_From(stmt, from),
 	AssignInstruction_To(stmt, to).
 
+ALOAD(stmt, to, arr) :-
+	LoadArrayIndex_Base(stmt, arr),
+	LoadArrayIndex_To(stmt, to).
+
 ALOAD_NUM(stmt, to, arr, i) :-
 	LoadArrayIndex_Base(stmt, arr),
 	LoadArrayIndex_To(stmt, to),
@@ -76,13 +89,15 @@ ALOAD_VAR(stmt, to, arr, i) :-
 	ArrayInsnIndex(stmt, i).
 
 // HACK
-.output ALOAD_VAR
-.output ASTORE_VAR
 ALOAD_VAR(stmt, to, arr, "???") :-
 	LoadArrayIndex_Base(stmt, arr),
 	LoadArrayIndex_To(stmt, to),
 	!ArrayNumIndex(stmt, _),
 	!ArrayInsnIndex(stmt, _).
+
+ASTORE(stmt, arr, from) :-
+	StoreArrayIndex_Base(stmt, arr),
+	StoreArrayIndex_From(stmt, from).
 
 ASTORE_NUM(stmt, arr, i, from) :-
 	StoreArrayIndex_Base(stmt, arr),
@@ -141,13 +156,12 @@ ACTUAL_RET(stmt, to) :- AssignReturnValue(stmt, to).
 
 RET(stmt) :- isReturnVoid_Insn(stmt).
 
-RET(stmt), FORMAL_RET(stmt, var) :-
-	ReturnNonvoid_Var(stmt, var).
+RET(stmt), FORMAL_RET(stmt, var) :- ReturnNonvoid_Var(stmt, var).
 
 
-.decl __OperatorAt(stmt:Instruction, op:symbol)
+.decl __OperatorAt(stmt: Instruction, op: symbol)
 .input __OperatorAt(filename="OperatorAt.facts")
-.decl __Operand_ValidStr(stmt:Instruction, pos:number, oper:symbol)
+.decl __Operand_ValidStr(stmt: Instruction, pos: number, oper: symbol)
 
 OPERAND_VAR(stmt, pos, oper) :- AssignOper_From(stmt, pos, oper).
 OPERAND_VAR(stmt, pos, oper) :- If_Var(stmt, pos, oper).
@@ -183,10 +197,10 @@ GOTO(stmt, label) :-
 PlusMethodInvocation(?fakeNewSite),
 ALLOC(?fakeNewSite, ?toObj, ?alloc),
 HeapAllocation_Type(?alloc, ?type) :-
-  MethodInvocation_Method(?invo, ?method),
-  ( ?method = "<java.lang.Object: java.lang.Object clone()>"
-  ; ?method = "<java.util.LinkedList: java.lang.Object clone()>"),
-  AssignReturnValue(?invo, ?toObj),
-  CAST(_, _, ?type, ?toObj),
-  ?alloc = cat("<mock clone allocation for type [", cat(?type, "]>")),
-  ?fakeNewSite = cat("<mock clone allocation site for type [", cat(?type, "]>")).
+	MethodInvocation_Method(?invo, ?method),
+	(?method = "<java.lang.Object: java.lang.Object clone()>"
+	 ; ?method = "<java.util.LinkedList: java.lang.Object clone()>"),
+	AssignReturnValue(?invo, ?toObj),
+	CAST(_, ?to, ?type, ?toObj),
+	?alloc = cat("<mock clone allocation for type [", cat(?type, "]>")),
+	?fakeNewSite = cat("<mock clone allocation site for type [", cat(?type, "]>")).
