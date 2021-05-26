@@ -201,6 +201,6 @@ HeapAllocation_Type(?alloc, ?type) :-
 	(?method = "<java.lang.Object: java.lang.Object clone()>"
 	 ; ?method = "<java.util.LinkedList: java.lang.Object clone()>"),
 	AssignReturnValue(?invo, ?toObj),
-	CAST(_, ?to, ?type, ?toObj),
+	CAST(_, _, ?type, ?toObj),
 	?alloc = cat("<mock clone allocation for type [", cat(?type, "]>")),
 	?fakeNewSite = cat("<mock clone allocation site for type [", cat(?type, "]>")).
