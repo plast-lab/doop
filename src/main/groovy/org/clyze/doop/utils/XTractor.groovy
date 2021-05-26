@@ -17,16 +17,24 @@ class XTractor {
 		outFile.text = ""
 
 		arrays()
-		conditions()
-		schema()
+//		conditions()
+//		schema()
 
 		println "Results in... $outFile"
 	}
 
 	private static def arrays() {
+		Map<String, Set<String>> varAliases = [:].withDefault { [] as Set }
+		new File(analysis.database, "Flows.csv").eachLine {
+			def (String from, String to) = it.split("\t")
+			varAliases[from] << to
+		}
+
+		def arrayMetaFacts = []
+		def mainArrays = []
 		Map<String, Integer> relNameToVariant = [:]
 		outFile << ".decl arr_META(relation:symbol, name:symbol, types:symbol, dimensions:number)\n"
-		new File(analysis.database, "OUT_ArrayInfo.csv").eachLine {
+		new File(analysis.database, "MainArrayVar.csv").eachLine {
 			def (String array, String name, String types) = it.split("\t")
 			def dimensions = types.count("[]")
 			def relName = "${name.split("#").first()}" as String
@@ -37,33 +45,39 @@ class XTractor {
 				relNameToVariant[relName] = variant + 1
 				relName += "_$variant"
 			}
-			def dims = (1..dimensions).collect { "i$it:symbol" }.join(", ")
+			def dims = (1..dimensions).collect { "i$it:number" }.join(", ")
 			outFile << ".decl $relName($dims, value:symbol)\n"
 			def dimSizes = (1..dimensions).collect { "dim$it:number" }.join(", ")
 			outFile << ".decl ${relName}_DimSizes($dimSizes)\n"
-			def metaRule = "arr_META(\"$relName\", \"$array\", \"$types\", $dimensions)."
-			arrayMeta[array] = [relName, metaRule, name, types, dimensions]
+			arrayMetaFacts << "arr_META(\"$relName\", \"$array\", \"$types\", $dimensions)."
+			def metaInfo = [relName, name, types, dimensions]
+			varAliases[array].each { arrayMeta[it] = metaInfo }
+			mainArrays << array
 		}
+		outFile << "\n"
+		arrayMetaFacts.each { outFile << "$it\n" }
+		outFile << "\n"
+
 		def arrayDims = [:].withDefault { [:] }
-		new File(analysis.database, "OUT_ArrayDims.csv").eachLine {
+		new File(analysis.database, "ArrayDims.csv").eachLine {
 			def (String array, pos, size) = it.split("\t")
 			arrayDims[array][pos as int] = size
 		}
-		arrayMeta.each { array, meta ->
-			def (String relName, metaRule, name, types, int dimensions) = meta
+		mainArrays.each { array ->
+			def (String relName, name, types, int dimensions) = arrayMeta[array]
 			def sizes = arrayDims[array]
 			def allSizes = (0..(dimensions - 1)).collect { sizes[it] ?: -1 }
-			outFile << "$metaRule\n"
 			outFile << "${relName}_DimSizes(${allSizes.join(", ")}).\n"
 		}
+		outFile << "\n"
 
 		def load_from2index2to = [:].withDefault { [:].withDefault { [] } }
-		new File(analysis.database, "OUT_ArrayLoad.csv").eachLine {
+		new File(analysis.database, "ArrayLoad.csv").eachLine {
 			def (String to, String from, index) = it.split("\t")
 			load_from2index2to[from][index as int] << to
 		}
 		def store_to_index_value = [:].withDefault { [:] }
-		new File(analysis.database, "OUT_ArrayStore.csv").eachLine {
+		new File(analysis.database, "ArrayStore.csv").eachLine {
 			def (String to, index, value) = it.split("\t")
 			store_to_index_value[to][index as int] = value
 		}
