@@ -8,6 +8,14 @@
 #include "../../main/android-mocking.dl"
 #endif // ANDROID
 
+#ifdef X_SERVER_LOGIC
+#include "../server-logic/queries.dl"
+#endif // X_SERVER_LOGIC
+
+#ifdef SARIF
+#include "../sarif/sarif.dl"
+#endif // SARIF
+
 #define DUMMY_CONTEXT "-"
 
 MethodInvocationInContext(DUMMY_CONTEXT, ?invocation, ?tomethod),

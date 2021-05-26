@@ -17,18 +17,23 @@
 
 .output PhantomType
 SARIF_InterestingRelation("PhantomType", 0, "JvmClass", "Type is phantom.", "Type is phantom, this could be an indication of missing code.", "warning").
+
+#ifndef DISABLE_POINTS_TO
 .output mainAnalysis.PhantomInvoke(IO="file",filename="PhantomInvoke.csv",delimiter="\t")
 SARIF_InterestingRelation("PhantomInvoke", 0, "JvmMethodInvocation", "Invoked method is phantom.", "Invoked method is phantom, this could be an indication of missing code.", "warning").
+#endif // DISABLE_POINTS_TO
 
 #ifdef GENERATE_OPTIMIZATION_DIRECTIVES
 SARIF_InterestingRelation("MethodToRemove", 0, "JvmMethod", "Method seems to be unused and can be removed.", "Method seems to be unused and can be removed.", "warning").
 SARIF_InterestingRelation("SingleInvocationToInline", 0, "JvmMethodInvocation", "Invoked method can be inlined: @@1", "Invoked method can be inlined.", "warning").
 #endif // GENERATE_OPTIMIZATION_DIRECTIVES
 
+#ifndef DISABLE_POINTS_TO
 #ifdef INFORMATION_FLOW
 .output AppTaintedVarPointsTo
 SARIF_InterestingRelation("AppTaintedVarPointsTo", 1, "JvmVariable", "Variable is tainted, points to @@0.", "Variable is tainted.", "warning").
 #endif // INFORMATION_FLOW
+#endif // DISABLE_POINTS_TO
 
 #ifdef X_SERVER_LOGIC
 SARIF_InterestingRelation("Server_Field_ShadowedBy", 0, "JvmField", "Field is shadowed by field @@1", "Field is shadowed.", "warning").
