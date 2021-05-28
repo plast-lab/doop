@@ -124,11 +124,6 @@ ReachableContext(?ctx, ?method) :-
   isImmutableContext(?ctx),
   ImplicitReachable(?method).
 
-// Forced reachable methods are invoked by unknown callers.
-ReachableContext(?ctx, ?method) :-
-  ForcedReachable(?method),
-  isImmutableContext(?ctx).
-
 // If a class needs to be initialized, then its class initializer is invoked
 // Note: InitializedClass already deals with superclasses that need initialization
 ReachableContext(?clinitContext, ?clinit) :-

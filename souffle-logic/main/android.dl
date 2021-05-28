@@ -113,38 +113,6 @@ ForcedReachableAndroidContext(?ctx, ?meth) :-
   AndroidEntryPoint(?meth),
   isImmutableContext(?ctx).
 
-/*
- * The following rules handle the 'keep' specification, by
- * forcing reachability and mocking of all "keep" methods.
- */
-
-// 'keep'/'root' = make method reachable.
-ForcedReachableAndroidContext(?ctx, ?meth) :-
-  (KeepMethod(?meth) ; RootCodeElement(?meth)),
-  isMethod(?meth),
-  isImmutableContext(?ctx).
-
-// 'keep class members' / 'keep classes with members' = keep all class
-// methods if the class has a reachable method. We assume that 'keep
-// classes with members' has already been resolved and the tuples only
-// concern the types that apply.
-ForcedReachableAndroidContext(?ctx, ?method) :-
-  ( KeepClassMembers(?method) ; KeepClassesWithMembers(?method) ),
-  Method_DeclaringType(?method, ?type),
-  Method_DeclaringType(?someMethod, ?type),
-  Reachable(?someMethod),
-  isImmutableContext(?ctx).
-
-// Not clear what ProGuard does with "keep" annotations for classes, but certainly
-// I've seen documented behavior in industrial code that expects it to keep no-arg
-// constructors.
-ForcedReachableAndroidContext(?ctx, ?meth) :-
-  KeepClass(?class),
-  basic.ClassConstructor(?meth, ?class),
-  !FormalParam(_, ?meth, _),
-  isImmutableContext(?ctx).
-
-
 /**
  * Layout control objects
 **/
@@ -610,7 +578,7 @@ ReachableValue(?hctx, ?value) :-
 #endif // DISABLE_POINTS_TO
 
 // Link the two concepts: if an object is a ReifiedAndroidObjectValue,
-// make its constructors ForcedReachable.
+// make its constructors ForcedReachableAndroidContext.
 ForcedReachableAndroidContext(?ctx, ?meth) :-
   ReifiedAndroidObjectValue(_, ?type),
   basic.ClassConstructor(?meth, ?type),
@@ -640,19 +608,14 @@ VarPointsTo(?hctx, ?value, ?ctx, ?this) :-
   ThisVar(?meth, ?this).
  .plan 1:(3,2,1,4)
 
+
 // ... and do the same for argument objects.
 // REVIEW: this is imprecise. It assigns any argument to a
 // type-compatible value, regardless of the hierarchy of actual
 // graphical components. One could also perhaps distinguish
 // objects initialized by different constructors.
-
-FormalOfForcedReachableContext(?ctx, ?formal, ?formalType) :-
-  ForcedReachableAndroidContext(?ctx, ?meth),
-  FormalParam(_, ?meth, ?formal),
-  Var_Type(?formal, ?formalType).
-
 VarPointsTo(?hctx, ?value, ?ctx, ?formal) :-
-  FormalOfForcedReachableContext(?ctx, ?formal, ?formalType),
+  FormalOfForcedReachableAndroidContext(?ctx, ?formal, ?formalType),
   isImmutableHContext(?hctx),
   basic.SubtypeOf(?type, ?formalType),
   ReifiedAndroidObjectValue(?value, ?type).
@@ -670,14 +633,14 @@ _NotMostRefinedType(?type) :-
   ?other != ?type.
 
 VarPointsTo(?hctx, ?value, ?ctx, ?formal) :-
-  FormalOfForcedReachableContext(?ctx, ?formal, ?formalType),
+  FormalOfForcedReachableAndroidContext(?ctx, ?formal, ?formalType),
   ApplicationObjectFlowingToLibrary(?hctx, ?value, ?formalType).
 #ifndef X_CONTEXT_REMOVER
  .plan 1:(2,1)
 #endif // X_CONTEXT_REMOVER
 
 VarPointsTo(?hctx, ?value, ?ctx, ?formal) :-
-  FormalOfForcedReachableContext(?ctx, ?formal, ?formalType),
+  FormalOfForcedReachableAndroidContext(?ctx, ?formal, ?formalType),
   basic.SubtypeOf(?type, ?formalType),
   !_NotMostRefinedType(?type),
   ApplicationObjectFlowingToLibrary(?hctx, ?value, ?type).
@@ -910,7 +873,6 @@ VarPointsTo(?hctx, ?baseValue, ?ctx, ?this) :-
 /**
  * Contribute to the global summary relation
 **/
-
 ApplicationEntryPoint(?meth) :-
   ForcedReachableAndroidContext(_, ?meth),
   ApplicationMethod(?meth).
@@ -1110,7 +1072,7 @@ TypeHasApplicationObjectFlowingToLibrary(?type) :-
 // types-only, there must also be a reachable value of the class.
 .decl ForcedReachableAndroidClass(?ctx:configuration.Context, ?type:ReferenceType)
 
-ForcedReachableAndroidContext(?ctx, ?method) :-
+ForcedReachableContext(?ctx, ?method) :-
   ForcedReachableAndroidClass(?ctx, ?type),
   Method_DeclaringType(?method, ?type).
 

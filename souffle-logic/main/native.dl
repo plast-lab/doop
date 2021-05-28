@@ -477,14 +477,7 @@ ReachableMethodFromNativeCode(?finalizerAdd) :-
 
 
 // Process methods found by the native scanner. This includes mocking of arguments.
-#ifdef ANDROID
 
-ForcedReachableAndroidContext(?ctx, ?meth) :-
-  ReachableContextFromNative(?ctx, ?meth, _, _).
-
-#else
-
-// Simple mocking for non-Android code.
 ReachableContext(?ctx, ?meth) :-
   ReachableContextFromNative(?ctx, ?meth, _, _).
 
@@ -507,7 +500,5 @@ VarPointsTo(?immHCtx, ?mockId, ?ctx, ?this) :-
   isImmutableHContext(?immHCtx),
   ?mockId = cat("<mock receiver of type ", cat(?type, cat(" from ", cat(?file, cat(":", cat(?function, ">")))))).
 #endif // DISABLE_POINTS_TO
-
-#endif // ANDROID
 
 #endif // SCAN_NATIVE_CODE
