@@ -1,9 +1,4 @@
 #pragma once
-#include "loops.dl"
-
-.type AccessPath = [first: symbol, rest: AccessPath]
-.decl VarHasAP_AUX(var: Var, ap: AccessPath, size: number)
-.decl VarHasAP(var: Var, ap: AccessPath)
 
 VarHasAP_AUX(var, [var, nil], 1) :-
 	InterestingStmt(stmt),
@@ -11,21 +6,6 @@ VarHasAP_AUX(var, [var, nil], 1) :-
 	API_ResultMethod(method),
 	((IF(stmt, _, _), OPERAND_VAR(stmt, _, var)) ;
 	 (RET(stmt), FORMAL_RET(stmt, var))).
-
-VarHasAP_AUX(var, [array, ["@", [indexStr, rest]]], size + 3) :-
-	VarHasAP_AUX(var, [to, rest], size),
-	((ALOAD_NUM(_, to, array, index), indexStr = to_string(index));
-	 ALOAD_VAR(_, to, array, indexStr)).
-
-VarHasAP(var, ap) :-
-	VarHasAP_AUX(var, ap, maxSize),
-	!IVALUE_Var(var, _),
-	maxSize = max size : { VarHasAP_AUX(var, _, size) }.
-
-VarHasAP(var, [to_string(val), nil]) :-
-	VarHasAP_AUX(var, [var, nil], _),
-	IVALUE_Var(var, val).
-
 
 .type Cond = [left: AccessPath, op: symbol, right: AccessPath]
 .type GroupCond = [rest: GroupCond, last: Cond]
@@ -47,8 +27,6 @@ VarHasAP(var, [to_string(val), nil]) :-
 .decl NoIfReturns(method: Method, ap: AccessPath)
 .decl OUT_NoIfReturnsStr(method: Method, out: symbol)
 
-.decl AUX_isAccessPath(ap: AccessPath)
-.decl AUX_AccessPathStr(ap: AccessPath, out: symbol)
 .decl AUX_isCond(cond: Cond)
 .decl AUX_CondSymbol(cond: Cond, out: symbol)
 .decl AUX_isGroupCond(cond: GroupCond)
@@ -172,23 +150,15 @@ NoIfReturns(method, ap) :-
 
 
 
-AUX_isAccessPath(ap) :- IfOperand(_, _, ap).
-AUX_isAccessPath(rest) :- AUX_isAccessPath([_, rest]), rest != nil.
-AUX_isAccessPath(ap) :- VarHasAP(_, ap).
-
-AUX_AccessPathStr(ap, first) :- AUX_isAccessPath(ap), ap = [first, nil].
-
-AUX_AccessPathStr(ap, cat(first, out)) :-
-	AUX_isAccessPath(ap), ap = [first, rest], rest != nil,
-	AUX_AccessPathStr(rest, out).
+isAccessPath(ap) :- IfOperand(_, _, ap).
 
 AUX_isCond(cond) :- AUX_isGroupCond([_, cond]).
 
 AUX_CondSymbol(cond, cat(cat(leftOut, cat("|", cat(op, "|"))), rightOut)) :-
 	AUX_isCond(cond),
 	cond = [left, op, right],
-	AUX_AccessPathStr(left, leftOut),
-	AUX_AccessPathStr(right, rightOut).
+	AccessPathStr(left, leftOut),
+	AccessPathStr(right, rightOut).
 
 AUX_isGroupCond(cond) :- Next_IfInGroup(stmt, "-"), IfGroupCondition(stmt, cond).
 AUX_isGroupCond(rest) :- AUX_isGroupCond([rest, _]), rest != nil.
@@ -213,9 +183,9 @@ OUT_IfGroupConditionStr(stmt, methodName, out) :-
 
 OUT_IfReturnsStr(ifStmt, out) :-
 	IfReturns(ifStmt, _, ap),
-	AUX_AccessPathStr(ap, out).
+	AccessPathStr(ap, out).
 
 OUT_NoIfReturnsStr(methodName, out) :-
 	NoIfReturns(method, ap),
 	Method_SimpleName(method, methodName),
-	AUX_AccessPathStr(ap, out).
+	AccessPathStr(ap, out).

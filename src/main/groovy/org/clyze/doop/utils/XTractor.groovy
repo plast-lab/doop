@@ -3,8 +3,6 @@ package org.clyze.doop.utils
 import groovy.transform.Canonical
 import org.clyze.doop.core.DoopAnalysis
 
-import java.lang.reflect.Array
-
 class XTractor {
 	static DoopAnalysis analysis
 	static File outFile
@@ -23,7 +21,7 @@ class XTractor {
 		println "Results in... $outFile"
 	}
 
-	private static def arrays() {
+	static def arrays() {
 		Map<String, Set<String>> varAliases = [:].withDefault { [] as Set }
 		new File(analysis.database, "Flows.csv").eachLine {
 			def (String from, String to) = it.split("\t")
@@ -47,6 +45,7 @@ class XTractor {
 			}
 			def dims = (1..dimensions).collect { "i$it:number" }.join(", ")
 			outFile << ".decl $relName($dims, value:symbol)\n"
+			outFile << ".decl ${relName}_Init($dims, value:symbol)\n"
 			def dimSizes = (1..dimensions).collect { "dim$it:number" }.join(", ")
 			outFile << ".decl ${relName}_DimSizes($dimSizes)\n"
 			arrayMetaFacts << "arr_META(\"$relName\", \"$array\", \"$types\", $dimensions)."
@@ -56,8 +55,8 @@ class XTractor {
 		}
 		outFile << "\n"
 		arrayMetaFacts.each { outFile << "$it\n" }
-		outFile << "\n"
 
+		outFile << "\n"
 		def arrayDims = [:].withDefault { [:] }
 		new File(analysis.database, "ArrayDims.csv").eachLine {
 			def (String array, pos, size) = it.split("\t")
@@ -66,28 +65,33 @@ class XTractor {
 		mainArrays.each { array ->
 			def (String relName, name, types, int dimensions) = arrayMeta[array]
 			def sizes = arrayDims[array]
-			def allSizes = (0..(dimensions - 1)).collect { sizes[it] ?: -1 }
+			def allSizes = (1..dimensions).collect { sizes[it-1] ?: -1 }
 			outFile << "${relName}_DimSizes(${allSizes.join(", ")}).\n"
 		}
-		outFile << "\n"
 
+		outFile << "\n"
 		def load_from2index2to = [:].withDefault { [:].withDefault { [] } }
 		new File(analysis.database, "ArrayLoad.csv").eachLine {
 			def (String to, String from, index) = it.split("\t")
 			load_from2index2to[from][index as int] << to
 		}
-		def store_to_index_value = [:].withDefault { [:] }
+		def store_to2index2value = [:].withDefault { [:] }
 		new File(analysis.database, "ArrayStore.csv").eachLine {
 			def (String to, index, value) = it.split("\t")
-			store_to_index_value[to][index as int] = value
+			store_to2index2value[to][index as int] = value
+		}
+
+		def fixVal = { String value, String types ->
+			(types.startsWith("char") && value.isNumber()) ? "\"${value.toInteger() as char}\"" : value
 		}
 
 		def appendToIndices
 		appendToIndices = { String array, List indices, String currVar ->
 			def nextIndicesAndVars = load_from2index2to[currVar]
 			if (nextIndicesAndVars.isEmpty()) {
-				def relName = arrayMeta[array].first()
-				store_to_index_value[currVar].each { lastIndex, value ->
+				def (String relName, name, String types, int dimensions) = arrayMeta[array]
+				store_to2index2value[currVar].each { lastIndex, String value ->
+					value = fixVal(value, types)
 					outFile << "$relName(${(indices + [lastIndex, value]).join(", ")}).\n"
 				}
 				return
@@ -99,24 +103,25 @@ class XTractor {
 			}
 		}
 		arrayMeta.keySet().each { appendToIndices(it, [], it) }
-	}
 
-	private static def conditions() {
-		def clean = { String s ->
-			s.isNumber() ? s : s.split("/").last().split('_\\$\\$A_').first()
-		}
-
-		def ap = { String s, String tempVar ->
-			def parts = s.split("@")
-			if (parts.length == 1) {
-				return new CompExpr(tempVar, tempVar, "=", clean(parts[0]))
-			} else {
-				def array = arrayMeta[parts[0]].first() as String
-				def indexes = parts.drop(1).collect { clean(it) }
-				return new ArrayExpr(tempVar, array, indexes)
+		outFile << "\n"
+		new File(analysis.database, "ArrayInitialized.csv").eachLine {
+			def (String array, String value) = it.split("\t")
+			if (!value.isNumber()) throw new RuntimeException("Invalid AP?")
+			def (String relName, name, String types, int dimensions) = arrayMeta[array]
+			def allZero = (1..dimensions).collect { 0 }.join(", ")
+			def indexes = (1..dimensions).collect {"i$it" }.join(", ")
+			outFile << "${relName}_Init($allZero, ${fixVal(value, types)}).\n"
+			outFile << "$relName($indexes, val) :- ${relName}_Init($indexes, val).\n"
+			dimensions.times {index ->
+				def headIndexes = (1..dimensions).collect {it-1 == index ? "i$it + 1" : "i$it" }.join(", ")
+				def size = arrayDims[array][index] as int
+				outFile << "${relName}_Init($headIndexes, val) :- ${relName}_Init($indexes, val), i${index+1} < ${size-1}.\n"
 			}
 		}
+	}
 
+	static def conditions() {
 		Map<String, Expr> ifReturnsExpr = [:]
 		new File(analysis.database, "OUT_IfReturnsStr.csv").eachLine {
 			def (String stmt, String rawAP) = it.split("\t")
@@ -149,7 +154,7 @@ class XTractor {
 		}
 	}
 
-	private static def schema() {
+	static def schema() {
 		Map<String, List<String[]>> classInfo = [:].withDefault { [] }
 		new File(analysis.database, "OUT_ClassInfo.csv").eachLine { line ->
 			def (klass, kind, field, fieldType) = line.split("\t")
@@ -209,6 +214,18 @@ class XTractor {
 		dlTypes.each { outFile << "$it\n" }
 		dlDecls.each { outFile << "$it\n" }
 		dlInputs.each { outFile << "$it\n" }
+	}
+
+	static def ap(String rawAP, String tempVar) {
+		def clean = { String s -> s.isNumber() ? s : s.split("/").last().split('_\\$\\$A_').first() }
+		def parts = rawAP.split("@")
+		if (parts.length == 1) {
+			return new CompExpr(tempVar, tempVar, "=", clean(parts[0]))
+		} else {
+			def array = arrayMeta[parts[0]].first() as String
+			def indexes = parts.drop(1).collect { clean(it) }
+			return new ArrayExpr(tempVar, array, indexes)
+		}
 	}
 }
 

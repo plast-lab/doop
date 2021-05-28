@@ -1,7 +1,4 @@
 #pragma once
-#include "arrays.dl"
-#include "conditions.dl"
-#include "common.dl"
 
 .decl LocalBlockEdge(fromBB: Instruction, toBB: Instruction)
 .decl StructuredLoopBackEdge(fromBB: Instruction, toBB: Instruction)
@@ -17,14 +14,10 @@
 .decl LoopMainExitCond(jumpStmt: Instruction)
 .decl LoopExitCond_Stmt(jumpStmt: Instruction, loopHead: Instruction)
 .decl LoopExitCond(condVar: Var, op: symbol, rhs: number, loopHead: Instruction)
-.decl OUT_ArrayUsedInLoop(array: Var, indexVar: Var, loopHead: Instruction)
-.decl OUT_ArrayDimIterated(array: Var, dim: number, loopHead: Instruction)
 
 .output LoopInitialValue
 .output InductionVariable
 .output LoopExitCond
-.output OUT_ArrayUsedInLoop
-.output OUT_ArrayDimIterated
 
 LocalBlockEdge(fromBB, toBB) :-
 	InterestingStmt(fromBB),
@@ -122,47 +115,3 @@ LoopInitialValue(condVar, value, loopHead) :-
 	StmtInStructuredLoop(stmt, loopHead),
 	MOVE(stmt, condVar, from),
 	IVALUE_Var(from, value).
-
-OUT_ArrayUsedInLoop(array, indexVar, loopHead) :-
-	StmtInStructuredLoop(stmt, loopHead),
-	(ALOAD_VAR(stmt, _, array, indexVar) ;
-	 ASTORE_VAR(stmt, array, indexVar, _)),
-	InductionVariable(indexVar, loopHead).
-
-OUT_ArrayUsedInLoop(origArray, indexVar, loopHead) :-
-	OUT_ArrayUsedInLoop(array, indexVar, loopHead),
-	Flows(origArray, array).
-
-IVALUE_Var(to, size) :-
-	InterestingStmt(stmt),
-	UNOP(stmt, to, "len"),
-	OPERAND_VAR(stmt, 1, array),
-	ArrayDims(array, 0, size).
-
-// [0..size)
-OUT_ArrayDimIterated(array, 0, loopHead) :-
-	OUT_ArrayUsedInLoop(array, indexVar, loopHead),
-	InductionVariable(indexVar, loopHead),
-	LoopInitialValue(indexVar, 0, loopHead),
-	ArrayDims(array, 0, size),
-	(LoopExitCond(indexVar, "<", size, loopHead);
-	 LoopExitCond(indexVar, "<=", size - 1, loopHead)).
-
-// (size..0]
-OUT_ArrayDimIterated(array, 0, loopHead) :-
-	OUT_ArrayUsedInLoop(array, indexVar, loopHead),
-	InductionVariable(indexVar, loopHead),
-	ArrayDims(array, 0, size),
-	LoopInitialValue(indexVar, size - 1, loopHead),
-	LoopExitCond(indexVar, ">=", 0, loopHead).
-
-// toArray = baseArray[..]
-OUT_ArrayDimIterated(baseArray, dim + 1, loopHead) :-
-	OUT_ArrayDimIterated(toArray, dim, loopHead),
-	(ALOAD_VAR(_, toArray, baseArray, _) ;
-	 ALOAD_NUM(_, toArray, baseArray, _)).
-
-OUT_ArrayDimIterated(baseArray, dim + 1, loopHead) :-
-	OUT_ArrayDimIterated(toArray, dim, loopHead),
-	(ALOAD_VAR(_, toArray, baseArray, _) ;
-	 ALOAD_NUM(_, toArray, baseArray, _)).
