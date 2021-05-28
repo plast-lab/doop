@@ -3,6 +3,12 @@ package org.clyze.doop.core
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 import groovy.util.logging.Log4j
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
+import java.util.concurrent.Callable
+import java.util.concurrent.Executors
+import java.util.concurrent.Future
+import org.clyze.doop.common.DoopErrorCodeException
 import org.clyze.doop.jimple.JimpleProcessor
 import org.clyze.doop.soot.DoopConventions
 import org.clyze.doop.utils.ConfigurationGenerator
@@ -13,12 +19,6 @@ import org.clyze.doop.utils.TACGenerator
 import org.clyze.doop.utils.XTractor
 import org.clyze.utils.Executor
 import org.clyze.utils.JHelper
-
-import java.nio.file.Files
-import java.nio.file.StandardCopyOption
-import java.util.concurrent.Callable
-import java.util.concurrent.Executors
-import java.util.concurrent.Future
 
 import static org.apache.commons.io.FileUtils.deleteQuietly
 import static org.apache.commons.io.FileUtils.sizeOfDirectory
@@ -140,6 +140,17 @@ class SouffleAnalysis extends DoopAnalysis {
 	}
 
 	void mainAnalysis(File analysis) {
+
+		// Check the open programs argument before calling the preprocessor.
+		String openProgramsProfile = null
+		String openProgramsRules = options.OPEN_PROGRAMS.value
+		if (openProgramsRules) {
+			openProgramsProfile = "${Doop.souffleLogicPath}/addons/open-programs/rules-${openProgramsRules}.dl"
+			println openProgramsProfile
+			if (!(new File(openProgramsProfile)).exists())
+				throw DoopErrorCodeException.error35("Open program rules profile does not exist: " + openProgramsProfile)
+		}
+
 		cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/basic/basic.dl")
 		cpp.includeAtEnd("$analysis", "${Doop.souffleAnalysesPath}/${getBaseName(analysis.name)}/analysis.dl")
 
@@ -152,10 +163,9 @@ class SouffleAnalysis extends DoopAnalysis {
 			cpp.includeAtEnd("$analysis", "${infoflowDir}/${options.INFORMATION_FLOW.value}${INFORMATION_FLOW_SUFFIX}.dl")
 		}
 
-		String openProgramsRules = options.OPEN_PROGRAMS.value
-		if (openProgramsRules) {
+		if (openProgramsProfile) {
 			log.debug "Using open-programs rules: ${openProgramsRules}"
-			cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/addons/open-programs/rules-${openProgramsRules}.dl")
+			cpp.includeAtEnd("$analysis", openProgramsProfile)
 		}
 
 		if (options.SANITY.value) {

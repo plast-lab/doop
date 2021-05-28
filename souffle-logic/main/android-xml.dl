@@ -240,7 +240,7 @@ XMLFragment_Id(?file, ?nodeId, ?id) :-
 //   <EditText android:id="@id/password">
 // should produce: category="id", id="password".
 .decl XMLAndroidId(?file:symbol, ?nodeId:symbol, ?parentId:symbol, ?category:symbol, ?id:symbol, ?qClass:ClassType)
-.output XMLAndroidId
+
 XMLAndroidId(?file, ?nodeId, ?parentId, ?category, ?id, ?qClass) :-
   XMLNode(?file, ?nodeId, ?parentId, _, _, ?class),
   XMLNodeAttribute(?file, ?nodeId, _, _, "android:id", ?attrId),
@@ -252,7 +252,7 @@ XMLAndroidId(?file, ?nodeId, ?parentId, ?category, ?id, ?qClass) :-
 
 // Mark layout control nodes with a password input type.
 .decl XMLAndroidPasswordControl(?file:symbol, ?nodeId: symbol)
-.output XMLAndroidPasswordControl
+
 XMLAndroidPasswordControl(?file, ?nodeId) :-
   XMLNodeAttribute(?file, ?nodeId, _, _, "android:inputType", "textPassword").
 

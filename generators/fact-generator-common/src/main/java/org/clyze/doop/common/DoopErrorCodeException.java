@@ -149,6 +149,10 @@ public class DoopErrorCodeException extends Exception {
         return new DoopErrorCodeException(34, msg);
     }
 
+    public static DoopErrorCodeException error35(String msg) {
+        return new DoopErrorCodeException(35, msg);
+    }
+
     private DoopErrorCodeException(int errorCode, Throwable original) {
         super(PREFIX + errorCode, original);
         this.errorCode = errorCode;

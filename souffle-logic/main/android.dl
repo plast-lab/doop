@@ -118,13 +118,9 @@ ForcedReachableAndroidContext(?ctx, ?meth) :-
  * forcing reachability and mocking of all "keep" methods.
  */
 
-// 'keep'= make method reachable.
+// 'keep'/'root' = make method reachable.
 ForcedReachableAndroidContext(?ctx, ?meth) :-
-  KeepMethod(?meth),
-  isImmutableContext(?ctx).
-// 'root'= make method reachable.
-ForcedReachableAndroidContext(?ctx, ?meth) :-
-  RootCodeElement(?meth),
+  (KeepMethod(?meth) ; RootCodeElement(?meth)),
   isMethod(?meth),
   isImmutableContext(?ctx).
 
@@ -135,8 +131,8 @@ ForcedReachableAndroidContext(?ctx, ?meth) :-
 ForcedReachableAndroidContext(?ctx, ?method) :-
   ( KeepClassMembers(?method) ; KeepClassesWithMembers(?method) ),
   Method_DeclaringType(?method, ?type),
-  Method_DeclaringType(?otherMethod, ?type),
-  Reachable(?otherMethod),
+  Method_DeclaringType(?someMethod, ?type),
+  Reachable(?someMethod),
   isImmutableContext(?ctx).
 
 // Not clear what ProGuard does with "keep" annotations for classes, but certainly

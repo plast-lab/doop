@@ -47,12 +47,15 @@ ApplicationEntryPoint(?meth) :-
   ForcedReachable(?meth),
   ApplicationMethod(?meth).
 
+// Keep spec rules for (non-Android) Java programs.
 #ifndef ANDROID
 ForcedReachable(?meth) :-
-  KeepMethod(?meth).
-ForcedReachable(?meth) :-
-  RootCodeElement(?meth),
+  (KeepMethod(?meth) ; RootCodeElement(?meth)),
   isMethod(?meth).
+ForcedReachable(?meth) :-
+  KeepClass(?class),
+  basic.ClassConstructor(?meth, ?class),
+  !FormalParam(_, ?meth, _).
 #endif // ANDROID
 
 #endif // MICRO
