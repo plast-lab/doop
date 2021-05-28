@@ -8,6 +8,14 @@
 #include "../../main/android-mocking.dl"
 #endif // ANDROID
 
+#ifdef X_SERVER_LOGIC
+#include "../server-logic/queries.dl"
+#endif // X_SERVER_LOGIC
+
+#ifdef SARIF
+#include "../sarif/sarif.dl"
+#endif // SARIF
+
 #define DUMMY_CONTEXT "-"
 
 MethodInvocationInContext(DUMMY_CONTEXT, ?invocation, ?tomethod),
@@ -39,29 +47,30 @@ ParamTaintTransferredToBase(?param, ?ctx, ?base) :-
   MethodInvocation_Base(?invocation, ?base).
 
 // Variable is tainted with label.
-.decl Var_Taint(?v:Var, ?label:InformationLabel)
+.decl Var_Taint(?v:Var, ?label:InformationLabel, ?source:symbol)
 .output Var_Taint
 
 // Base case: tainting method return value.
-Var_Taint(?to, ?label) :-
+Var_Taint(?to, ?label, ?invocation) :-
   CallTaintingMethod(?label, _, ?invocation),
   AssignReturnValue(?invocation, ?to).
 // Recursive case, based on core relation.
-Var_Taint(?b, ?label) :-
-  Var_Taint(?a, ?label),
+Var_Taint(?b, ?label, ?source) :-
+  Var_Taint(?a, ?label, ?source),
   VarIsTaintedFromVar(_, _, ?b, _, ?a).
 // Recursive case: data-flow propagates taint.
-Var_Taint(?to, ?label),
+Var_Taint(?to, ?label, ?source),
 VarIsTaintedFromVar(?type, DUMMY_CONTEXT, ?to, DUMMY_CONTEXT, ?from) :-
-  Var_Taint(?from, ?label),
+  Var_Taint(?from, ?label, ?source),
   Flows(?from, ?to),
   Var_Type(?to, ?type).
 // Recursive case: parameter-taints-base.
-Var_Taint(?base, ?label) :-
-  Var_Taint(?param, ?label),
+Var_Taint(?base, ?label, ?source) :-
+  Var_Taint(?param, ?label, ?source),
   ParamTaintTransferredToBase(?param, _, ?base).
 // Finally, handle the sinks.
 LeakingTaintedInformation(?sourceLabel, ?destLabel, DUMMY_CONTEXT, ?invocation, ?source) :-
-  Var_Taint(?var, ?sourceLabel),
-  LeakingSinkVariable(?destLabel, ?invocation, _, ?var),
-  ?source = "-".
+  Var_Taint(?var, ?sourceLabel, ?source),
+  LeakingSinkVariable(?destLabel, ?invocation, _, ?var).
+
+

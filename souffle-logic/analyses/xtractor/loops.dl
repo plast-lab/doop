@@ -137,14 +137,14 @@ IVALUE_Var(to, size) :-
 	InterestingStmt(stmt),
 	UNOP(stmt, to, "len"),
 	OPERAND_VAR(stmt, 1, array),
-	OUT_ArrayDims(array, 0, size).
+	ArrayDims(array, 0, size).
 
 // [0..size)
 OUT_ArrayDimIterated(array, 0, loopHead) :-
 	OUT_ArrayUsedInLoop(array, indexVar, loopHead),
 	InductionVariable(indexVar, loopHead),
 	LoopInitialValue(indexVar, 0, loopHead),
-	OUT_ArrayDims(array, 0, size),
+	ArrayDims(array, 0, size),
 	(LoopExitCond(indexVar, "<", size, loopHead);
 	 LoopExitCond(indexVar, "<=", size - 1, loopHead)).
 
@@ -152,7 +152,7 @@ OUT_ArrayDimIterated(array, 0, loopHead) :-
 OUT_ArrayDimIterated(array, 0, loopHead) :-
 	OUT_ArrayUsedInLoop(array, indexVar, loopHead),
 	InductionVariable(indexVar, loopHead),
-	OUT_ArrayDims(array, 0, size),
+	ArrayDims(array, 0, size),
 	LoopInitialValue(indexVar, size - 1, loopHead),
 	LoopExitCond(indexVar, ">=", 0, loopHead).
 
@@ -164,5 +164,5 @@ OUT_ArrayDimIterated(baseArray, dim + 1, loopHead) :-
 
 OUT_ArrayDimIterated(baseArray, dim + 1, loopHead) :-
 	OUT_ArrayDimIterated(toArray, dim, loopHead),
-	(ALOAD_VAR(stmt, toArray, baseArray, _) ;
-	 ALOAD_NUM(stmt, toArray, baseArray, _)).
+	(ALOAD_VAR(_, toArray, baseArray, _) ;
+	 ALOAD_NUM(_, toArray, baseArray, _)).

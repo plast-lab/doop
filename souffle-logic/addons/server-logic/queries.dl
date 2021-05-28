@@ -18,6 +18,8 @@ _Valid_Interesting_Type(?type) :-
 _Server_Interesting_Type(?class) :-
   ApplicationClass(?class).
 
+#ifndef DISABLE_POINTS_TO
+
 // All classes with a reachable method
 _Server_Interesting_Type(?class) :-
   Method_DeclaringType(?method, ?class),
@@ -40,6 +42,8 @@ _Server_Interesting_Type(?type) :-
 _Server_Interesting_Type(?interface) :-
   mainAnalysis.ProxyObject_Interface(_, ?interface).
 #endif // REFLECTION_DYNAMIC_PROXIES
+
+#endif // DISABLE_POINTS_TO
 
 // Transitively, everything up the hierarchy
 _Server_Interesting_Type(?interface) :-
@@ -98,10 +102,12 @@ Server_IField_Values_Count(?baseValue, ?fld, ?n) :-
   _IFPT(?baseValue, ?fld, _),
   ?n = count:{_IFPT(?baseValue, ?fld, _)}.
 
+#ifndef DISABLE_POINTS_TO
 _SFPT(?fld, ?value) :-
   mainAnalysis.StaticFieldPointsTo(_, ?value, ?fld),
   !HeapAllocation_Null(?value),
   !isNumConstant(?value).
+#endif // DISABLE_POINTS_TO
 
 _SFPT_Count(?fld, ?n) :-
   _SFPT(?fld, _),
@@ -159,10 +165,12 @@ Server_SField_Values(?fld, "<<XL-pt-set>>") :-
 .decl _VPT_Count(?var:Var, ?n:number)
 .decl _InterestingVar(?var:Var)
 
+#ifndef DISABLE_POINTS_TO
 _VPT(?var, ?value) :-
   mainAnalysis.VarPointsTo(_, ?value, _, ?var),
   !HeapAllocation_Null(?value),
   !isNumConstant(?value).
+#endif // DISABLE_POINTS_TO
 
 _InterestingVar(?var) :-
   _VPT(?var, _).
@@ -215,9 +223,11 @@ Server_Var_Return(?var, ?method) :-
 .decl _AIPT(?arrayValue:Value, ?value:Value)
 .decl _AIPT_Count(?arrayValue:Value, ?n:number)
 
+#ifndef DISABLE_POINTS_TO
 _AIPT(?arrayValue, ?value) :-
   mainAnalysis.ArrayIndexPointsTo(_, ?value, _, ?arrayValue),
   !HeapAllocation_Null(?value).
+#endif // DISABLE_POINTS_TO
 
 _AIPT_Count(?arrayValue, ?n) :-
   _AIPT(?arrayValue, _),
@@ -302,9 +312,11 @@ Server_Method_Subtype(?method, ?subMethod) :-
 .output Server_Invocation_Values
 // .output Server_TypeCallsType
 
+#ifndef DISABLE_POINTS_TO
 Server_Invocation_Values(?fromMethod, ?invo, ?toMethod) :-
   mainAnalysis.AnyCallGraphEdge(?invo, ?toMethod),
   Instruction_Method(?invo, ?fromMethod).
+#endif // DISABLE_POINTS_TO
 
 // Augment invocation values with targets of invoked covariant
 // bridges (which are invisible in the case of Java sources).
@@ -329,20 +341,23 @@ Server_TypeCallsType(?fromType, ?toType) :-
 .output Server_Metrics
 
 .decl _AppVirtual(?invo:MethodInvocation)
-.decl _AppVirtual_Resolved(?invo:MethodInvocation)
-.output mainAnalysis.AppReachable
 
 _AppVirtual(?invo) :-
   _VirtualMethodInvocation(?invo, _, _, _, ?method),
   ApplicationMethod(?method).
 
+#ifndef DISABLE_POINTS_TO
+.output mainAnalysis.AppReachable
+Server_Metrics("#AppMethod (reachable)", ?n) :- ?n = count:{mainAnalysis.AppReachable(_)}.
+
+.decl _AppVirtual_Resolved(?invo:MethodInvocation)
 _AppVirtual_Resolved(?invo) :-
   _AppVirtual(?invo),
   mainAnalysis.AnyCallGraphEdge(?invo, _).
+Server_Metrics("#AppVirtual (resolved)", ?n) :- ?n = count:{_AppVirtual_Resolved(_)}.
+#endif // DISABLE_POINTS_TO
 
 Server_Metrics("#AppVirtual (static)", ?n) :- ?n = count:{_AppVirtual(_)}.
-Server_Metrics("#AppVirtual (resolved)", ?n) :- ?n = count:{_AppVirtual_Resolved(_)}.
-Server_Metrics("#AppMethod (reachable)", ?n) :- ?n = count:{mainAnalysis.AppReachable(_)}.
 
 .decl _ClassTypeUnion(?c:ReferenceType)
 _ClassTypeUnion(?c) :- isClassType(?c) ; isInterfaceType(?c).
@@ -365,9 +380,11 @@ Server_Metrics("Results threshold", X_SERVER_LOGIC_THRESHOLD).
 .output TaintSourceMethod(IO="file",filename="TaintSourceMethod.csv",delimiter="\t")
 .output LeakingSinkMethodArg(IO="file",filename="LeakingSinkMethodArg.csv",delimiter="\t")
 
+#ifndef DISABLE_POINTS_TO
 .decl Server_TaintObjTransfer(?from: Var, ?to: Var)
 .output Server_TaintObjTransfer
 Server_TaintObjTransfer(?from, ?to) :- TaintObjTransfer(_, ?from, _, ?to).
+#endif // DISABLE_POINTS_TO
 
 .decl Server_LeakingSinkVariable(?label:InformationLabel, ?tomethod:MethodInvocation, ?var:Var)
 .output Server_LeakingSinkVariable
@@ -397,6 +414,7 @@ Server_LeakingTaintedInformation(?fromLabel, ?toLabel, ?invocation, ?value) :-
 .output BroadcastReceiver
 .output ContentProvider
 .output AndroidApplication
+#ifndef DISABLE_POINTS_TO
 .output mainAnalysis.AndroidAppComponent
 .output mainAnalysis.AndroidOriginalAppComponent
 .output mainAnalysis.RegisterBroadCastReceiverVar
@@ -412,9 +430,7 @@ Server_LeakingTaintedInformation(?fromLabel, ?toLabel, ?invocation, ?value) :-
 .output mainAnalysis.SpecialMissingPackableValue
 .output mainAnalysis.ForcedReachableFromJavascriptContext
 .output mainAnalysis.ArgToAddJavascriptInterface
-#ifndef DISABLE_POINTS_TO
 .output mainAnalysis.ReifiedApplicationAndCompatibleVar
-#endif // DISABLE_POINTS_TO
 .output mainAnalysis.ActivityVar
 .output mainAnalysis.BindFragment
 .output mainAnalysis.ActivityVarInType
@@ -431,4 +447,5 @@ Server_LeakingTaintedInformation(?fromLabel, ?toLabel, ?invocation, ?value) :-
 .output mainAnalysis.ForcedReachableAndroidClass
 .output mainAnalysis.ReifiedAndroidObjectValue
 .output mainAnalysis.ReifiedComponent
+#endif // DISABLE_POINTS_TO
 #endif // ANDROID
