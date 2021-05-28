@@ -10,6 +10,7 @@ import java.nio.file.StandardCopyOption
 import org.clyze.doop.common.DoopErrorCodeException
 import org.clyze.doop.core.DoopAnalysisFactory
 import org.clyze.doop.core.DoopAnalysisFamily
+import org.clyze.doop.util.Resource
 import org.clyze.utils.CheckSum
 import org.clyze.utils.Executor
 import org.clyze.utils.Helper
@@ -21,6 +22,7 @@ class SouffleScript {
 
 	static final String EXE_NAME = "analysis-binary"
 	protected static final String TIME_UTIL = "/usr/bin/time"
+	protected static final String CHPST_UTIL = '/usr/bin/chpst'
 
 	Executor executor
 	File cacheDir
@@ -169,6 +171,25 @@ class SouffleScript {
 	 */
 	void postprocessFacts(File outDir, boolean profile) { }
 
+	private static List<String> getUtilsPrefix(SouffleOptions options) {
+		List<String> ret = new ArrayList<>()
+		if (options.maxMemory) {
+			String timeoutUtil = Resource.getResource(SouffleScript.class, log, Resource.TIMEOUT_UTIL)
+			if (new File(timeoutUtil).exists()) {
+				println "Using ${timeoutUtil} to limit memory usage..."
+				ret.addAll(['perl', timeoutUtil, '--confess', '-m', options.maxMemory] as List<String>)
+			} else if (new File(CHPST_UTIL).exists()) {
+				println "Using ${CHPST_UTIL} to limit memory usage..."
+				ret.addAll([CHPST_UTIL, "-d ${options.maxMemory}" as String] as List<String>)
+			} else
+				println "Could not find mechanism to limit analysis memory consumption."
+		} else if (new File(TIME_UTIL).exists()) {
+			println "Using ${TIME_UTIL} to gather performance statistics..."
+			ret.add(TIME_UTIL)
+		}
+		return ret
+	}
+
 	def run(File analysisBinary, File factsDir, File outDir,
 	        int jobs, long monitoringInterval, Closure monitorClosure,
 			SouffleOptions options) {
@@ -178,14 +199,11 @@ class SouffleScript {
 			return [compilationTime, executionTime]
 		}
 
-		def db = new File(outDir, "database")
-		def baseCommand = "${analysisBinary} -j${jobs} -F${factsDir.canonicalPath} -D${db.canonicalPath}"
-		if (new File(TIME_UTIL).exists()) {
-			println "Using ${TIME_UTIL} to gather performance statistics..."
-			baseCommand = TIME_UTIL + " " + baseCommand
-		}
-
-		def executionCommand = baseCommand.split().toList()
+		File db = new File(outDir, 'database')
+		List<String> executionCommand = getUtilsPrefix(options)
+		executionCommand.addAll([analysisBinary.canonicalPath, '-j' + jobs,
+								 '-F' + factsDir.canonicalPath,
+								 '-D' + db.canonicalPath] as List<String>)
 		if (options.profile)
 			executionCommand << ("-p${outDir}/profile.txt" as String)
 
@@ -216,14 +234,18 @@ class SouffleScript {
         if (options.removeContexts)
             removeContexts(scriptFile)
 
-        def interpretationCommand = "souffle ${scriptFile} -j${jobs} -F${factsDir.canonicalPath} -D${db.canonicalPath}".split().toList()
+		List<String> interpretationCommand = getUtilsPrefix(options)
+		interpretationCommand.addAll(['souffle', scriptFile.canonicalPath,
+									  '-j' + jobs, '-F' + factsDir.canonicalPath,
+									  '-D' + db.canonicalPath] as List<String>)
         if (options.profile)
             interpretationCommand<< ("-p${outDir}/profile.txt" as String)
         if (options.debug)
             interpretationCommand << ("-r${outDir}/report.html" as String)
 
         log.info "Interpreting analysis script"
-        log.debug "Interpretation command: $interpretationCommand"
+		def cmd = interpretationCommand.join(" ")
+        log.debug "Interpretation command: ${cmd}"
 
         def ignoreCounter = 0
         executionTime = Helper.timing {

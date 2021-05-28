@@ -22,6 +22,8 @@ class SouffleOptions {
     boolean removeContexts
     /** Use custom functors. */
     boolean useFunctors
+    /** Maximum memory to use. */
+    String maxMemory
 
     SouffleOptions() {}
 
@@ -34,5 +36,6 @@ class SouffleOptions {
         this.translateOnly = options.SOUFFLE_MODE?.value == DoopAnalysisFamily.SOUFFLE_TRANSLATED
         this.removeContexts = options.X_CONTEXT_REMOVER?.value as boolean
         this.useFunctors = options.SOUFFLE_USE_FUNCTORS?.value as boolean
+        this.maxMemory = options.MAX_MEMORY?.value as String
     }
 }
