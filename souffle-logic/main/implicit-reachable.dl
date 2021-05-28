@@ -43,20 +43,66 @@ ForcedReachable(?m) :- JUnitTestMethod(?m, _).
 ForcedReachable(?m) :- EvoSuiteEntryPoint(?m).
 #endif // DISCOVER_TESTS
 
+// Contribute to the global summary relation.
 ApplicationEntryPoint(?meth) :-
   ForcedReachable(?meth),
   ApplicationMethod(?meth).
 
-// Keep spec rules for (non-Android) Java programs.
-#ifndef ANDROID
+.decl ForcedReachableContext(?ctx:configuration.Context, ?meth:Method)
+
+// Forced reachable methods are invoked by unknown callers.
+ForcedReachableContext(?ctx, ?method) :-
+  ForcedReachable(?method),
+  isImmutableContext(?ctx).
+
+// Forced-reachable contexts are reachable contexts.
+ReachableContext(?ctx, ?meth) :-
+  ForcedReachableContext(?ctx, ?meth).
+
+// Formals of forced-reachable contexts, recorded here for mocking.
+.decl FormalOfForcedReachableContext(?ctx:configuration.Context, ?formal:Var, ?formalType:Type)
+FormalOfForcedReachableContext(?ctx, ?formal, ?formalType) :-
+  ForcedReachableContext(?ctx, ?meth),
+  FormalParam(_, ?meth, ?formal),
+  Var_Type(?formal, ?formalType).
+
+// REVIEW: this is imprecise, it assigns a mock argument for each
+// parameter in a forced-reachable method.
+MockValueConsMacro(?value, ?formalType),
+VarPointsTo(?hctx, ?value, ?ctx, ?formal) :-
+  FormalOfForcedReachableContext(?ctx, ?formal, ?formalType),
+  isImmutableHContext(?hctx),
+  basic.SubtypeOf(?type, ?formalType),
+  ?value = cat("<mock value for forced-reachable parameter ", cat(?formal, ">")).
+
+/*
+ * The following rules handle the 'keep' specification, by
+ * forcing reachability and mocking of all "keep" methods.
+ */
+
+// 'keep'/'root' = make method reachable.
 ForcedReachable(?meth) :-
   (KeepMethod(?meth) ; RootCodeElement(?meth)),
   isMethod(?meth).
+
+// Not clear what ProGuard does with "keep" annotations for classes, but certainly
+// I've seen documented behavior in industrial code that expects it to keep no-arg
+// constructors.
 ForcedReachable(?meth) :-
   KeepClass(?class),
   basic.ClassConstructor(?meth, ?class),
   !FormalParam(_, ?meth, _).
-#endif // ANDROID
+
+// 'keep class members' / 'keep classes with members' = keep all class
+// methods if the class has a reachable method. We assume that 'keep
+// classes with members' has already been resolved and the tuples only
+// concern the types that apply.
+ForcedReachableContext(?ctx, ?method) :-
+  ( KeepClassMembers(?method) ; KeepClassesWithMembers(?method) ),
+  Method_DeclaringType(?method, ?type),
+  Method_DeclaringType(?someMethod, ?type),
+  Reachable(?someMethod),
+  isImmutableContext(?ctx).
 
 #endif // MICRO
 
