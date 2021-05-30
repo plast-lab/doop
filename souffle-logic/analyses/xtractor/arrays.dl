@@ -1,15 +1,19 @@
 #pragma once
-#include "common.dl"
 
 .decl MainArrayVar(array: Var, name: symbol, types: symbol)
 .decl ArrayDims(array: Var, dim: number, size: number)
 .decl ArrayLoad(to: Var, from: Var, index: number)
 .decl ArrayStore(to: Var, index: number, value: number)
+.decl ArrayUsedInLoop(array: Var, indexVar: Var, loopHead: Instruction)
+.decl ArrayDimIterated(array: Var, dim: number, indexVar: Var, loopHead: Instruction)
+.decl ArrayInitializedInLoop(array: Var, loopHead: Instruction, value: AccessPath)
+.decl ArrayInitialized(array: Var, value: symbol)
 
 .output MainArrayVar
 .output ArrayDims
 .output ArrayLoad
 .output ArrayStore
+.output ArrayInitialized
 
 MainArrayVar(array, name, types) :-
 	AllocArray(stmt, array, types),
@@ -40,6 +44,12 @@ ArrayDims(toArray, dim - 1, size) :-
 	InterestingStmt(stmt),
 	ArrayDims(baseArray, dim, size), dim > 0.
 
+IVALUE_Var(to, size) :-
+	InterestingStmt(stmt),
+	UNOP(stmt, to, "len"),
+	OPERAND_VAR(stmt, 1, array),
+	ArrayDims(array, 0, size).
+
 // to = from[index]
 // Due to SSA, `to` will appear only once
 ArrayLoad(to, from, index) :-
@@ -53,3 +63,54 @@ ArrayStore(to, index, value) :-
 	InterestingStmt(stmt),
 	IVALUE_ArrayIndex(stmt, index),
 	IVALUE_Var(valueVar, value).
+
+ArrayUsedInLoop(array, indexVar, loopHead) :-
+	StmtInStructuredLoop(stmt, loopHead),
+	(ALOAD_VAR(stmt, _, array, indexVar) ;
+	 ASTORE_VAR(stmt, array, indexVar, _)).
+
+// [0..size)
+ArrayDimIterated(array, 0, indexVar, loopHead) :-
+	ArrayUsedInLoop(array, indexVar, loopHead),
+	InductionVariable(indexVar, loopHead),
+	ArrayDims(array, 0, size),
+	LoopInitialValue(indexVar, 0, loopHead),
+	(LoopExitCond(indexVar, "<", size, loopHead);
+	 LoopExitCond(indexVar, "<=", size - 1, loopHead)).
+
+// (size..0]
+ArrayDimIterated(array, 0, indexVar, loopHead) :-
+	ArrayUsedInLoop(array, indexVar, loopHead),
+	InductionVariable(indexVar, loopHead),
+	ArrayDims(array, 0, size),
+	LoopInitialValue(indexVar, size - 1, loopHead),
+	LoopExitCond(indexVar, ">=", 0, loopHead).
+
+// toArray = baseArray[..]
+ArrayDimIterated(baseArray, dim + 1, indexVar, loopHead) :-
+	ArrayDimIterated(toArray, dim, indexVar, loopHead),
+	ALOAD(_, toArray, baseArray).
+
+VarHasAP_AUX(var, [var, nil], 1) :-
+	ASTORE_VAR(stmt, _, _, var),
+	StmtInStructuredLoop(stmt, _),
+	InterestingStmt(stmt).
+
+ArrayInitializedInLoop(array, loopHead, ap) :-
+	ArrayDimIterated(array, _, indexVar, loopHead),
+	ASTORE_VAR(stmt, array, indexVar, fromVar),
+	StmtInStructuredLoop(stmt, loopHead),
+	VarHasAP(fromVar, ap).
+
+ArrayInitializedInLoop(baseArray, loopHead, ap) :-
+	ArrayInitializedInLoop(array, innerLoopHead, ap),
+	ALOAD_VAR(stmt, array, baseArray, indexVar),
+	StmtInStructuredLoop(stmt, innerLoopHead),
+	ContainsInnerStructuredLoop(loopHead, innerLoopHead),
+	ArrayDimIterated(baseArray, _, indexVar, loopHead).
+
+ArrayInitialized(array, out) :-
+	ArrayInitializedInLoop(someArray, _, ap),
+	AccessPathStr(ap, out),
+	Flows(array, someArray),
+	MainArrayVar(array, _, _).

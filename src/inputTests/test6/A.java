@@ -31,8 +31,8 @@ class Main {
 		char[][] board = new char[3][3];
 
 		//Initialize our board with dashes (empty positions)
-		for (int i = 0; i < 3; i++) {
-			for (int j = 0; j < 3; j++) {
+		for (int i = 0; i < board.length; i++) {
+			for (int j = 0; j < board[i].length; j++) {
 				board[i][j] = '-';
 			}
 		}
@@ -44,6 +44,7 @@ class Main {
 		foobar2(FOO1D);
 		foobar3(FOO1D);
 		foobar4(FOO1D);
+		foobar5(BAR);
 
 		printfoo(board);
 	}
@@ -114,6 +115,13 @@ class Main {
 		int sum = 0;
 		for (char c : myarr)
 			sum += c;
+	}
+
+	static void foobar5(char[][][] myarr) {
+		for (int i = 0; i < myarr.length; i++)
+			for (int j = 0; j < myarr[i].length; j++)
+				for (int k = 0; k < myarr[i][j].length; k++)
+					myarr[i][j][k] = '?';
 	}
 
 	static void printfoo(char[][] board) {

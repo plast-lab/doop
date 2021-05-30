@@ -105,6 +105,12 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					value: 90, // Minutes
 					cli: false
 			),
+			new AnalysisOption<String>(
+					id: "MAX_MEMORY",
+					name: "max-memory",
+					argName: "MEMORY_SIZE",
+					description: "The maximum memory that the analysis can consume (does not include memory needed by fact generation). Example values: 2m, 4g."
+			),
 			new AnalysisOption<List<String>>(
 					id: "INPUTS",
 					name: "input-file",

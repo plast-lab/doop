@@ -21,6 +21,7 @@ public enum Resource {
     WALA_FACT_GENERATOR("wala-fact-generator.jar", null),
     DEX_FACT_GENERATOR("dex-fact-generator.jar", null),
     APKTOOL_JAR("apktool-cli-2.4.2.jar", "APKTOOL_PATH"),
+    TIMEOUT_UTIL("timeout", null),
     WALA_PRIMORDIAL("WALAprimordial.jar.model", null);
 
     public final String filename;

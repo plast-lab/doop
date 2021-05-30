@@ -146,7 +146,6 @@ class SouffleAnalysis extends DoopAnalysis {
 		String openProgramsRules = options.OPEN_PROGRAMS.value
 		if (openProgramsRules) {
 			openProgramsProfile = "${Doop.souffleLogicPath}/addons/open-programs/rules-${openProgramsRules}.dl"
-			println openProgramsProfile
 			if (!(new File(openProgramsProfile)).exists())
 				throw DoopErrorCodeException.error35("Open program rules profile does not exist: " + openProgramsProfile)
 		}

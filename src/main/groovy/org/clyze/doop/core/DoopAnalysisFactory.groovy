@@ -406,6 +406,30 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		throwIfBothSet(options.INPUT_ID, options.CACHE)
 		throwIfBothSet(options.KEEP_SPEC, options.X_SYMLINK_CACHED_FACTS)
 
+		String maxMemory = options.MAX_MEMORY.value
+		if (maxMemory) {
+			long multiplier = 0
+			if (maxMemory.endsWith("k") || maxMemory.endsWith("K"))
+				multiplier = 1024
+			else if (maxMemory.endsWith("m") || maxMemory.endsWith("M"))
+				multiplier = 1024 * 1024
+			else if (maxMemory.endsWith("g") || maxMemory.endsWith("G"))
+				multiplier = 1024 * 1024 * 1024
+			if (multiplier == 0) {
+				log.error "ERROR: Could not process memory size ${maxMemory}: wrong format."
+				options.MAX_MEMORY.value = null
+			} else {
+				maxMemory = maxMemory.substring(0, maxMemory.length()-1)
+				try {
+					options.MAX_MEMORY.value = String.valueOf(multiplier * Integer.parseInt(maxMemory))
+					log.info "Maximum memory size: ${options.MAX_MEMORY.value}"
+				} catch (Exception ex) {
+					log.error "ERROR: Could not process memory size ${maxMemory}: ${ex.message}"
+					options.MAX_MEMORY.value = null
+				}
+			}
+		}
+
 		if (options.X_SERVER_CHA.value && !options.FACTS_ONLY.value)
 			throw new RuntimeException("Option --${options.X_SERVER_CHA.name} should only be used together with --${options.FACTS_ONLY.name}.")
 

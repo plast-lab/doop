@@ -72,7 +72,6 @@ MockValueConsMacro(?value, ?formalType),
 VarPointsTo(?hctx, ?value, ?ctx, ?formal) :-
   FormalOfForcedReachableContext(?ctx, ?formal, ?formalType),
   isImmutableHContext(?hctx),
-  basic.SubtypeOf(?type, ?formalType),
   ?value = cat("<mock value for forced-reachable parameter ", cat(?formal, ">")).
 
 /*
