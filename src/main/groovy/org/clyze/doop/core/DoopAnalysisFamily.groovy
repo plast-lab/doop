@@ -846,7 +846,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "IGNORE_MAIN_METHOD",
 					name: "ignore-main-method",
 					group: GROUP_ENTRY_POINTS,
-					description: "If main class is not given explicitly, do not try to discover it from jar/filename info. Open-program analysis variant will be triggered in this case.",
+					description: "If main class is not given explicitly, do not try to discover it from jar/filename info. Open-program analysis variant may be triggered in this case.",
 					forPreprocessor: true
 			),
 
