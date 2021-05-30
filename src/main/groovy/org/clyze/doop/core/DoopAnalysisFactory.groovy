@@ -583,16 +583,17 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 				analysisName != "data-flow") {
 				if (options.DISCOVER_MAIN_METHODS.value)
 					log.warn "WARNING: No main class was found. Using option --${options.DISCOVER_MAIN_METHODS.name} to discover main methods."
-				else if (!options.OPEN_PROGRAMS.value && !options.KEEP_SPEC.value) {
-					if (options.INPUT_ID.value || options.CACHE.value)
+				else if (!options.OPEN_PROGRAMS.value) {
+					if (options.KEEP_SPEC.value)
+						log.info "No main class was found, entry points will be computed from spec: ${options.KEEP_SPEC.value}"
+					else if (options.INPUT_ID.value || options.CACHE.value)
 						log.warn("WARNING: No main class was found and option --${options.OPEN_PROGRAMS.name} is missing. The reused facts are assumed to declare the correct main class(es).")
 					else {
 						log.warn "WARNING: No main class was found. This will trigger open-program analysis!"
 						options.OPEN_PROGRAMS.value = "concrete-types"
 					}
-				} else {
-                    log.info "No main class was found, all entry points will be computed from open programs logic."
-                }
+				} else
+					log.info "No main class was found, entry points will be computed from open programs logic."
 			}
 		}
 
