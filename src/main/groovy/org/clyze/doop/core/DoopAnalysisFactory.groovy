@@ -590,7 +590,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 						log.warn("WARNING: No main class was found and option --${options.OPEN_PROGRAMS.name} is missing. The reused facts are assumed to declare the correct main class(es).")
 					else {
 						log.warn "WARNING: No main class was found. This will trigger open-program analysis!"
-						options.OPEN_PROGRAMS.value = "concrete-types"
+						options.OPEN_PROGRAMS.value = "jackee"
 					}
 				} else
 					log.info "No main class was found, entry points will be computed from open programs logic."

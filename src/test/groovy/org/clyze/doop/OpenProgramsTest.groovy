@@ -25,7 +25,7 @@ class OpenProgramsTest extends DoopSpec {
         metricIsApprox(analysis, "var points-to (INS)", 69_132_048)
 
 	where:
-	    profile << ['concrete-types'] // 'servlets-only']
+	    profile << ['jackee'] // 'servlets-only']
     }
 
     // @spock.lang.Ignore
