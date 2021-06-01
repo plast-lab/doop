@@ -16,7 +16,7 @@ class MiscLambdaTests extends ServerAnalysisTests {
 		when:
 		String analysisName = "context-insensitive"
 		Analysis analysis = analyzeTest("invokedynamic-ForEach",
-										["--platform", "java_8"] + (wala ? ["--wala-fact-gen"] : []),
+										['--platform', 'java_8'] + (wala ? ["--wala-fact-gen"] : []) + souffleInterpreter,
 										analysisName,
 										"test-invokedynamic-ForEach" + (wala ? "-wala" : ""))
 
@@ -31,7 +31,7 @@ class MiscLambdaTests extends ServerAnalysisTests {
 	@Unroll
 	def "Server analysis test FutureExample"(String analysisName) {
 		when:
-		List<String> opts = ['--platform', 'java_8', '--generate-jimple'] + testExports
+		List<String> opts = ['--platform', 'java_8', '--cache'] + testExports + souffleInterpreter
 		Analysis analysis = analyzeTest("invokedynamic-FutureExample", opts, analysisName)
 
 		then:
@@ -46,7 +46,7 @@ class MiscLambdaTests extends ServerAnalysisTests {
 	@Unroll
 	def "Server analysis test FutureExample2"() {
 		when:
-		Analysis analysis = analyzeTest("invokedynamic-FutureExample2", ["--platform", "java_8"], "2-object-sensitive+heap")
+		Analysis analysis = analyzeTest("invokedynamic-FutureExample2", ["--platform", "java_8"] + souffleInterpreter, "2-object-sensitive+heap")
 
 		then:
 		methodIsReachable(analysis, '<example.Computation: java.lang.Integer computation()>')

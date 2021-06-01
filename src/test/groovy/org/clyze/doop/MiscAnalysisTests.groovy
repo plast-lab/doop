@@ -25,7 +25,7 @@ class MiscAnalysisTests extends ServerAnalysisTests {
 	@Unroll
 	def "Server analysis test Flatten"() {
 		when:
-		Analysis analysis = analyzeTest("doop-bug-report-2018-07-20-Flatten", ["--reflection-classic"])
+		Analysis analysis = analyzeTest("doop-bug-report-2018-07-20-Flatten", ["--reflection-classic"] + souffleInterpreter)
 
 		then:
 		methodIsReachable(analysis, '<Flatten: void flatten()>')

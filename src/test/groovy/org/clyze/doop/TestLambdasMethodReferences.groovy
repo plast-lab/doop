@@ -21,7 +21,7 @@ class TestLambdasMethodReferences extends DoopSpec {
 		List<String> opts = ["--platform", "java_8", "--server-logic",
 							 "--thorough-fact-gen",
 							 "--generate-jimple"] +
-							 sanityOpts + walaOpts
+							 sanityOpts + walaOpts + souffleInterpreter
 		Analysis analysis = analyzeBuiltinTest("107-lambdas", opts, analysisName, id)
 
 		then:
@@ -57,7 +57,7 @@ class TestLambdasMethodReferences extends DoopSpec {
 			analyzeBuiltinTest("104-method-references",
 							   ["--platform", "java_8",
 								"--thorough-fact-gen", "--no-standard-exports",
-								"--generate-jimple"] + sanityOpts,
+								"--generate-jimple"] + sanityOpts + souffleInterpreter,
 							   analysisName)
 
 		then:

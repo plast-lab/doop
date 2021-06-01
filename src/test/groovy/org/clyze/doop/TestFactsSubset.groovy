@@ -10,7 +10,7 @@ class TestFactsSubset extends ServerAnalysisTests {
     @Unroll
     def "Server analysis test 006 (hello world) / facts-subset"(String subset) {
         when:
-        Analysis analysis = analyzeTest("006-hello-world", ["--Xfacts-subset", subset, "--platform", "java_8"])
+        Analysis analysis = analyzeTest('006-hello-world', ['--Xfacts-subset', subset, '--platform', 'java_8', '--facts-only'])
 
         then:
         true
