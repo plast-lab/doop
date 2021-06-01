@@ -11,6 +11,7 @@
 #include "exceptions-declarations.dl"
 #include "implicit-reachable-declarations.dl"
 #include "threads-declarations.dl"
+#include "api-mocking.dl"
 #ifdef ANDROID
 #include "android-declarations.dl"
 #include "android.dl"
