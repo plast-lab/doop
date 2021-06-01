@@ -5,7 +5,7 @@
 #include "core.dl"
 
 #ifdef ANDROID
-#include "../../main/android-mocking.dl"
+#include "../../main/api-mocking.dl"
 #endif // ANDROID
 
 #ifdef X_SERVER_LOGIC
@@ -26,7 +26,6 @@ TypeForReturnValue(?type, ?ret, ?invocation) :-
   AssignCast(?type, ?ret, _, _),
   MethodInvocationInfo(?invocation, _, ?ret).
 
-#ifdef ANDROID
 PlusMethodInvocation(?fakeNewSite),
 ALLOC(?fakeNewSite, ?to, ?alloc),
 HeapAllocation_Type(?alloc, ?type) :-
@@ -35,10 +34,9 @@ HeapAllocation_Type(?alloc, ?type) :-
   Method_Descriptor(?method, ?desc),
   Method_DeclaringType(?method, ?declType),
   basic.MethodLookup(?name, ?desc, ?declType, ?invokedMethod),
-  AndroidMethodReturns(?invokedMethod, ?alloc, ?type),
+  MockedMethodReturns(?invokedMethod, ?alloc, ?type),
   ?fakeNewSite = cat("<mock allocation site for ", cat(?alloc, ">")),
   AssignReturnValue(?invo, ?to).
-#endif // ANDROID
 
 // Variant of core rule, without the negation in AssignReturnValue.
 ParamTaintTransferredToBase(?param, ?ctx, ?base) :-

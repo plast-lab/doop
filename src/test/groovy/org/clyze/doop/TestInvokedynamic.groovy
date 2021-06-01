@@ -23,7 +23,7 @@ class TestInvokedynamic extends DoopSpec {
                         // "--server-logic",
                         "--extra-logic", "${Doop.souffleLogicPath}/addons/testing/TestInvokedynamic.dl",
                         "--thorough-fact-gen", "--sanity", "--no-standard-exports",
-                        "--reflection-method-handles"] + reflectionOpts
+                        "--reflection-method-handles"] + reflectionOpts + souffleInterpreter
         String analysisId = "test-115-invokedynamic" + (fullReflection ? "" : "-light-refl")
         Analysis analysis = analyzeBuiltinTest("115-invokedynamic",
                                                options,

@@ -1,7 +1,25 @@
 /**
- * This file contains information about mocked Android API elements.
+ * This file contains information about mocked API elements.
  * This information is reused by both the points-to and the data-flow analyses.
  */
+
+// Basic "spec" relation: method returns mock value (of some type).
+.decl MockedMethodReturns(?method:Method, ?alloc:HeapAllocation, ?type:ReferenceType)
+.output MockedMethodReturns
+
+/** java.sql mocking */
+
+// Model DriverManager.getConnection().
+MockedMethodReturns(?method, ?value, ?type) :-
+  ?method = "<java.sql.DriverManager: java.sql.Connection getConnection(java.lang.String,java.util.Properties,java.lang.Class)>",
+  basic.SubtypeOf(?type, "java.sql.Connection"),
+  isClassType(?type),
+  ?value = cat("<mock SQL connection of type ", cat(?type, ">")).
+
+
+/** Android API mocking */
+
+#ifdef ANDROID
 
 // System services are mocked.
 .decl SystemService(?type:ReferenceType)
@@ -41,10 +59,6 @@ SYSTEM_SERVICE("android.media.MediaRouter").
 SYSTEM_SERVICE("android.telephony.TelephonyManager").
 SYSTEM_SERVICE("android.telephony.SubscriptionManager").
 
-// Helper relation: Android method returns a mock value (of some type).
-.decl AndroidMethodReturns(?method:Method, ?alloc:HeapAllocation, ?type:ReferenceType)
-.output AndroidMethodReturns
-
 // Helper releation: getSystemService() methods.
 .decl GetSystemServiceMethod(?method:Method)
 
@@ -57,7 +71,7 @@ GetSystemServiceMethod("<android.app.Activity: java.lang.Object getSystemService
 #endif // DISABLE_POINTS_TO
 
 // Mock return values of Context.getSystemService().
-AndroidMethodReturns(?method, ?alloc, ?type),
+MockedMethodReturns(?method, ?alloc, ?type),
 HeapAllocation_Type(?alloc, ?type) :-
   SystemService(?type),
   GetSystemServiceMethod(?method),
@@ -66,7 +80,7 @@ HeapAllocation_Type(?alloc, ?type) :-
 // Mock return values of TelephonyManager getters.
 isStringConstant(?alloc),
 HeapAllocation_Type(?alloc, "java.lang.String"),
-AndroidMethodReturns(?method, ?alloc, "java.lang.String") :-
+MockedMethodReturns(?method, ?alloc, "java.lang.String") :-
   ( ?method = "<android.telephony.TelephonyManager: java.lang.String getDeviceId()>"
   ; ?method = "<android.telephony.TelephonyManager: java.lang.String getDeviceId(int)>"
   ; ?method = "<android.telephony.TelephonyManager: java.lang.String getImei()>"
@@ -74,3 +88,5 @@ AndroidMethodReturns(?method, ?alloc, "java.lang.String") :-
   ; ?method = "<android.telephony.TelephonyManager: java.lang.String getMeid()>"
   ; ?method = "<android.telephony.TelephonyManager: java.lang.String getMeid(int)>"),
   ?alloc = "<mock device id>".
+
+#endif // ANDROID

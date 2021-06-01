@@ -33,7 +33,6 @@
 **/
 
 #include "android-xml.dl"
-#include "android-mocking.dl"
 
 /**
  * App Components, in layout resources or dynamically registered
@@ -1080,18 +1079,6 @@ ForcedReachableContext(?ctx, ?method) :-
 #include "../addons/glide.dl"
 
 #ifndef DISABLE_POINTS_TO
-
-// Core mocking rule.
-MockValueConsMacro(?value, ?type),
-ReifiedAndroidObjectValue(?value, ?type),
-VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
-  Instruction_Method(?invocation, ?inmethod),
-  ReachableContext(?ctx, ?inmethod),
-  MethodInvocation_Method(?invocation, ?method),
-  AndroidMethodReturns(?method, ?value, ?type),
-  AssignReturnValue(?invocation, ?return),
-  isImmutableHContext(?hctx).
-
 // Mock call to Activity.attach().
 ReachableContext(?ctx, ?method),
 VarPointsTo(?hctx, ?value, ?ctx, ?this) :-
@@ -1102,5 +1089,4 @@ VarPointsTo(?hctx, ?value, ?ctx, ?this) :-
   ThisVar(?method, ?this),
   isImmutableHContext(?hctx),
   isImmutableContext(?ctx).
-
 #endif // DISABLE_POINTS_TO

@@ -36,6 +36,10 @@ abstract class DoopSpec extends Specification {
         return [ "--sanity" ] + testExports
     }
 
+    protected List<String> getSouffleInterpreter() {
+        return [ "--souffle-mode", "interpreted" ]
+    }
+
     protected List<String> getTestExports() {
         return [ "--extra-logic", "${Doop.souffleLogicPath}/addons/testing/test-exports.dl" ]
     }

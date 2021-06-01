@@ -735,3 +735,15 @@ Value_DeclaringType(?constValue, ?declaringType) :-
   isIntegerType(?type),
   ?constValue = NUM_CONSTANT(?n, ?type).
 #endif // ANDROID
+
+#ifndef DISABLE_POINTS_TO
+// Core mocking rule.
+MockValueConsMacro(?value, ?type),
+VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
+  Instruction_Method(?invocation, ?inmethod),
+  ReachableContext(?ctx, ?inmethod),
+  MethodInvocation_Method(?invocation, ?method),
+  MockedMethodReturns(?method, ?value, ?type),
+  AssignReturnValue(?invocation, ?return),
+  isImmutableHContext(?hctx).
+#endif // DISABLE_POINTS_TO

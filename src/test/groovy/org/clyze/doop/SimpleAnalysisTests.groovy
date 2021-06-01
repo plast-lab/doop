@@ -20,7 +20,7 @@ class SimpleAnalysisTests extends ServerAnalysisTests {
 										 "--generate-jimple", "--server-logic",
 										 "--cs-library", "--extra-metrics", "--sarif",
 										 "--thorough-fact-gen", "--cfg",
-										 "--platform", "java_8"] + sanityOpts)
+										 "--platform", "java_8"] + sanityOpts + souffleInterpreter)
 
 		then:
 		// Test variance.
@@ -37,7 +37,7 @@ class SimpleAnalysisTests extends ServerAnalysisTests {
 	@Unroll
 	def "Server analysis test 012 (interface fields)"() {
 		when:
-		Analysis analysis = analyzeTest("012-interface-fields", testExports)
+		Analysis analysis = analyzeTest("012-interface-fields", testExports + souffleInterpreter)
 
 		then:
 		staticFieldPointsTo(analysis, '<Y: Y fooooooooo>', '<Y: void <clinit>()>/new Y$1/0')
@@ -49,7 +49,7 @@ class SimpleAnalysisTests extends ServerAnalysisTests {
 		when:
 		Analysis analysis = analyzeTest("013-enums", ["--reflection-classic", "--generate-jimple",
 													  "--no-standard-exports",
-													  "--run-jphantom"] + testExports)
+													  "--run-jphantom"] + testExports + souffleInterpreter)
 
 		then:
 		varPointsToQ(analysis, '<Main: void main(java.lang.String[])>/enumConsts#_93', '<Enums array for Main$UndeletablePrefKey>')

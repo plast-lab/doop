@@ -10,7 +10,7 @@ import static org.clyze.doop.TestUtils.*
 /**
  * Test micro analysis.
  */
-class CrudeMicroTest extends Specification {
+class CrudeMicroTest extends DoopSpec {
 
     // @spock.lang.Ignore
     @Unroll
@@ -18,7 +18,8 @@ class CrudeMicroTest extends Specification {
         when:
         String id = 'antlr-micro'
         // First run 'micro' analysis.
-        Main.main((String[])['-i', Artifacts.ANTLR_JAR, '-a', 'micro', '--id', id, '--dacapo', '--stats', 'none', '--fact-gen-cores', '1', '--platform', 'java_7'])
+        List<String> baseArgs = ['-i', Artifacts.ANTLR_JAR, '-a', 'micro', '--id', id, '--dacapo', '--stats', 'none', '--fact-gen-cores', '1', '--platform', 'java_7']
+        Main.main((String[])(baseArgs + souffleInterpreter))
         Analysis analysis = Main.analysis
         // Then, run 'self-contained' analysis on the same facts using a different output directory.
         File selfContainedIn  = new File(analysis.outDir, 'database')
