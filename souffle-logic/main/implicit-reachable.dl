@@ -126,6 +126,26 @@ VarPointsTo(?hctx, ?value, ?ctx, ?formal) :-
   isImmutableHContext(?hctx),
   ?value = cat("<mock value for forced-reachable parameter ", cat(?class, ">")).
 
+/**
+ *  Mock receivers for entry points
+ **/
+.decl MockObject(?value:Value, ?class:ReferenceType)
+.output MockObject
+.decl MockObjFromOpenProgramEntryPointReceiver(?value:Value)
+.decl ExercisedEntryPointMethod(?class:Type, ?method:Method)
+
+MockValueConsMacro(?value, ?class),
+VarPointsTo(?hctx, ?value, ?ctx, ?receiver),
+MockObjFromOpenProgramEntryPointReceiver(?value),
+MockObject(?value, ?class) :-
+  ( ExercisedEntryPointMethod(?class, ?method)
+  ; (ForcedReachable(?method), Method_DeclaringType(?method, ?class))),
+  ThisVar(?method, ?receiver),
+  ?value = cat(?class, "::MockObject"),
+  mainAnalysis.isImmutableContext(?ctx),
+  mainAnalysis.isImmutableHContext(?hctx).
+
+
 /*
  * The following rules handle the 'keep' specification, by
  * forcing reachability and mocking of all "keep" methods.
