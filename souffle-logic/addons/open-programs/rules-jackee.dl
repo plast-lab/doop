@@ -28,18 +28,6 @@ EntryPointClass(?class) :-
   Servlet(?class),
   ApplicationConcreteType(?class).
 
-.decl ServletParamType(?paramType:Type)
-
-ServletParamType(?paramType) :-
-  (basic.SubtypeOf(?paramType, "javax.servlet.ServletRequest");
-   basic.SubtypeOf(?paramType, "javax.servlet.ServletResponse");
-   basic.SubtypeOf(?paramType, "org.springframework.http.HttpMethod");
-   basic.SubtypeOf(?paramType, "org.apache.commons.httpclient.HttpMethod");
-   basic.SubtypeOf(?paramType, "org.springframework.extensions.webscripts.WebScriptRequest");
-   basic.SubtypeOf(?paramType, "org.springframework.extensions.webscripts.WebScriptResponse");
-   basic.SubtypeOf(?paramType, "javax.servlet.http.HttpSessionEvent");
-   basic.SubtypeOf(?paramType, "javax.servlet.ServletContextEvent")).
-
 EntryPointClass(?class) :-
   Method_DeclaringType(?method, ?class),
   ApplicationConcreteType(?class),
