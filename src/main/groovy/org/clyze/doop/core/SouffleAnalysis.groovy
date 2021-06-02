@@ -144,7 +144,7 @@ class SouffleAnalysis extends DoopAnalysis {
 		// Check the open programs argument before calling the preprocessor.
 		String openProgramsProfile = null
 		String openProgramsRules = options.OPEN_PROGRAMS.value
-		if (openProgramsRules && (openProgramsRules != DoopAnalysisFamily.DISABLE_OPEN_PROGRAMS)) {
+		if (openProgramsRules) {
 			openProgramsProfile = "${Doop.souffleLogicPath}/addons/open-programs/rules-${openProgramsRules}.dl"
 			if (!(new File(openProgramsProfile)).exists())
 				throw DoopErrorCodeException.error35("Open program rules profile does not exist: " + openProgramsProfile)

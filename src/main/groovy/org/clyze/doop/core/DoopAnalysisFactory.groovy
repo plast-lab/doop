@@ -589,12 +589,13 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 					else if (options.INPUT_ID.value || options.CACHE.value)
 						log.warn("WARNING: No main class was found and option --${options.OPEN_PROGRAMS.name} is missing. The reused facts are assumed to declare the correct main class(es).")
 					else {
-						log.warn "WARNING: No main class was found. This will trigger open-program analysis! (Use '--${options.OPEN_PROGRAMS.name} ${DoopAnalysisFamily.DISABLE_OPEN_PROGRAMS}' to keep this logic disabled.)"
+						log.warn "WARNING: No main class was found. This will trigger open-program analysis! (Use '--${options.OPEN_PROGRAMS.name} ${DoopAnalysisFamily.FORCE_OPEN_PROGRAMS_DISABLED}' to keep this logic disabled.)"
 						options.OPEN_PROGRAMS.value = "jackee"
 					}
-				} else if (options.OPEN_PROGRAMS.value == DoopAnalysisFamily.DISABLE_OPEN_PROGRAMS)
+				} else if (options.OPEN_PROGRAMS.value == DoopAnalysisFamily.FORCE_OPEN_PROGRAMS_DISABLED) {
 					log.warn "WARNING: No main class was found and open programs logic is explicitly disabled. Entry points should come from logic."
-				else
+					options.OPEN_PROGRAMS.value = null
+				} else
 					log.info "No main class was found, entry points will be computed from open programs logic."
 			}
 		}
