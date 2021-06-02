@@ -46,7 +46,12 @@ class DoopAnalysisFamily implements AnalysisFamily {
 	static final String SOUFFLE_INTERPRETED = 'interpreted'
 	static final String SOUFFLE_TRANSLATED = 'translated'
 
-	static final String DISABLE_OPEN_PROGRAMS = 'disabled'
+	/**
+	 * Special value of open programs that disables their automatic activation.
+	 * Useful when entry points are missing from the command line and are
+	 * only declared in logic.
+	 */
+	static final String FORCE_OPEN_PROGRAMS_DISABLED = 'disabled'
 
 	@Override
 	String getName() { "doop" }
