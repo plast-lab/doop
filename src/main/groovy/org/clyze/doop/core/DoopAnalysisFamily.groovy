@@ -46,6 +46,8 @@ class DoopAnalysisFamily implements AnalysisFamily {
 	static final String SOUFFLE_INTERPRETED = 'interpreted'
 	static final String SOUFFLE_TRANSLATED = 'translated'
 
+	static final String DISABLE_OPEN_PROGRAMS = 'disabled'
+
 	@Override
 	String getName() { "doop" }
 
