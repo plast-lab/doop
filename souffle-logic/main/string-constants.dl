@@ -863,16 +863,21 @@ AllocationShouldBeMergedPerClass(?type, ?class) :-
  * String buffers and builders
  *************************************************************/
 
-.decl StringFactoryType(?type:Type)
-.decl StringFactoryHeap(?heap:HeapAllocation)
-
-StringFactoryType(?type) :-
+// Internal concept. DO NOT ADD TO IT!
+.decl _StringFactoryType(?type:Type)
+_StringFactoryType(?type) :-
   ?type = "java.lang.StringBuffer" ;
   ?type = "java.lang.StringBuilder".
 
+.decl StringFactoryHeap(?heap:HeapAllocation)
 StringFactoryHeap(?heap) :-
   HeapAllocation_Type(?heap, ?heaptype),
-  StringFactoryType(?heaptype).
+  _StringFactoryType(?heaptype).
+
+// Other modules add to this. Don't know why! (REVIEW)
+.decl StringFactoryType(?type:Type)
+StringFactoryType(?type) :-
+  _StringFactoryType(?type).
 
 #ifndef DISTINGUISH_ALL_STRING_BUFFERS
 #ifndef INFORMATION_FLOW_HIGH_SOUNDNESS
@@ -881,7 +886,7 @@ StringFactoryHeap(?heap) :-
 .decl PackageAndTypeToStringFactoryHeap(?heap:HeapAllocation, ?type:Type, ?packageName:symbol)
 
 PackageAndTypeToStringFactoryHeap(?heap, ?heaptype, ?packageName) :-
-  StringFactoryType(?heaptype),
+  _StringFactoryType(?heaptype),
   HeapAllocation_Type(?heap, ?heaptype),
   AssignHeapAllocation(?heap, _, ?meth),
   Method_DeclaringType(?meth, ?class),
@@ -909,12 +914,12 @@ HeapRepresentative(?representativeHeap, ?heap) :-
 // // all string buffers (and builders) in the same class are merged
 // AllocationShouldBeMergedPerClass(?heaptype, ?class) <-
 //   AllocationsPerClassAndType[?heaptype, ?class] > 1,
-//   StringFactoryType(?heaptype).
+//   _StringFactoryType(?heaptype).
 
 //// Used to be per-method:
 // AllocationShouldBeMergedPerMethod(?heaptype, ?meth) <-
 //   AllocationsPerMethodAndType[?heaptype, ?meth] > 1,
-//   StringFactoryType(?heaptype).
+//   _StringFactoryType(?heaptype).
 #else // not DISTINGUISH_STRING_BUFFERS_PER_PACKAGE, i.e., merge them all
 #ifndef NO_MERGES
 HeapRepresentative("<<string-buffer>>", ?heap) :-
