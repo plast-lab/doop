@@ -12,8 +12,6 @@
 Servlet(?class) :-
   AllApplicationConcreteImplementations(?class, "javax.servlet.http.HttpServlet").
 
-.decl ExercisedEntryPointMethod(?class:Type, ?method:Method)
-
 // Contribute to the global summary relation
 mainAnalysis.ApplicationEntryPoint(?meth) :-
   EntryPointMethod(?meth),
@@ -27,18 +25,6 @@ mainAnalysis.ApplicationEntryPoint(?meth) :-
 EntryPointClass(?class) :-
   Servlet(?class),
   ApplicationConcreteType(?class).
-
-.decl ServletParamType(?paramType:Type)
-
-ServletParamType(?paramType) :-
-  (basic.SubtypeOf(?paramType, "javax.servlet.ServletRequest");
-   basic.SubtypeOf(?paramType, "javax.servlet.ServletResponse");
-   basic.SubtypeOf(?paramType, "org.springframework.http.HttpMethod");
-   basic.SubtypeOf(?paramType, "org.apache.commons.httpclient.HttpMethod");
-   basic.SubtypeOf(?paramType, "org.springframework.extensions.webscripts.WebScriptRequest");
-   basic.SubtypeOf(?paramType, "org.springframework.extensions.webscripts.WebScriptResponse");
-   basic.SubtypeOf(?paramType, "javax.servlet.http.HttpSessionEvent");
-   basic.SubtypeOf(?paramType, "javax.servlet.ServletContextEvent")).
 
 EntryPointClass(?class) :-
   Method_DeclaringType(?method, ?class),
@@ -57,23 +43,6 @@ mainAnalysis.ReachableContext(?ctx, ?method) :-
 
 // Set flag to enable statistics print logic.
 #define OPEN_PROGRAM_MOCK_OBJS
-
-/**
- *  Mock receivers for entry points
- **/
-.decl MockObject(?value:Value, ?class:ReferenceType)
-.output MockObject
-.decl MockObjFromOpenProgramEntryPointReceiver(?value:Value)
-
-mainAnalysis_MockValueConsMacro(?value, ?class),
-mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?receiver),
-MockObjFromOpenProgramEntryPointReceiver(?value),
-MockObject(?value, ?class) :-
-  ExercisedEntryPointMethod(?class, ?method),
-  ThisVar(?method, ?receiver),
-  ?value = cat(?class, "::MockObject"),
-  mainAnalysis.isImmutableContext(?ctx),
-  mainAnalysis.isImmutableHContext(?hctx).
 
 /**
  *  Mock arguments for entry points

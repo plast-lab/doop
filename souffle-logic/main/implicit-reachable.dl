@@ -66,13 +66,85 @@ FormalOfForcedReachableContext(?ctx, ?formal, ?formalType) :-
   FormalParam(_, ?meth, ?formal),
   Var_Type(?formal, ?formalType).
 
-// REVIEW: this is imprecise, it assigns a mock argument for each
-// parameter in a forced-reachable method.
-MockValueConsMacro(?value, ?formalType),
+.decl ApplicationConcreteType(?type:ClassType)
+
+ApplicationConcreteType(?type) :-
+    ApplicationClass(?type),
+    !isInterfaceType(?type),
+    !ClassModifier("abstract", ?type).
+
+//anantoni: For now we want all concrete types that are going to be used as mock object types to be part of the application
+// Our fallback is the type itself, but that will only work in case it's not abstract
+// We need to monitor the cases where entry points have arguments with no concrete implementations
+
+.decl AllApplicationConcreteImplementations(?type1:ClassType, ?type2:Type)
+.decl TypeHasApplicationConcreteSubtypes(?type:Type)
+
+TypeHasApplicationConcreteSubtypes(?abstractType),
+AllApplicationConcreteImplementations(?class, ?abstractType) :-
+    ApplicationClass(?class),
+    basic.SubtypeOf(?class, ?abstractType),
+    ?abstractType != "java.lang.Object",
+    !ClassModifier("abstract", ?class).
+
+.decl ConcreteApplicationClass(?class: ClassType)
+ConcreteApplicationClass(?class) :-
+    isClassType(?class),
+    !ClassModifier("abstract", ?class).
+
+AllApplicationConcreteImplementations(?class, ?class) :- ConcreteApplicationClass(?class).
+
+.decl ServletParamType(?paramType:ReferenceType)
+ServletParamType(?paramType) :-
+  basic.SubtypeOf(?paramType, "javax.servlet.ServletRequest");
+  basic.SubtypeOf(?paramType, "javax.servlet.ServletResponse");
+  basic.SubtypeOf(?paramType, "org.springframework.http.HttpMethod");
+  basic.SubtypeOf(?paramType, "org.apache.commons.httpclient.HttpMethod");
+  basic.SubtypeOf(?paramType, "org.springframework.extensions.webscripts.WebScriptRequest");
+  basic.SubtypeOf(?paramType, "org.springframework.extensions.webscripts.WebScriptResponse");
+  basic.SubtypeOf(?paramType, "javax.servlet.http.HttpServletRequest");
+  basic.SubtypeOf(?paramType, "javax.servlet.http.HttpServletResponse");
+  basic.SubtypeOf(?paramType, "javax.servlet.http.HttpSessionEvent");
+  basic.SubtypeOf(?paramType, "javax.servlet.ServletContextEvent").
+
+// Special types implemented in the library also participate in mocking.
+.decl SpecialConcreteImplementations(?class:ClassType, ?type:ReferenceType)
+SpecialConcreteImplementations(?class, ?type) :-
+  isClassType(?class),
+  basic.SubtypeOf(?class, ?type),
+  ServletParamType(?type).
+
+
+// REVIEW: this is imprecise, it assigns one or more mock arguments
+// for each parameter in a forced-reachable method.
+MockValueConsMacro(?value, ?class),
 VarPointsTo(?hctx, ?value, ?ctx, ?formal) :-
   FormalOfForcedReachableContext(?ctx, ?formal, ?formalType),
+  ( AllApplicationConcreteImplementations(?class, ?formalType)
+  ; SpecialConcreteImplementations(?class, ?formalType)
+  ),
   isImmutableHContext(?hctx),
-  ?value = cat("<mock value for forced-reachable parameter ", cat(?formal, ">")).
+  ?value = cat("<mock value for forced-reachable parameter ", cat(?class, ">")).
+
+/**
+ *  Mock receivers for entry points
+ **/
+.decl MockObject(?value:Value, ?class:ReferenceType)
+.output MockObject
+.decl MockObjFromOpenProgramEntryPointReceiver(?value:Value)
+.decl ExercisedEntryPointMethod(?class:Type, ?method:Method)
+
+MockValueConsMacro(?value, ?class),
+VarPointsTo(?hctx, ?value, ?ctx, ?receiver),
+MockObjFromOpenProgramEntryPointReceiver(?value),
+MockObject(?value, ?class) :-
+  ( ExercisedEntryPointMethod(?class, ?method)
+  ; (ForcedReachable(?method), Method_DeclaringType(?method, ?class))),
+  ThisVar(?method, ?receiver),
+  ?value = cat(?class, "::MockObject"),
+  mainAnalysis.isImmutableContext(?ctx),
+  mainAnalysis.isImmutableHContext(?hctx).
+
 
 /*
  * The following rules handle the 'keep' specification, by

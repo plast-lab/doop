@@ -45,7 +45,7 @@ CallGraphEdge(?callerCtx, ?invocation, ?immCtx, ?tomethod) :-
   MethodInvocation_Method(?invocation, ?tomethod),
   !ZipperPrecisionCriticalMethod(?tomethod).
 
-#else
+#else // X_ZIPPER
 // Original rules
 
 isContext(?calleeCtx),
