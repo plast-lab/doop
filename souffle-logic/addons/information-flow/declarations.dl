@@ -12,7 +12,11 @@
 #define CONTEXT mainAnalysis.configuration.Context
 #endif // DISABLE_POINTS_TO
 
+// Declaration of a taint source method.
 .decl TaintSourceMethod(?label:InformationLabel, ?method:Method)
+// Declaration of a taint source method, including all methods that override it.
+.decl TaintSourceMethodWithOverrides(?label:InformationLabel, ?method:Method)
+
 .decl LeakingSinkMethod(?lable:InformationLabel, ?method:Method)
 .decl LeakingSinkMethodArg(?label:InformationLabel, ?index:number, ?method:Method)
 .decl LeakingSinkVariable(?label:InformationLabel, ?tomethod:MethodInvocation, ?ctx:CONTEXT, ?var:Var)

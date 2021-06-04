@@ -102,3 +102,9 @@ LeakingSinkVariable(?label, ?invocation, ?ctx, ?var) :-
    MethodInvocationInContextInApplication(?ctx, ?invocation, ?tomethod),
    MethodInvocation_Base(?invocation, ?var).
 
+TaintSourceMethod(?label, ?method) :-
+  TaintSourceMethodWithOverrides(?label, ?method).
+TaintSourceMethod(?label, ?overrideMethod) :-
+  TaintSourceMethodWithOverrides(?label, ?method),
+  basic.MethodOverridesOther(?overrideMethod, ?method).
+
