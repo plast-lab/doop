@@ -362,12 +362,13 @@ NewMetricMacro("45.0", "total leaks", Stats_Simple_LeakingTaintedInformation(_, 
  * Open Programs
  ***************************************************/
 
+NewMetricMacro("61.0", "Mock Objects", mainAnalysis.MockObject(_, _)).
+
 #ifdef OPEN_PROGRAMS
 //Stats_Simple_ReachableFromOpenProgramEntryPoint(?method) :-
 //  MockReachableContext(_, ?method).
 
 //NewMetricMacro("60.0", "Entry Points", OpenProgramEntryPoint(_)).
-NewMetricMacro("61.0", "Mock Objects", MockObject(_, _)).
 
 #ifdef OPEN_PROGRAM_MOCK_OBJS
 NewMetricMacro("61.1", "Mock Objects for Receivers", mainAnalysis.MockObjFromOpenProgramEntryPointReceiver(_)).

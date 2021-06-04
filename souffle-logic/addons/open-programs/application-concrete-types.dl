@@ -7,21 +7,21 @@ BridgeMethod(?bridge, ?type) :-
 
 TypeHasNoApplicationConcreteImplementations(?class) :-
     isType(?class),
-    !TypeHasApplicationConcreteSubtypes(?class).
+    !mainAnalysis.TypeHasApplicationConcreteSubtypes(?class).
 
 .decl AbstractOrInterfaceTypeHasNoApplicationConcreteImplementations(?type:Type)
 
 AbstractOrInterfaceTypeHasNoApplicationConcreteImplementations(?class) :-
     isInterfaceType(?class),
     !ClassModifier("annotation", ?class),
-    !TypeHasApplicationConcreteSubtypes(?class),
-    !AllApplicationConcreteImplementations(_, ?class).
+    !mainAnalysis.TypeHasApplicationConcreteSubtypes(?class),
+    !mainAnalysis.AllApplicationConcreteImplementations(_, ?class).
 
 AbstractOrInterfaceTypeHasNoApplicationConcreteImplementations(?class) :-
     isClassType(?class),
     ClassModifier("abstract", ?class),
-    !TypeHasApplicationConcreteSubtypes(?class),
-    !AllApplicationConcreteImplementations(_, ?class).
+    !mainAnalysis.TypeHasApplicationConcreteSubtypes(?class),
+    !mainAnalysis.AllApplicationConcreteImplementations(_, ?class).
 
 .decl NonApplicationConcreteImplementations(?class:Type, ?staticType:Type)
 .decl NonApplicationConcreteImplementationsOrd(?classOrd:number, ?staticType:Type)
