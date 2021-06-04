@@ -13,6 +13,7 @@
 .type OpaqueInstruction = Instruction
 
 .decl isOpaqueInstruction(?insn:OpaqueInstruction)
+.output isOpaqueInstruction
 
 .decl ClassLoaderMethod(?method:Method, ?argIdx:number)
 .output ClassLoaderMethod
@@ -83,3 +84,6 @@ OPAQUE_METHOD("<java.lang.invoke.MethodHandles$Lookup: java.lang.Class lookupCla
 #endif // REFLECTION_METHOD_HANDLES
 OPAQUE_METHOD("<java.lang.invoke.MethodType: java.lang.Class parameterType(int)>").
 OPAQUE_METHOD("<java.lang.invoke.MethodType: java.lang.Class returnType()>").
+
+// There is special support for dynamic proxies API, API internals are not analyzed.
+OPAQUE_METHOD("<sun.misc.ProxyGenerator: byte[] generateClassFile()>").
