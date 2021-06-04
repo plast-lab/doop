@@ -5,6 +5,8 @@
 
 // Flows from 'x' to 'y'
 .decl Flows(x:Var, y:Var)
+// Flows extended with self-flow
+.decl Flows_EXT(x:Var, y:Var)
 // Optimized for transitive join
 .decl OptBaseFlows(x:Var, y:Var)
 // Method will return its 'nth' formal param
@@ -21,6 +23,7 @@
 .decl FlowsIntoInstanceFieldBase(x:Var, base:Var)
 
 .output Flows
+.output Flows_EXT
 .output SelfFlows
 .output PointerFlows
 .output FlowsIntoConstArrayIndex
@@ -36,10 +39,6 @@ OptBaseFlows(from, to) :-
 	(UNOP(stmt, to, _) ; BINOP(stmt, to, _)),
 	InterestingStmt(stmt),
 	OPERAND_VAR(stmt, _, from).
-
-OptBaseFlows(v, v) :-
-	ALLOC(stmt, v, _),
-	InterestingStmt(stmt).
 
 // Array STORE with const index
 FlowsIntoConstArrayIndex(from, arr, i),
@@ -127,7 +126,7 @@ ResolveCall(stmt, method) :-
 	MethodInvocation_Method(stmt, sigMethod),
 	Method_SimpleName(sigMethod, name),
 	Method_Descriptor(sigMethod, desc),
-	Flows(allocVar, base),
+	Flows_EXT(allocVar, base),
 	ALLOC(_, allocVar, heap),
 	HeapAllocation_Type(heap, heapType),
 	basic.MethodLookup(name, desc, heapType, method).
@@ -138,6 +137,9 @@ Flows(x, y) :- OptBaseFlows(x, y).
 // Transitive closure
 Flows(x, z) :- Flows(x, y), OptBaseFlows(y, z).
 .plan 1:(2,1)
+
+Flows_EXT(x, y) :- Flows(x, y).
+Flows_EXT(x, x) :- isVar(x).
 
 SelfFlows(x) :- Flows(x, x).
 
