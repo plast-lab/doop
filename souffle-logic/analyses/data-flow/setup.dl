@@ -27,7 +27,7 @@
 .decl FORMAL_PARAM(m: Method, pos: number, param: Var) inline
 .decl ACTUAL_PARAM(stmt: MethodInvocation, pos: number, param: Var) inline
 .decl FORMAL_RET(stmt: ReturnNonvoid_Insn, ret: Var)
-.decl ACTUAL_RET(stmt: ReturnInstruction, to: Var) inline
+.decl ACTUAL_RET(stmt: MethodInvocation, to: Var) inline
 // pos starts from 1
 .decl OPERAND_VAR(stmt: Instruction, pos: number, oper: Var)
 .decl OPERAND_NUM(stmt: Instruction, pos: number, oper: number)

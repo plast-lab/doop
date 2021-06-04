@@ -8,12 +8,14 @@
 .decl ArrayDimIterated(array: Var, dim: number, indexVar: Var, loopHead: Instruction)
 .decl ArrayInitializedInLoop(array: Var, loopHead: Instruction, value: AccessPath)
 .decl ArrayInitialized(array: Var, value: symbol)
+.decl ArrayAccess(array: Var, out: symbol)
 
 .output MainArrayVar
 .output ArrayDims
 .output ArrayLoad
 .output ArrayStore
 .output ArrayInitialized
+.output ArrayAccess
 
 MainArrayVar(array, name, types) :-
 	AllocArray(stmt, array, types),
@@ -44,6 +46,7 @@ ArrayDims(toArray, dim - 1, size) :-
 	InterestingStmt(stmt),
 	ArrayDims(baseArray, dim, size), dim > 0.
 
+// array.length
 IVALUE_Var(to, size) :-
 	InterestingStmt(stmt),
 	UNOP(stmt, to, "len"),
@@ -91,11 +94,6 @@ ArrayDimIterated(baseArray, dim + 1, indexVar, loopHead) :-
 	ArrayDimIterated(toArray, dim, indexVar, loopHead),
 	ALOAD(_, toArray, baseArray).
 
-VarHasAP_AUX(var, [var, nil], 1) :-
-	ASTORE_VAR(stmt, _, _, var),
-	StmtInStructuredLoop(stmt, _),
-	InterestingStmt(stmt).
-
 ArrayInitializedInLoop(array, loopHead, ap) :-
 	ArrayDimIterated(array, _, indexVar, loopHead),
 	ASTORE_VAR(stmt, array, indexVar, fromVar),
@@ -114,3 +112,47 @@ ArrayInitialized(array, out) :-
 	AccessPathStr(ap, out),
 	Flows(array, someArray),
 	MainArrayVar(array, _, _).
+
+
+#define TOP(x, y, rest) [x, [y, rest]]
+
+VarHasAP_AUX(from, TOP("@", to_string(val), nil), 2) :-
+	ASTORE(stmt, _, from),
+	InterestingStmt(stmt),
+	NonArrayVar(from),
+	IVALUE_Var(from, val).
+
+VarHasAP_AUX(from, TOP("@", "?", nil), 2) :-
+	ASTORE(stmt, _, from),
+	InterestingStmt(stmt),
+	NonArrayVar(from),
+	!IVALUE_Var(from, _).
+
+VarHasAP_AUX(array, TOP("@", to_string(val), rest), size + 2) :-
+	(ASTORE_NUM(stmt, array, val, from) ;
+	 (ASTORE_VAR(stmt, array, index, from), IVALUE_Var(index, val))),
+	InterestingStmt(stmt),
+	VarHasAP_AUX(from, rest, size).
+
+VarHasAP_AUX(array, TOP("@", "?", rest), size + 2) :-
+	ASTORE_VAR(stmt, array, index, from),
+	!IVALUE_Var(index, _),
+	InterestingStmt(stmt),
+	VarHasAP_AUX(from, rest, size).
+
+VarHasAP_AUX(fromArray, TOP("@", to_string(val), rest), size + 2) :-
+	(ALOAD_NUM(stmt, array, fromArray, val) ;
+	 (ALOAD_VAR(stmt, array, fromArray, index), IVALUE_Var(index, val))),
+	InterestingStmt(stmt),
+	VarHasAP_AUX(array, rest, size).
+
+VarHasAP_AUX(fromArray, TOP("@", "?", rest), size + 2) :-
+	ALOAD_VAR(stmt, array, fromArray, index),
+	!IVALUE_Var(index, _),
+	InterestingStmt(stmt),
+	VarHasAP_AUX(array, rest, size).
+
+ArrayAccess(array, cat(array, out)) :-
+	VarHasAP(array, ap),
+	MainArrayVar(array, _, _),
+	AccessPathStr(ap, out).
