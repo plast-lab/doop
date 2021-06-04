@@ -8,11 +8,17 @@ class XTractor {
 	static File outFile
 
 	static def arrayMeta = [:].withDefault { [] }
+	static Map<String, Set<String>> varAliases = [:].withDefault { [] as Set }
 
 	static void run(DoopAnalysis analysis) {
 		this.analysis = analysis
 		outFile = new File(analysis.database, "xtractor-out.dl")
 		outFile.text = ""
+
+		new File(analysis.database, "Flows_EXT.csv").eachLine {
+			def (String from, String to) = it.split("\t")
+			varAliases[from] << to
+		}
 
 		arrays()
 //		conditions()
@@ -22,12 +28,6 @@ class XTractor {
 	}
 
 	static def arrays() {
-		Map<String, Set<String>> varAliases = [:].withDefault { [] as Set }
-		new File(analysis.database, "Flows.csv").eachLine {
-			def (String from, String to) = it.split("\t")
-			varAliases[from] << to
-		}
-
 		def arrayMetaFacts = []
 		def mainArrays = []
 		Map<String, Integer> relNameToVariant = [:]
@@ -46,8 +46,12 @@ class XTractor {
 			def dims = (1..dimensions).collect { "i$it:number" }.join(", ")
 			outFile << ".decl $relName($dims, value:symbol)\n"
 			outFile << ".decl ${relName}_Init($dims, value:symbol)\n"
+			outFile << ".decl ${relName}_UnknownPos(dim:number)\n"
 			def dimSizes = (1..dimensions).collect { "dim$it:number" }.join(", ")
 			outFile << ".decl ${relName}_DimSizes($dimSizes)\n"
+			outFile << ".decl ${relName}_Provided($dims, value:symbol)\n"
+			outFile << ".input ${relName}_Provided\n"
+			outFile << ".decl ${relName}_Missing($dims, value:symbol)\n"
 			arrayMetaFacts << "arr_META(\"$relName\", \"$array\", \"$types\", $dimensions)."
 			def metaInfo = [relName, name, types, dimensions]
 			varAliases[array].each { arrayMeta[it] = metaInfo }
@@ -119,6 +123,27 @@ class XTractor {
 				outFile << "${relName}_Init($headIndexes, val) :- ${relName}_Init($indexes, val), i${index+1} < ${size-1}.\n"
 			}
 		}
+
+		outFile << "\n"
+		def arraysWithAccess = [] as Set
+		new File(analysis.database, "ArrayAccess.csv").eachLine {
+			def (String array, String rawAp) = it.split("\t")
+			if (!rawAp.contains("@?")) return
+			def (String relName, name, String types, int dimensions) = arrayMeta[array]
+			def parts = rawAp.split("@").drop(1)
+			def last = fixVal(parts.last(), types)
+			def indexes = (parts.dropRight(1) + [last]).toList().withIndex()
+					.collect { t, int i -> t == "?" ? "i$i" : t}.join(", ")
+			outFile << "$relName($indexes) :- ${relName}_Provided($indexes).\n"
+			arraysWithAccess << array
+		}
+
+		outFile << "\n"
+		arraysWithAccess.each { array ->
+			def (String relName, name, String types, int dimensions) = arrayMeta[array]
+			def dims = (0..dimensions).collect { "i$it" }.join(", ")
+			outFile << "${relName}_Missing($dims) :-\n\t${relName}_Provided($dims),\n\t!$relName($dims).\n"
+		}
 	}
 
 	static def conditions() {
@@ -128,6 +153,7 @@ class XTractor {
 			ifReturnsExpr[stmt] = ap(rawAP, "ret")
 		}
 		def methodsWithRules = []
+		def ruleDecls = []
 		new File(analysis.database, "OUT_IfGroupConditionStr.csv").eachLine {
 			def (String stmt, String methodName, String complexCond) = it.split("\t")
 			def conditions = complexCond.split(" AND ")
@@ -139,6 +165,7 @@ class XTractor {
 				res += [l, r, new CompExpr(null, l.tempVar, op == "==" ? "=" : op, r.tempVar)]
 			}
 			res = Expr.opt(res + ifReturnsExpr[stmt])
+			if (methodName !in methodsWithRules) ruleDecls << ".decl $methodName(value:symbol)"
 			outFile << "\n${res[0].str()} :-\n\t"
 			outFile << "${res.drop(1).collect { it.str() }.join(",\n\t")}.\n"
 			methodsWithRules << methodName
@@ -146,12 +173,15 @@ class XTractor {
 		new File(analysis.database, "OUT_NoIfReturnsStr.csv").eachLine {
 			def (String methodName, String rawAP) = it.split("\t")
 			if (methodName !in methodsWithRules) return
-			def res = [new RelExpr("ret", methodName + "_default"),
+			def res = [new RelExpr("ret", methodName + "_Def"),
 					new RelExpr("_", "!" + methodName), ap(rawAP, "ret")]
 			res = Expr.opt(res)
+			ruleDecls << ".decl ${methodName}_Def(value:symbol)"
 			outFile << "\n${res[0].str()} :-\n\t"
 			outFile << "${res.drop(1).collect { it.str() }.join(",\n\t")}.\n"
 		}
+		outFile << "\n"
+		ruleDecls.each { outFile << "$it\n" }
 	}
 
 	static def schema() {
