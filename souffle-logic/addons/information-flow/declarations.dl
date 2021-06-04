@@ -66,7 +66,6 @@
 .decl VarIsTaintedFromValueIndex(?ctx:mainAnalysis.configuration.Context, ?base:Var, ?hctx:mainAnalysis.configuration.HContext, ?value:Value)
 
 .decl TaintObjTransfer(fromCtx:mainAnalysis.configuration.Context, from:Var, toCtx:mainAnalysis.configuration.Context, to:Var)
-.output TaintObjTransfer
 
 #endif // DISABLE_POINTS_TO
 

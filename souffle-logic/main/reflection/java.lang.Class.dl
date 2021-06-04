@@ -247,8 +247,6 @@ VarPointsTo(?hctx, ?arrayValue, ?callerCtx, ?to) :-
  *   public Method getDeclaredMethod(String name, Class[] parameterTypes)
  *************************************************************/
 
-/* DISABLED, EXPENSIVE
-
 // Threshold for complete model of getMethods(): if a type has less than
 // <threshold> public methods, then calling getMethods() on the type is modeled naively.
 .decl getMethodsPrecisionThreshold(?t:number)
@@ -287,8 +285,6 @@ VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) :-
 ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?arrayValue) :-
   FillArray_PublicMethods(?hctx, ?arrayValue, ?type),
   getMethodsResult(?type, ?value).
-
-*/
 
 // NOTE that this won't fire when we are in distinguish-no-string-constants
 // mode. The constant will never flow to ?param.
