@@ -247,16 +247,29 @@ VarPointsTo(?hctx, ?arrayValue, ?callerCtx, ?to) :-
  *   public Method getDeclaredMethod(String name, Class[] parameterTypes)
  *************************************************************/
 
-/*
-//VERSION-A
-ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?arrayValue) :-
-  FillArray_PublicMethods(?hctx, ?arrayValue, ?type),
+// Threshold for complete model of getMethods(): if a type has less than
+// <threshold> public methods, then calling getMethods() on the type is modeled naively.
+.decl getMethodsPrecisionThreshold(?t:number)
+getMethodsPrecisionThreshold(6).
+
+// A reified method object that results from calling getMethods() on a type.
+.decl getMethodsResult(?type:ReferenceType, ?value:Value)
+getMethodsResult(?type, ?value) :-
+  isClassType(?type),
+  ApplicationClass(?type),
   Method_DeclaringType(?signature, ?type),
   Method_Modifier("public", ?signature),
   ReifiedMethod(?signature, ?value),
   MethodNameMatchingStringConstant_Signature(?signature, _).
-// we assume the returned methods will be filtered by some string
-*/
+
+// A type that supports calling getMethods() on its reified class object.
+.decl getMethodsSupportedType(?type:ClassType)
+getMethodsSupportedType(?type) :-
+  getMethodsPrecisionThreshold(?t),
+  isClassType(?type),
+  getMethodsResult(?type, _),    // witness to only get ?type with count > 0
+  ?num = count : getMethodsResult(?type, _),
+  ?num < ?t.
 
 .decl FillArray_PublicMethods(?hctx:configuration.HContext, ?arrayValue:Value, ?type:Type)
 
@@ -265,8 +278,13 @@ VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) :-
   java_lang_Class_getMethods(?invocation, ?to, ?from),
   VarPointsTo(_, ?classValue, ?ctx, ?from),
   ReifiedClass(?type, ?classValue),
+  getMethodsSupportedType(?type),
   ReflectiveAllocation(?invocation, _, ?arrayValue),
   isImmutableHContext(?hctx).
+
+ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?arrayValue) :-
+  FillArray_PublicMethods(?hctx, ?arrayValue, ?type),
+  getMethodsResult(?type, ?value).
 
 // NOTE that this won't fire when we are in distinguish-no-string-constants
 // mode. The constant will never flow to ?param.

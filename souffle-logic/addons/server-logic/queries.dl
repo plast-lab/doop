@@ -380,12 +380,6 @@ Server_Metrics("Results threshold", X_SERVER_LOGIC_THRESHOLD).
 .output TaintSourceMethod(IO="file",filename="TaintSourceMethod.csv",delimiter="\t")
 .output LeakingSinkMethodArg(IO="file",filename="LeakingSinkMethodArg.csv",delimiter="\t")
 
-#ifndef DISABLE_POINTS_TO
-.decl Server_TaintObjTransfer(?from: Var, ?to: Var)
-.output Server_TaintObjTransfer
-Server_TaintObjTransfer(?from, ?to) :- TaintObjTransfer(_, ?from, _, ?to).
-#endif // DISABLE_POINTS_TO
-
 .decl Server_LeakingSinkVariable(?label:InformationLabel, ?tomethod:MethodInvocation, ?var:Var)
 .output Server_LeakingSinkVariable
 Server_LeakingSinkVariable(?label, ?tomethod, ?var) :-
