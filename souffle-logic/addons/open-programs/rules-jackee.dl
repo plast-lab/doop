@@ -10,7 +10,7 @@
 .decl Servlet(?class:Type)
 
 Servlet(?class) :-
-  AllApplicationConcreteImplementations(?class, "javax.servlet.http.HttpServlet").
+  mainAnalysis.AllApplicationConcreteImplementations(?class, "javax.servlet.http.HttpServlet").
 
 // Contribute to the global summary relation
 mainAnalysis.ApplicationEntryPoint(?meth) :-
@@ -24,17 +24,17 @@ mainAnalysis.ApplicationEntryPoint(?meth) :-
  **/
 EntryPointClass(?class) :-
   Servlet(?class),
-  ApplicationConcreteType(?class).
+  mainAnalysis.ApplicationConcreteType(?class).
 
 EntryPointClass(?class) :-
   Method_DeclaringType(?method, ?class),
-  ApplicationConcreteType(?class),
+  mainAnalysis.ApplicationConcreteType(?class),
   FormalParam(_, ?method, ?param),
   Var_Type(?param, ?paramType),
-  ServletParamType(?paramType).
+  mainAnalysis.ServletParamType(?paramType).
 
 EntryPointClass(?class) :-
-  ApplicationConcreteType(?class),
+  mainAnalysis.ApplicationConcreteType(?class),
   match(".*rest.*Resource", ?class).
 
 mainAnalysis.ReachableContext(?ctx, ?method) :-
@@ -56,12 +56,12 @@ mainAnalysis.ReachableContext(?ctx, ?method) :-
 mainAnalysis_MockValueConsMacro(cat(?concreteType, "::MockObject"), ?concreteType),
 mainAnalysis.VarPointsTo(?hctx, cat(?concreteType, "::MockObject"), ?ctx, ?param),
 MockObjFromOpenProgramEntryPointArg(cat(?concreteType, "::MockObject")),
-MockObject(cat(?concreteType, "::MockObject"), ?concreteType) :-
-  ExercisedEntryPointMethod(?entryPointDeclaringType, ?method),
+mainAnalysis.MockObject(cat(?concreteType, "::MockObject"), ?concreteType) :-
+  mainAnalysis.ExercisedEntryPointMethod(?entryPointDeclaringType, ?method),
   !BridgeMethod(?method, ?entryPointDeclaringType),
   FormalParam(_, ?method, ?param),
   Var_Type(?param, ?type),
-  AllApplicationConcreteImplementations(?concreteType, ?type),
+  mainAnalysis.AllApplicationConcreteImplementations(?concreteType, ?type),
   mainAnalysis.isImmutableHContext(?hctx),
   mainAnalysis.isImmutableContext(?ctx).
 
@@ -72,8 +72,8 @@ MockObject(cat(?concreteType, "::MockObject"), ?concreteType) :-
 mainAnalysis_MockValueConsMacro(cat(?concreteType, "::MockObject"), ?concreteType),
 mainAnalysis.VarPointsTo(?hctx, cat(?concreteType, "::MockObject"), ?ctx, ?param),
 MockObjFromOpenProgramEntryPointArg(cat(?concreteType, "::MockObject")),
-MockObject(cat(?concreteType, "::MockObject"), ?concreteType) :-
-  ExercisedEntryPointMethod(?entryPointDeclaringType, ?method),
+mainAnalysis.MockObject(cat(?concreteType, "::MockObject"), ?concreteType) :-
+  mainAnalysis.ExercisedEntryPointMethod(?entryPointDeclaringType, ?method),
   !BridgeMethod(?method, ?entryPointDeclaringType),
   FormalParam(_, ?method, ?param),
   Var_Type(?param, ?type),
@@ -83,7 +83,7 @@ MockObject(cat(?concreteType, "::MockObject"), ?concreteType) :-
   mainAnalysis.isImmutableContext(?ctx).
 
 mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?bridgeParam) :-
-  ExercisedEntryPointMethod(?entryPoint, ?bridge),
+  mainAnalysis.ExercisedEntryPointMethod(?entryPoint, ?bridge),
   BridgeMethod(?bridge, ?entryPoint),
   basic.MethodMightBeCovariantBridge(?bridge, ?method),
   FormalParam(?index, ?bridge, ?bridgeParam),
@@ -106,7 +106,7 @@ mainAnalysis.InstanceFieldPointsTo(?hctx, ?mockBeanObject, ?injectedField, ?base
   InjectionAnnotatedField(?injectedField),
   !Field_Annotation(?injectedField, "javax.annotation.Resource"),
   ConcreteBean_Id(?beanType, ?injectedField),
-  MockObject(?mockBeanObject, ?beanType),
+  mainAnalysis.MockObject(?mockBeanObject, ?beanType),
   mainAnalysis.isImmutableHContext(?basehctx),
   mainAnalysis.isImmutableHContext(?hctx).
 
@@ -120,7 +120,7 @@ mainAnalysis.InstanceFieldPointsTo(?hctx, ?mockBeanObject, ?injectedField, ?base
   (basic.SubtypeOf(?beanType, ?injectedFieldType);
    ?beanType = ?injectedFieldType),
   !ConcreteBean_Id(_, ?injectedField),
-  MockObject(?mockBeanObject, ?beanType),
+  mainAnalysis.MockObject(?mockBeanObject, ?beanType),
   mainAnalysis.isImmutableHContext(?basehctx),
   mainAnalysis.isImmutableHContext(?hctx).
 
@@ -165,7 +165,7 @@ mainAnalysis.InstanceFieldPointsTo(?hctx, ?mockBeanObject, ?injectedField, ?base
   !BeanResource(?injectedField, _, _),
   Field_Type(?injectedField, ?fieldType),
   basic.SubtypeOf(?resourceClass, ?fieldType),
-  MockObject(?mockBeanObject, ?resourceClass),
+  mainAnalysis.MockObject(?mockBeanObject, ?resourceClass),
   mainAnalysis.isImmutableHContext(?basehctx),
   mainAnalysis.isImmutableHContext(?hctx).
 
@@ -174,7 +174,7 @@ mainAnalysis.InstanceFieldPointsTo(?hctx, ?mockBeanObject, ?injectedField, ?base
 .decl EntryPointClass(?type: Type)
 
 EntryPointClass(?type) :-
-  ApplicationConcreteType(?type),
+  mainAnalysis.ApplicationConcreteType(?type),
   (Type_Annotation(?type, "org.springframework.stereotype.Controller");
    Type_Annotation(?type, "org.springframework.web.bind.annotation.RequestMapping");
    Type_Annotation(?type, "org.springframework.web.bind.annotation.RestController");
@@ -195,9 +195,9 @@ EntryPointClass(?type) :-
    PossibleEntryPointClass(?type)).
 
 mainAnalysis_MockValueConsMacro(cat(?type, "::MockObject"), ?type),
-MockObject(cat(?type, "::MockObject"), ?type) :-
+mainAnalysis.MockObject(cat(?type, "::MockObject"), ?type) :-
   isClassType(?type),
-  ((ApplicationConcreteType(?type),
+  ((mainAnalysis.ApplicationConcreteType(?type),
    Type_Annotation(?type, "org.springframework.web.bind.annotation.RequestMapping");
    Type_Annotation(?type, "org.springframework.web.bind.annotation.RestController");
    Type_Annotation(?type, "org.springframework.web.bind.annotation.ControllerAdvice");
@@ -242,15 +242,15 @@ PossibleEntryPointClass(?type) :-
   Method_SimpleName(?method, "init").
 
 
-ExercisedEntryPointMethod(?type, ?method) :-
-   MockObject(_, ?type),
+mainAnalysis.ExercisedEntryPointMethod(?type, ?method) :-
+   mainAnalysis.MockObject(_, ?type),
    Method_DeclaringType(?method, ?type),
    Method_SimpleName(?method, "<init>").
 
 /**
  *  For every entry point class we make its methods entry points
  **/
-ExercisedEntryPointMethod(?type, ?method) :-
+mainAnalysis.ExercisedEntryPointMethod(?type, ?method) :-
   EntryPointClass(?type),
   Method_DeclaringType(?method, ?type),
   !MethodWithBuggySerializableArg(?method).
@@ -259,7 +259,7 @@ ExercisedEntryPointMethod(?type, ?method) :-
  * Classes extending TagSupport handled .tld files
  * TLD (tag library descriptors) are XML files that extend JSPs with custom tags
  **/
-ExercisedEntryPointMethod(?type, ?method) :-
+mainAnalysis.ExercisedEntryPointMethod(?type, ?method) :-
   ApplicationClass(?type),
   basic.SubtypeOf(?type, "javax.servlet.jsp.tagext.TagSupport"),
   Method_DeclaringType(?method, ?type).
@@ -267,14 +267,14 @@ ExercisedEntryPointMethod(?type, ?method) :-
 .decl EntryPointMethod(?method:Method)
 
 EntryPointMethod(?method) :-
-  ExercisedEntryPointMethod(_, ?method).
+  mainAnalysis.ExercisedEntryPointMethod(_, ?method).
 
 // anantoni: I'm trying to figure out if there are any non-bridge erased methods that are marked as entry points
 // In that case I would have to handle the mock objects that mock a java.lang.Object argument too
 .decl ErasedEntryPointMethod(?method:Method)
 
 ErasedEntryPointMethod(?method) :-
-  ExercisedEntryPointMethod(?class, ?method),
+  mainAnalysis.ExercisedEntryPointMethod(?class, ?method),
   basic._BridgeMethod(?method, _, ?class),
   FormalParam(_, ?method, ?param),
   Var_Type(?param, ?type),
@@ -302,13 +302,13 @@ DependencyInjectedMethod(?method) :-
    match("javax.inject.*", ?annotation)).
 
 DependencyInjectedMethod(?method),
-ExercisedEntryPointMethod(?class, ?method) :-
+mainAnalysis.ExercisedEntryPointMethod(?class, ?method) :-
    ApplicationClass(?class),
    Method_DeclaringType(?method, ?class),
    DependencyInjectedMethod(?method).
 
 //JAX-RS API implementations
-ExercisedEntryPointMethod(?class, ?method) :-
+mainAnalysis.ExercisedEntryPointMethod(?class, ?method) :-
   ApplicationClass(?class),
   Method_DeclaringType(?method, ?class),
   (Method_Annotation(?method, "org.springframework.web.bind.annotation.RequestMapping");
@@ -319,19 +319,19 @@ ExercisedEntryPointMethod(?class, ?method) :-
    Method_Annotation(?method, "javax.ws.rs.DELETE");
    Method_Annotation(?method, "javax.ws.rs.PATH")).
 
-ExercisedEntryPointMethod(?class, ?method) :-
+mainAnalysis.ExercisedEntryPointMethod(?class, ?method) :-
   (XMLNodeAttribute(?XMLFile, ?nodeId, _, "init-method", "init-method", ?simpleName);
    XMLNodeAttribute(?XMLFile, ?nodeId, _, "destroy-method", "destroy-method", ?simpleName)),
   Method_SimpleName(?method, ?simpleName),
   Method_DeclaringType(?method, ?class),
   XMLNodeAttribute(?XMLFile, ?nodeId, _, "class", "class", ?class).
 
-ExercisedEntryPointMethod(?class, ?method) :-
+mainAnalysis.ExercisedEntryPointMethod(?class, ?method) :-
   basic.SubtypeOf(?class, "org.springframework.beans.factory.InitializingBean"),
   Method_DeclaringType(?method, ?class),
   Method_SimpleName(?method, "afterPropertiesSet").
 
-ExercisedEntryPointMethod(?class, ?method) :-
+mainAnalysis.ExercisedEntryPointMethod(?class, ?method) :-
   Method_DeclaringType(?method, ?class),
   ?class = "com.icegreen.greenmail.util.GreenMail".
 
@@ -341,7 +341,7 @@ mainAnalysis.VarPointsTo(?immHctx, ?beanMockObject, ?ctx, ?return) :-
   ReturnVar(?return, ?method),
   Method_SimpleName(?method, ?simplename),
   ConcreteBean_Id(?beanClass, ?simplename),
-  MockObject(?beanMockObject, ?beanClass),
+  mainAnalysis.MockObject(?beanMockObject, ?beanClass),
   mainAnalysis.isImmutableHContext(?immHctx).
 
 /**
@@ -402,7 +402,7 @@ ConcreteBean_Id(?type, ?beanId) :-
 
 isConcreteBean(?class) :-
   XMLNodeAttribute(_, _, _, _, _, ?class),
-  ApplicationConcreteType(?class).
+  mainAnalysis.ApplicationConcreteType(?class).
 
 MVCInterceptorBean(?class) :-
   XMLNode(?XMLFile, ?parentNodeId, _, _, "interceptor", "mvc:interceptor"),
@@ -410,17 +410,17 @@ MVCInterceptorBean(?class) :-
   XMLNodeAttribute(?XMLFile, ?nodeId, _, "class", "class", ?class).
 
 AuthenticationFilterBean(?bean) :-
-  ApplicationConcreteType(?bean),
+  mainAnalysis.ApplicationConcreteType(?bean),
   basic.SubtypeOf(?bean, "javax.servlet.Filter").
 
 AuthenticationEntryPoint(?type) :-
-  ApplicationConcreteType(?type),
+  mainAnalysis.ApplicationConcreteType(?type),
   (basic.SubtypeOf(?type, "org.springframework.security.web.AuthenticationEntryPoint");
    basic.SubtypeOf(?type, "org.springframework.security.web.authentication.AuthenticationSuccessHandler");
    basic.SubtypeOf(?type, "org.springframework.security.web.access.AccessDeniedHandler")).
 
 ApplicationListener(?type) :-
-  ApplicationConcreteType(?type),
+  mainAnalysis.ApplicationConcreteType(?type),
   basic.SubtypeOf(?type, "org.springframework.context.ApplicationListener").
 
 Validator(?validator) :-
@@ -456,7 +456,7 @@ BeanFieldInjection(?class, ?injectedField, ?mockObject) :-
   Field_DeclaringType(?injectedField, ?class),
   Field_SimpleName(?injectedField, ?fieldName),
   ConcreteBean_Id(?injectedBeanType, ?refId),
-  MockObject(?mockObject, ?injectedBeanType).
+  mainAnalysis.MockObject(?mockObject, ?injectedBeanType).
 
 /** Pattern:
  * <bean class="?class">
@@ -478,7 +478,7 @@ BeanFieldInjection(?class, ?injectedField, ?mockObject) :-
   Field_DeclaringType(?injectedField, ?class),
   Field_SimpleName(?injectedField, ?fieldName),
   ConcreteBean_Id(?injectedBeanType, ?injectedBeanId),
-  MockObject(?mockObject, ?injectedBeanType).
+  mainAnalysis.MockObject(?mockObject, ?injectedBeanType).
 
 /**
  * Special handling for java.util.Collection data structures containing beans
@@ -500,7 +500,7 @@ BeanMap(?id, ?mapClass, ?value) :-
   XMLNodeAttribute(?XMLFile, ?nodeId, _, "key", "key", ?entryBeanKey),
   XMLNodeAttribute(?XMLFile, ?nodeId, _, "value-ref", "value-ref", ?entryBeanId),
   ConcreteBean_Id(?entryBeanClass, ?entryBeanId),
-  MockObject(?entryBeanMockObject, ?entryBeanClass),
+  mainAnalysis.MockObject(?entryBeanMockObject, ?entryBeanClass),
   ?value = cat("Mock map: ", cat(?id, ?mapClass)).
 
 BeanFieldInjection(?beanClass, ?injectedField, ?value),
@@ -518,7 +518,7 @@ BeanMap(?id, ?mapClass, ?value) :-
   XMLNode(?XMLFile, ?valueNodeId, ?entryNodeId, _, "bean", "bean"),
   XMLNodeAttribute(?XMLFile, ?valueNodeId, _, "class", "class", ?entryBeanId),
   ConcreteBean_Id(?entryBeanClass, ?entryBeanId),
-  MockObject(?entryBeanMockObject, ?entryBeanClass),
+  mainAnalysis.MockObject(?entryBeanMockObject, ?entryBeanClass),
   ?mapClass = "java.util.HashMap",
   ?id = cat(cat(?beanClass, " "), ?injectedField),
   ?value = cat("Mock map: ", cat(?id, ?mapClass)).
@@ -560,7 +560,7 @@ BeanMap(?id, ?mapClass, ?value) :-
   XMLNode(?XMLFile, ?valueNodeId, ?entryNodeId, _, "bean", "bean"),
   XMLNodeAttribute(?XMLFile, ?valueNodeId, _, "class", "class", ?entryBeanId),
   ConcreteBean_Id(?entryBeanClass, ?entryBeanId),
-  MockObject(?entryBeanMockObject, ?entryBeanClass),
+  mainAnalysis.MockObject(?entryBeanMockObject, ?entryBeanClass),
   ?mapClass = "java.util.HashMap",
   ?id = cat(cat(?beanClass, " "), ?injectedField),
   ?value = cat("Mock map: ", cat(?id, ?mapClass)).
@@ -603,7 +603,7 @@ mainAnalysis.VarPointsTo(?immHctx, ?beanMockObject, ?ctx, ?local) :-
   ActualParam(0, ?invocation, ?actual),
   mainAnalysis.VarPointsTo(_, ?heap, ?ctx, ?actual),
   ConcreteBean_Id(?beanClass, ?heap),
-  MockObject(?beanMockObject, ?beanClass),
+  mainAnalysis.MockObject(?beanMockObject, ?beanClass),
   AssignReturnValue(?invocation, ?local),
   mainAnalysis.isImmutableHContext(?immHctx).
  .plan 1:(3,2,4,1,5,6,7)
@@ -616,7 +616,7 @@ mainAnalysis.VarPointsTo(?immHctx, ?beanMockObject, ?ctx, ?local) :-
 ApplicationUnreachableMethod(?method) :-
   ApplicationMethod(?method),
   Method_DeclaringType(?method, ?type),
-  ApplicationConcreteType(?type),
+  mainAnalysis.ApplicationConcreteType(?type),
   !mainAnalysis.Reachable(?method).
 
 .decl IncompleteFieldInjection(?type:Type, ?value:Value, ?field:Field)
@@ -633,19 +633,19 @@ IncompleteFieldInjection(?decltype, ?basevalue, ?injectedField) :-
 .decl VPTUnreachableMockObject(?value:Value)
 
 VPTUnreachableMockObject(?value) :-
-  MockObject(?value, _),
+  mainAnalysis.MockObject(?value, _),
   !mainAnalysis.VarPointsTo(_, ?value, _, _).
 
 .decl IFPTUnreachableMockObject(?value:Value)
 
 IFPTUnreachableMockObject(?value) :-
-  MockObject(?value, _),
+  mainAnalysis.MockObject(?value, _),
   !mainAnalysis.InstanceFieldPointsTo(_, ?value, _, _, _).
 
 .decl UnreachableMockObject(?value:Value)
 
 UnreachableMockObject(?value) :-
-  MockObject(?value, _),
+  mainAnalysis.MockObject(?value, _),
   VPTUnreachableMockObject(?value),
   IFPTUnreachableMockObject(?value).
 
@@ -654,16 +654,16 @@ UnreachableMockObject(?value) :-
 .decl ActionClass(?class:Type)
 
 ActionClass(?class) :-
-    (AllApplicationConcreteImplementations(?class, "com.opensymphony.xwork2.ActionSupport");
-     AllApplicationConcreteImplementations(?class, "com.opensymphony.xwork2.Action");
+    (mainAnalysis.AllApplicationConcreteImplementations(?class, "com.opensymphony.xwork2.ActionSupport");
+     mainAnalysis.AllApplicationConcreteImplementations(?class, "com.opensymphony.xwork2.Action");
      Type_Annotation(?class, "org.apache.struts2.convention.annotation.Action");
      Type_Annotation(?class, "org.apache.struts2.convention.annotation.Result")).
 
 EntryPointClass(?class) :-
     ActionClass(?class),
-    ApplicationConcreteType(?class).
+    mainAnalysis.ApplicationConcreteType(?class).
 
-ExercisedEntryPointMethod(?class, ?method) :-
+mainAnalysis.ExercisedEntryPointMethod(?class, ?method) :-
     ApplicationClass(?class),
     Method_DeclaringType(?method, ?class),
     (Method_Annotation(?method, "org.apache.struts2.convention.annotation.Action");
@@ -672,7 +672,7 @@ ExercisedEntryPointMethod(?class, ?method) :-
 .decl IncompletelyMockedMethod(?method:Method)
 
 IncompletelyMockedMethod(?method) :-
-    ExercisedEntryPointMethod(?entryPointDeclaringType, ?method),
+    mainAnalysis.ExercisedEntryPointMethod(?entryPointDeclaringType, ?method),
     !BridgeMethod(?method, ?entryPointDeclaringType),
     FormalParam(_, ?method, ?param),
     Var_Type(?param, ?type),
@@ -681,7 +681,7 @@ IncompletelyMockedMethod(?method) :-
 .decl TypeCannotBeMocked(?type:Type)
 
 TypeCannotBeMocked(?type) :-
-    ExercisedEntryPointMethod(?entryPointDeclaringType, ?method),
+    mainAnalysis.ExercisedEntryPointMethod(?entryPointDeclaringType, ?method),
     !BridgeMethod(?method, ?entryPointDeclaringType),
     FormalParam(_, ?method, ?param),
     Var_Type(?param, ?type),
