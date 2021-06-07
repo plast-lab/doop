@@ -182,7 +182,15 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "The path to the Java platform to use.",
 					argName: "PATH"
 			),
-
+			new AnalysisOption<List<String>>(
+					id: "DEFINE_CPP_MACRO",
+					name: "define-cpp-macro",
+					description: "Define a C preprocessor macro that will be available in analysis logic.",
+					value: [],
+					multipleValues: true,
+					argName: "MACRO",
+					forPreprocessor: true
+			),
 			new AnalysisOption<List<String>>(
 					id: "MAIN_CLASS",
 					name: "main",
