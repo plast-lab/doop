@@ -25,11 +25,13 @@ class CPreprocessor {
             option.forPreprocessor && option.value
         }
         .collect { AnalysisOption<?> option ->
-            if (option.value instanceof Integer || option.value instanceof String)
-                "-D${option.id}=${option.value}" as String
+            if (option.id == 'DEFINE_CPP_MACRO')
+                option.value.collect { "-D${it}" as String }
+            else if (option.value instanceof Integer || option.value instanceof String)
+                ["-D${option.id}=${option.value}" as String]
             else
-                "-D${option.id}" as String
-        } as List<String>
+                ["-D${option.id}" as String]
+        }.flatten() as List<String>
         log.debug "Preprocessor: " + macroCli
     }
 
