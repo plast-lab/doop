@@ -2,20 +2,17 @@
 
 .decl MainArrayVar(array: Var, name: symbol, types: symbol)
 .decl ArrayDims(array: Var, dim: number, size: number)
-.decl ArrayLoad(to: Var, from: Var, index: number)
-.decl ArrayStore(to: Var, index: number, value: number)
 .decl ArrayUsedInLoop(array: Var, indexVar: Var, loopHead: Instruction)
 .decl ArrayDimIterated(array: Var, dim: number, indexVar: Var, loopHead: Instruction)
 .decl ArrayInitializedInLoop(array: Var, loopHead: Instruction, value: AccessPath)
-.decl ArrayInitialized(array: Var, value: symbol)
-.decl ArrayAccess(array: Var, out: symbol)
+.decl OUT_ArrayInitialized(array: Var, value: symbol)
+.decl ArrayWrite_AUX(ap: AccessPath)
+.decl OUT_ArrayWrite(out: symbol)
 
 .output MainArrayVar
 .output ArrayDims
-.output ArrayLoad
-.output ArrayStore
-.output ArrayInitialized
-.output ArrayAccess
+.output OUT_ArrayInitialized
+.output OUT_ArrayWrite
 
 MainArrayVar(array, name, types) :-
 	AllocArray(stmt, array, types),
@@ -53,19 +50,19 @@ IVALUE_Var(to, size) :-
 	OPERAND_VAR(stmt, 1, array),
 	ArrayDims(array, 0, size).
 
-// to = from[index]
-// Due to SSA, `to` will appear only once
-ArrayLoad(to, from, index) :-
-	ALOAD(stmt, to, from),
-	InterestingStmt(stmt),
-	IVALUE_ArrayIndex(stmt, index).
-
-// to[index] = value
-ArrayStore(to, index, value) :-
-	ASTORE(stmt, to, valueVar),
-	InterestingStmt(stmt),
-	IVALUE_ArrayIndex(stmt, index),
-	IVALUE_Var(valueVar, value).
+//// to = from[index]
+//// Due to SSA, `to` will appear only once
+//ArrayLoad(to, from, index) :-
+//	ALOAD(stmt, to, from),
+//	InterestingStmt(stmt),
+//	IVALUE_ArrayIndex(stmt, index).
+//
+//// to[index] = value
+//ArrayStore(to, index, value) :-
+//	ASTORE(stmt, to, valueVar),
+//	InterestingStmt(stmt),
+//	IVALUE_ArrayIndex(stmt, index),
+//	IVALUE_Var(valueVar, value).
 
 ArrayUsedInLoop(array, indexVar, loopHead) :-
 	StmtInStructuredLoop(stmt, loopHead),
@@ -94,11 +91,11 @@ ArrayDimIterated(baseArray, dim + 1, indexVar, loopHead) :-
 	ArrayDimIterated(toArray, dim, indexVar, loopHead),
 	ALOAD(_, toArray, baseArray).
 
-ArrayInitializedInLoop(array, loopHead, ap) :-
+ArrayInitializedInLoop(array, loopHead, [nil, val]) :-
 	ArrayDimIterated(array, _, indexVar, loopHead),
 	ASTORE_VAR(stmt, array, indexVar, fromVar),
 	StmtInStructuredLoop(stmt, loopHead),
-	VarHasAP(fromVar, ap).
+	VarSymbolicValue(fromVar, val).
 
 ArrayInitializedInLoop(baseArray, loopHead, ap) :-
 	ArrayInitializedInLoop(array, innerLoopHead, ap),
@@ -107,52 +104,31 @@ ArrayInitializedInLoop(baseArray, loopHead, ap) :-
 	ContainsInnerStructuredLoop(loopHead, innerLoopHead),
 	ArrayDimIterated(baseArray, _, indexVar, loopHead).
 
-ArrayInitialized(array, out) :-
+OUT_ArrayInitialized(array, out) :-
 	ArrayInitializedInLoop(someArray, _, ap),
 	AccessPathStr(ap, out),
-	Flows(array, someArray),
+	Flows_EXT(array, someArray),
 	MainArrayVar(array, _, _).
 
 
-#define TOP(x, y, rest) [x, [y, rest]]
+VarHasAP(var, [nil, array]) :-
+	Flows_EXT(array, var),
+	MainArrayVar(array, _, _).
 
-VarHasAP_AUX(from, TOP("@", to_string(val), nil), 2) :-
-	ASTORE(stmt, _, from),
+VarHasAP(array, [rest, valStr]) :-
+	((ALOAD_NUM(stmt, array, fromArray, val), valStr = to_string(val)) ;
+	 (ALOAD_VAR(stmt, array, fromArray, index), VarSymbolicValue(index, valStr))),
 	InterestingStmt(stmt),
-	NonArrayVar(from),
-	IVALUE_Var(from, val).
+	VarHasAP(fromArray, rest).
 
-VarHasAP_AUX(from, TOP("@", "?", nil), 2) :-
-	ASTORE(stmt, _, from),
+ArrayWrite_AUX([[rest, valStr], fromValueStr]) :-
+	((ASTORE_NUM(stmt, array, val, from), valStr = to_string(val)) ;
+	 (ASTORE_VAR(stmt, array, index, from), VarSymbolicValue(index, valStr))),
 	InterestingStmt(stmt),
-	NonArrayVar(from),
-	!IVALUE_Var(from, _).
+	VarHasAP(array, rest),
+	VarSymbolicValue(from, fromValueStr).
 
-VarHasAP_AUX(array, TOP("@", to_string(val), rest), size + 2) :-
-	(ASTORE_NUM(stmt, array, val, from) ;
-	 (ASTORE_VAR(stmt, array, index, from), IVALUE_Var(index, val))),
-	InterestingStmt(stmt),
-	VarHasAP_AUX(from, rest, size).
+isAccessPath(ap) :- ArrayWrite_AUX(ap).
+isAccessPath(ap) :- ArrayInitializedInLoop(_, _, ap).
 
-VarHasAP_AUX(array, TOP("@", "?", rest), size + 2) :-
-	ASTORE_VAR(stmt, array, index, from),
-	!IVALUE_Var(index, _),
-	InterestingStmt(stmt),
-	VarHasAP_AUX(from, rest, size).
-
-VarHasAP_AUX(fromArray, TOP("@", to_string(val), rest), size + 2) :-
-	(ALOAD_NUM(stmt, array, fromArray, val) ;
-	 (ALOAD_VAR(stmt, array, fromArray, index), IVALUE_Var(index, val))),
-	InterestingStmt(stmt),
-	VarHasAP_AUX(array, rest, size).
-
-VarHasAP_AUX(fromArray, TOP("@", "?", rest), size + 2) :-
-	ALOAD_VAR(stmt, array, fromArray, index),
-	!IVALUE_Var(index, _),
-	InterestingStmt(stmt),
-	VarHasAP_AUX(array, rest, size).
-
-ArrayAccess(array, cat(array, out)) :-
-	VarHasAP(array, ap),
-	MainArrayVar(array, _, _),
-	AccessPathStr(ap, out).
+OUT_ArrayWrite(out) :- ArrayWrite_AUX(ap), AccessPathStr(ap, out).
