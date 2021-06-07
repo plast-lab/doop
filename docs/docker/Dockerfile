@@ -23,7 +23,8 @@ RUN dpkg-reconfigure --frontend=noninteractive locales
 
 ## Souffle
 RUN apt-get install -y cpp autoconf automake bison build-essential clang doxygen flex g++ gdb git libncurses5-dev libtool libsqlite3-dev make mcpp python sqlite zlib1g-dev wget curl
-RUN mkdir /souffle && wget https://github.com/souffle-lang/souffle/releases/download/1.5.1/souffle_1.5.1-1_amd64.deb -O /souffle/souffle_1.5.1-1_amd64.deb && apt-get install /souffle/souffle_1.5.1-1_amd64.deb
+# RUN mkdir /souffle && wget https://github.com/souffle-lang/souffle/releases/download/1.5.1/souffle_1.5.1-1_amd64.deb -O /souffle/souffle_1.5.1-1_amd64.deb && apt-get install /souffle/souffle_1.5.1-1_amd64.deb
+RUN mkdir /souffle && wget https://github.com/souffle-lang/souffle/releases/download/2.0.2/souffle_2.0.2-1_amd64.deb -O /souffle/souffle_2.0.2-1_amd64.deb && apt-get install /souffle/souffle_2.0.2-1_amd64.deb
 
 ## ddlog
 ## Rust (binary release)
@@ -38,14 +39,14 @@ RUN apt-get install -y python2.7 python-pip && pip2 install parglare==0.9.2
 ENV DDLOG_DIR=/differential-datalog/
 
 ## Doop
-RUN apt-get install -y openjdk-8-jdk openjdk-8-jre openjdk-8-jdk-headless radare2 unzip
+RUN apt-get install -y openjdk-8-jdk openjdk-8-jre openjdk-8-jdk-headless radare2 unzip time
 RUN git clone https://bitbucket.org/yanniss/doop-benchmarks.git
 ENV DOOP_BENCHMARKS=/doop-benchmarks
 ENV DOOP_PLATFORMS_LIB=/doop-benchmarks
 ENV DOOP_CACHE=/data/cache
 ENV DOOP_OUT=/data/out
 RUN mkdir /doop
-ARG DOOP_VERSION=doop-4.22.9
+ARG DOOP_VERSION=doop-4.24.2
 COPY $DOOP_VERSION.zip /doop/$DOOP_VERSION.zip
 RUN cd /doop && unzip $DOOP_VERSION.zip
 ENV DOOP_HOME=/doop/$DOOP_VERSION
