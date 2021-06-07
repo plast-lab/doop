@@ -1,12 +1,5 @@
 #pragma once
 
-VarHasAP_AUX(var, [var, nil], 1) :-
-	InterestingStmt(stmt),
-	Instruction_Method(stmt, method),
-	API_ResultMethod(method),
-	((IF(stmt, _, _), OPERAND_VAR(stmt, _, var)) ;
-	 (RET(stmt), FORMAL_RET(stmt, var))).
-
 .type Cond = [left: AccessPath, op: symbol, right: AccessPath]
 .type GroupCond = [rest: GroupCond, last: Cond]
 
@@ -18,19 +11,19 @@ VarHasAP_AUX(var, [var, nil], 1) :-
 
 .decl IfCondition(ifStmt: Instruction, cond: Cond)
 .decl IfGroupCondition(ifStmt: Instruction, cond: GroupCond)
-.decl AUX_IfGroup(ifStmt: Instruction, method: Method, index: number)
-.decl AUX_Next_IfGroup(ifStmt1: Instruction, ifStmt2: Instruction)
+.decl IfGroup_AUX(ifStmt: Instruction, method: Method, index: number)
+.decl Next_IfGroup(ifStmt1: Instruction, ifStmt2: Instruction)
 .decl OUT_IfGroupConditionStr(ifStmt: Instruction, methodName: symbol, out: symbol)
 
 .decl IfReturns(ifStmt: Instruction, retStmt: Instruction, ap: AccessPath)
 .decl OUT_IfReturnsStr(ifStmt: Instruction, out: symbol)
 .decl NoIfReturns(method: Method, ap: AccessPath)
-.decl OUT_NoIfReturnsStr(method: Method, out: symbol)
+.decl OUT_NoIfReturnsStr(method: Method, retType: Type, out: symbol)
 
-.decl AUX_isCond(cond: Cond)
-.decl AUX_CondSymbol(cond: Cond, out: symbol)
-.decl AUX_isGroupCond(cond: GroupCond)
-.decl AUX_GroupCondStr(cond: GroupCond, out: symbol)
+.decl isCond(cond: Cond)
+.decl CondStr(cond: Cond, out: symbol)
+.decl isGroupCond(cond: GroupCond)
+.decl GroupCondStr(cond: GroupCond, out: symbol)
 
 .output OUT_IfGroupConditionStr
 .output OUT_IfReturnsStr
@@ -43,7 +36,7 @@ IfOperand(ifStmt, pos, ap) :-
 	OPERAND_VAR(ifStmt, pos, var),
 	VarHasAP(var, ap).
 
-IfOperand(ifStmt, pos, [to_string(num), nil]) :-
+IfOperand(ifStmt, pos, [nil, to_string(num)]) :-
 	IF(ifStmt, _, _),
 	InterestingStmt(ifStmt),
 	OPERAND_NUM(ifStmt, pos, num).
@@ -116,20 +109,19 @@ IfGroupCondition(ifStmt2, [rest, cond]) :-
 	IfGroupCondition(ifStmt1, rest),
 	IfCondition(ifStmt2, cond).
 
-AUX_IfGroup(ifStmt, method, index) :-
+IfGroup_AUX(ifStmt, method, index) :-
 	Next_IfInGroup(ifStmt, "-"),
 	Instruction_Index(ifStmt, index),
 	Instruction_Method(ifStmt, method).
 
-AUX_Next_IfGroup("-", ifStmt) :-
-	AUX_IfGroup(ifStmt, method, minIndex),
-	minIndex = min index : { AUX_IfGroup(_, method, index) }.
+Next_IfGroup("-", ifStmt) :-
+	IfGroup_AUX(ifStmt, method, minIndex),
+	minIndex = min index : { IfGroup_AUX(_, method, index) }.
 
-AUX_Next_IfGroup(ifStmt1, ifStmt2) :-
-	AUX_IfGroup(ifStmt1, method, index1),
-	AUX_IfGroup(ifStmt2, method, minMaxIndex2),
-	minMaxIndex2 = min index2 : { AUX_IfGroup(_, method, index2), index2 > index1 }.
-
+Next_IfGroup(ifStmt1, ifStmt2) :-
+	IfGroup_AUX(ifStmt1, method, index1),
+	IfGroup_AUX(ifStmt2, method, minMaxIndex2),
+	minMaxIndex2 = min index2 : { IfGroup_AUX(_, method, index2), index2 > index1 }.
 
 IfReturns(ifStmt, retStmt, ap) :-
 	IfGroupCondition(ifStmt, _),
@@ -139,53 +131,54 @@ IfReturns(ifStmt, retStmt, ap) :-
 	FORMAL_RET(retStmt, var),
 	VarHasAP(var, ap).
 
-NoIfReturns(method, ap) :-
+NoIfReturns(method, [nil, val]) :-
 	InterestingStmt(retStmt),
 	Instruction_Method(retStmt, method),
 	API_ResultMethod(method),
 	RET(retStmt),
 	FORMAL_RET(retStmt, var),
-	VarHasAP(var, ap),
+	VarSymbolicValue(var, val),
 	!IfReturns(_, retStmt, _).
 
 
-
 isAccessPath(ap) :- IfOperand(_, _, ap).
+isAccessPath(ap) :- NoIfReturns(_, ap).
 
-AUX_isCond(cond) :- AUX_isGroupCond([_, cond]).
+isCond(cond) :- isGroupCond([_, cond]).
 
-AUX_CondSymbol(cond, cat(cat(leftOut, cat("|", cat(op, "|"))), rightOut)) :-
-	AUX_isCond(cond),
+CondStr(cond, cat(cat(leftOut, cat("|", cat(op, "|"))), rightOut)) :-
+	isCond(cond),
 	cond = [left, op, right],
 	AccessPathStr(left, leftOut),
 	AccessPathStr(right, rightOut).
 
-AUX_isGroupCond(cond) :- Next_IfInGroup(stmt, "-"), IfGroupCondition(stmt, cond).
-AUX_isGroupCond(rest) :- AUX_isGroupCond([rest, _]), rest != nil.
+isGroupCond(cond) :- Next_IfInGroup(stmt, "-"), IfGroupCondition(stmt, cond).
+isGroupCond(rest) :- isGroupCond([rest, _]), rest != nil.
 
-AUX_GroupCondStr(cond, out) :-
-	AUX_isGroupCond(cond),
+GroupCondStr(cond, out) :-
+	isGroupCond(cond),
 	cond = [nil, base],
-	AUX_CondSymbol(base, out).
+	CondStr(base, out).
 
-AUX_GroupCondStr(cond, cat(cat(restOut, " AND "), baseOut)) :-
-	AUX_isGroupCond(cond),
+GroupCondStr(cond, cat(cat(restOut, " AND "), baseOut)) :-
+	isGroupCond(cond),
 	cond = [rest, base], rest != nil,
-	AUX_CondSymbol(base, baseOut),
-	AUX_GroupCondStr(rest, restOut).
+	CondStr(base, baseOut),
+	GroupCondStr(rest, restOut).
 
 OUT_IfGroupConditionStr(stmt, methodName, out) :-
 	Next_IfInGroup(stmt, "-"),
 	IfGroupCondition(stmt, cond),
 	Instruction_Method(stmt, method),
 	Method_SimpleName(method, methodName),
-	AUX_GroupCondStr(cond, out).
+	GroupCondStr(cond, out).
 
 OUT_IfReturnsStr(ifStmt, out) :-
 	IfReturns(ifStmt, _, ap),
 	AccessPathStr(ap, out).
 
-OUT_NoIfReturnsStr(methodName, out) :-
+OUT_NoIfReturnsStr(methodName, retType, out) :-
 	NoIfReturns(method, ap),
 	Method_SimpleName(method, methodName),
+	Method_ReturnType(method, retType),
 	AccessPathStr(ap, out).

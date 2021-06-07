@@ -75,36 +75,6 @@ FlippedCondition("<=", ">=").
 FlippedCondition("==", "==").
 FlippedCondition("!=", "!=").
 
-
-.type AccessPath = [first: symbol, rest: AccessPath]
-.decl VarHasAP_AUX(var: Var, ap: AccessPath, size: number)
-.decl VarHasAP(var: Var, ap: AccessPath)
-.decl isAccessPath(ap: AccessPath)
-.decl AccessPathStr(ap: AccessPath, out: symbol)
-
-//VarHasAP_AUX(var, [array, ["@", [indexStr, rest]]], size + 3) :-
-//	VarHasAP_AUX(var, [to, rest], size),
-//	((ALOAD_NUM(_, to, array, index), indexStr = to_string(index));
-//	 ALOAD_VAR(_, to, array, indexStr)).
-
-VarHasAP(var, ap) :-
-	VarHasAP_AUX(var, ap, maxSize),
-	!IVALUE_Var(var, _),
-	maxSize = max size : { VarHasAP_AUX(var, _, size) }.
-
-//VarHasAP(var, [to_string(val), nil]) :-
-//	VarHasAP_AUX(var, [var, nil], _),
-//	IVALUE_Var(var, val).
-
-isAccessPath(rest) :- isAccessPath([_, rest]), rest != nil.
-isAccessPath(ap) :- VarHasAP(_, ap).
-
-AccessPathStr(ap, first) :- isAccessPath(ap), ap = [first, nil].
-
-AccessPathStr(ap, cat(first, out)) :-
-	isAccessPath(ap), ap = [first, rest], rest != nil,
-	AccessPathStr(rest, out).
-
 .decl ArrayVar(var: Var)
 .decl NonArrayVar(var: Var) inline
 
@@ -116,3 +86,32 @@ ArrayVar(var) :-
 NonArrayVar(var) :-
 	isVar(var),
 	!ArrayVar(var).
+
+.type AccessPath = [rest: AccessPath, last: symbol]
+.decl VarSymbolicValue(var: Var, value: symbol)
+.decl VarHasAP(var: Var, ap: AccessPath)
+.decl isAccessPath(ap: AccessPath)
+.decl AccessPathStr(ap: AccessPath, out: symbol)
+
+isAccessPath(rest) :- isAccessPath([rest, _]), rest != nil.
+isAccessPath(ap) :- VarHasAP(_, ap).
+
+AccessPathStr(ap, last) :- isAccessPath(ap), ap = [nil, last].
+
+AccessPathStr(ap, cat(out, cat("@", last))) :-
+	isAccessPath(ap), ap = [rest, last], rest != nil,
+	AccessPathStr(rest, out).
+
+VarSymbolicValue(var, val) :-
+	isVar(var),
+	Var_DeclaringMethod(var, method),
+	InterestingMethod(method),
+	((!IVALUE_Var(var, _), val = "?") ;
+	 (InductionVariable(var, _), val = cat(var, "#?"))).
+
+VarSymbolicValue(var, to_string(val)) :-
+	isVar(var),
+	Var_DeclaringMethod(var, method),
+	InterestingMethod(method),
+	!InductionVariable(var, _),
+	IVALUE_Var(var, val).
