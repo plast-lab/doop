@@ -114,15 +114,17 @@ SpecialConcreteImplementations(?class, ?type) :-
   basic.SubtypeOf(?class, ?type),
   ServletParamType(?type).
 
+.decl TypeToConcreteImplementation(?type:ReferenceType, ?class:ClassType)
+TypeToConcreteImplementation(?type, ?class) :-
+  AllApplicationConcreteImplementations(?type, ?class) ;
+  SpecialConcreteImplementations(?type, ?class).
 
 // REVIEW: this is imprecise, it assigns one or more mock arguments
 // for each parameter in a forced-reachable method.
 MockValueConsMacro(?value, ?class),
 VarPointsTo(?hctx, ?value, ?ctx, ?formal) :-
   FormalOfForcedReachableContext(?ctx, ?formal, ?formalType),
-  ( AllApplicationConcreteImplementations(?class, ?formalType)
-  ; SpecialConcreteImplementations(?class, ?formalType)
-  ),
+  TypeToConcreteImplementation(?class, ?formalType),
   isImmutableHContext(?hctx),
   ?value = cat("<mock value for forced-reachable parameter ", cat(?class, ">")).
 
