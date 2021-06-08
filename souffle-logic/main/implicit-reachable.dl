@@ -141,7 +141,7 @@ MockObject(?value, ?class) :-
   ( ExercisedEntryPointMethod(?class, ?method)
   ; (ForcedReachable(?method), Method_DeclaringType(?method, ?class))),
   ThisVar(?method, ?receiver),
-  ?value = cat(?class, "::MockObject"),
+  ?value = MOCK_OBJECT_OF_TYPE(?class),
   mainAnalysis.isImmutableContext(?ctx),
   mainAnalysis.isImmutableHContext(?hctx).
 

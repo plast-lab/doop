@@ -77,3 +77,5 @@
 // android.widget ("Android Programming: The Big Nerd Ranch Guide", chapter 32).
 #define QUAL_CONTROL_TYPE(t, qType) \
   (qType = t ; qType = cat("android.view.", t) ; qType = cat("android.widget.", t))
+
+#define MOCK_OBJECT_OF_TYPE(type) cat(type, "::MockObject")
