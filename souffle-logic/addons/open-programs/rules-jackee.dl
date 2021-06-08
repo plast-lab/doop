@@ -53,26 +53,27 @@ mainAnalysis.ReachableContext(?ctx, ?method) :-
  * Main policy: If the argument type has concrete subtypes in the application, pass them all as mock objects
  * If it does not have concrete subtypes but it's a concrete type, pass that the mock object of the itself as argument.
  **/
-mainAnalysis_MockValueConsMacro(cat(?concreteType, "::MockObject"), ?concreteType),
-mainAnalysis.VarPointsTo(?hctx, cat(?concreteType, "::MockObject"), ?ctx, ?param),
-MockObjFromOpenProgramEntryPointArg(cat(?concreteType, "::MockObject")),
-mainAnalysis.MockObject(cat(?concreteType, "::MockObject"), ?concreteType) :-
+mainAnalysis_MockValueConsMacro(?mockObj, ?concreteType),
+mainAnalysis.VarPointsTo(?hctx, ?mockObj, ?ctx, ?param),
+MockObjFromOpenProgramEntryPointArg(?mockObj),
+mainAnalysis.MockObject(?mockObj, ?concreteType) :-
   mainAnalysis.ExercisedEntryPointMethod(?entryPointDeclaringType, ?method),
   !BridgeMethod(?method, ?entryPointDeclaringType),
   FormalParam(_, ?method, ?param),
   Var_Type(?param, ?type),
   mainAnalysis.AllApplicationConcreteImplementations(?concreteType, ?type),
   mainAnalysis.isImmutableHContext(?hctx),
-  mainAnalysis.isImmutableContext(?ctx).
+  mainAnalysis.isImmutableContext(?ctx),
+  ?mockObj = MOCK_OBJECT_OF_TYPE(?concreteType).
 
 /**
  * Fallback: If the argument type has no concrete types in the application and it's an abstract class or interface
  * pass them all as mock objects create a mock object of a representative subtype of it and pass it as argument.
  **/
-mainAnalysis_MockValueConsMacro(cat(?concreteType, "::MockObject"), ?concreteType),
-mainAnalysis.VarPointsTo(?hctx, cat(?concreteType, "::MockObject"), ?ctx, ?param),
-MockObjFromOpenProgramEntryPointArg(cat(?concreteType, "::MockObject")),
-mainAnalysis.MockObject(cat(?concreteType, "::MockObject"), ?concreteType) :-
+mainAnalysis_MockValueConsMacro(?mockObj, ?concreteType),
+mainAnalysis.VarPointsTo(?hctx, ?mockObj, ?ctx, ?param),
+MockObjFromOpenProgramEntryPointArg(?mockObj),
+mainAnalysis.MockObject(?mockObj, ?concreteType) :-
   mainAnalysis.ExercisedEntryPointMethod(?entryPointDeclaringType, ?method),
   !BridgeMethod(?method, ?entryPointDeclaringType),
   FormalParam(_, ?method, ?param),
@@ -80,7 +81,8 @@ mainAnalysis.MockObject(cat(?concreteType, "::MockObject"), ?concreteType) :-
   AbstractOrInterfaceTypeHasNoApplicationConcreteImplementations(?type),
   NonApplicationConcreteImplementationRepresentative(?concreteType, ?type),
   mainAnalysis.isImmutableHContext(?hctx),
-  mainAnalysis.isImmutableContext(?ctx).
+  mainAnalysis.isImmutableContext(?ctx),
+  ?mockObj = MOCK_OBJECT_OF_TYPE(?concreteType).
 
 mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?bridgeParam) :-
   mainAnalysis.ExercisedEntryPointMethod(?entryPoint, ?bridge),
@@ -194,8 +196,8 @@ EntryPointClass(?type) :-
    match(".*_jsp", ?type);
    PossibleEntryPointClass(?type)).
 
-mainAnalysis_MockValueConsMacro(cat(?type, "::MockObject"), ?type),
-mainAnalysis.MockObject(cat(?type, "::MockObject"), ?type) :-
+mainAnalysis_MockValueConsMacro(?mockObj, ?type),
+mainAnalysis.MockObject(?mockObj, ?type) :-
   isClassType(?type),
   ((mainAnalysis.ApplicationConcreteType(?type),
    Type_Annotation(?type, "org.springframework.web.bind.annotation.RequestMapping");
@@ -217,7 +219,8 @@ mainAnalysis.MockObject(cat(?type, "::MockObject"), ?type) :-
    ApplicationListener(?type);
    MVCInterceptorBean(?type);
    Validator(?type);
-   PossibleEntryPointClass(?type)).
+   PossibleEntryPointClass(?type)),
+   ?mockObj = MOCK_OBJECT_OF_TYPE(?type).
 
 .decl isSpringApplication(?value:number)
 

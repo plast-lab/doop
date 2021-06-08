@@ -275,9 +275,9 @@ StaticToActualType(?type, ?type) :-
   ConcreteType(?type).
 
 // The key point where all the mock objects are created. Triggers all the rest.
-MockObject(cat(?class, "::: (Mock)"), ?class),
-mainAnalysis_MockValueConsMacro(cat(?class, "::: (Mock)"), ?class),
-mainAnalysis.Value_DeclaringType(cat(?class, "::: (Mock)"), ?class) :-
+MockObject(?mockObj, ?class),
+mainAnalysis_MockValueConsMacro(?mockObj, ?class),
+mainAnalysis.Value_DeclaringType(?mockObj, ?class) :-
 #ifndef OPEN_PROGRAMS
   // If we are not in open-program mode, only trigger logic if no main method exists
   !basic.MainMethodDeclaration(_),
@@ -285,7 +285,8 @@ mainAnalysis.Value_DeclaringType(cat(?class, "::: (Mock)"), ?class) :-
   !AndroidAppComponent(_),
 #endif // ANDROID
 #endif // OPEN_PROGRAMS
-  ObjToMock(?class).
+  ObjToMock(?class),
+  ?mockObj = cat(?class, "::MockObject").
 
 // Similar for mainAnalysis.ReachableContext. If not in open program mode, add extra conditions.
 mainAnalysis.ReachableContext(?ctx, ?method) :-
