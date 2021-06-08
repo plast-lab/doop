@@ -67,10 +67,15 @@ public class PythonInvoker {
                     //System.out.println("class: " + klass.toString() + " in file: " + sourceFileName);
                     Collection<? extends IMethod> methods = klass.getDeclaredMethods();
                     for (IMethod m : methods) {
-                        m.getName();
-                        //System.out.println("\t" + m.getSignature());
-                        IR ir = cache.getIR(m);
-                        System.out.println(ir.toString());
+                        try {
+                            m.getName();
+                            //System.out.println("\t" + m.getSignature());
+                            IR ir = cache.getIR(m);
+                            System.out.println(ir.toString());
+                        } catch (Exception ex) {
+                            System.err.println("ERROR: cannot get IR for method: " + m);
+                            ex.printStackTrace();
+                        }
                     }
                 }
                 Runnable pythonFactGenerator = new PythonFactGenerator(factWriter, classSet, parameters.getOutputDir(), cache);

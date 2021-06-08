@@ -371,3 +371,9 @@ environment variable DOOP_PLATFORMS_LIB to point to the full path of
 the clone repository. For some Android applications, also set
 environment variable ANDROID_SDK to point to the local Android SDK
 directory.
+
+*Problem:* Some methods/types from library inputs do not appear in
+the analysis.
+
+Solution: Give the library inputs with `-i` (or `--input-file`) instead
+of `-l` (or `--library-file`).
