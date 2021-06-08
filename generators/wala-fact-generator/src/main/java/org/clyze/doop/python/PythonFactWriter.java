@@ -68,7 +68,12 @@ class PythonFactWriter {
     }
 
     void writeRootFolder(){
-        _db.add(PROJECT_ROOT_FOLDER, getRoot());
+        try {
+            _db.add(PROJECT_ROOT_FOLDER, getRoot());
+        } catch (Exception ex) {
+            System.err.println("ERROR: cannot write project root folder.");
+            ex.printStackTrace();
+        }
     }
 
     void writeMethod(IMethod m) {
