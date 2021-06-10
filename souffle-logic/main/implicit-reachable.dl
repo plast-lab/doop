@@ -121,6 +121,7 @@ TypeToConcreteImplementation(?type, ?class) :-
 // REVIEW: this is imprecise, it assigns one or more mock arguments
 // for each parameter in a forced-reachable method.
 MockValueConsMacro(?mockObj, ?class),
+MockObjFromOpenProgramEntryPointArg(?mockObj),
 VarPointsTo(?hctx, ?mockObj, ?ctx, ?formal) :-
   FormalOfForcedReachableContext(?ctx, ?formal, ?formalType),
   TypeToConcreteImplementation(?formalType, ?class),
