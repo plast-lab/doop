@@ -24,7 +24,6 @@ ConcreteType(?type) :-
 #define OPEN_PROGRAM_MOCK_OBJS
 .decl ObjToMock(?class:ReferenceType)
 .decl MockObjFromOpenProgramEntryPoint(?class:ReferenceType)
-.decl MockObjFromOpenProgramEntryPointArg(?value:Value)
 .decl MockObjFromArray(?class:ReferenceType)
 
 MockObjFromOpenProgramEntryPoint(?class),

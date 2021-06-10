@@ -45,17 +45,12 @@ mainAnalysis.ReachableContext(?ctx, ?method) :-
 #define OPEN_PROGRAM_MOCK_OBJS
 
 /**
- *  Mock arguments for entry points
- **/
-.decl MockObjFromOpenProgramEntryPointArg(?value:Value)
-
-/**
  * Main policy: If the argument type has concrete subtypes in the application, pass them all as mock objects
  * If it does not have concrete subtypes but it's a concrete type, pass that the mock object of the itself as argument.
  **/
 mainAnalysis_MockValueConsMacro(?mockObj, ?concreteType),
 mainAnalysis.VarPointsTo(?hctx, ?mockObj, ?ctx, ?param),
-MockObjFromOpenProgramEntryPointArg(?mockObj),
+mainAnalysis.MockObjFromOpenProgramEntryPointArg(?mockObj),
 mainAnalysis.MockObject(?mockObj, ?concreteType) :-
   mainAnalysis.ExercisedEntryPointMethod(?entryPointDeclaringType, ?method),
   !BridgeMethod(?method, ?entryPointDeclaringType),
@@ -72,7 +67,7 @@ mainAnalysis.MockObject(?mockObj, ?concreteType) :-
  **/
 mainAnalysis_MockValueConsMacro(?mockObj, ?concreteType),
 mainAnalysis.VarPointsTo(?hctx, ?mockObj, ?ctx, ?param),
-MockObjFromOpenProgramEntryPointArg(?mockObj),
+mainAnalysis.MockObjFromOpenProgramEntryPointArg(?mockObj),
 mainAnalysis.MockObject(?mockObj, ?concreteType) :-
   mainAnalysis.ExercisedEntryPointMethod(?entryPointDeclaringType, ?method),
   !BridgeMethod(?method, ?entryPointDeclaringType),
@@ -91,7 +86,7 @@ mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?bridgeParam) :-
   FormalParam(?index, ?bridge, ?bridgeParam),
   FormalParam(?index, ?method, ?methodParam),
   mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?methodParam),
-  MockObjFromOpenProgramEntryPointArg(?value).
+  mainAnalysis.MockObjFromOpenProgramEntryPointArg(?value).
 
 .decl InjectionAnnotatedField(?field:Field)
 

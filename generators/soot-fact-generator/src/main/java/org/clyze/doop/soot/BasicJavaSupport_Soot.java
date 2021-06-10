@@ -80,6 +80,12 @@ public class BasicJavaSupport_Soot extends BasicJavaSupport implements ClassAdde
         addCommonDynamicClass(scene, "sun.net.www.protocol.http.Handler");
         addCommonDynamicClass(scene, "sun.net.www.protocol.https.Handler");
         addCommonDynamicClass(scene, "sun.net.www.protocol.jar.Handler");
+
+        /*
+         * Java EE classes that are not automatically resolved and may
+         * be needed for mocking (https://bitbucket.org/yanniss/doop/issues/27).
+         */
+        addCommonDynamicClass(scene, "javax.servlet.http.HttpServletRequestWrapper");
     }
 
     private static void addCommonDynamicClass(Scene scene, String className) {
