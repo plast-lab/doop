@@ -77,7 +77,7 @@ ApplicationConcreteType(?type) :-
 // Our fallback is the type itself, but that will only work in case it's not abstract
 // We need to monitor the cases where entry points have arguments with no concrete implementations
 
-.decl AllApplicationConcreteImplementations(?type1:ClassType, ?type2:Type)
+.decl AllApplicationConcreteImplementations(?class:ClassType, ?type:Type)
 .decl TypeHasApplicationConcreteSubtypes(?type:Type)
 
 TypeHasApplicationConcreteSubtypes(?abstractType),
@@ -87,12 +87,7 @@ AllApplicationConcreteImplementations(?class, ?abstractType) :-
     ?abstractType != "java.lang.Object",
     !ClassModifier("abstract", ?class).
 
-.decl ConcreteApplicationClass(?class: ClassType)
-ConcreteApplicationClass(?class) :-
-    isClassType(?class),
-    !ClassModifier("abstract", ?class).
-
-AllApplicationConcreteImplementations(?class, ?class) :- ConcreteApplicationClass(?class).
+AllApplicationConcreteImplementations(?class, ?class) :- ConcreteClass(?class).
 
 .decl ServletParamType(?paramType:ReferenceType)
 ServletParamType(?paramType) :-
@@ -116,15 +111,15 @@ SpecialConcreteImplementations(?class, ?type) :-
 
 .decl TypeToConcreteImplementation(?type:ReferenceType, ?class:ClassType)
 TypeToConcreteImplementation(?type, ?class) :-
-  AllApplicationConcreteImplementations(?type, ?class) ;
-  SpecialConcreteImplementations(?type, ?class).
+  AllApplicationConcreteImplementations(?class, ?type) ;
+  SpecialConcreteImplementations(?class, ?type).
 
 // REVIEW: this is imprecise, it assigns one or more mock arguments
 // for each parameter in a forced-reachable method.
 MockValueConsMacro(?value, ?class),
 VarPointsTo(?hctx, ?value, ?ctx, ?formal) :-
   FormalOfForcedReachableContext(?ctx, ?formal, ?formalType),
-  TypeToConcreteImplementation(?class, ?formalType),
+  TypeToConcreteImplementation(?formalType, ?class),
   isImmutableHContext(?hctx),
   ?value = cat("<mock value for forced-reachable parameter ", cat(?class, ">")).
 
