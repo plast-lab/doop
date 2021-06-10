@@ -114,14 +114,24 @@ TypeToConcreteImplementation(?type, ?class) :-
   AllApplicationConcreteImplementations(?class, ?type) ;
   SpecialConcreteImplementations(?class, ?type).
 
+/**
+ *  Mock arguments for entry points
+ **/
+.decl MockObjFromOpenProgramEntryPointArg(?value:Value)
 // REVIEW: this is imprecise, it assigns one or more mock arguments
 // for each parameter in a forced-reachable method.
-MockValueConsMacro(?value, ?class),
-VarPointsTo(?hctx, ?value, ?ctx, ?formal) :-
+MockValueConsMacro(?mockObj, ?class),
+VarPointsTo(?hctx, ?mockObj, ?ctx, ?formal) :-
   FormalOfForcedReachableContext(?ctx, ?formal, ?formalType),
   TypeToConcreteImplementation(?formalType, ?class),
   isImmutableHContext(?hctx),
-  ?value = cat("<mock value for forced-reachable parameter ", cat(?class, ">")).
+  ?mockObj = cat("<mock value for forced-reachable parameter ", cat(?class, ">")).
+
+// Helper/statistics relation.
+.decl UnmockableFormalOfForcedReachableContext(?formal:Var, ?formalType:Type)
+UnmockableFormalOfForcedReachableContext(?formal, ?formalType) :-
+  FormalOfForcedReachableContext(_, ?formal, ?formalType),
+  !TypeToConcreteImplementation(?formalType, _).
 
 /**
  *  Mock receivers for entry points
