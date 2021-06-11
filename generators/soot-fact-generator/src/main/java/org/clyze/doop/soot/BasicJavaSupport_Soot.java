@@ -16,8 +16,17 @@ public class BasicJavaSupport_Soot extends BasicJavaSupport implements ClassAdde
 
     public void addSootClasses(Iterable<String> classesToLoad, Collection<SootClass> loadedClasses, Scene scene) {
         for (String className : classesToLoad) {
-            SootClass c = scene.loadClass(className, SootClass.BODIES);
-            loadedClasses.add(c);
+            if (className.contains("]") || className.contains("[") || className.contains(";")) {
+                System.err.println("WARNING: class name '" + className + "' is not supported, class will not be loaded.");
+                continue;
+            }
+            try {
+                SootClass c = scene.loadClass(className, SootClass.BODIES);
+                loadedClasses.add(c);
+            } catch (Exception ex) {
+                System.err.println("ERROR: could not add class '" + className + "'");
+                throw ex;
+            }
         }
     }
 
