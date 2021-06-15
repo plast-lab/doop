@@ -46,12 +46,12 @@ class XTractor {
 			def dims = (1..dimensions).collect { "i$it:number" }.join(", ")
 			outFile << ".decl $relName($dims, value:symbol)\n"
 			outFile << ".decl ${relName}_Init($dims, value:symbol)\n"
-			outFile << ".decl ${relName}_UnknownPos(dim:number)\n"
 			def dimSizes = (1..dimensions).collect { "dim$it:number" }.join(", ")
 			outFile << ".decl ${relName}_DimSizes($dimSizes)\n"
 			outFile << ".decl ${relName}_Provided($dims, value:symbol)\n"
 			outFile << ".input ${relName}_Provided\n"
 			outFile << ".decl ${relName}_Missing($dims, value:symbol)\n"
+			outFile << ".output ${relName}_Missing\n"
 			arrayMetaFacts << "array_META(\"$relName\", \"$array\", \"$types\", $dimensions)."
 			def metaInfo = [relName, name, types, dimensions]
 			varAliases[array].each { arrayMeta[it] = metaInfo }
@@ -134,7 +134,8 @@ class XTractor {
 				res += [l, r, new CompExpr(null, l.tempVar, op == "==" ? "=" : op, r.tempVar)]
 			}
 			res = exprOpt(res + ifReturnsExpr[stmt])
-			if (methodName !in methodsWithRules) ruleDecls << ".decl $methodName(value:symbol)"
+			if (methodName !in methodsWithRules)
+				ruleDecls << ".decl $methodName(value:symbol)\n.output $methodName"
 			outFile << "\n${res[0].str()} :-\n\t"
 			outFile << "${res.drop(1).collect { it.str() }.join(",\n\t")}.\n"
 			methodsWithRules << methodName
@@ -146,7 +147,7 @@ class XTractor {
 			           new RelExpr("_", "!" + methodName),
 					   ap(fixVal(rawAP, retType), "ret")]
 			res = exprOpt(res)
-			ruleDecls << ".decl ${methodName}_Def(value:symbol)"
+			ruleDecls << ".decl ${methodName}_Def(value:symbol)\n.output ${methodName}_Def"
 			outFile << "\n${res[0].str()} :-\n\t"
 			outFile << "${res.drop(1).collect { it.str() }.join(",\n\t")}.\n"
 		}
