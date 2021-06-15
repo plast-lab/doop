@@ -13,6 +13,7 @@
 #include "theorem-prover.dl"
 
 API_ResultMethod("<Main: char playerHasWon(char[][])>").
+//API_ResultMethod("<Main: boolean boardIsFull(char[][])>").
 
 .decl TEST_ToSymbolMissing(expr: Expr)
 .decl TEST_ToSymbolConflict(expr1: Expr, expr2: Expr, out: symbol)

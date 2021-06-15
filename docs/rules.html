@@ -76,39 +76,37 @@
 <ul>
 <li> .decl GlideReifiedType(?value:Value, ?type:ReferenceType)</li>
 </ul>
-<h2> addons/information-flow/android.dl </h2>
-<ul>
-<li> .decl PossibleLayoutGetText(?to:Var, ?invocation:MethodInvocation, ?ctx:mainAnalysis.configuration.Context, ?base:Var)</li>
-</ul>
 <h2> addons/information-flow/declarations.dl </h2>
 <ul>
 <li> .decl AnyMethodInvocation(?invocation:MethodInvocation, ?tomethod:Method)</li>
 <li> .decl BaseToParamTaintTransferMethod(?method:Method)</li>
 <li> .decl BaseToRetTaintTransferMethod(?method:Method)</li>
-<li> .decl CallTaintingMethod(?label:InformationLabel, ?ctx:mainAnalysis.configuration.Context, ?invocation:MethodInvocation)</li>
+<li> .decl CallTaintingMethod(?label:InformationLabel, ?ctx:CONTEXT, ?invocation:MethodInvocation)</li>
 <li> .decl LabelFromSource(?source:symbol, ?label:InformationLabel)</li>
 <li> .decl LeakingSinkMethod(?lable:InformationLabel, ?method:Method)</li>
 <li> .decl LeakingSinkMethodArg(?label:InformationLabel, ?index:number, ?method:Method)</li>
-<li> .decl LeakingSinkVariable(?label:InformationLabel, ?tomethod:MethodInvocation, ?ctx:mainAnalysis.configuration.Context, ?var:Var)</li>
-<li> .decl LeakingTaintedInformation(?fromLabel:InformationLabel, ?toLabel:InformationLabel, ?ctx:mainAnalysis.configuration.Context, ?invocation:MethodInvocation, ?value:symbol)</li>
-<li> .decl LeakingTaintedInformationVars(?fromCtx:mainAnalysis.configuration.Context, ?from:Var, ?toCtx:mainAnalysis.configuration.Context, ?to:Var)</li>
-<li> .decl MethodInvocationInContext(?ctx:mainAnalysis.configuration.Context, ?invocation:MethodInvocation, ?tomethod:Method)</li>
-<li> .decl MethodInvocationInContextInApplication(?ctx:mainAnalysis.configuration.Context, ?invocation:MethodInvocation, ?method:Method)</li>
+<li> .decl LeakingSinkVariable(?label:InformationLabel, ?tomethod:MethodInvocation, ?ctx:CONTEXT, ?var:Var)</li>
+<li> .decl LeakingTaintedInformation(?fromLabel:InformationLabel, ?toLabel:InformationLabel, ?ctx:CONTEXT, ?invocation:MethodInvocation, ?value:symbol)</li>
+<li> .decl LeakingTaintedInformationVars(?fromCtx:CONTEXT, ?from:Var, ?toCtx:CONTEXT, ?to:Var)</li>
+<li> .decl MethodInvocationInContext(?ctx:CONTEXT, ?invocation:MethodInvocation, ?tomethod:Method)</li>
+<li> .decl MethodInvocationInContextInApplication(?ctx:CONTEXT, ?invocation:MethodInvocation, ?method:Method)</li>
 <li> .decl MethodInvocationInfo(?invocation:MethodInvocation, ?type:Type, ?var:Var)</li>
 <li> .decl MethodReturningStringFactory(?tomethod:Method)</li>
 <li> .decl MockBaseToRetTaintTransferMethod(?meth:Method)</li>
 <li> .decl MockParamToRetTaintTransferMethod(?meth:Method)</li>
 <li> .decl ParamIndexToBaseTaintTransferMethod(?index:number, ?method:Method)</li>
-<li> .decl ParamTaintTransferredToBase(?param:Var, ?ctx:mainAnalysis.configuration.Context, ?base:Var)</li>
-<li> .decl ParamTaintTransferredToRet(?type:Type, ?ret:Var, ?ctx:mainAnalysis.configuration.Context, ?param:Var)</li>
+<li> .decl ParamTaintTransferredToBase(?param:Var, ?ctx:CONTEXT, ?base:Var)</li>
+<li> .decl ParamTaintTransferredToRet(?type:Type, ?ret:Var, ?ctx:CONTEXT, ?param:Var)</li>
 <li> .decl ParamToBaseTaintTransferMethod(?index:number, ?method:Method)</li>
 <li> .decl ParamToRetTaintTransferMethod(?method:Method)</li>
 <li> .decl SanitizationMethod(?method:Method)</li>
+<li> .decl SensitiveLayoutControlTaintConfig(?label:symbol, ?method:Method)</li>
 <li> .decl SourceFromTaintedValue(?value:Value, ?id:symbol)</li>
 <li> .decl StringFactoryReturnInvocation(?invocation:MethodInvocation)</li>
 <li> .decl TaintObjTransfer(fromCtx:mainAnalysis.configuration.Context, from:Var, toCtx:mainAnalysis.configuration.Context, to:Var)</li>
 <li> .decl TaintSourceMethod(?label:InformationLabel, ?method:Method)</li>
-<li> .decl TaintTransferMethodInvocationInContext(?ctx:mainAnalysis.configuration.Context, ?index:number, ?invocation:MethodInvocation)</li>
+<li> .decl TaintSourceMethodWithOverrides(?label:InformationLabel, ?method:Method)</li>
+<li> .decl TaintTransferMethodInvocationInContext(?ctx:CONTEXT, ?index:number, ?invocation:MethodInvocation)</li>
 <li> .decl TaintedObjectSerialized(?declaringType:Type, ?source:symbol, ?type:Type, ?hctx:mainAnalysis.configuration.HContext, ?val:Value, ?ctx:mainAnalysis.configuration.Context, ?base:Var)</li>
 <li> .decl TaintedValue(?value:Value)</li>
 <li> .decl TaintedValueTransferred(?declaringType:Type, ?id:symbol, ?type:Type, ?value:Value)</li>
@@ -118,10 +116,14 @@
 <li> .decl VarIsCast(?var:Var)</li>
 <li> .decl VarIsTaintedFromValue(?type:Type, ?value:Value, ?ctx:mainAnalysis.configuration.Context, ?var:Var)</li>
 <li> .decl VarIsTaintedFromValueIndex(?ctx:mainAnalysis.configuration.Context, ?base:Var, ?hctx:mainAnalysis.configuration.HContext, ?value:Value)</li>
-<li> .decl VarIsTaintedFromVar(?type:Type, ?ctx1:mainAnalysis.configuration.Context, ?var1:Var, ?ctx2:mainAnalysis.configuration.Context, ?var2:Var)</li>
-<li> .decl VarIsTaintedFromVarIndex(?base:Var, ?ctx1:mainAnalysis.configuration.Context, ?param:Var)</li>
+<li> .decl VarIsTaintedFromVar(?type:Type, ?ctx1:CONTEXT, ?var1:Var, ?ctx2:CONTEXT, ?var2:Var)</li>
+<li> .decl VarIsTaintedFromVarIndex(?base:Var, ?ctx1:CONTEXT, ?param:Var)</li>
 <li> .decl VarUse(?var:Var, ?inst:Instruction)</li>
 <li> .decl isInformationLabel(?id:symbol)</li>
+</ul>
+<h2> addons/information-flow/rules-data-flow.dl </h2>
+<ul>
+<li> .decl Var_Taint(?v:Var, ?label:InformationLabel, ?source:symbol)</li>
 </ul>
 <h2> addons/information-flow/rules.dl </h2>
 <ul>
@@ -148,13 +150,10 @@
 <h2> addons/open-programs/application-concrete-types.dl </h2>
 <ul>
 <li> .decl AbstractOrInterfaceTypeHasNoApplicationConcreteImplementations(?type:Type)</li>
-<li> .decl AllApplicationConcreteImplementations(?type1:ClassType, ?type2:Type)</li>
-<li> .decl ApplicationConcreteType(?type:ClassType)</li>
 <li> .decl BridgeMethod(?bridge:Method, ?type:Type)</li>
 <li> .decl NonApplicationConcreteImplementationRepresentative(?class:Type, ?staticType:Type)</li>
 <li> .decl NonApplicationConcreteImplementations(?class:Type, ?staticType:Type)</li>
 <li> .decl NonApplicationConcreteImplementationsOrd(?classOrd:number, ?staticType:Type)</li>
-<li> .decl TypeHasApplicationConcreteSubtypes(?type:Type)</li>
 <li> .decl TypeHasNoApplicationConcreteImplementations(?type:Type)</li>
 </ul>
 <h2> addons/open-programs/entry-points.dl </h2>
@@ -199,8 +198,6 @@
 <li> .decl MockObjFromField(?fieldType:ReferenceType)</li>
 <li> .decl MockObjFromFormal(?type:ReferenceType)</li>
 <li> .decl MockObjFromOpenProgramEntryPoint(?class:ReferenceType)</li>
-<li> .decl MockObjFromOpenProgramEntryPointArg(?value:Value)</li>
-<li> .decl MockObjFromOpenProgramEntryPointReceiver(?value:Value)</li>
 <li> .decl MockObject(?value:Value, ?class:ReferenceType)</li>
 <li> .decl MockObjectContext(?hctx:mainAnalysis.configuration.HContext, ?value:Value, ?class:ReferenceType)</li>
 <li> .decl MockObjectForComponentType(?value:Value, ?arrayType:ArrayType)</li>
@@ -233,7 +230,6 @@
 <li> .decl EntryPointClass(?type: Type)</li>
 <li> .decl EntryPointMethod(?method:Method)</li>
 <li> .decl ErasedEntryPointMethod(?method:Method)</li>
-<li> .decl ExercisedEntryPointMethod(?class:Type, ?method:Method)</li>
 <li> .decl GetBeanAppInvocation(?ctx: mainAnalysis.configuration.Context, ?invocation: MethodInvocation)</li>
 <li> .decl IFPTUnreachableMockObject(?value:Value)</li>
 <li> .decl IncompleteFieldInjection(?type:Type, ?value:Value, ?field:Field)</li>
@@ -244,13 +240,9 @@
 <li> .decl MockObjFromArray(?type:ReferenceType)</li>
 <li> .decl MockObjFromField(?type:ReferenceType)</li>
 <li> .decl MockObjFromFormal(?type:ReferenceType)</li>
-<li> .decl MockObjFromOpenProgramEntryPointArg(?value:Value)</li>
-<li> .decl MockObjFromOpenProgramEntryPointReceiver(?value:Value)</li>
-<li> .decl MockObject(?value:Value, ?class:Type)</li>
 <li> .decl PossibleEntryPointClass(?type:Type)</li>
 <li> .decl SerializableEntryPointMethod(?method:Method)</li>
 <li> .decl Servlet(?class:Type)</li>
-<li> .decl ServletParamType(?paramType:Type)</li>
 <li> .decl TypeCannotBeMocked(?type:Type)</li>
 <li> .decl UnreachableMockObject(?value:Value)</li>
 <li> .decl VPTUnreachableMockObject(?value:Value)</li>
@@ -270,7 +262,7 @@
 <li> .decl MockObjFromField(?type:ReferenceType)</li>
 <li> .decl MockObjFromFormal(?type:ReferenceType)</li>
 <li> .decl MockObjFromOpenProgramEntryPoint(?value:Value)</li>
-<li> .decl MockObject(?value:Value, ?type:Type)</li>
+<li> .decl MockObject(?value:Value, ?type:ReferenceType)</li>
 <li> .decl MockOpenProgramEntryPoint(?class:Type, ?method:Method)</li>
 <li> .decl OpenProgramEntryPoint(?method:Method)</li>
 <li> .decl PossibleOpenProgramEntryPoint(?class:Type, ?method:Method)</li>
@@ -316,8 +308,11 @@
 <li> .decl NI_AllPublicMethods(?type:ReferenceType)</li>
 <li> .decl NI_ReachableField(?field:Field)</li>
 <li> .decl NI_ReachableMethod(?method:Method)</li>
+<li> .decl NI_Stats(?label:symbol, ?f:symbol)</li>
 <li> .decl NonFinalFieldWrittenInNonConstructor(?field:Field)</li>
 <li> .decl RClass(?r:symbol)</li>
+<li> .decl ReachableAppField(?fld:Field)</li>
+<li> .decl ReachableAppMethod(?method:Method)</li>
 <li> .decl ReachableField(?field:Field)</li>
 <li> .decl ReachableFieldAccessedByReflection(?field:Field)</li>
 <li> .decl ReachableMethodOnlyUsedInSingleInvocationTarget(?method:Method)</li>
@@ -340,6 +335,7 @@
 <li> .decl UnreachablePublicField(?type:ReferenceType)</li>
 <li> .decl UnreachablePublicMethod(?method:Method, ?type:ReferenceType)</li>
 <li> .decl _RelevantStringPosition(?className: symbol, ?pos:number)</li>
+<li> .decl relCount(?n:number)</li>
 </ul>
 <h2> addons/opt-directives/keep.dl </h2>
 <ul>
@@ -423,7 +419,6 @@
 <li> .decl Server_Method_Subtype(?method:Method, ?subMethod:Method)</li>
 <li> .decl Server_Metrics(?metric:symbol, ?n:number)</li>
 <li> .decl Server_SField_Values(?fld:Field, ?value:Value)</li>
-<li> .decl Server_TaintObjTransfer(?from: Var, ?to: Var)</li>
 <li> .decl Server_TypeCallsType(?fromClass:ReferenceType, ?toClass:ReferenceType)</li>
 <li> .decl Server_Type_Can_Access_Field(?type:ReferenceType, ?fld:Field)</li>
 <li> .decl Server_Var_Return(?var:Var, ?method:Method)</li>
@@ -832,113 +827,6 @@
 <li> .decl JUnitTestMethod(?m:Method, ?tInstance:Value)</li>
 <li> .decl TestNGAnnotatedMethod(?m:Method)</li>
 </ul>
-<h2> addons/xtractor/analysis.dl </h2>
-<ul>
-<li> .decl ArrayHasExprSymbol(out1: symbol, out2: symbol, out3: symbol)</li>
-<li> .decl FldHasExprSymbol(base: symbol, fld: symbol, out: symbol)</li>
-<li> .decl HeapHasExprSymbol(heap: symbol, fld: symbol, out: symbol)</li>
-<li> .decl Sanity_ToSymbolConflict(expr1: Expr, expr2: Expr, out: symbol)</li>
-<li> .decl Sanity_ToSymbolMissing(expr: Expr)</li>
-<li> .decl Sanity_WrongSizedExpr(out: symbol, size: number)</li>
-<li> .decl VarHasExprSymbol(loc: symbol, out: symbol)</li>
-<li> .decl rel##Symbol(out1: symbol, out2: symbol)</li>
-<li> .decl rel##Symbol(out: symbol)</li>
-</ul>
-<h2> addons/xtractor/constant-folding.dl </h2>
-<ul>
-<li> .decl API_RequestConstantFold1(op: Operator, arg: symbol)</li>
-<li> .decl API_RequestConstantFold2(op: Operator, left: symbol, right: symbol)</li>
-<li> .decl API_RespondConstantFold1(op: Operator, arg: symbol, folded: symbol)</li>
-<li> .decl API_RespondConstantFold2(op: Operator, left: symbol, right: symbol, folded: symbol)</li>
-</ul>
-<h2> addons/xtractor/expr-client.dl </h2>
-<ul>
-<li> .decl ArrayHasExpr(arrExpr: Expr, index: symbol, expr: Expr)</li>
-<li> .decl FldHasExpr(base: symbol, fld: Field, expr: Expr)</li>
-<li> .decl FormalToActualExpr(x:MethodInvocation, formal: Var, actualExpr: Expr)</li>
-<li> .decl HeapHasExpr(heapExpr: Expr, fld: Field, expr: Expr)</li>
-<li> .decl InputMethod(method: Method)</li>
-<li> .decl InterestingConstrStmt(x: Instruction, method: Method)</li>
-<li> .decl MapOperator(op: Operator, mapped: Operator)</li>
-<li> .decl MarkedForMapping(x:MethodInvocation, base: Var, fld: Field, expr: Expr)</li>
-<li> .decl OperandExpr(stmt: Instruction, pos: number, expr: Expr, size: number, var: Var)</li>
-<li> .decl OutputMethod(method: Method)</li>
-<li> .decl PassThroughMethod(method: Method, pos: number)</li>
-<li> .decl REQ_Mapping(x:Instruction, expr: Expr)</li>
-<li> .decl RES_Mapping(x:Instruction, expr: Expr, mapped: Expr)</li>
-<li> .decl RequestExpr_BINOP(to: Var, op: Operator, left: Expr, right: Expr, leftVar: Var, rightVar: Var, lrSize: number)</li>
-<li> .decl VarHasExpr(loc: Var, expr: Expr)</li>
-<li> .decl isEffectivelyEmptyConstructor(m: Method)</li>
-<li> .decl isRefHeapExpr(heap: HeapAllocation, expr: Expr)</li>
-</ul>
-<h2> addons/xtractor/schema-static.dl </h2>
-<ul>
-<li> .decl Schema_ClassInfo(class:symbol, kind:symbol, field:symbol, fieldType:symbol)</li>
-</ul>
-<h2> addons/xtractor/symbolic.dl </h2>
-<ul>
-<li> .decl API_IsBoundVar(expr: Expr)</li>
-<li> .decl API_IsFreeVar(expr: Expr)</li>
-<li> .decl API_IsInitialConstantExpr(const: Expr)</li>
-<li> .decl API_IsInitialExpr(expr: Expr)</li>
-<li> .decl AbsorbingOperators(op1: Operator, op2: Operator)</li>
-<li> .decl AssociativeOperator(op: Operator)</li>
-<li> .decl CancelingOperator(op: Operator, const: Expr)</li>
-<li> .decl CommutativeOperator(op: Operator)</li>
-<li> .decl CommutativePairOperators(op1: Operator, op2: Operator)</li>
-<li> .decl DeMorganOperators(op1: Operator, op2: Operator)</li>
-<li> .decl DecomposeExpr(expr: Expr, base: Base, left: Expr, right: Expr)</li>
-<li> .decl DualAssociativeOperators(op1: Operator, op2: Operator)</li>
-<li> .decl ExprHasBoundVar(expr: Expr)</li>
-<li> .decl ExprHasFreeVar(expr: Expr)</li>
-<li> .decl ExprHasNoFreeVar(expr: Expr)</li>
-<li> .decl ExprSize(expr: Expr, size: number)</li>
-<li> .decl ExprSymbol(out: symbol)</li>
-<li> .decl IdempotentOperator(op: Operator)</li>
-<li> .decl InfixSymbol(op: Operator, out: symbol)</li>
-<li> .decl IsArithmeticOperator(op: Operator)</li>
-<li> .decl IsBinaryOperator(op: Operator)</li>
-<li> .decl IsConstantExpr(expr: Expr, const: PrimitiveExpr)</li>
-<li> .decl IsExpr(expr: Expr)</li>
-<li> .decl IsLogicalExpr(expr: Expr)</li>
-<li> .decl IsLogicalOperator(op: Operator)</li>
-<li> .decl IsOperator(op: Operator)</li>
-<li> .decl IsUnaryOperator(op: Operator)</li>
-<li> .decl LeftAnnihilator(op: Operator, const: Expr, result: Expr)</li>
-<li> .decl LeftIdentityElement(op: Operator, id: Expr)</li>
-<li> .decl MaybeLogicalOperator(op: Operator)</li>
-<li> .decl MutuallyExclusiveOperators(op1: Operator, op2: Operator)</li>
-<li> .decl RightAnnihilator(op: Operator, const: Expr, result: Expr)</li>
-<li> .decl RightIdentityElement(op: Operator, id: Expr)</li>
-<li> .decl SelfInverseOperator(op: Operator)</li>
-<li> .decl ToSymbol(expr: Expr, out: symbol)</li>
-<li> .decl UnarySymbol(op: Operator, out: symbol)</li>
-</ul>
-<h2> addons/xtractor/theorem-prover.dl </h2>
-<ul>
-<li> .decl API_EqualityCheckRequest(expr1: Expr, expr2: Expr)</li>
-<li> .decl API_InequalityCheckRequest(op: Operator, expr1: Expr, expr2: Expr)</li>
-<li> .decl CompareOperator(op: Operator)</li>
-<li> .decl EqualityCheckResponse(expr1: Expr, expr2: Expr, result: Expr)</li>
-<li> .decl Equals(expr1: Expr, expr2: Expr)</li>
-<li> .decl EqualsToNotLarger(expr1: Expr, size1: number, expr2: Expr, size2: number)</li>
-<li> .decl EqualsToSmallerExt(expr1: Expr, expr2: Expr)</li>
-<li> .decl ExprGreaterThan(expr1: Expr, expr2: Expr)</li>
-<li> .decl ExprRequestFold1(expr: Expr, op: symbol, const: symbol)</li>
-<li> .decl ExprRequestFold2(expr: Expr, op: symbol, leftConst: symbol, rightConst: symbol)</li>
-<li> .decl Implies(expr1: Expr, expr2: Expr)</li>
-<li> .decl InequalityCheckResponse(op: Operator, expr1: Expr, expr2: Expr, result: Expr)</li>
-<li> .decl LinearSolvableExpression(expr: Expr, op: Operator, left: Expr, right: Expr)</li>
-<li> .decl NegatedExpr(expr: Expr, negExpr: Expr)</li>
-<li> .decl NonReducedExpr(expr: Expr)</li>
-<li> .decl Normalize(expr: Expr, norm: Expr)</li>
-<li> .decl NormalizedLogicalExpr(expr: Expr)</li>
-<li> .decl OptBaseEquals(expr1: Expr, expr2: Expr)</li>
-<li> .decl OptBaseImplies(expr1: Expr, expr2: Expr)</li>
-<li> .decl PreNormalize(expr: Expr, norm: Expr)</li>
-<li> .decl RequestDistributivityEQ(expr1: Expr, op1Size: number, expr2: Expr)</li>
-<li> .decl ValueForFreeVar(freeVar: Expr, expr: Expr, exprSolved: Expr)</li>
-</ul>
 <h2> analyses/1-call-site-sensitive+heap/analysis.dl </h2>
 <ul>
 <li> .decl StartupInvocation(?invocation:MethodInvocation)</li>
@@ -1001,39 +889,50 @@
 <li> .decl FlowsIntoConstArrayIndex(x:Var, arr:Var, index:number)</li>
 <li> .decl FlowsIntoInstanceFieldBase(x:Var, base:Var)</li>
 <li> .decl FlowsIntoStaticField(x:Var, fld:Field)</li>
+<li> .decl Flows_EXT(x:Var, y:Var)</li>
 <li> .decl OptBaseFlows(x:Var, y:Var)</li>
 <li> .decl OptMethodRetFormal(m:Method, nth:number)</li>
 <li> .decl PointerFlows(x:Var, y:Var)</li>
+<li> .decl ResolveCall(stmt: MethodInvocation, method: Method)</li>
 <li> .decl SelfFlows(x:Var)</li>
 </ul>
 <h2> analyses/data-flow/setup.dl </h2>
 <ul>
-<li> .decl ALLOC(stmt:AssignHeapAllocation_Insn, to:Var, h:HeapAllocation)</li>
-<li> .decl ALOAD_NUM(stmt:LoadArrayIndex_Insn, to:Var, arr:Var, i:number)</li>
-<li> .decl ALOAD_VAR(stmt:LoadArrayIndex_Insn, to:Var, arr:Var, i:Var)</li>
-<li> .decl ASTORE_NUM(stmt:StoreArrayIndex_Insn, arr:Var, i:number, from:Var)</li>
-<li> .decl ASTORE_VAR(stmt:StoreArrayIndex_Insn, arr:Var, i:Var, from:Var)</li>
-<li> .decl BINOP(stmt:AssignBinop_Insn, to:Var, op:symbol)</li>
-<li> .decl CAST(stmt:AssignCast_Insn, to:Var, type:Type, from:Var)</li>
-<li> .decl FORMAL_RET(stmt:ReturnNonvoid_Insn, ret:Var)</li>
-<li> .decl IF(stmt:If_Insn, op:symbol, label:number)</li>
-<li> .decl ILOAD(stmt:LoadInstanceField_Insn, to:Var, base:Var, fld:Field)</li>
-<li> .decl INIT_VAR(stmt:AssignNumConstant_Insn, to:Var, value:NumConstant)</li>
-<li> .decl ISTORE(stmt:StoreInstanceField_Insn, base:Var, fld:Field, from:Var)</li>
-<li> .decl InterestingStmt(stmt:Instruction)</li>
-<li> .decl MOVE(stmt:AssignLocal_Insn, to:Var, from:Var)</li>
-<li> .decl OPERAND_NUM(stmt:Instruction, pos:number, oper:number)</li>
-<li> .decl OPERAND_VAR(stmt:Instruction, pos:number, oper:Var)</li>
-<li> .decl RESOLVE_CALL(stmt:MethodInvocation, method:Method)</li>
-<li> .decl RET(stmt:ReturnInstruction)</li>
-<li> .decl SCALL(stmt:StaticMethodInvocation_Insn, m:Method)</li>
-<li> .decl SLOAD(stmt:LoadStaticField_Insn, to:Var, fld:Field)</li>
-<li> .decl SPCALL(stmt:SpecialMethodInvocation_Insn, base:Var, m:Method)</li>
-<li> .decl SSTORE(stmt:StoreStaticField_Insn, fld:Field, from:Var)</li>
-<li> .decl UNOP(stmt:AssignUnop_Insn, to:Var, op:symbol)</li>
-<li> .decl VCALL(stmt:VirtualMethodInvocation_Insn, base:Var, m:Method)</li>
-<li> .decl __Operand_ValidStr(stmt:Instruction, pos:number, oper:symbol)</li>
-<li> .decl __OperatorAt(stmt:Instruction, op:symbol)</li>
+<li> .decl ACTUAL_PARAM(stmt: MethodInvocation, pos: number, param: Var)</li>
+<li> .decl ACTUAL_RET(stmt: MethodInvocation, to: Var)</li>
+<li> .decl ALLOC(stmt: AssignHeapAllocation_Insn, to: Var, h: HeapAllocation)</li>
+<li> .decl ALOAD(stmt: LoadArrayIndex_Insn, to: Var, arr: Var)</li>
+<li> .decl ALOAD_NUM(stmt: LoadArrayIndex_Insn, to: Var, arr: Var, i: number)</li>
+<li> .decl ALOAD_VAR(stmt: LoadArrayIndex_Insn, to: Var, arr: Var, i: Var)</li>
+<li> .decl ASTORE(stmt: StoreArrayIndex_Insn, arr: Var, from: Var)</li>
+<li> .decl ASTORE_NUM(stmt: StoreArrayIndex_Insn, arr: Var, i: number, from: Var)</li>
+<li> .decl ASTORE_VAR(stmt: StoreArrayIndex_Insn, arr: Var, i: Var, from: Var)</li>
+<li> .decl AllocArray(stmt: AssignHeapAllocation_Insn, arr: Var, types: Type)</li>
+<li> .decl AllocArraySize_NUM(stmt: Instruction, pos: number, size: number)</li>
+<li> .decl AllocArraySize_VAR(stmt: Instruction, pos: number, sizeVar: Var)</li>
+<li> .decl BINOP(stmt: AssignBinop_Insn, to: Var, op: symbol)</li>
+<li> .decl CAST(stmt: AssignCast_Insn, to: Var, type: Type, from: Var)</li>
+<li> .decl FORMAL_PARAM(m: Method, pos: number, param: Var)</li>
+<li> .decl FORMAL_RET(stmt: ReturnNonvoid_Insn, ret: Var)</li>
+<li> .decl GOTO(stmt: Goto_Insn, label: number)</li>
+<li> .decl IF(stmt: If_Insn, op: symbol, label: number)</li>
+<li> .decl ILOAD(stmt: LoadInstanceField_Insn, to: Var, base: Var, fld: Field)</li>
+<li> .decl INIT_VAR(stmt: AssignNumConstant_Insn, to: Var, value: NumConstant)</li>
+<li> .decl ISTORE(stmt: StoreInstanceField_Insn, base: Var, fld: Field, from: Var)</li>
+<li> .decl InterestingMethod(method: Method)</li>
+<li> .decl InterestingStmt(stmt: Instruction)</li>
+<li> .decl MOVE(stmt: AssignLocal_Insn, to: Var, from: Var)</li>
+<li> .decl OPERAND_NUM(stmt: Instruction, pos: number, oper: number)</li>
+<li> .decl OPERAND_VAR(stmt: Instruction, pos: number, oper: Var)</li>
+<li> .decl RET(stmt: ReturnInstruction)</li>
+<li> .decl SCALL(stmt: StaticMethodInvocation_Insn, m: Method)</li>
+<li> .decl SLOAD(stmt: LoadStaticField_Insn, to: Var, fld: Field)</li>
+<li> .decl SPCALL(stmt: SpecialMethodInvocation_Insn, base: Var, m: Method)</li>
+<li> .decl SSTORE(stmt: StoreStaticField_Insn, fld: Field, from: Var)</li>
+<li> .decl UNOP(stmt: AssignUnop_Insn, to: Var, op: symbol)</li>
+<li> .decl VCALL(stmt: VirtualMethodInvocation_Insn, base: Var, m: Method)</li>
+<li> .decl __Operand_ValidStr(stmt: Instruction, pos: number, oper: symbol)</li>
+<li> .decl __OperatorAt(stmt: Instruction, op: symbol)</li>
 </ul>
 <h2> analyses/dependency-analysis/declarations.dl </h2>
 <ul>
@@ -1821,6 +1720,178 @@
 <ul>
 <li> .decl OptReachableTypeResolveInvocation(?invocation:MethodInvocation, ?tomethod:Method)</li>
 </ul>
+<h2> analyses/xtractor/analysis.dl </h2>
+<ul>
+<li> .decl ArrayHasExprSymbol(out1: symbol, index: symbol, out2: symbol)</li>
+<li> .decl FldHasExprSymbol(base: symbol, fld: symbol, out: symbol)</li>
+<li> .decl HeapHasExprSymbol(heap: symbol, fld: symbol, out: symbol)</li>
+<li> .decl TEST_ToSymbolConflict(expr1: Expr, expr2: Expr, out: symbol)</li>
+<li> .decl TEST_ToSymbolMissing(expr: Expr)</li>
+<li> .decl TEST_WrongSizedExpr(out: symbol, size: number)</li>
+<li> .decl VarHasExprSymbol(loc: symbol, out: symbol)</li>
+<li> .decl rel##Symbol(out1: symbol, out2: symbol)</li>
+<li> .decl rel##Symbol(out: symbol)</li>
+</ul>
+<h2> analyses/xtractor/arrays.dl </h2>
+<ul>
+<li> .decl ArrayDimIterated(array: Var, dim: number, indexVar: Var, loopHead: Instruction)</li>
+<li> .decl ArrayDims(array: Var, dim: number, size: number)</li>
+<li> .decl ArrayInitializedInLoop(array: Var, loopHead: Instruction, value: AccessPath)</li>
+<li> .decl ArrayUsedInLoop(array: Var, indexVar: Var, loopHead: Instruction)</li>
+<li> .decl ArrayWrite_AUX(ap: AccessPath)</li>
+<li> .decl MainArrayVar(array: Var, name: symbol, types: symbol)</li>
+<li> .decl OUT_ArrayInitialized(array: Var, value: symbol)</li>
+<li> .decl OUT_ArrayWrite(out: symbol)</li>
+</ul>
+<h2> analyses/xtractor/common.dl </h2>
+<ul>
+<li> .decl API_ResultMethod(method: Method)</li>
+<li> .decl AccessPathStr(ap: AccessPath, out: symbol)</li>
+<li> .decl ArrayVar(var: Var)</li>
+<li> .decl FlippedCondition(op: symbol, flippedOp: symbol)</li>
+<li> .decl IVALUE_ArrayIndex(stmt: Instruction, index: number)</li>
+<li> .decl IVALUE_ArraySize_EXT(stmt: Instruction, size: number)</li>
+<li> .decl IVALUE_OPERAND(stmt: Instruction, pos: number, value: number)</li>
+<li> .decl IVALUE_Var(var: Var, value: number)</li>
+<li> .decl IVALUE_Var_EXT(var: Var, value: number)</li>
+<li> .decl NonArrayVar(var: Var)</li>
+<li> .decl ReverseCondition(op: symbol, reverseOp: symbol)</li>
+<li> .decl VarHasAP(var: Var, ap: AccessPath)</li>
+<li> .decl VarSymbolicValue(var: Var, value: symbol)</li>
+<li> .decl isAccessPath(ap: AccessPath)</li>
+</ul>
+<h2> analyses/xtractor/conditions.dl </h2>
+<ul>
+<li> .decl CondStr(cond: Cond, out: symbol)</li>
+<li> .decl GroupCondStr(cond: GroupCond, out: symbol)</li>
+<li> .decl IfBothGotoSame_AUX(ifStmt1: Instruction, ifStmt2: Instruction, index1: number, index2: number, label: number)</li>
+<li> .decl IfCondition(ifStmt: Instruction, cond: Cond)</li>
+<li> .decl IfGroupCondition(ifStmt: Instruction, cond: GroupCond)</li>
+<li> .decl IfGroup_AUX(ifStmt: Instruction, method: Method, index: number)</li>
+<li> .decl IfInGroup_AUX(ifStmt1: Instruction, ifStmt2: Instruction, index1: number, index2: number)</li>
+<li> .decl IfJumpToDifferentInBetween_AUX(ifStmt1: Instruction, ifStmt2: Instruction)</li>
+<li> .decl IfOperand(stmt: Instruction, pos: number, ap: AccessPath)</li>
+<li> .decl IfReturns(ifStmt: Instruction, retStmt: Instruction, ap: AccessPath)</li>
+<li> .decl Next_IfGroup(ifStmt1: Instruction, ifStmt2: Instruction)</li>
+<li> .decl Next_IfInGroup(ifStmt1: Instruction, ifStmt2: Instruction)</li>
+<li> .decl NoIfReturns(method: Method, ap: AccessPath)</li>
+<li> .decl OUT_IfGroupConditionStr(ifStmt: Instruction, methodName: symbol, out: symbol)</li>
+<li> .decl OUT_IfReturnsStr(ifStmt: Instruction, out: symbol)</li>
+<li> .decl OUT_NoIfReturnsStr(method: Method, retType: Type, out: symbol)</li>
+<li> .decl isCond(cond: Cond)</li>
+<li> .decl isGroupCond(cond: GroupCond)</li>
+</ul>
+<h2> analyses/xtractor/constant-folding.dl </h2>
+<ul>
+<li> .decl API_RequestConstantFold1(op: Operator, arg: symbol)</li>
+<li> .decl API_RequestConstantFold2(op: Operator, left: symbol, right: symbol)</li>
+<li> .decl API_RespondConstantFold1(op: Operator, arg: symbol, folded: symbol)</li>
+<li> .decl API_RespondConstantFold2(op: Operator, left: symbol, right: symbol, folded: symbol)</li>
+</ul>
+<h2> analyses/xtractor/expr-client.dl </h2>
+<ul>
+<li> .decl ArrayHasExpr(arrExpr: Expr, index: symbol, expr: Expr)</li>
+<li> .decl FldHasExpr(base: symbol, fld: Field, expr: Expr)</li>
+<li> .decl FormalToActualExpr(x:MethodInvocation, formal: Var, actualExpr: Expr)</li>
+<li> .decl HeapHasExpr(heapExpr: Expr, fld: Field, expr: Expr)</li>
+<li> .decl InputMethod(method: Method)</li>
+<li> .decl InterestingConstrStmt(x: Instruction, method: Method)</li>
+<li> .decl MapOperator(op: Operator, mapped: Operator)</li>
+<li> .decl MarkedForMapping(x:MethodInvocation, base: Var, fld: Field, expr: Expr)</li>
+<li> .decl OperandExpr(stmt: Instruction, pos: number, expr: Expr, size: number, var: Var)</li>
+<li> .decl OutputMethod(method: Method)</li>
+<li> .decl PassThroughMethod(method: Method, pos: number)</li>
+<li> .decl REQ_Mapping(x:Instruction, expr: Expr)</li>
+<li> .decl RES_Mapping(x:Instruction, expr: Expr, mapped: Expr)</li>
+<li> .decl RequestExpr_BINOP(to: Var, op: Operator, left: Expr, right: Expr, leftVar: Var, rightVar: Var, lrSize: number)</li>
+<li> .decl VarHasExpr(loc: Var, expr: Expr)</li>
+<li> .decl isEffectivelyEmptyConstructor(m: Method)</li>
+<li> .decl isRefHeapExpr(heap: HeapAllocation, expr: Expr)</li>
+</ul>
+<h2> analyses/xtractor/loops.dl </h2>
+<ul>
+<li> .decl BlockInStructuredLoop(bb: Instruction, loopHead: Instruction)</li>
+<li> .decl ChangeByOne(stmt: Instruction, to: Var, var: Var)</li>
+<li> .decl ContainsInnerStructuredLoop(loopHead: Instruction, innerloopHead: Instruction)</li>
+<li> .decl InductionVariable(var: Var, loopHead: Instruction)</li>
+<li> .decl InnermostStructuredLoop(loopHead: Instruction)</li>
+<li> .decl LocalBlockEdge(fromBB: Instruction, toBB: Instruction)</li>
+<li> .decl LoopExitCond(condVar: Var, op: symbol, rhs: number, loopHead: Instruction)</li>
+<li> .decl LoopExitCond_Stmt(jumpStmt: Instruction, loopHead: Instruction)</li>
+<li> .decl LoopInitialValue(condVar: Var, value: number, loopHead: Instruction)</li>
+<li> .decl LoopMainExitCond(jumpStmt: Instruction)</li>
+<li> .decl StmtInStructuredLoop(stmt: Instruction, loopHead: Instruction)</li>
+<li> .decl StructuredLoopBackEdge(fromBB: Instruction, toBB: Instruction)</li>
+<li> .decl StructuredloopHead(bb: Instruction)</li>
+</ul>
+<h2> analyses/xtractor/out-schema.dl </h2>
+<ul>
+<li> .decl OUT_ClassInfo(class: symbol, kind: symbol, field: symbol, fieldType: symbol)</li>
+</ul>
+<h2> analyses/xtractor/symbolic.dl </h2>
+<ul>
+<li> .decl API_IsBoundVar(expr: Expr)</li>
+<li> .decl API_IsFreeVar(expr: Expr)</li>
+<li> .decl API_IsInitialConstantExpr(const: Expr)</li>
+<li> .decl API_IsInitialExpr(expr: Expr)</li>
+<li> .decl AbsorbingOperators(op1: Operator, op2: Operator)</li>
+<li> .decl AssociativeOperator(op: Operator)</li>
+<li> .decl CancelingOperator(op: Operator, const: Expr)</li>
+<li> .decl CommutativeOperator(op: Operator)</li>
+<li> .decl CommutativePairOperators(op1: Operator, op2: Operator)</li>
+<li> .decl DeMorganOperators(op1: Operator, op2: Operator)</li>
+<li> .decl DecomposeExpr(expr: Expr, base: Base, left: Expr, right: Expr)</li>
+<li> .decl DualAssociativeOperators(op1: Operator, op2: Operator)</li>
+<li> .decl ExprHasBoundVar(expr: Expr)</li>
+<li> .decl ExprHasFreeVar(expr: Expr)</li>
+<li> .decl ExprHasNoFreeVar(expr: Expr)</li>
+<li> .decl ExprSize(expr: Expr, size: number)</li>
+<li> .decl ExprSymbol(out: symbol)</li>
+<li> .decl IdempotentOperator(op: Operator)</li>
+<li> .decl InfixSymbol(op: Operator, out: symbol)</li>
+<li> .decl IsArithmeticOperator(op: Operator)</li>
+<li> .decl IsBinaryOperator(op: Operator)</li>
+<li> .decl IsConstantExpr(expr: Expr, const: PrimitiveExpr)</li>
+<li> .decl IsExpr(expr: Expr)</li>
+<li> .decl IsLogicalExpr(expr: Expr)</li>
+<li> .decl IsLogicalOperator(op: Operator)</li>
+<li> .decl IsOperator(op: Operator)</li>
+<li> .decl IsUnaryOperator(op: Operator)</li>
+<li> .decl LeftAnnihilator(op: Operator, const: Expr, result: Expr)</li>
+<li> .decl LeftIdentityElement(op: Operator, id: Expr)</li>
+<li> .decl MaybeLogicalOperator(op: Operator)</li>
+<li> .decl MutuallyExclusiveOperators(op1: Operator, op2: Operator)</li>
+<li> .decl RightAnnihilator(op: Operator, const: Expr, result: Expr)</li>
+<li> .decl RightIdentityElement(op: Operator, id: Expr)</li>
+<li> .decl SelfInverseOperator(op: Operator)</li>
+<li> .decl ToSymbol(expr: Expr, out: symbol)</li>
+<li> .decl UnarySymbol(op: Operator, out: symbol)</li>
+</ul>
+<h2> analyses/xtractor/theorem-prover.dl </h2>
+<ul>
+<li> .decl API_EqualityCheckRequest(expr1: Expr, expr2: Expr)</li>
+<li> .decl API_InequalityCheckRequest(op: Operator, expr1: Expr, expr2: Expr)</li>
+<li> .decl CompareOperator(op: Operator)</li>
+<li> .decl EqualityCheckResponse(expr1: Expr, expr2: Expr, result: Expr)</li>
+<li> .decl Equals(expr1: Expr, expr2: Expr)</li>
+<li> .decl EqualsToNotLarger(expr1: Expr, size1: number, expr2: Expr, size2: number)</li>
+<li> .decl EqualsToSmallerExt(expr1: Expr, expr2: Expr)</li>
+<li> .decl ExprGreaterThan(expr1: Expr, expr2: Expr)</li>
+<li> .decl ExprRequestFold1(expr: Expr, op: symbol, const: symbol)</li>
+<li> .decl ExprRequestFold2(expr: Expr, op: symbol, leftConst: symbol, rightConst: symbol)</li>
+<li> .decl Implies(expr1: Expr, expr2: Expr)</li>
+<li> .decl InequalityCheckResponse(op: Operator, expr1: Expr, expr2: Expr, result: Expr)</li>
+<li> .decl LinearSolvableExpression(expr: Expr, op: Operator, left: Expr, right: Expr)</li>
+<li> .decl NegatedExpr(expr: Expr, negExpr: Expr)</li>
+<li> .decl NonReducedExpr(expr: Expr)</li>
+<li> .decl Normalize(expr: Expr, norm: Expr)</li>
+<li> .decl NormalizedLogicalExpr(expr: Expr)</li>
+<li> .decl OptBaseEquals(expr1: Expr, expr2: Expr)</li>
+<li> .decl OptBaseImplies(expr1: Expr, expr2: Expr)</li>
+<li> .decl PreNormalize(expr: Expr, norm: Expr)</li>
+<li> .decl RequestDistributivityEQ(expr1: Expr, op1Size: number, expr2: Expr)</li>
+<li> .decl ValueForFreeVar(freeVar: Expr, expr: Expr, exprSolved: Expr)</li>
+</ul>
 <h2> basic/basic.dl </h2>
 <ul>
 <li> .decl MainMethodDeclaration(?method:Method)</li>
@@ -1937,9 +2008,6 @@
 <li> .decl SensitiveLayoutControl(?id:symbol, ?type:ReferenceType, ?parent:symbol)</li>
 <li> .decl SensitiveLayoutControl0(?id:symbol, ?typename:ReferenceType, ?parent:symbol)</li>
 <li> .decl Service(?x:ReferenceType)</li>
-<li> .decl XMLNode(?file:symbol, ?nodeId:symbol, ?parentNodeId:symbol, ?namespaceURI:symbol, ?localName:symbol, ?qName:symbol)</li>
-<li> .decl XMLNodeAttribute(?file:symbol, ?nodeId:symbol, ?index:symbol, ?localName:symbol, ?qName:symbol, ?value:symbol)</li>
-<li> .decl XMLNodeData(?file:symbol, ?nodeId:symbol, ?data:symbol)</li>
 </ul>
 <h2> facts/flow-insensitive-facts.dl </h2>
 <ul>
@@ -1964,11 +2032,13 @@
 <ul>
 <li> .decl ActualParam(?index:number, ?invocation:MethodInvocation, ?var:Var)</li>
 <li> .decl AnnotationElement(?annotationKind:symbol, ?element:symbol, ?parentId:symbol, ?id:symbol, ?name:symbol, ?value1:symbol, ?value2:symbol)</li>
+<li> .decl ApplicationAllocation(?allocation:HeapAllocation)</li>
 <li> .decl ApplicationClass(?ref:ReferenceType)</li>
 <li> .decl ApplicationField(?field:Field)</li>
+<li> .decl ApplicationInvocation(?invocation:MethodInvocation)</li>
 <li> .decl ApplicationMethod(?method:Method)</li>
 <li> .decl ApplicationVar(?var:Var)</li>
-<li> .decl ArrayAllocation(?insn:Instruction, ?sizeVar:Var)</li>
+<li> .decl ArrayAllocation(?insn:Instruction, ?pos:number, ?sizeVar:Var)</li>
 <li> .decl ArrayInsnIndex(?insn:Instruction, ?index:Var)</li>
 <li> .decl ArrayNumIndex(?insn:Instruction, ?index:number)</li>
 <li> .decl AssignCastNumConstant_Id(?insn:AssignCastNumConstant_Insn, ?const:symbol)</li>
@@ -2225,10 +2295,13 @@
 <li> .decl PhantomMethod(?m:Method)</li>
 <li> .decl PhantomType(?t:ReferenceType)</li>
 <li> .decl String_toRaw(?id:symbol, ?rawId:symbol)</li>
+<li> .decl XMLNode(?file:symbol, ?nodeId:symbol, ?parentNodeId:symbol, ?namespaceURI:symbol, ?localName:symbol, ?qName:symbol)</li>
+<li> .decl XMLNodeAttribute(?file:symbol, ?nodeId:symbol, ?index:symbol, ?localName:symbol, ?qName:symbol, ?value:symbol)</li>
+<li> .decl XMLNodeData(?file:symbol, ?nodeId:symbol, ?data:symbol)</li>
 <li> .decl _ActualParam(?index:number, ?invocation:MethodInvocation, ?var:Var)</li>
 <li> .decl _ApplicationClass(?type:ReferenceType)</li>
 <li> .decl _ApplicationPackage(?package:symbol)</li>
-<li> .decl _ArrayAllocation(?instruction:Instruction, ?sizeVar:Var)</li>
+<li> .decl _ArrayAllocation(?instruction:Instruction, ?pos:number, ?sizeVar:Var)</li>
 <li> .decl _ArrayInsnIndex(?instruction:Instruction, ?index:Var)</li>
 <li> .decl _ArrayNumIndex(?instruction:Instruction, ?index:number)</li>
 <li> .decl _ArrayType(?arrayType:ArrayType)</li>
@@ -2341,7 +2414,7 @@
 <li> .decl AppMethodOverridesAndroidLibraryMethod(?meth:Method, ?concreteMeth:Method)</li>
 <li> .decl ApplicationObjectFlowingToLibrary(?hctx:configuration.HContext, ?value:Value, ?ofType:Type)</li>
 <li> .decl ForcedReachableAndroidContext(?ctx:configuration.Context, ?meth:Method)</li>
-<li> .decl FormalOfForcedReachableContext(?ctx:configuration.Context, ?formal:Var, ?formalType:Type)</li>
+<li> .decl FormalOfForcedReachableAndroidContext(?ctx:configuration.Context, ?formal:Var, ?formalType:Type)</li>
 <li> .decl FragmentRetrievalByArg0MethodInvocation(?invo:MethodInvocation)</li>
 <li> .decl ImplicitlyInstantiatedLibraryType(?type:ReferenceType)</li>
 <li> .decl LayoutControlObjectValueFromId(?controlValue:Value, ?numId:symbol)</li>
@@ -2365,7 +2438,7 @@
 <li> .decl SensitiveLayoutControlValue(?value:Value)</li>
 <li> .decl TypeHasApplicationObjectFlowingToLibrary(?ofType:Type)</li>
 <li> .decl TypeHasReachableApplicationObject(?type:Type)</li>
-<li> .decl UninitialisedArray(?hctx:configuration.HContext, ?value:Value, ?invocation:MethodInvocation, ?type:Type)</li>
+<li> .decl UninitializedArray(?hctx:configuration.HContext, ?value:Value, ?invocation:MethodInvocation, ?type:Type)</li>
 <li> .decl VarsAtInvocationRetrievingLayoutControl(?ret:Var, ?var:Var)</li>
 <li> .decl ViewRetrievalByArg0MethodInvocation(?invo:MethodInvocation)</li>
 <li> .decl WebClientType(?type:Type)</li>
@@ -2376,9 +2449,12 @@
 <li> .decl Activity_Alias(?activity:ClassType, ?alias:symbol)</li>
 <li> .decl Activity_Parent(?type:ClassType, ?parentActivity:ClassType)</li>
 <li> .decl ApplicationPackage(?package:symbol)</li>
+<li> .decl DisabledActivity(?activityType:ReferenceType)</li>
 <li> .decl LauncherActivity(?type:ClassType)</li>
 <li> .decl LayoutBehavior(?class:ClassType)</li>
 <li> .decl LayoutControl_CallbackMethod(?controlId:symbol, ?method:symbol)</li>
+<li> .decl XMLAndroidId(?file:symbol, ?nodeId:symbol, ?parentId:symbol, ?category:symbol, ?id:symbol, ?qClass:ClassType)</li>
+<li> .decl XMLAndroidPasswordControl(?file:symbol, ?nodeId: symbol)</li>
 <li> .decl XMLFragment_Class(?file:symbol, ?nodeId:symbol, ?qClass:ClassType)</li>
 <li> .decl XMLFragment_Id(?file:symbol, ?nodeId:symbol, ?id:symbol)</li>
 <li> .decl XMLNode_Id(?file:symbol, ?nodeId:symbol, ?name:symbol, ?value:symbol)</li>
@@ -2417,7 +2493,14 @@
 <li> .decl SpecialMissingPackableValue(?invocation:MethodInvocation, ?value:Value)</li>
 <li> .decl UnobfuscatedApplicationClass(?type:ReferenceType)</li>
 <li> .decl UnobfuscatedMethod(?meth:Method)</li>
+<li> .decl XMLLayoutControl(?file:symbol, ?nodeId:symbol, ?id:symbol)</li>
 <li> .decl _NotMostRefinedType(?type:ReferenceType)</li>
+</ul>
+<h2> main/api-mocking.dl </h2>
+<ul>
+<li> .decl GetSystemServiceMethod(?method:Method)</li>
+<li> .decl MockedMethodReturns(?method:Method, ?alloc:HeapAllocation, ?type:ReferenceType)</li>
+<li> .decl SystemService(?type:ReferenceType)</li>
 </ul>
 <h2> main/basic-context-sensitivity.dl </h2>
 <ul>
@@ -2619,6 +2702,22 @@
 <li> .decl ApplicationEntryPoint(?meth:Method)</li>
 <li> .decl ForcedReachable(?method:Method)</li>
 <li> .decl ImplicitReachable(?sig:Method)</li>
+</ul>
+<h2> main/implicit-reachable.dl </h2>
+<ul>
+<li> .decl AllApplicationConcreteImplementations(?class:ClassType, ?type:Type)</li>
+<li> .decl ApplicationConcreteType(?type:ClassType)</li>
+<li> .decl ExercisedEntryPointMethod(?class:Type, ?method:Method)</li>
+<li> .decl ForcedReachableContext(?ctx:configuration.Context, ?meth:Method)</li>
+<li> .decl FormalOfForcedReachableContext(?ctx:configuration.Context, ?formal:Var, ?formalType:Type)</li>
+<li> .decl MockObjFromOpenProgramEntryPointArg(?value:Value)</li>
+<li> .decl MockObjFromOpenProgramEntryPointReceiver(?value:Value)</li>
+<li> .decl MockObject(?value:Value, ?class:ReferenceType)</li>
+<li> .decl ServletParamType(?paramType:ReferenceType)</li>
+<li> .decl SpecialConcreteImplementations(?class:ClassType, ?type:ReferenceType)</li>
+<li> .decl TypeHasApplicationConcreteSubtypes(?type:Type)</li>
+<li> .decl TypeToConcreteImplementation(?type:ReferenceType, ?class:ClassType)</li>
+<li> .decl UnmockableFormalOfForcedReachableContext(?formal:Var, ?formalType:Type)</li>
 </ul>
 <h2> main/in-out-flow.dl </h2>
 <ul>
@@ -2851,6 +2950,9 @@
 <li> .decl OptTypeContainsPublicMethod(?type:Type, ?signature:Method)</li>
 <li> .decl PopulateAnnotationsForType(?annotationsArray:Value, ?type:Type, ?hctx:configuration.HContext)</li>
 <li> .decl ReflectiveSpecialMethodInvocation(?invocation:MethodInvocation, ?constructor:Method, ?ctx:configuration.Context, ?to:Var)</li>
+<li> .decl getMethodsPrecisionThreshold(?t:number)</li>
+<li> .decl getMethodsResult(?type:ReferenceType, ?value:Value)</li>
+<li> .decl getMethodsSupportedType(?type:ClassType)</li>
 </ul>
 <h2> main/reflection/java.lang.reflect.Field.dl </h2>
 <ul>
@@ -3129,6 +3231,7 @@
 <li> .decl ValidSuffixForField(?field:Field, ?fieldName:symbol, ?index:number, ?length:number)</li>
 <li> .decl ValidSuffixForMethod(?method:Method, ?methodName:symbol, ?index:number, ?length:number)</li>
 <li> .decl ValidSuffixForType(?className:symbol, ?index:number, ?length:number)</li>
+<li> .decl _StringFactoryType(?type:Type)</li>
 <li> .decl _StringIterationTrick(?pos:number)</li>
 <li> .decl string_upper(s1:symbol, s2:symbol)</li>
 </ul>
@@ -3742,4 +3845,4 @@
 <li> .decl isUnboundMethodOrFunctionObjectAllocation(?h: FunctionObjectAllocation)</li>
 <li> .decl isValue(?value:Value)</li>
 </ul>
-<p>Timestamp: 2021-04-14 12:24:08.249706</p></body></html>
+<p>Timestamp: 2021-06-11 15:17:12.708975</p></body></html>
