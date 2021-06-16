@@ -35,14 +35,17 @@ public class SootParameters extends Parameters {
         switch (args[i]) {
         case "--full":
             if (this._mode != null) {
-                System.err.println("error: duplicate mode argument");
+                System.err.println("ERROR: duplicate mode argument");
                 throw DoopErrorCodeException.error1();
             }
             this._mode = SootParameters.Mode.FULL;
             break;
         case "--main":
             i = shift(args, i);
-            this._main = args[i];
+            if (this._main != null)
+                System.err.println("WARNING: main class already set to " + this._main + ", ignoring value: " + args[i]);
+            else
+                this._main = args[i];
             break;
         case "--ssa":
             this._ssa = true;
@@ -135,17 +138,17 @@ public class SootParameters extends Parameters {
             _mode = SootParameters.Mode.INPUTS;
 
         if (_toStdout && !_generateJimple) {
-            System.err.println("error: --stdout must be used with --generate-jimple");
+            System.err.println("ERROR: --stdout must be used with --generate-jimple");
             throw DoopErrorCodeException.error7();
         } else if (_toStdout && getOutputDir() != null) {
-            System.err.println("error: --stdout and -d options are not compatible");
+            System.err.println("ERROR: --stdout and -d options are not compatible");
             throw DoopErrorCodeException.error2();
         } else if ((getInputs().stream().anyMatch(s -> s.endsWith(".apk") || s.endsWith(".aar"))) &&
                 (!_android)) {
-            System.err.println("error: the --platform parameter is mandatory for APK/AAR inputs, run 'doop --help' to see the valid Android platform values");
+            System.err.println("ERROR: the --platform parameter is mandatory for APK/AAR inputs, run 'doop --help' to see the valid Android platform values");
             throw DoopErrorCodeException.error3();
         } else if (_android && _androidJars == null) {
-            System.err.println("internal error: bad configuration for Android analysis mode, missing Android .jar");
+            System.err.println("ERROR: bad configuration for Android analysis mode, missing Android .jar");
             throw DoopErrorCodeException.error21();
         }
 

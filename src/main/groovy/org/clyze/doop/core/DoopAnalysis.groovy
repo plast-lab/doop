@@ -349,6 +349,12 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             params += ["--fact-gen-cores", options.FACT_GEN_CORES.value.toString()]
         }
 
+        if (options.MAIN_CLASS.value) {
+            options.MAIN_CLASS.value.each { String mainClass ->
+                params += ["--main", mainClass]
+            }
+        }
+
         if (options.X_FACTS_SUBSET.value) {
             params += ["--facts-subset", options.X_FACTS_SUBSET.value.toString()]
         }

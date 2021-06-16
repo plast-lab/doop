@@ -197,7 +197,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					group: GROUP_ENTRY_POINTS,
 					argName: "MAIN",
 					description: "Specify the main class(es) separated by spaces.",
-					value: [],
+					value: [] as List<String>,
 					multipleValues: true,
 					forCacheID: true
 			),

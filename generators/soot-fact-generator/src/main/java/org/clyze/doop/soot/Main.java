@@ -183,8 +183,9 @@ public class Main {
             addToSootClassPath(scene, lib);
         }
 
-        if (sootParameters._main != null)
-            Options.v().set_main_class(sootParameters._main);
+        String mainClass = sootParameters._main;
+        if (mainClass != null)
+            Options.v().set_main_class(mainClass);
 
         if (sootParameters._mode == SootParameters.Mode.FULL)
             Options.v().set_full_resolver(true);
@@ -230,6 +231,9 @@ public class Main {
 
         classes = new HashSet<>(scene.getClasses());
         System.out.println("Total classes in Scene: " + classes.size());
+
+        if (mainClass != null && classes.stream().noneMatch((SootClass sc) -> sc.getName().equals(mainClass)))
+            System.err.println("WARNING: main class does not exist: " + mainClass);
 
         // If a facts subset is selected, delete all other classes before fact generation.
         if (sootParameters._factsSubSet != null) {
