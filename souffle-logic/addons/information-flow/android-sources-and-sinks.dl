@@ -94,7 +94,8 @@ LeakingSinkMethod("Bundle", "<android.os.Bundle: void putString(java.lang.String
 LeakingSinkMethod("Bundle", "<android.os.Bundle: void putStringArray(java.lang.String,java.lang.String[])>").
 LeakingSinkMethod("Bundle", "<android.os.Bundle: void putStringArrayList(java.lang.String,java.util.ArrayList)>").
 LeakingSinkMethod("Bundle", "<android.os.Bundle: void putAll(android.os.Bundle)>").
-TaintSourceMethod("IPC", "<android.app.PendingIntent: android.app.PendingIntent getActivity(android.content.Context,int,android.content.Intent,int)>").
+// Disabled, too noisy.
+// TaintSourceMethod("IPC", "<android.app.PendingIntent: android.app.PendingIntent getActivity(android.content.Context,int,android.content.Intent,int)>").
 TaintSourceMethod("IPC", "<android.app.PendingIntent: android.app.PendingIntent getActivity(android.content.Context,int,android.content.Intent,int,android.os.Bundle)>").
 TaintSourceMethod("IPC", "<android.app.PendingIntent: android.app.PendingIntent getBroadcast(android.content.Context,int,android.content.Intent,int)>").
 TaintSourceMethod("IPC", "<android.app.PendingIntent: android.app.PendingIntent getService(android.content.Context,int,android.content.Intent,int)>").
