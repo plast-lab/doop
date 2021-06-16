@@ -42,6 +42,7 @@ public class Parameters {
     public boolean _reportPhantoms = false;
     public boolean _dex = false;
     public boolean _legacyAndroidProcessing = false;
+    public String _main = null;
 
     public enum FactsSubSet {
         APP, APP_N_DEPS, PLATFORM;
@@ -207,6 +208,13 @@ public class Parameters {
             break;
         case "--ignore-factgen-errors":
             _ignoreFactGenErrors = true;
+            break;
+        case "--main":
+            i = shift(args, i);
+            if (this._main != null)
+                System.err.println("WARNING: main class already set to " + this._main + ", ignoring value: " + args[i]);
+            else
+                this._main = args[i];
             break;
         case "--android":
             _android = true;

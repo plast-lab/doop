@@ -11,7 +11,6 @@ public class SootParameters extends Parameters {
     enum Mode { INPUTS, FULL }
 
     Mode _mode = null;
-    String _main = null;
     boolean _ssa = false;
     boolean _allowPhantom = false;
     boolean _generateJimple = false;
@@ -39,13 +38,6 @@ public class SootParameters extends Parameters {
                 throw DoopErrorCodeException.error1();
             }
             this._mode = SootParameters.Mode.FULL;
-            break;
-        case "--main":
-            i = shift(args, i);
-            if (this._main != null)
-                System.err.println("WARNING: main class already set to " + this._main + ", ignoring value: " + args[i]);
-            else
-                this._main = args[i];
             break;
         case "--ssa":
             this._ssa = true;
