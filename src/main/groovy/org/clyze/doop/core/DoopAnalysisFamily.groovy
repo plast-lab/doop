@@ -1235,13 +1235,29 @@ class DoopAnalysisFamily implements AnalysisFamily {
 		return new TreeSet<>(platforms)
 	}
 
-    static Collection<File> getAllInputs(Map<String, AnalysisOption<?>> options) {
-        Collection<File> inputs = [] as List<File>
-        Closure collector = { l -> (l as List<String>).collect { new File(it) }}
-        inputs += collector(options.INPUTS.value)
-        inputs += collector(options.LIBRARIES.value)
-        inputs += collector(options.HEAPDLS.value)
-        inputs += collector(options.PLATFORMS.value)
+    static Collection<FileInput> getAllInputs(Map<String, AnalysisOption<?>> options) {
+        Collection<FileInput> inputs = new ArrayList<FileInput>()
+        Closure<List<FileInput>> collector = { AnalysisOption<?> l -> (l.value as List<String>).collect {new FileInput(l.id, new File(it)) }}
+        inputs += collector(options.get('INPUTS'))
+        inputs += collector(options.get('LIBRARIES'))
+        inputs += collector(options.get('HEAPDLS'))
+        inputs += collector(options.get('PLATFORMS'))
         return inputs
     }
+
+	@CompileStatic
+	static class FileInput {
+		final String id
+		final File file
+
+		FileInput(String id, File file) {
+			this.id = id
+			this.file = file
+		}
+
+		@Override
+		String toString() {
+			return id + '$' + file.canonicalPath
+		}
+	}
 }
