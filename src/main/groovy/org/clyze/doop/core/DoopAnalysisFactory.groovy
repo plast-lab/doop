@@ -256,7 +256,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			.collect { it as String }
 
 		Collection<String> checksums = DoopAnalysisFamily.getAllInputs(options)
-			.collectMany { File file -> CheckSum.checksumList(file, HASH_ALGO) }
+			.collectMany { DoopAnalysisFamily.FileInput fi -> [CheckSum.checksum(fi.id, HASH_ALGO)] + CheckSum.checksumList(fi.file, HASH_ALGO) }
 
 		// Also calculate checksums on all other options that import
 		// files into facts.
