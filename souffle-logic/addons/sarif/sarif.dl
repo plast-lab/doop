@@ -42,6 +42,7 @@ SARIF_InterestingRelation("Server_Field_ShadowedBy", 0, "JvmField", "Field is sh
 
 #ifndef DISABLE_POINTS_TO
 #if STATS_LEVEL == full
-SARIF_InterestingRelation("Stats_Simple_PotentiallyFailingCast", 2, "JvmVariable", "Reachable cast may fail: @@2 = (@@0) @@1 ", "Reachable cast may fail.", "warning").
+.output Stats_Simple_PotentiallyFailingCast
+SARIF_InterestingRelation("Stats_Simple_PotentiallyFailingCast", 3, "JvmVariable", "Reachable cast may fail: @@2 = (@@0) @@1 ", "Reachable cast may fail.", "warning").
 #endif // STATS_LEVEL == full
 #endif // DISABLE_POINTS_TO
