@@ -180,8 +180,8 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			if (opt.forPreprocessor) {
 				log.warn "WARNING: Using option --${opt.name} but facts may not be modified (only logic will be affected)."
 			} else {
-				if (options.X_SYMLINK_CACHED_FACTS.value) {
-					throw new RuntimeException("Option --${opt.name} modifies facts, cannot be used with --${options.X_SYMLINK_CACHED_FACTS.name}.")
+				if (options.X_SYMLINK_INPUT_FACTS.value) {
+					throw new RuntimeException("Option --${opt.name} modifies facts, cannot be used with --${options.X_SYMLINK_INPUT_FACTS.name}.")
 				} else if (throwError) {
 					throw new RuntimeException("Option --${opt.name} modifies facts, cannot be used with --${factsOpt.name}")
 				} else {
@@ -404,7 +404,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
 		throwIfBothSet(options.INPUT_ID, options.FACTS_ONLY)
 		throwIfBothSet(options.INPUT_ID, options.CACHE)
-		throwIfBothSet(options.KEEP_SPEC, options.X_SYMLINK_CACHED_FACTS)
+		throwIfBothSet(options.KEEP_SPEC, options.X_SYMLINK_INPUT_FACTS)
 
 		String maxMemory = options.MAX_MEMORY.value
 		if (maxMemory) {

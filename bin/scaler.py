@@ -28,7 +28,7 @@ def run_pre_analysis(args):
     args = args + ['--Xscaler-pre']
     args = args + ['--id', APP + "-scaler-ci"]
     args = args + ['--input-id', APP+"-facts"]
-    args = args + ['--Xsymlink-cached-facts']
+    args = args + ['--Xsymlink-input-facts']
     cmd = ' '.join(args)
     print YELLOW + BOLD + 'Running pre-analysis ... ' + RESET
     # print cmd
@@ -81,7 +81,7 @@ def run_main_analysis(args, scaler_file):
     args = args + ['--special-cs-methods', scaler_file]
     args = args + ['--id', APP + '-scaler-fully-guided']
     args = args + ['--input-id', APP+"-facts"]
-    args = args + ['--Xsymlink-cached-facts']
+    args = args + ['--Xsymlink-input-facts']
     
     cmd = ' '.join(args)
     print YELLOW + BOLD + 'Running main (Scaler-guided) analysis ...' + RESET
