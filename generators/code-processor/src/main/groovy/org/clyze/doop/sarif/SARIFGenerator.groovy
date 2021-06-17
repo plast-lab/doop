@@ -77,7 +77,7 @@ abstract class SARIFGenerator {
      */
     abstract void process()
 
-        /**
+    /**
      * Reads the analysis output database to gather relation data and metadata.
      * @return   true if interesting relations were found
      */
