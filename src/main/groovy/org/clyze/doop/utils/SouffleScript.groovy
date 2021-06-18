@@ -82,7 +82,7 @@ class SouffleScript {
 
 		def checksum = calcChecksum(options.profile, options.provenance, options.liveProf)
 		def cacheFile = new File(cacheDir, checksum)
-		if (!cacheFile.exists() || options.debug || options.forceRecompile) {
+		if (!cacheFile.exists() || options.debug || options.forceRecompile || options.translateOnly) {
 
 			if (options.removeContexts) {
 				removeContexts(scriptFile)
