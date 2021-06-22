@@ -119,7 +119,6 @@ MockForFormal(?value, ?formal, ?type, ?method) :-
   TypeForFormals(?formal, ?method, ?type),
   MockObject(?value, ?type).
 
-.decl MockObject(?value:Value, ?class:ReferenceType)
 .decl MockObjectContext(?hctx:mainAnalysis.configuration.HContext, ?value:Value, ?class:ReferenceType)
 
 .decl ContextForOpenProgramEntryPoint(?ctx:mainAnalysis.configuration.Context, ?method:Method)
