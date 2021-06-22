@@ -102,11 +102,16 @@ abstract class SARIFGenerator {
             Map<String, String[]> relLines = new HashMap<>()
             for (String relLine : rel.readLines()) {
                 String[] relParts = relLine.tokenize('\t')
-                String doopId = relParts[rm.doopIdPosition]
-                relLines.put(doopId, relParts)
-                Set<RMetadata> relationMetadata = doopIds.get(doopId) ?: new HashSet<RMetadata>()
-                relationMetadata.add(rm)
-                doopIds.put(doopId, relationMetadata)
+                try {
+                    String doopId = relParts[rm.doopIdPosition]
+                    relLines.put(doopId, relParts)
+                    Set<RMetadata> relationMetadata = doopIds.get(doopId) ?: new HashSet<RMetadata>()
+                    relationMetadata.add(rm)
+                    doopIds.put(doopId, relationMetadata)
+                } catch (Throwable t) {
+                    println "ERROR: processing line fails: ${relLine} -> (parts: ${relParts})"
+                    t.printStackTrace()
+                }
             }
             relationLines.put(relationName, relLines)
         }
