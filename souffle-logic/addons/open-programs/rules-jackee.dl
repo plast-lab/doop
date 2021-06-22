@@ -50,7 +50,7 @@ mainAnalysis.ReachableContext(?ctx, ?method) :-
  **/
 mainAnalysis_MockValueConsMacro(?mockObj, ?concreteType),
 mainAnalysis.VarPointsTo(?hctx, ?mockObj, ?ctx, ?param),
-mainAnalysis.MockObjFromOpenProgramEntryPointArg(?mockObj),
+MockObjFromOpenProgramEntryPointArg(?mockObj),
 MockObject(?mockObj, ?concreteType) :-
   ExercisedEntryPointMethod(?entryPointDeclaringType, ?method),
   !BridgeMethod(?method, ?entryPointDeclaringType),
@@ -67,7 +67,7 @@ MockObject(?mockObj, ?concreteType) :-
  **/
 mainAnalysis_MockValueConsMacro(?mockObj, ?concreteType),
 mainAnalysis.VarPointsTo(?hctx, ?mockObj, ?ctx, ?param),
-mainAnalysis.MockObjFromOpenProgramEntryPointArg(?mockObj),
+MockObjFromOpenProgramEntryPointArg(?mockObj),
 MockObject(?mockObj, ?concreteType) :-
   ExercisedEntryPointMethod(?entryPointDeclaringType, ?method),
   !BridgeMethod(?method, ?entryPointDeclaringType),
@@ -86,7 +86,7 @@ mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?bridgeParam) :-
   FormalParam(?index, ?bridge, ?bridgeParam),
   FormalParam(?index, ?method, ?methodParam),
   mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?methodParam),
-  mainAnalysis.MockObjFromOpenProgramEntryPointArg(?value).
+  MockObjFromOpenProgramEntryPointArg(?value).
 
 .decl InjectionAnnotatedField(?field:Field)
 

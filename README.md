@@ -321,7 +321,7 @@ Then start Visual Studio Code to view the intermediate code annotated
 with the analysis results:
 
 ```
-code out/app/facts/jimple out/app/database/doop.sarif
+code out/app/database/jimple out/app/database/doop.sarif
 ```
 
 ## License
