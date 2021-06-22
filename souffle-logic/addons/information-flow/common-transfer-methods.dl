@@ -45,8 +45,12 @@ BaseToRetTaintTransferMethod("<java.lang.String: java.lang.String toUpperCase(ja
 BaseToRetTaintTransferMethod("<java.lang.String: java.lang.String toUpperCase()>").
 BaseToRetTaintTransferMethod("<java.lang.String: java.lang.String trim()>").
 BaseToRetTaintTransferMethod("<java.lang.String: java.lang.String toString()>").
+*/
+
 BaseToRetTaintTransferMethod("<java.lang.String: char[] toCharArray()>").
 BaseToRetTaintTransferMethod("<java.lang.String: java.lang.String intern()>").
+
+/*
 BaseToRetTaintTransferMethod("<java.lang.String: java.lang.String format(java.lang.String,java.lang.Object[])>").
 BaseToRetTaintTransferMethod("<java.lang.String: java.lang.String format(java.util.Locale,java.lang.String,java.lang.Object[])>").
 */
