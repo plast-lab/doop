@@ -362,10 +362,10 @@ NewMetricMacro("45.0", "total leaks", Stats_Simple_LeakingTaintedInformation(_, 
  * Open Programs
  ***************************************************/
 
-NewMetricMacro("61.0", "mock objects", mainAnalysis.MockObject(_, _)).
-NewMetricMacro("61.1", "mock objects for receivers", mainAnalysis.MockObjFromOpenProgramEntryPointReceiver(_)).
-NewMetricMacro("61.2", "mock objects for arg", mainAnalysis.MockObjFromOpenProgramEntryPointArg(_)).
-NewMetricMacro("61.6", "forced-reachable formals that could not be mocked", mainAnalysis.UnmockableFormalOfForcedReachableContext(_, _)).
+NewMetricMacro("61.0", "mock objects", MockObject(_, _)).
+NewMetricMacro("61.1", "mock objects for receivers", MockObjFromOpenProgramEntryPointReceiver(_)).
+NewMetricMacro("61.2", "mock objects for arg", MockObjFromOpenProgramEntryPointArg(_)).
+NewMetricMacro("61.6", "forced-reachable formals that could not be mocked", UnmockableFormalOfForcedReachableContext(_, _)).
 
 #ifdef OPEN_PROGRAMS
 //Stats_Simple_ReachableFromOpenProgramEntryPoint(?method) :-

@@ -45,7 +45,7 @@ def run_pre_analyses(init_args, app):
     args = args + ['--Xoracular-heuristics']
     args = args + ['--input-id', app+"-facts"]
     args = args + ['--id', app+"-ci"]
-    args = args + ['--Xsymlink-cached-facts']
+    args = args + ['--Xsymlink-input-facts']
 
     cmd = ' '.join(args)
     print(YELLOW + BOLD + 'Running pre-analyses #1 ' + PRE_ANALYSIS_1 + RESET)
@@ -68,7 +68,7 @@ def run_pre_analyses(init_args, app):
     #args = args + ['--Xcontext-dependency-heuristic']
     args = args + ['--input-id', app+"-facts"]
     args = args + ['--id', app+'-2obj']
-    args = args + ['--Xsymlink-cached-facts']
+    args = args + ['--Xsymlink-input-facts']
     args = args + ['--timeout 10000']
     args = args + ['--Xoracular-heuristics']
 
@@ -247,7 +247,7 @@ def run_main_analysis(args, app, oracular_file):
     args = args + ['--special-cs-methods', oracular_file]
     args = args + ['--input-id', app+"-facts"]
     args = args + ['--id', app+'-oracular']
-    args = args + ['--Xsymlink-cached-facts']
+    args = args + ['--Xsymlink-input-facts']
     args = args + ['--timeout 10000']
     args = args + ['--Xoracular-heuristics']
     

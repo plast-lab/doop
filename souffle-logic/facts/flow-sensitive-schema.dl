@@ -515,3 +515,13 @@
 // Predicate to store analysis statistics
 .decl Stats_Metrics(order:symbol, msg:symbol, c:number)
 #endif
+
+// Mock objects participating in mocked methods and argument/return values.
+// Declared here so that they are available for statistics even when
+// implicitly reachable entry points are disabled.
+.decl MockObject(?value:Value, ?class:ReferenceType)
+.output MockObject
+.decl MockObjFromOpenProgramEntryPointReceiver(?value:Value)
+.decl ExercisedEntryPointMethod(?class:Type, ?method:Method)
+.decl MockObjFromOpenProgramEntryPointArg(?value:Value)
+.decl UnmockableFormalOfForcedReachableContext(?formal:Var, ?formalType:Type)

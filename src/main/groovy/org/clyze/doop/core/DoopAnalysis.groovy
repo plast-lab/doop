@@ -134,7 +134,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
      * @param fromDir the existing directory containing the facts
      */
     protected void linkOrCopyFacts(File fromDir) {
-        if (options.X_SYMLINK_CACHED_FACTS.value) {
+        if (options.X_SYMLINK_INPUT_FACTS.value) {
             try {
                 fromDir.eachFile { file ->
                     Files.createSymbolicLink(new File(factsDir, file.name).toPath(), file.toPath())

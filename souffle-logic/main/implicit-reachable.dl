@@ -117,7 +117,6 @@ TypeToConcreteImplementation(?type, ?class) :-
 /**
  *  Mock arguments for entry points
  **/
-.decl MockObjFromOpenProgramEntryPointArg(?value:Value)
 // REVIEW: this is imprecise, it assigns one or more mock arguments
 // for each parameter in a forced-reachable method.
 MockValueConsMacro(?mockObj, ?class),
@@ -129,7 +128,6 @@ VarPointsTo(?hctx, ?mockObj, ?ctx, ?formal) :-
   ?mockObj = cat("<mock value for forced-reachable parameter ", cat(?class, ">")).
 
 // Helper/statistics relation.
-.decl UnmockableFormalOfForcedReachableContext(?formal:Var, ?formalType:Type)
 UnmockableFormalOfForcedReachableContext(?formal, ?formalType) :-
   FormalOfForcedReachableContext(_, ?formal, ?formalType),
   !TypeToConcreteImplementation(?formalType, _).
@@ -137,11 +135,6 @@ UnmockableFormalOfForcedReachableContext(?formal, ?formalType) :-
 /**
  *  Mock receivers for entry points
  **/
-.decl MockObject(?value:Value, ?class:ReferenceType)
-.output MockObject
-.decl MockObjFromOpenProgramEntryPointReceiver(?value:Value)
-.decl ExercisedEntryPointMethod(?class:Type, ?method:Method)
-
 MockValueConsMacro(?value, ?class),
 VarPointsTo(?hctx, ?value, ?ctx, ?receiver),
 MockObjFromOpenProgramEntryPointReceiver(?value),

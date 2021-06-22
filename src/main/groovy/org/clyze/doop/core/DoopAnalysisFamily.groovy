@@ -31,6 +31,8 @@ class DoopAnalysisFamily implements AnalysisFamily {
 	private static final int SERVER_DEFAULT_THRESHOLD = 1000
 	private static final int DEFAULT_JOBS = 4
 	private static final String DEFAULT_NATIVE_BACKEND = ''
+	static final String INPUT_ID_OPT = 'input-id'
+	static final String CACHE_OPT = 'cache'
 
 	static final String NATIVE_BACKEND_BINUTILS = 'binutils'
 	static final String NATIVE_BACKEND_BUILTIN = 'builtin'
@@ -270,7 +272,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			),
 			new BooleanAnalysisOption(
 					id: "CACHE",
-					name: "cache",
+					name: CACHE_OPT,
 					group: GROUP_FACTS,
 					description: "The analysis will use the cached facts, if they exist."
 			),
@@ -892,7 +894,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			),
 			new AnalysisOption<String>(
 					id: "INPUT_ID",
-					name: "input-id",
+					name: INPUT_ID_OPT,
 					group: GROUP_FACTS,
 					description: "Import facts from dir with id ID and start the analysis. Application/library inputs are ignored.",
 					argName: "ID",
@@ -1031,10 +1033,10 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
-					id: "X_SYMLINK_CACHED_FACTS",
-					name: "Xsymlink-cached-facts",
+					id: "X_SYMLINK_INPUT_FACTS",
+					name: "Xsymlink-input-facts",
 					group: GROUP_FACTS,
-					description: "Use symbolic links instead of copying cached facts.",
+					description: "Use symbolic links instead of copying cached facts. Used with --${CACHE_OPT} or --${INPUT_ID_OPT}.",
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
