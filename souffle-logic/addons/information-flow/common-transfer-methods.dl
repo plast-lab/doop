@@ -1,6 +1,18 @@
 #pragma once
 
-//ParamToBaseTaintTransferMethod(0, "<java.lang.StringBuilder: java.lang.StringBuilder append(java.lang.Object)>").
+#ifdef DISABLE_POINTS_TO
+// Mark methods as taint-transfer for shallow analyses.
+
+ParamToBaseTaintTransferMethod(0, ?method),
+ParamToRetTaintTransferMethod(?method) :-
+  Method_DeclaringType(?method, "java.lang.StringBuilder"),
+  Method_SimpleName(?method, ?name),
+  (?name = "append" ; ?name = "appendCodePoint").
+
+BaseToRetTaintTransferMethod("<java.lang.StringBuilder: java.lang.String toString()>").
+
+#endif // DISABLE_POINTS_TO
+
 ParamToBaseTaintTransferMethod(0, "<java.lang.StringBuffer: java.lang.StringBuffer append(java.lang.Object)>").
 ParamToBaseTaintTransferMethod(0, "<java.lang.StringBuffer: java.lang.StringBuffer append(java.lang.String)>").
 ParamToBaseTaintTransferMethod(0, "<java.lang.StringBuffer: java.lang.StringBuffer append(java.lang.StringBuffer)>").
