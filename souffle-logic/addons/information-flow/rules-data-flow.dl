@@ -66,6 +66,10 @@ VarIsTaintedFromVar(?type, DUMMY_CONTEXT, ?to, DUMMY_CONTEXT, ?from) :-
 Var_Taint(?base, ?label, ?source) :-
   Var_Taint(?param, ?label, ?source),
   ParamTaintTransferredToBase(?param, _, ?base).
+// Recursive case: parameter-taints-return-value.
+Var_Taint(?to, ?label, ?source) :-
+  Var_Taint(?param, ?label, ?source),
+  ParamTaintTransferredToRet(_, ?to, DUMMY_CONTEXT, ?param).
 // Finally, handle the sinks.
 LeakingTaintedInformation(?sourceLabel, ?destLabel, DUMMY_CONTEXT, ?invocation, ?source) :-
   Var_Taint(?var, ?sourceLabel, ?source),
