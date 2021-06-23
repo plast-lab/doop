@@ -66,8 +66,20 @@ GetSystemServiceMethod("<android.content.Context: java.lang.Object getSystemServ
 GetSystemServiceMethod("<android.content.Context: java.lang.Object getSystemService(java.lang.Class)>").
 
 #ifdef DISABLE_POINTS_TO
-// This method must be declared when running very shallow analyses.
+// These methods must be declared when running very shallow analyses.
 GetSystemServiceMethod("<android.app.Activity: java.lang.Object getSystemService(java.lang.String)>").
+
+.decl ShallowMockedMethod(?method:Method)
+.output ShallowMockedMethod
+
+ShallowMockedMethod("<android.telephony.SmsManager: android.telephony.SmsManager getDefault()>").
+
+MockedMethodReturns(?method, MOCK_OBJECT_OF_TYPE(?type), ?type) :-
+  ShallowMockedMethod(?method),
+  isMethod(?method),
+  Method_ReturnType(?method, ?type),
+  isClassType(?type),
+  !ClassModifier("abstract", ?type).
 #endif // DISABLE_POINTS_TO
 
 // Mock return values of Context.getSystemService().

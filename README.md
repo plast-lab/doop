@@ -324,6 +324,8 @@ with the analysis results:
 code out/app/database/jimple out/app/database/doop.sarif
 ```
 
+![Visual Studio Code example](docs/vscode-sarif-example.png)
+
 ## License
 UPL (see [LICENSE](LICENSE)).
 

@@ -32,7 +32,7 @@ SARIF_InterestingRelation("SingleInvocationToInline", 0, "JvmMethodInvocation", 
 #ifdef INFORMATION_FLOW
 .output AppTaintedVarPointsTo
 SARIF_InterestingRelation("AppTaintedVarPointsTo", 1, "JvmVariable", "Variable is tainted, points to @@0.", "Variable is tainted.", "warning").
-SARIF_InterestingRelation("LeakingTaintedInformation", 2, "JvmMethodInvocation", "Tainted sink, source = @@3", "Tainted sink method invocation.", "warning").
+SARIF_InterestingRelation("LeakingTaintedInformation", 3, "JvmMethodInvocation", "Tainted sink, source = @@4", "Tainted sink method invocation.", "warning").
 #endif // INFORMATION_FLOW
 #endif // DISABLE_POINTS_TO
 

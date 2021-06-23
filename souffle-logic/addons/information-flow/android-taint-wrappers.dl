@@ -17,7 +17,6 @@ ParamToRetTaintTransferMethod("<java.lang.String: java.lang.String format(java.u
 ParamToRetTaintTransferMethod("<java.lang.String: java.lang.String format(java.lang.String,java.lang.Object[])>").
 //BaseToParamTaintTransferMethod(0, "<java.util.Formatter: void <init>(java.lang.Appendable)>").
 
-BaseToRetTaintTransferMethod("<java.lang.String: char[] toCharArray()>").
 BaseToRetTaintTransferMethod("<java.lang.String: byte[] getBytes()>").
 
 ParamToRetTaintTransferMethod("<java.lang.String: java.lang.String replaceAll(java.lang.String,java.lang.String)>").
