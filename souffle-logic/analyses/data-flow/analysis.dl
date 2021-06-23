@@ -119,6 +119,7 @@ ResolveCall(stmt, method) :-
 	InterestingStmt(stmt),
 	MethodInvocation_Method(stmt, method).
 
+// Method call resolution informed by receiver/base allocations.
 ResolveCall(stmt, method) :-
 	(VirtualMethodInvocation_Base(stmt, base) ;
 	 SpecialMethodInvocation_Base(stmt, base)),
@@ -130,6 +131,19 @@ ResolveCall(stmt, method) :-
 	ALLOC(_, allocVar, heap),
 	HeapAllocation_Type(heap, heapType),
 	basic.MethodLookup(name, desc, heapType, method).
+
+// Very simple/direct resolution, works even when there is no
+// allocation information for the base variable.
+.decl ResolveCallDirect(stmt: MethodInvocation, method: Method)
+ResolveCallDirect(stmt, method) :-
+	(VirtualMethodInvocation_Base(stmt, base) ;
+	 SpecialMethodInvocation_Base(stmt, base)),
+	InterestingStmt(stmt),
+	MethodInvocation_Method(stmt, sigMethod),
+	Method_SimpleName(sigMethod, name),
+	Method_Descriptor(sigMethod, desc),
+	Var_Type(base, baseType),
+	basic.MethodLookup(name, desc, baseType, method).
 
 
 Flows(x, y) :- OptBaseFlows(x, y).

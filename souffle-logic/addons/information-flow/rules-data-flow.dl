@@ -20,7 +20,7 @@
 
 MethodInvocationInContext(DUMMY_CONTEXT, ?invocation, ?tomethod),
 AnyMethodInvocation(?invocation, ?tomethod) :-
-  ResolveCall(?invocation, ?tomethod).
+  ResolveCall(?invocation, ?tomethod) ; ResolveCallDirect(?invocation, ?tomethod).
 
 TypeForReturnValue(?type, ?ret, ?invocation) :-
   AssignCast(?type, ?ret, _, _),
