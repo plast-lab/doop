@@ -18,9 +18,9 @@ TaintedVarTaintedFromVar(?toCtx, ?to, ?value, ?type) :-
 
 mainAnalysis_MockValueConsMacro(?value, ?type),
 TaintedValue(?value),
-SourceFromTaintedValue(?value, ?id),
+SourceFromTaintedValue(?value, ?source),
 mainAnalysis.Value_DeclaringType(?value, ?declaringType) :-
-  TaintedValueTransferred(?declaringType, ?id, ?type, ?value).
+  TaintedValueTransferred(?declaringType, ?source, ?type, ?value).
 
 TaintedValueTransferred(?declaringType, ?source, ?type, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB)),
 mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB), ?toCtx, ?to) :-
