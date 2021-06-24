@@ -10,10 +10,10 @@ class DataFlowTest extends DoopSpec {
     @Unroll
     def "Data-flow analysis test"() {
         when:
-        Main.main((String[])
-                  ['-i', Artifacts.HELLO_JAR,
+        Main.main(['-i', Artifacts.HELLO_JAR,
                    '--id', 'data-flow-test', '--cache',
-                   '-a', 'data-flow'])
+                   '--information-flow', 'minimal',
+                   '-a', 'data-flow'] as String[])
         Analysis analysis = Main.analysis
 
         then:
