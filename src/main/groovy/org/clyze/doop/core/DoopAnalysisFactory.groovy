@@ -538,7 +538,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			options.CACHE_DIR.value = cachedFacts
 			if (options.CACHE.value && cachedFacts.exists()) {
 				// Facts are assumed to be read-only.
-				checkFactsReuse(options.CACHE, options, true)
+				checkFactsReuse(options.CACHE, options, false)
 			} else if (options.CACHE.value) {
 				log.info "Could not find cached facts, option will be ignored: --${options.CACHE.name}"
 				options.CACHE.value = false
