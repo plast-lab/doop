@@ -3,10 +3,7 @@
 #include "declarations.dl"
 #include "delta.dl"
 #include "core.dl"
-
-#ifdef ANDROID
 #include "../../main/api-mocking.dl"
-#endif // ANDROID
 
 #ifdef X_SERVER_LOGIC
 #include "../server-logic/queries.dl"
