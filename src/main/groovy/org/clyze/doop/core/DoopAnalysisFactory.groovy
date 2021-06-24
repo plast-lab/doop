@@ -516,6 +516,15 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			options.X_SERIALIZE_FACTGEN_COMPILATION.value = true
 		}
 
+		if (options.SARIF.value) {
+			if (options.WALA_FACT_GEN.value || options.X_DEX_FACT_GEN.value)
+				log.warn "WARNING: SARIF mode is only supported for the Soot-based fact generator"
+			else {
+				log.info "SARIF mode enables Jimple generation."
+				options.GENERATE_JIMPLE.value = true
+			}
+		}
+
 		// Enable APK decoding on Android when not reusing read-only
 		// facts. We don't check the ANDROID option, since the user
 		// may want to analyze an .apk using a non-Android platform.
@@ -616,13 +625,6 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		}
 
 		throwIfBothSet(options.APP_REGEX, options.AUTO_APP_REGEX_MODE)
-
-		if (options.SARIF.value) {
-			if (options.WALA_FACT_GEN.value || options.X_DEX_FACT_GEN.value)
-				log.warn "WARNING: SARIF mode is only supported for the Soot-based fact generator"
-			else
-				options.GENERATE_JIMPLE.value = true
-		}
 
 		// Process statistics option.
 		String stats = options.STATS_LEVEL.value as String
