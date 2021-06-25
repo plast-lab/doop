@@ -1,15 +1,5 @@
 #include "common-transfer-methods.dl"
 
-#define TaintSourceMethodPattern(pattern) \
-  TaintSourceMethod("default", method) :- \
-    isMethod(method), \
-    match(pattern, method)
-
-#define LeakingSinkMethodPattern(n, pattern) \
-  LeakingSinkMethodArg("default", n, method) :- \
-    isMethod(method), \
-    match(pattern, method)
-
 TaintSourceMethodPattern("<javax.servlet.ServletRequest: .* get.*\(.*\)>").
 TaintSourceMethodPattern("<javax.servlet.ServletContext: .* get.*\(.*\)>").
 TaintSourceMethodPattern("<javax.servlet.ServletConfig: .* get.*\(.*\)>").

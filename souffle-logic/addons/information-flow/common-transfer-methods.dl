@@ -1,5 +1,7 @@
 #pragma once
 
+#include "macros.dl"
+
 #ifdef DISABLE_POINTS_TO
 // Mark methods as taint-transfer for shallow analyses.
 
