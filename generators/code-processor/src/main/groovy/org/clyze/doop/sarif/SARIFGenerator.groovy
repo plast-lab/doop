@@ -1,6 +1,7 @@
 package org.clyze.doop.sarif
 
 import groovy.transform.CompileStatic
+import java.util.Collections
 import java.util.concurrent.atomic.AtomicInteger
 import org.clyze.persistent.model.Element
 import org.clyze.persistent.model.Position
@@ -48,7 +49,7 @@ abstract class SARIFGenerator {
      *  Doop ids for parsed elements. */
     protected final Map<String, Set<RMetadata>> doopIds = new HashMap<>()
     /** Interesting relations stored as relation-name -> doop-id -> line. Used in message reporting. */
-    private final Map<String, Map<String, String[]>> relationLines = new HashMap<>()
+    private final Map<String, Map<String, List<String[]>>> relationLines = new HashMap<>()
     /** List of all metadata, to be used to generate the rules list for SARIF. */
     private final List<RMetadata> allMetadata = new LinkedList<>()
     /** The JVM metadata symbols supported. */
@@ -99,12 +100,12 @@ abstract class SARIFGenerator {
                 println "ERROR: relation does not exist and will not be included in SARIF output: ${rel.canonicalPath}"
                 continue
             }
-            Map<String, String[]> relLines = new HashMap<>()
+            Map<String, List<String[]>> relLines = new HashMap<>()
             for (String relLine : rel.readLines()) {
                 String[] relParts = relLine.tokenize('\t')
                 try {
                     String doopId = relParts[rm.doopIdPosition]
-                    relLines.put(doopId, relParts)
+                    relLines.computeIfAbsent(doopId, { new ArrayList<String[]>()}).add(relParts)
                     Set<RMetadata> relationMetadata = doopIds.get(doopId) ?: new HashSet<RMetadata>()
                     relationMetadata.add(rm)
                     doopIds.put(doopId, relationMetadata)
@@ -134,25 +135,32 @@ abstract class SARIFGenerator {
         println "SARIF results written to file: ${sarifOut.canonicalPath}"
     }
 
-    private Result resultForSymbol(String doopId, SymbolWithId sym, RMetadata metadata) {
+    private List<Result> resultsForSymbol(String doopId, SymbolWithId sym, RMetadata metadata) {
         ArtifactLocation artLoc = new ArtifactLocation(sym.sourceFileName)
         Position pos = sym.position
         Location loc = new Location(artLoc, pos.startLine, pos.startColumn, pos.endLine, pos.endColumn)
-        return new Result("rule-${metadata.ruleIndex}", metadata.ruleIndex,
-                new Message(formatMessage(doopId, metadata)), [loc] as List<Location>)
+        return formatMessages(doopId, metadata).collect { String msg ->
+            new Result("rule-${metadata.ruleIndex}", metadata.ruleIndex,
+                       new Message(msg), [loc] as List<Location>)
+        } as List<Result>
     }
 
-    private String formatMessage(String doopId, RMetadata metadata) {
-        String msg = metadata.resultMessage
-        if (!msg.contains(PLACEHOLDER_PRE))
-            return msg
-        String[] lineParts = relationLines[metadata.name][doopId]
-        for (int i = 0; i < lineParts.length; i++) {
-            String placeholder = PLACEHOLDER_PRE + i
-            if (msg.contains(placeholder))
-                msg = msg.replace(placeholder, lineParts[i])
+    private List<String> formatMessages(String doopId, RMetadata metadata) {
+        String msgTemplate = metadata.resultMessage
+        if (!msgTemplate.contains(PLACEHOLDER_PRE))
+            return Collections.singletonList(msgTemplate)
+
+        List<String> messages = new ArrayList<>();
+        for (String[] lineParts : relationLines[metadata.name][doopId]) {
+            String msg = new String(msgTemplate)
+            for (int i = 0; i < lineParts.length; i++) {
+                String placeholder = PLACEHOLDER_PRE + i
+                if (msg.contains(placeholder))
+                    msg = msg.replace(placeholder, lineParts[i])
+            }
+            messages.add(msg)
         }
-        return msg
+        return messages
     }
 
     /**
@@ -174,7 +182,7 @@ abstract class SARIFGenerator {
                     for (Class<?> c : JVM_SYMBOLS) {
                         if (metadata.contentType == c.simpleName) {
                             if (c.isInstance(sym))
-                                results.add resultForSymbol(symbolId, sym, metadata)
+                                results.addAll resultsForSymbol(symbolId, sym, metadata)
                             else if (!(sym instanceof Usage))
                                 println "ERROR: wrong content type for element ${metadata.contentType}, class = ${c}"
                             break
