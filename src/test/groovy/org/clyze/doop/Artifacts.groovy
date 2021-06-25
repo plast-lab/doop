@@ -8,4 +8,5 @@ class Artifacts {
     final static String ANTLR_JAR="http://centauri.di.uoa.gr:8081/artifactory/DaCapo-benchmarks/2006/antlr.jar"
     final static String HELLO_JAR="http://centauri.di.uoa.gr:8081/artifactory/Demo-benchmarks/test-resources/006-hello-world-1.2.jar"
     final static String GLOVAR_PY="http://centauri.di.uoa.gr:8081/artifactory/Demo-benchmarks/python/glovar.py"
+    final static String DROIDBENCH_CLONE1="https://github.com/secure-software-engineering/DroidBench/raw/master/apk/GeneralJava/Clone1.apk"
 }

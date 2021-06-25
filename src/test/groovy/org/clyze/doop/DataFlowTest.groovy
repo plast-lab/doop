@@ -8,17 +8,21 @@ class DataFlowTest extends DoopSpec {
 
     // @spock.lang.Ignore
     @Unroll
-    def "Data-flow analysis test"() {
+    def "Data-flow/information-flow analysis test"() {
         when:
-        Main.main((String[])
-                  ['-i', Artifacts.HELLO_JAR,
-                   '--id', 'data-flow-test', '--cache',
-                   '-a', 'data-flow'])
+        Main.main(['-i', Artifacts.DROIDBENCH_CLONE1,
+                   '--id', 'data-flow-test',
+                   '--platform', 'android_25_fulljars',
+                   '--information-flow', 'android',
+                   '--souffle-mode', 'interpreted',
+                   '--stats', 'none',
+                   '-a', 'data-flow'] as String[])
         Analysis analysis = Main.analysis
 
         then:
 	    TestUtils.fileExists(analysis, 'database/Flows.csv')
         TestUtils.fileExists(analysis, 'database/PointerFlows.csv')
         TestUtils.fileExists(analysis, 'database/SelfFlows.csv')
+        TestUtils.relationHasExactSize(analysis, 'LeakingTaintedInformation', 1)
     }
 }
