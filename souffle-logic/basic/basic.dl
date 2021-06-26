@@ -2,6 +2,7 @@
 
 .comp Basic {
 
+#include "exceptions.dl"
 #include "finalization-declarations.dl"
 #include "finalization.dl"
 #include "method-lookup.dl"

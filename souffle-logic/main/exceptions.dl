@@ -15,15 +15,15 @@ Instruction_Throws(?hctx, ?value, ?callerCtx, ?invocation) :-
 ThrowPointsTo(?hctx, ?value, ?ctx, ?method) :-
   Instruction_Throws(?hctx, ?value, ?ctx, ?insn),
   Instruction_Method(?insn, ?method),
-  !ExceptionHandler_InRange(_, ?insn).
+  !basic.ExceptionHandler_InRange(_, ?insn).
 
 ThrowPointsTo(?hctx, ?value, ?ctx, ?method) :-
   Instruction_Throws(?hctx, ?value, ?ctx, ?insn),
   Value_Type(?value, ?valueType),
   Instruction_Method(?insn, ?method),
-  ExceptionHandler_SameInsn_Repr(?insn, ?repr),
-  ExceptionHandler_SameBlock_Repr(?repr, ?block),
-  !ExceptionHandler_TypeIsCaught(?valueType, ?block).
+  basic.ExceptionHandler_SameInsn_Repr(?insn, ?repr),
+  basic.ExceptionHandler_SameBlock_Repr(?repr, ?block),
+  !basic.ExceptionHandler_TypeIsCaught(?valueType, ?block).
 //// Certainly Value_Type is now part of the main SCC for much more
 //// than info-flow. Still, might this fail for some settings?
 //#ifdef INFORMATION_FLOW
@@ -33,107 +33,17 @@ ThrowPointsTo(?hctx, ?value, ?ctx, ?method) :-
 VarPointsTo(?hctx, ?value, ?ctx, ?param) :-
   Instruction_Throws(?hctx, ?value, ?ctx, ?insn),
   Value_Type(?value, ?valueType),
-  ExceptionHandler_InRange(?handler, ?insn),
+  basic.ExceptionHandler_InRange(?handler, ?insn),
   ExceptionHandler_Type(?handler, ?handlerType),
   basic.SubtypeOf(?valueType, ?handlerType),
   ConcreteClass(?valueType), // filtering null_type
   ExceptionHandler_FormalParam(?handler, ?param),
-  !ExceptionHandler_Impossible(?valueType, ?handler, ?insn).
+  !basic.ExceptionHandler_Impossible(?valueType, ?handler, ?insn).
 //// See previous rule
 //#ifdef INFORMATION_FLOW
  .plan 1:(2,1,3,4,5,6,7)
 //#endif
 #endif // DISABLE_POINTS_TO
-
-///////////////////////////////////////////////////////////////////////////////
-
-/*
- * This will only used to check that an exception is *not* caught (negated).
- * Merge handlers with the same catch block for further optimization.
- */
-ExceptionHandler_TypeIsCaught(?type, ?block) :-
-  ExceptionHandler_InRange(?handler, ?insn),
-  ExceptionHandler_SameInsn_Repr(?insn, ?repr),
-  ExceptionHandler_SameBlock_Repr(?repr, ?block),
-  ExceptionHandler_Type(?handler, ?handlerType),
-  basic.SubtypeOf(?type, ?handlerType),
-  ConcreteClass(?type).
-
-/*
- * Inclusion of instuction is important. E.g. handler1 covers indices 20-30,
- * handler2 covers indices 10-40. Also, Previous(handler1, handler2).
- * Instruction #25 may infer Impossible(T1, handler2). Subsequently, when
- * checking instruction #15, we would (falsely) have that handler2 is
- * impossible for type T1.
- */
-ExceptionHandler_Impossible(?type, ?h2, ?insn) :-
-  ExceptionHandler_InRange(?h1, ?insn),
-  ExceptionHandler_InRange(?h2, ?insn),
-  ExceptionHandler_Before(?h1, ?h2),
-  ExceptionHandler_Type(?h1, ?h1Type),
-  ExceptionHandler_Type(?h2, ?h2Type),
-  basic.SubtypeOf(?type, ?h1Type),
-  basic.SubtypeOf(?type, ?h2Type),
-  ConcreteClass(?type).
-
-///////////////////////////////////////////////////////////////////////////////
-
-// An "exception handler" has a separate identity and the following information:
-//  -where it starts being active
-//  -where it stops
-//  -which type it handles
-//  -where it jumps when an appropriate exception is caught ("catch block"). This is
-//   independent from the instructions the handler covers and has no semantics
-//   (e.g., no priority of handlers based on locations of catch blocks).
-//  -in which order it appears in the program text. This is important for priority.
-
-ExceptionHandler_InRange(?handler, ?instruction) :-
-  ExceptionHandler_Method(?handler, ?method),
-  Instruction_Method(?instruction, ?method),
-  Instruction_Index(?instruction, ?index),
-  ExceptionHandler_Begin(?handler, ?beginIndex),
-  ?beginIndex <= ?index,
-  ExceptionHandler_End(?handler, ?endIndex),
-  ?endIndex > ?index.
-
-ExceptionHandler_Before(?previous, ?handler) :-
-  ExceptionHandler_Previous(?handler, ?previous).
-
-ExceptionHandler_Before(?before, ?handler) :-
-  ExceptionHandler_Before(?middle, ?handler),
-  ExceptionHandler_Previous(?middle, ?before).
-
-/*
- * An instruction may be in range of multiple handlers. Pick the first one as a
- * representative and have it handling all (concrete) types of those handlers.
- */
-ExceptionHandler_SameInsn_PartialOrder(?h1, ?h2, ?insn) :-
-  ExceptionHandler_InRange(?h1, ?insn),
-  ExceptionHandler_InRange(?h2, ?insn),
-  ExceptionHandler_Before(?h1, ?h2).
-
-ExceptionHandler_SameInsn_Repr(?insn, ?handler) :-
-  ExceptionHandler_InRange(?handler, ?insn),
-  !ExceptionHandler_SameInsn_PartialOrder(_, ?handler, ?insn).
-
-/*
- * In Jimple, multiple handlers share the same catch block. Also, additional
- * handlers/catch blocks might be added (e.g., to handle exitmonitor commands).
- */
-ExceptionHandler_SameBlock_PartialOrder(?h1, ?h2) :-
-  ExceptionHandler_Before(?h1, ?h2),
-  ExceptionHandler_Index(?h1, ?h1Index),
-  ExceptionHandler_Index(?h2, ?h2Index),
-  ?h1Index = ?h2Index.
-
-ExceptionHandler_SameBlock_Repr(?handler, ?handler) :-
-  isExceptionHandler(?handler),
-  !ExceptionHandler_SameBlock_PartialOrder(_, ?handler).
-
-ExceptionHandler_SameBlock_Repr(?handler, ?repr) :-
-  ExceptionHandler_SameBlock_PartialOrder(?repr, ?handler),
-  !ExceptionHandler_SameBlock_PartialOrder(_, ?repr).
-
 
 #ifdef REFLECTION_DYNAMIC_PROXIES
 // Dynamic proxies have some special exception semantics, since the
