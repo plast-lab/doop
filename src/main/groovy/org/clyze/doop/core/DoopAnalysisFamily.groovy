@@ -585,6 +585,13 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
+					id: "X_MODEL_STDLIB",
+					name: "Xmodel-stdlib",
+					group: GROUP_EXPERIMENTAL,
+					description: "Model standard library APIs instead of analyzing their code.",
+					forPreprocessor: true
+			),
+			new BooleanAnalysisOption(
 					id: "REFLECTION",
 					name: "reflection",
 					group: GROUP_REFLECTION,

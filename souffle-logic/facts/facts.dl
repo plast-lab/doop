@@ -9,9 +9,7 @@
 #include "flow-insensitive-facts.dl"
 #include "keep.dl"
 
-#if defined(REFLECTION) || defined(LIGHT_REFLECTION_GLUE)
 #include "opaque-methods.dl"
-#endif
 
 #ifdef ANDROID
 #include "android.dl"
