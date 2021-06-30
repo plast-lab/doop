@@ -5,16 +5,22 @@ import org.clyze.doop.core.DoopAnalysis
 
 class XTractor {
 	static DoopAnalysis analysis
-	static File outFile
+	static File souffleOut
+	static File delveOut
 
 	static def arrayMeta = [:].withDefault { [] }
 	static Map<String, Set<String>> varAliases = [:].withDefault { [] as Set }
 
 	static void run(DoopAnalysis analysis) {
 		this.analysis = analysis
-		outFile = new File(analysis.database, "xtractor-out.dl")
-		outFile.text = ""
+		souffleOut = new File(analysis.database, "xtractor-out.dl")
+		delveOut = new File(analysis.database, "xtractor-out.jl")
+		souffleOut.text = ""
+		delveOut.text = """using DelveSDK
+conn = LocalConnection(dbname=:test)
+create_database(conn; overwrite=true)
 
+"""
 		new File(analysis.database, "Flows_EXT.csv").eachLine {
 			def (String from, String to) = it.split("\t")
 			varAliases[from] << to
@@ -24,14 +30,13 @@ class XTractor {
 		conditions()
 //		schema()
 
-		println "Results in... $outFile"
+		println "Results in... $souffleOut and $delveOut\n"
 	}
 
 	static def arrays() {
-		def arrayMetaFacts = []
 		def mainArrays = []
 		Map<String, Integer> relNameToVariant = [:]
-		outFile << ".decl array_META(relation:symbol, name:symbol, types:symbol, dimensions:number)\n"
+		souffleOut << ".decl array_META(relation:symbol, name:symbol, types:symbol, dimensions:number)\n"
 		new File(analysis.database, "MainArrayVar.csv").eachLine {
 			def (String array, String name, String types) = it.split("\t")
 			def dimensions = types.count("[]")
@@ -44,23 +49,23 @@ class XTractor {
 				relName += "_$variant"
 			}
 			def dims = (1..dimensions).collect { "i$it:number" }.join(", ")
-			outFile << ".decl $relName($dims, value:symbol)\n"
-			outFile << ".decl ${relName}_Init($dims, value:symbol)\n"
 			def dimSizes = (1..dimensions).collect { "dim$it:number" }.join(", ")
-			outFile << ".decl ${relName}_DimSizes($dimSizes)\n"
-			outFile << ".decl ${relName}_Provided($dims, value:symbol)\n"
-			outFile << ".input ${relName}_Provided\n"
-			outFile << ".decl ${relName}_Missing($dims, value:symbol)\n"
-			outFile << ".output ${relName}_Missing\n"
-			arrayMetaFacts << "array_META(\"$relName\", \"$array\", \"$types\", $dimensions)."
+			souffleOut << ".decl $relName($dims, value:symbol)\n"
+			souffleOut << ".decl ${relName}_Init($dims, value:symbol)\n"
+			souffleOut << ".decl ${relName}_DimSizes($dims)\n"
+			souffleOut << ".decl ${relName}_Provided($dims, value:symbol)\n"
+			souffleOut << ".input ${relName}_Provided\n"
+			souffleOut << ".decl ${relName}_Missing($dims)\n"
+			souffleOut << ".output ${relName}_Missing\n"
+			souffleOut << "array_META(\"$relName\", \"$array\", \"$types\", $dimensions).\n"
+			delveOut << "load_edb(conn, :array_META, [(\"$relName\", \"$array\", \"$types\", $dimensions)])\n"
 			def metaInfo = [relName, name, types, dimensions]
 			varAliases[array].each { arrayMeta[it] = metaInfo }
 			mainArrays << array
 		}
-		outFile << "\n"
-		arrayMetaFacts.each { outFile << "$it\n" }
 
-		outFile << "// Array Dimensions\n"
+		souffleOut << "// Array Dimensions\n"
+		delveOut << "\n"
 		def arrayDims = [:].withDefault { [:] }
 		new File(analysis.database, "ArrayDims.csv").eachLine {
 			def (String array, pos, size) = it.split("\t")
@@ -69,28 +74,40 @@ class XTractor {
 		mainArrays.each { array ->
 			def (String relName, name, types, int dimensions) = arrayMeta[array]
 			def sizes = arrayDims[array]
-			def allSizes = (1..dimensions).collect { sizes[it-1] ?: -1 }
-			outFile << "${relName}_DimSizes(${allSizes.join(", ")}).\n"
+			def allSizes = (1..dimensions).collect { sizes[it-1] ?: -1 }.join(", ")
+			souffleOut << "${relName}_DimSizes($allSizes).\n"
+			delveOut << "load_edb(conn, :${relName}_DimSizes, [($allSizes)])\n"
 		}
 
-		outFile << "// Array Initialization\n"
+		souffleOut << "// Array Initialization\n"
+		delveOut << "\n"
+		def delvePendingRules = [:].withDefault { [] }
 		new File(analysis.database, "OUT_ArrayInitialized.csv").eachLine {
 			def (String array, String value) = it.split("\t")
 			if (!value.isNumber()) throw new RuntimeException("Invalid AP?")
 			def (String relName, name, String types, int dimensions) = arrayMeta[array]
 			def allZero = (1..dimensions).collect { 0 }.join(", ")
 			def indexes = (1..dimensions).collect {"i$it" }.join(", ")
-			outFile << "${relName}_Init($allZero, ${fixVal(value, types)}).\n"
-			outFile << "$relName($indexes, val) :- ${relName}_Init($indexes, val).\n"
+			def headIndexes2 = (1..dimensions).collect {"i$it" }.join(", ")
+			souffleOut << "$relName($indexes, val) :- ${relName}_Init($indexes, val).\n"
+			delvePendingRules[relName] << "def $relName($indexes, val) = ${relName}_Init($indexes, val)"
+			souffleOut << "${relName}_Init($allZero, ${fixVal(value, types)}).\n"
+			delveOut << "install_source(conn, \"${relName}_Init\", \"\"\"\n"
+			delveOut << "def ${relName}_Init = {($allZero, ${fixVal(value, types)})}\n"
 			dimensions.times {index ->
 				def headIndexes = (1..dimensions).collect {it-1 == index ? "i$it + 1" : "i$it" }.join(", ")
 				def size = arrayDims[array][index] as int
-				outFile << "${relName}_Init($headIndexes, val) :- ${relName}_Init($indexes, val), i${index+1} < ${size-1}.\n"
+				souffleOut << "${relName}_Init($headIndexes, val) :- ${relName}_Init($indexes, val), i${index+1} < ${size-1}.\n"
+				def indexes2 = (1..dimensions).collect {it-1 == index ? "x" : "i$it" }.join(", ")
+				delveOut << "def ${relName}_Init($headIndexes2, val) = exists(x: ${relName}_Init($indexes2, val) and i${index+1} = x + 1 and x < ${size-1})\n"
 			}
+			delveOut << "\"\"\")\n"
 		}
 
-		outFile << "// Array (External) Values\n"
+		souffleOut << "// Array (External) Values\n"
+		delveOut << "\n"
 		def arraysWithAccess = [] as Set
+		def delveProvidedRels = [:] // TODO input
 		new File(analysis.database, "OUT_ArrayWrite.csv").eachLine {String rawAP ->
 			def parts = rawAP.split("@")
 			if (parts.any { it.endsWith("#?") }) return
@@ -100,22 +117,39 @@ class XTractor {
 			def last = fixVal(rest.last(), types)
 			def indexes = (rest.dropRight(1) + [last]).toList().withIndex()
 					.collect { t, int i -> t == "?" ? "i$i" : t}.join(", ")
-			outFile << (rawAP.contains("@?") ?
+			souffleOut << (rawAP.contains("@?") ?
 					"$relName($indexes) :- ${relName}_Provided($indexes).\n" :
 					"$relName($indexes).\n")
+
+			def indexes2 = (1..dimensions+1).collect {"i$it" }.join(", ")
+			def values = (rest.dropRight(1) + [last]).toList().withIndex()
+					.collect { t, int i -> t == "?" ? null : "i${i+1} = $t"}.grep().join(", ")
+			delvePendingRules[relName] << "def $relName($indexes2) = ${relName}_Provided($indexes2), $values"
+			delveProvidedRels["${relName}_Provided"] = "def ${relName}_Provided = {(${(1..dimensions+1).collect{-1}.join(",")})}"
 			arraysWithAccess << array
 		}
 
-		outFile << "// Array External Values Sanity\n"
+		delveProvidedRels.each { relName, rule ->
+			delveOut << "install_source(conn, \"$relName\", \"\"\"$rule\"\"\")\n"
+		}
+		delvePendingRules.each { relName, rules ->
+			delveOut << "install_source(conn, \"$relName\", \"\"\"\n${rules.join("\n")}\n\"\"\")\n"
+		}
+
+		souffleOut << "// Array External Values Sanity\n"
 		arraysWithAccess.each { array ->
 			def (String relName, name, String types, int dimensions) = arrayMeta[array]
-			def dims = (0..dimensions).collect { "i$it" }.join(", ")
-			outFile << "${relName}_Missing($dims) :-\n\t${relName}_Provided($dims),\n\t!$relName($dims).\n"
+			def dims = (1..dimensions+1).collect { "i$it" }.join(", ")
+			souffleOut << "${relName}_Missing($dims) :-\n\t${relName}_Provided($dims),\n\t!$relName($dims).\n"
+			delveOut << "install_source(conn, \"${relName}_Missing\", \"\"\"\ndef ${relName}_Missing($dims) = ${relName}_Provided($dims) and not $relName($dims)\n\"\"\")\n"
+			delveOut << "query(conn; out=:$relName)\n"
+			delveOut << "query(conn; out=:${relName}_Missing)\n"
 		}
 	}
 
 	static def conditions() {
-		outFile << "\n// Rules\n"
+		souffleOut << "\n// Rules\n"
+		delveOut << "\n"
 		Map<String, Expr> ifReturnsExpr = [:]
 		new File(analysis.database, "OUT_IfReturnsStr.csv").eachLine {
 			def (String stmt, String rawAP) = it.split("\t")
@@ -123,6 +157,7 @@ class XTractor {
 		}
 		def methodsWithRules = []
 		def ruleDecls = []
+		def delveRules = [:].withDefault { [] }
 		new File(analysis.database, "OUT_IfGroupConditionStr.csv").eachLine {
 			def (String stmt, String methodName, String complexCond) = it.split("\t")
 			def conditions = complexCond.split(" AND ")
@@ -136,8 +171,13 @@ class XTractor {
 			res = exprOpt(res + ifReturnsExpr[stmt])
 			if (methodName !in methodsWithRules)
 				ruleDecls << ".decl $methodName(value:symbol)\n.output $methodName"
-			outFile << "\n${res[0].str()} :-\n\t"
-			outFile << "${res.drop(1).collect { it.str() }.join(",\n\t")}.\n"
+			def head = res.first()
+			def body = res.drop(1)
+			souffleOut << "\n${head.str()} :-\n\t"
+			souffleOut << "${body.collect { it.str() }.join(",\n\t")}.\n"
+			def onlyBodyVars = (body.collect { it.vars }.flatten() as Set) - head.vars
+			def mainBodyStr = body.collect { it.str() }.join(", ")
+			delveRules[methodName] << "def ${head.str()} = ${onlyBodyVars ? "exists(${onlyBodyVars.join(", ")}: $mainBodyStr)" : mainBodyStr}"
 			methodsWithRules << methodName
 		}
 		new File(analysis.database, "OUT_NoIfReturnsStr.csv").eachLine {
@@ -148,11 +188,22 @@ class XTractor {
 					   ap(fixVal(rawAP, retType), "ret")]
 			res = exprOpt(res)
 			ruleDecls << ".decl ${methodName}_Def(value:symbol)\n.output ${methodName}_Def"
-			outFile << "\n${res[0].str()} :-\n\t"
-			outFile << "${res.drop(1).collect { it.str() }.join(",\n\t")}.\n"
+			def head = res.first()
+			def body = res.drop(1)
+			souffleOut << "\n${head.str()} :-\n\t"
+			souffleOut << "${body.collect { it.str() }.join(",\n\t")}.\n"
+			def mainBodyStr = body.collect { it.str() }.join(", ").replaceAll("!", "not ")
+			delveRules["${methodName}_Def"] << "def ${head.str()} = $mainBodyStr"
 		}
-		outFile << "\n"
-		ruleDecls.each { outFile << "$it\n" }
+		souffleOut << "\n"
+		delveOut << "\n"
+		ruleDecls.each { souffleOut << "$it\n" }
+		delveRules.each { rel, rules ->
+			delveOut << "install_source(conn, \"$rel\", \"\"\"\n"
+			rules.each { delveOut << "$it\n"}
+			delveOut << "\"\"\")\n"
+			delveOut << "query(conn; out=:$rel)\n"
+		}
 	}
 
 	static def schema() {
@@ -211,10 +262,10 @@ class XTractor {
 			dlDecls << ".decl ${klass}_ALL(this:symbol, $allFields)"
 			dlInputs << ".input ${klass}_ALL"
 		}
-		outFile << "\n"
-		dlTypes.each { outFile << "$it\n" }
-		dlDecls.each { outFile << "$it\n" }
-		dlInputs.each { outFile << "$it\n" }
+//		outFile << "\n"
+//		dlTypes.each { outFile << "$it\n" }
+//		dlDecls.each { outFile << "$it\n" }
+//		dlInputs.each { outFile << "$it\n" }
 	}
 
 	static def ap(String rawAP, String tempVar) {
@@ -277,6 +328,8 @@ abstract class Expr {
 	boolean eq(Expr o) { false }
 
 	void replace(String orig, String repl) { if (tempVar == orig) tempVar = repl }
+
+	Set<String> getVars() { [] as Set }
 }
 
 @Canonical(includeSuperProperties = true)
@@ -284,6 +337,8 @@ class RelExpr extends Expr {
 	String relName
 
 	String str() { "$relName($tempVar)" }
+
+	Set<String> getVars() { [tempVar] as Set }
 }
 
 @Canonical(includeSuperProperties = true)
@@ -296,6 +351,10 @@ class ArrayExpr extends Expr {
 	boolean eq(Expr o) {
 		if (o !instanceof ArrayExpr || array != o.array) return false
 		indexes == o.indexes
+	}
+
+	Set<String> getVars() {
+		(indexes.findAll { !it.isNumber() } + [tempVar]) as Set
 	}
 }
 
