@@ -6,7 +6,9 @@ import org.clyze.doop.core.DoopAnalysis
 class XTractor {
 	static DoopAnalysis analysis
 	static File souffleOut
+
 	static File delveOut
+	static List delveOutputRels = []
 
 	static def arrayMeta = [:].withDefault { [] }
 	static Map<String, Set<String>> varAliases = [:].withDefault { [] as Set }
@@ -107,7 +109,8 @@ create_database(conn; overwrite=true)
 		souffleOut << "// Array (External) Values\n"
 		delveOut << "\n"
 		def arraysWithAccess = [] as Set
-		def delveProvidedRels = [:] // TODO input
+		def delveProvidedRels = [:]
+		def delveProvidedRelsTypes = [:]
 		new File(analysis.database, "OUT_ArrayWrite.csv").eachLine {String rawAP ->
 			def parts = rawAP.split("@")
 			if (parts.any { it.endsWith("#?") }) return
@@ -125,12 +128,16 @@ create_database(conn; overwrite=true)
 			def values = (rest.dropRight(1) + [last]).toList().withIndex()
 					.collect { t, int i -> t == "?" ? null : "i${i+1} = $t"}.grep().join(", ")
 			delvePendingRules[relName] << "def $relName($indexes2) = ${relName}_Provided($indexes2), $values"
-			delveProvidedRels["${relName}_Provided"] = "def ${relName}_Provided = {(${(1..dimensions+1).collect{-1}.join(",")})}"
+			def csv = (1..dimensions+1).collect { "${relName}_Provided_csv(pos, :c$it, i$it)" }.join(", ")
+			delveProvidedRels["${relName}_Provided"] = "def ${relName}_Provided($indexes2) = exists(pos: $csv)"
+			delveProvidedRelsTypes["${relName}_Provided"] = ((1..dimensions).collect {"Int" } + "String").join(",")
 			arraysWithAccess << array
 		}
 
 		delveProvidedRels.each { relName, rule ->
-			delveOut << "install_source(conn, \"$relName\", \"\"\"$rule\"\"\")\n"
+			delveOut << "load_csv(conn, :${relName}_csv; schema=FileSchema(Tuple{${delveProvidedRelsTypes[relName]}}), syntax=CSVFileSyntax(delim='\\t'), path=\"./${relName}.csv\")\n"
+			delveOut << "install_source(conn, \"$relName\", \"\"\"$rule\"\"\")\n\n"
+			delveOutputRels << ":$relName"
 		}
 		delvePendingRules.each { relName, rules ->
 			delveOut << "install_source(conn, \"$relName\", \"\"\"\n${rules.join("\n")}\n\"\"\")\n"
@@ -142,8 +149,7 @@ create_database(conn; overwrite=true)
 			def dims = (1..dimensions+1).collect { "i$it" }.join(", ")
 			souffleOut << "${relName}_Missing($dims) :-\n\t${relName}_Provided($dims),\n\t!$relName($dims).\n"
 			delveOut << "install_source(conn, \"${relName}_Missing\", \"\"\"\ndef ${relName}_Missing($dims) = ${relName}_Provided($dims) and not $relName($dims)\n\"\"\")\n"
-			delveOut << "query(conn; out=:$relName)\n"
-			delveOut << "query(conn; out=:${relName}_Missing)\n"
+			delveOutputRels += [":$relName", ":${relName}_Missing"]
 		}
 	}
 
@@ -202,8 +208,10 @@ create_database(conn; overwrite=true)
 			delveOut << "install_source(conn, \"$rel\", \"\"\"\n"
 			rules.each { delveOut << "$it\n"}
 			delveOut << "\"\"\")\n"
-			delveOut << "query(conn; out=:$rel)\n"
+			delveOutputRels << ":$rel"
 		}
+
+		delveOut << "\nquery(conn; outputs=[${delveOutputRels.join(", ")}])\n"
 	}
 
 	static def schema() {
