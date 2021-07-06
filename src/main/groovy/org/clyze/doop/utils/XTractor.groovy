@@ -7,8 +7,9 @@ class XTractor {
 	static DoopAnalysis analysis
 	static File souffleOut
 
-	static File delveOut
-	static List delveOutputRels = []
+	static File relScriptOut
+	static File relOut
+	static Set relOutputRels = [] as Set
 
 	static def arrayMeta = [:].withDefault { [] }
 	static Map<String, Set<String>> varAliases = [:].withDefault { [] as Set }
@@ -16,13 +17,15 @@ class XTractor {
 	static void run(DoopAnalysis analysis) {
 		this.analysis = analysis
 		souffleOut = new File(analysis.database, "xtractor-out.dl")
-		delveOut = new File(analysis.database, "xtractor-out.jl")
 		souffleOut.text = ""
-		delveOut.text = """using DelveSDK
+		relScriptOut = new File(analysis.database, "xtractor-out.jl")
+		relScriptOut.text = """using RelationalAI
 conn = LocalConnection(dbname=:test)
 create_database(conn; overwrite=true)
-
 """
+		relOut = new File(analysis.database, "xtractor-out.rel")
+		relOut.text = ""
+
 		new File(analysis.database, "Flows_EXT.csv").eachLine {
 			def (String from, String to) = it.split("\t")
 			varAliases[from] << to
@@ -32,7 +35,7 @@ create_database(conn; overwrite=true)
 		conditions()
 //		schema()
 
-		println "Results in... $souffleOut and $delveOut\n"
+		println "Results in... $souffleOut and\n$relScriptOut\n($relOut)\n"
 	}
 
 	static def arrays() {
@@ -60,14 +63,14 @@ create_database(conn; overwrite=true)
 			souffleOut << ".decl ${relName}_Missing($dims)\n"
 			souffleOut << ".output ${relName}_Missing\n"
 			souffleOut << "array_META(\"$relName\", \"$array\", \"$types\", $dimensions).\n"
-			delveOut << "load_edb(conn, :array_META, [(\"$relName\", \"$array\", \"$types\", $dimensions)])\n"
+			relOut << "def array_META = {(\"$relName\", \"$array\", \"$types\", $dimensions)}\n"
 			def metaInfo = [relName, name, types, dimensions]
 			varAliases[array].each { arrayMeta[it] = metaInfo }
 			mainArrays << array
 		}
 
 		souffleOut << "// Array Dimensions\n"
-		delveOut << "\n"
+		relOut << "\n"
 		def arrayDims = [:].withDefault { [:] }
 		new File(analysis.database, "ArrayDims.csv").eachLine {
 			def (String array, pos, size) = it.split("\t")
@@ -78,12 +81,11 @@ create_database(conn; overwrite=true)
 			def sizes = arrayDims[array]
 			def allSizes = (1..dimensions).collect { sizes[it-1] ?: -1 }.join(", ")
 			souffleOut << "${relName}_DimSizes($allSizes).\n"
-			delveOut << "load_edb(conn, :${relName}_DimSizes, [($allSizes)])\n"
+			relOut << "def ${relName}_DimSizes = {($allSizes)}\n"
 		}
 
 		souffleOut << "// Array Initialization\n"
-		delveOut << "\n"
-		def delvePendingRules = [:].withDefault { [] }
+		relScriptOut << "\n"
 		new File(analysis.database, "OUT_ArrayInitialized.csv").eachLine {
 			def (String array, String value) = it.split("\t")
 			if (!value.isNumber()) throw new RuntimeException("Invalid AP?")
@@ -92,25 +94,23 @@ create_database(conn; overwrite=true)
 			def indexes = (1..dimensions).collect {"i$it" }.join(", ")
 			def headIndexes2 = (1..dimensions).collect {"i$it" }.join(", ")
 			souffleOut << "$relName($indexes, val) :- ${relName}_Init($indexes, val).\n"
-			delvePendingRules[relName] << "def $relName($indexes, val) = ${relName}_Init($indexes, val)"
+			relOut << "def $relName($indexes, val) = ${relName}_Init($indexes, val)\n"
 			souffleOut << "${relName}_Init($allZero, ${fixVal(value, types)}).\n"
-			delveOut << "install_source(conn, \"${relName}_Init\", \"\"\"\n"
-			delveOut << "def ${relName}_Init = {($allZero, ${fixVal(value, types)})}\n"
+			relOut << "def ${relName}_Init = {($allZero, ${fixVal(value, types)})}\n"
 			dimensions.times {index ->
 				def headIndexes = (1..dimensions).collect {it-1 == index ? "i$it + 1" : "i$it" }.join(", ")
 				def size = arrayDims[array][index] as int
 				souffleOut << "${relName}_Init($headIndexes, val) :- ${relName}_Init($indexes, val), i${index+1} < ${size-1}.\n"
 				def indexes2 = (1..dimensions).collect {it-1 == index ? "x" : "i$it" }.join(", ")
-				delveOut << "def ${relName}_Init($headIndexes2, val) = exists(x: ${relName}_Init($indexes2, val) and i${index+1} = x + 1 and x < ${size-1})\n"
+				relOut << "def ${relName}_Init($headIndexes2, val) = exists(x: ${relName}_Init($indexes2, val) and i${index+1} = x + 1 and x < ${size-1})\n"
 			}
-			delveOut << "\"\"\")\n"
 		}
 
 		souffleOut << "// Array (External) Values\n"
-		delveOut << "\n"
+		relOut << "\n"
 		def arraysWithAccess = [] as Set
-		def delveProvidedRels = [:]
-		def delveProvidedRelsTypes = [:]
+		def relProvidedRels = [:]
+		def relProvidedRelsTypes = [:]
 		new File(analysis.database, "OUT_ArrayWrite.csv").eachLine {String rawAP ->
 			def parts = rawAP.split("@")
 			if (parts.any { it.endsWith("#?") }) return
@@ -127,20 +127,17 @@ create_database(conn; overwrite=true)
 			def indexes2 = (1..dimensions+1).collect {"i$it" }.join(", ")
 			def values = (rest.dropRight(1) + [last]).toList().withIndex()
 					.collect { t, int i -> t == "?" ? null : "i${i+1} = $t"}.grep().join(", ")
-			delvePendingRules[relName] << "def $relName($indexes2) = ${relName}_Provided($indexes2), $values"
+			relOut << "def $relName($indexes2) = ${relName}_Provided($indexes2), $values\n"
 			def csv = (1..dimensions+1).collect { "${relName}_Provided_csv(pos, :c$it, i$it)" }.join(", ")
-			delveProvidedRels["${relName}_Provided"] = "def ${relName}_Provided($indexes2) = exists(pos: $csv)"
-			delveProvidedRelsTypes["${relName}_Provided"] = ((1..dimensions).collect {"Int" } + "String").join(",")
+			relProvidedRels["${relName}_Provided"] = "def ${relName}_Provided($indexes2) = exists(pos: $csv)"
+			relProvidedRelsTypes["${relName}_Provided"] = ((1..dimensions).collect {"Int" } + "String").join(",")
 			arraysWithAccess << array
 		}
 
-		delveProvidedRels.each { relName, rule ->
-			delveOut << "load_csv(conn, :${relName}_csv; schema=FileSchema(Tuple{${delveProvidedRelsTypes[relName]}}), syntax=CSVFileSyntax(delim='\\t'), path=\"./${relName}.csv\")\n"
-			delveOut << "install_source(conn, \"$relName\", \"\"\"$rule\"\"\")\n\n"
-			delveOutputRels << ":$relName"
-		}
-		delvePendingRules.each { relName, rules ->
-			delveOut << "install_source(conn, \"$relName\", \"\"\"\n${rules.join("\n")}\n\"\"\")\n"
+		relProvidedRelsTypes.each { relName, types ->
+			relOut << "${relProvidedRels[relName]}\n"
+			relScriptOut << "load_csv(conn, :${relName}_csv; schema=FileSchema(Tuple{$types}), syntax=CSVFileSyntax(delim='\\t'), path=\"./${relName}.csv\")\n"
+			relOutputRels << ":$relName"
 		}
 
 		souffleOut << "// Array External Values Sanity\n"
@@ -148,14 +145,14 @@ create_database(conn; overwrite=true)
 			def (String relName, name, String types, int dimensions) = arrayMeta[array]
 			def dims = (1..dimensions+1).collect { "i$it" }.join(", ")
 			souffleOut << "${relName}_Missing($dims) :-\n\t${relName}_Provided($dims),\n\t!$relName($dims).\n"
-			delveOut << "install_source(conn, \"${relName}_Missing\", \"\"\"\ndef ${relName}_Missing($dims) = ${relName}_Provided($dims) and not $relName($dims)\n\"\"\")\n"
-			delveOutputRels += [":$relName", ":${relName}_Missing"]
+			relOut << "def ${relName}_Missing($dims) = ${relName}_Provided($dims) and not $relName($dims)\n"
+			relOutputRels += [":$relName", ":${relName}_Missing"]
 		}
 	}
 
 	static def conditions() {
 		souffleOut << "\n// Rules\n"
-		delveOut << "\n"
+		relOut << "\n"
 		Map<String, Expr> ifReturnsExpr = [:]
 		new File(analysis.database, "OUT_IfReturnsStr.csv").eachLine {
 			def (String stmt, String rawAP) = it.split("\t")
@@ -163,7 +160,6 @@ create_database(conn; overwrite=true)
 		}
 		def methodsWithRules = []
 		def ruleDecls = []
-		def delveRules = [:].withDefault { [] }
 		new File(analysis.database, "OUT_IfGroupConditionStr.csv").eachLine {
 			def (String stmt, String methodName, String complexCond) = it.split("\t")
 			def conditions = complexCond.split(" AND ")
@@ -183,7 +179,8 @@ create_database(conn; overwrite=true)
 			souffleOut << "${body.collect { it.str() }.join(",\n\t")}.\n"
 			def onlyBodyVars = (body.collect { it.vars }.flatten() as Set) - head.vars
 			def mainBodyStr = body.collect { it.str() }.join(", ")
-			delveRules[methodName] << "def ${head.str()} = ${onlyBodyVars ? "exists(${onlyBodyVars.join(", ")}: $mainBodyStr)" : mainBodyStr}"
+			relOut << "def ${head.str()} = ${onlyBodyVars ? "exists(${onlyBodyVars.join(", ")}: $mainBodyStr)" : mainBodyStr}\n"
+			relOutputRels += ":$methodName"
 			methodsWithRules << methodName
 		}
 		new File(analysis.database, "OUT_NoIfReturnsStr.csv").eachLine {
@@ -199,19 +196,13 @@ create_database(conn; overwrite=true)
 			souffleOut << "\n${head.str()} :-\n\t"
 			souffleOut << "${body.collect { it.str() }.join(",\n\t")}.\n"
 			def mainBodyStr = body.collect { it.str() }.join(", ").replaceAll("!", "not ")
-			delveRules["${methodName}_Def"] << "def ${head.str()} = $mainBodyStr"
+			relOut << "def ${head.str()} = $mainBodyStr\n"
+			relOutputRels += ":${methodName}_Def"
 		}
 		souffleOut << "\n"
-		delveOut << "\n"
 		ruleDecls.each { souffleOut << "$it\n" }
-		delveRules.each { rel, rules ->
-			delveOut << "install_source(conn, \"$rel\", \"\"\"\n"
-			rules.each { delveOut << "$it\n"}
-			delveOut << "\"\"\")\n"
-			delveOutputRels << ":$rel"
-		}
-
-		delveOut << "\nquery(conn; outputs=[${delveOutputRels.join(", ")}])\n"
+		relScriptOut << "\ninstall_source(conn, path=\"./${relOut.name}\")\n"
+		relScriptOut << "\nquery(conn; outputs=[${relOutputRels.join(", ")}])\n"
 	}
 
 	static def schema() {
