@@ -1162,7 +1162,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 	] as List<AnalysisOption<?>>
 
 	private static List<String> analysesFor(File path, String fileToLookFor) {
-		if (!path) {
+		if (path == null || !path.exists()) {
 			println "ERROR: Doop was not initialized correctly, could not read analyses names. Is environment variable DOOP_HOME set?"
 			return []
 		}
