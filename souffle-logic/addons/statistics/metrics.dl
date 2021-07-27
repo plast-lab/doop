@@ -1,5 +1,3 @@
-.decl ReachableClass(?class:symbol)
-.decl ReachableApplicationClass(?class:symbol)
 .decl ReachableSDKClass(?class:symbol)
 .decl ReachableDependencyClass(?class:symbol)
 .decl DependencyMethodDirectlyReachableFromApplication(?method:symbol)
@@ -17,8 +15,8 @@
 .decl Metrics_Method_OutgoingMethods_Count(?method:Method, ?n:number)
 .decl Metrics_Value_AsReceiver_Count(?value:Value, ?n:number)
 
-.output ReachableClass
-.output ReachableApplicationClass
+.output mainAnalysis.ReachableClass
+.output mainAnalysis.AppReachable
 .output ReachableSDKClass
 .output ReachableDependencyClass
 .output DependencyMethodDirectlyReachableFromApplication
@@ -35,15 +33,6 @@
 .output Metrics_Method_OutgoingInvo_Count
 .output Metrics_Method_OutgoingMethods_Count
 .output Metrics_Value_AsReceiver_Count
-
-ReachableClass(?class) :-
-    mainAnalysis.Reachable(?method),
-    Method_DeclaringType(?method, ?class).
-
-ReachableApplicationClass(?class) :-
-    mainAnalysis.Reachable(?method),
-    Method_DeclaringType(?method, ?class),
-    ApplicationClass(?class).
 
 ReachableSDKClass(?class) :-
     mainAnalysis.Reachable(?method),

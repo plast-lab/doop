@@ -666,6 +666,10 @@ ReachableContext(?ctx, ?method) :-
 Reachable(?method) :-
   ReachableContext(_, ?method).
 
+ReachableClass(?class) :-
+  mainAnalysis.Reachable(?method),
+  Method_DeclaringType(?method, ?class).
+
 .decl AppReachable(?method:Method)
 
 AppReachable(?method) :-
