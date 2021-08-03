@@ -23,7 +23,7 @@ public class JavaRepresentation {
     }
 
     public static String numberedInstructionId(String pre, String mid, SessionCounter c) {
-        return pre + "/" + mid + "/" + c.nextNumber(mid);
+        return instructionId(pre, mid, c.nextNumber(mid));
     }
 
     protected static String unsupportedId(String m, String kind, String ins, int index) {

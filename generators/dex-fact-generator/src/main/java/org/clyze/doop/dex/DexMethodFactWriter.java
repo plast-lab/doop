@@ -1110,7 +1110,7 @@ class DexMethodFactWriter extends JavaFactWriter {
                 "write-field-" + ((FieldReference) fieldRef).getName();
         } else
             kind = "assign";
-        String insn = instructionId(kind, index);
+        String insn = numberedInstructionId(methId, kind, counter);
         FieldInfo fi = new DexFieldInfo((DexBackedFieldReference)fieldRef);
         fieldOps.add(new FieldOp(target, insn, str(index), localA, localB, fi, methId));
     }

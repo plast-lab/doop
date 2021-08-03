@@ -116,48 +116,47 @@ class Representation extends JavaRepresentation {
         return numberedInstructionId(signature(m), name, counter);
     }
 
-    private String getKind(Stmt stmt) {
-        String kind = "unknown";
+    public static String getKind(Stmt stmt) {
         if (stmt instanceof AssignStmt) {
             AssignStmt assignStmt = (AssignStmt) stmt;
             Value rightOp = assignStmt.getRightOp();
             Value leftOp = assignStmt.getLeftOp();
             if (rightOp instanceof CastExpr)
-                kind = "assign-cast";
-            else if (rightOp instanceof FieldRef) {
-                kind = "read-field-" + ((FieldRef) rightOp).getFieldRef().name();
-            } else if (leftOp instanceof FieldRef) {
-                kind = "write-field-" + ((FieldRef) leftOp).getFieldRef().name();
-            } else
-                kind = "assign";
-        } else if ((stmt instanceof AssignStmt) || (stmt instanceof IdentityStmt))
-            kind = "assign";
-        else if(stmt instanceof DefinitionStmt)
-            kind = "definition";
-        else if(stmt instanceof EnterMonitorStmt)
-            kind = "enter-monitor";
-        else if(stmt instanceof ExitMonitorStmt)
-            kind = "exit-monitor";
-        else if(stmt instanceof GotoStmt)
-            kind = "goto";
-        else if(stmt instanceof IfStmt)
-            kind = "if";
-        else if(stmt instanceof InvokeStmt)
-            kind = "invoke";
-        else if(stmt instanceof RetStmt)
-            kind = "ret";
-        else if(stmt instanceof ReturnVoidStmt)
-            kind = "return-void";
-        else if(stmt instanceof ReturnStmt)
-            kind = "return";
-        else if(stmt instanceof SwitchStmt)
-            kind = "switch";
-        else if(stmt instanceof ThrowStmt)
-            kind = "throw";
-        return kind;
+                return "assign-cast";
+            else if (rightOp instanceof FieldRef)
+                return "read-field-" + ((FieldRef) rightOp).getFieldRef().name();
+            else if (leftOp instanceof FieldRef)
+                return "write-field-" + ((FieldRef) leftOp).getFieldRef().name();
+            else
+                return "assign";
+        } else if (stmt instanceof IdentityStmt)
+            return "assign";
+        else if (stmt instanceof DefinitionStmt)
+            return "definition";
+        else if (stmt instanceof EnterMonitorStmt)
+            return "enter-monitor";
+        else if (stmt instanceof ExitMonitorStmt)
+            return "exit-monitor";
+        else if (stmt instanceof GotoStmt)
+            return "goto";
+        else if (stmt instanceof IfStmt)
+            return "if";
+        else if (stmt instanceof InvokeStmt)
+            return "invoke";
+        else if (stmt instanceof RetStmt)
+            return "ret";
+        else if (stmt instanceof ReturnVoidStmt)
+            return "return-void";
+        else if (stmt instanceof ReturnStmt)
+            return "return";
+        else if (stmt instanceof SwitchStmt)
+            return "switch";
+        else if (stmt instanceof ThrowStmt)
+            return "throw";
+        return "unknown";
     }
 
-    String unsupported(SootMethod inMethod, Stmt stmt, int index) {
+    String unsupportedId(SootMethod inMethod, Stmt stmt, int index) {
         return unsupportedId(signature(inMethod), getKind(stmt), stmt.toString(), index);
     }
 

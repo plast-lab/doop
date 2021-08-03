@@ -655,7 +655,7 @@ class FactWriter extends JavaFactWriter {
 
     void writeUnsupported(SootMethod m, Stmt stmt, Session session) {
         int index = session.calcUnitNumber(stmt);
-        String insn = _rep.unsupported(m, stmt, index);
+        String insn = _rep.unsupportedId(m, stmt, index);
         String methodId = methodSig(m, null);
         _db.add(UNSUPPORTED_INSTRUCTION, insn, str(index), methodId);
     }
@@ -1094,12 +1094,19 @@ class FactWriter extends JavaFactWriter {
         final String insn;
         final String methodId;
         InstrInfo(SootMethod m, Stmt stmt, Session session, boolean calc) {
-            if (calc)
+            if (calc) {
                 this.index = session.calcUnitNumber(stmt);
-            else
+                this.insn = numberedInstructionId(_rep.signature(m), Representation.getKind(stmt), session);
+            } else {
                 this.index = session.getUnitNumber(stmt);
-            this.insn = _rep.instruction(m, stmt, index);
+                this.insn = _rep.instruction(m, stmt, index);
+            }
             this.methodId = methodSig(m, null);
+        }
+
+        @Override
+        public String toString() {
+            return "InstrInfo{ index=" + index + ", insn=" + insn + ", methodId=" + methodId + " }";
         }
     }
 }

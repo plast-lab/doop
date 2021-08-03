@@ -15,23 +15,16 @@ class Session extends SessionCounter {
   private final Map<Unit, Integer> _units = new HashMap<>();
   private int index = 0;
 
-  public int calcUnitNumber(Unit u)
-  {
-    index++;
-
+  public int calcUnitNumber(Unit u) {
     // record the first unit number for this unit (to handle jumps)
     _units.putIfAbsent(u, index);
-
-    return index;
+    return index++;
   }
 
-  public int getUnitNumber(Unit u)
-  {
+  public int getUnitNumber(Unit u) {
     Integer result = _units.get(u);
-    if(result == null) {
+    if (result == null)
       throw new RuntimeException("No unit number available for '" + u + "'");
-    }
-
     return result;
   }
 
