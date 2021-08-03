@@ -92,11 +92,11 @@ Server_Field_ShadowedBy(?fld, ?shadowFld) :-
 .output Server_Field_Read
 .output Server_Field_Write
 
-Server_Field_Read(?field, ?instr) :- _StoreInstanceField(?instr, _, _, _, ?field, _).
-Server_Field_Read(?field, ?instr) :- _StoreStaticField(?instr, _, _, ?field, _).
+Server_Field_Write(?field, ?instr) :- _StoreInstanceField(?instr, _, _, _, ?field, _).
+Server_Field_Write(?field, ?instr) :- _StoreStaticField(?instr, _, _, ?field, _).
 
-Server_Field_Write(?field, ?instr) :- _LoadInstanceField(?instr, _, _, _, ?field, _).
-Server_Field_Write(?field, ?instr) :- _LoadStaticField(?instr, _, _, ?field, _).
+Server_Field_Read(?field, ?instr) :- _LoadInstanceField(?instr, _, _, _, ?field, _).
+Server_Field_Read(?field, ?instr) :- _LoadStaticField(?instr, _, _, ?field, _).
 
 .decl _IFPT(?baseValue:Value, ?fld:Field, ?value:Value)
 .decl _SFPT(?fld:Field, ?value:Value)
