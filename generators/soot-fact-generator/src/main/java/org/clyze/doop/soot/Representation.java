@@ -119,9 +119,16 @@ class Representation extends JavaRepresentation {
     private String getKind(Stmt stmt) {
         String kind = "unknown";
         if (stmt instanceof AssignStmt) {
-            if (((AssignStmt) stmt).getRightOp() instanceof CastExpr)
+            AssignStmt assignStmt = (AssignStmt) stmt;
+            Value rightOp = assignStmt.getRightOp();
+            Value leftOp = assignStmt.getLeftOp();
+            if (rightOp instanceof CastExpr)
                 kind = "assign-cast";
-            else
+            else if (rightOp instanceof FieldRef) {
+                kind = "read-field-" + ((FieldRef) rightOp).getFieldRef().name();
+            } else if (leftOp instanceof FieldRef) {
+                kind = "write-field-" + ((FieldRef) leftOp).getFieldRef().name();
+            } else
                 kind = "assign";
         } else if ((stmt instanceof AssignStmt) || (stmt instanceof IdentityStmt))
             kind = "assign";

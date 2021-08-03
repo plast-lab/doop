@@ -19,7 +19,7 @@ class Session extends SessionCounter {
   {
     index++;
 
-    // record the first unit number for this units (to handle jumps)
+    // record the first unit number for this unit (to handle jumps)
     _units.putIfAbsent(u, index);
 
     return index;

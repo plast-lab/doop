@@ -30,6 +30,7 @@ import org.jf.dexlib2.iface.debug.RestartLocal;
 import org.jf.dexlib2.iface.debug.StartLocal;
 import org.jf.dexlib2.iface.instruction.*;
 import org.jf.dexlib2.iface.instruction.formats.ArrayPayload;
+import org.jf.dexlib2.iface.reference.FieldReference;
 import org.jf.dexlib2.iface.reference.Reference;
 import org.jf.dexlib2.iface.reference.TypeReference;
 import org.jf.dexlib2.immutable.debug.ImmutableEpilogueBegin;
@@ -1094,15 +1095,22 @@ class DexMethodFactWriter extends JavaFactWriter {
     private void writeLoadOrStoreSField(Instruction instr, int index,
                                         boolean isLoad, Collection<FieldOp> fieldOps) {
         int reg = ((OneRegisterInstruction)instr).getRegisterA();
-        PredicateFile target= isLoad ? LOAD_STATIC_FIELD : STORE_STATIC_FIELD;
+        PredicateFile target = isLoad ? LOAD_STATIC_FIELD : STORE_STATIC_FIELD;
         writeFieldOp(instr, target, local(reg), null, index, fieldOps);
     }
 
     private void writeFieldOp(Instruction instr, PredicateFile target,
                               String localA, @Nullable String localB, int index,
                               Collection<FieldOp> fieldOps) {
-        String insn = instructionId("assign", index);
         Reference fieldRef = ((ReferenceInstruction)instr).getReference();
+        String kind;
+        if (fieldRef instanceof FieldReference) {
+            kind = target.equals(LOAD_STATIC_FIELD) || target.equals(LOAD_INST_FIELD) ?
+                "read-field-"  + ((FieldReference) fieldRef).getName():
+                "write-field-" + ((FieldReference) fieldRef).getName();
+        } else
+            kind = "assign";
+        String insn = instructionId(kind, index);
         FieldInfo fi = new DexFieldInfo((DexBackedFieldReference)fieldRef);
         fieldOps.add(new FieldOp(target, insn, str(index), localA, localB, fi, methId));
     }
