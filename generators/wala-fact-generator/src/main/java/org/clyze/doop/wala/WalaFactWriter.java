@@ -374,7 +374,7 @@ class WalaFactWriter extends JavaFactWriter {
         String constant = s.getValue().toString();
         String heapId = writeStringConstant(constant);
 
-        String insn = _rep.signature(m) + "/assign/instruction" + index; // Not using _rep.instruction() because we do not want to be identified by our instr
+        String insn = _rep.signature(m) + "/assign/" + index; // Not using _rep.instruction() because we do not want to be identified by our instr
         String methodId = _rep.signature(m);
 
         _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heapId, _rep.local(m, l), methodId, ""+getLineNumberFromInstruction(ir, instruction));
@@ -382,7 +382,7 @@ class WalaFactWriter extends JavaFactWriter {
 
     private void writeAssignNull(IMethod m, SSAInstruction instruction, Local l, Session session) {
         int index = session.calcInstructionNumber(instruction);
-        String insn = _rep.signature(m) + "/assign/instruction" + index; // Not using _rep.instruction() because we do not want to be identified by our instr
+        String insn = _rep.signature(m) + "/assign/" + index; // Not using _rep.instruction() because we do not want to be identified by our instr
         String methodId = _rep.signature(m);
 
         _db.add(ASSIGN_NULL, insn, str(index), _rep.local(m, l), methodId);
@@ -390,7 +390,7 @@ class WalaFactWriter extends JavaFactWriter {
 
     private void writeAssignNumConstant(IMethod m, SSAInstruction instruction, Local l, ConstantValue constant, Session session) {
         int index = session.calcInstructionNumber(instruction);
-        String insn = _rep.signature(m) + "/assign/instruction" + index; // Not using _rep.instruction() because we do not want to be identified by our instr
+        String insn = _rep.signature(m) + "/assign/" + index; // Not using _rep.instruction() because we do not want to be identified by our instr
         String methodId = _rep.signature(m);
 
         _db.add(ASSIGN_NUM_CONST, insn, str(index), constant.toString().substring(1), _rep.local(m, l), methodId);
@@ -398,7 +398,7 @@ class WalaFactWriter extends JavaFactWriter {
 
     private void writeAssignMethodTypeConstant(IMethod m, SSAInstruction instr, Local l, ConstantValue constant, Session session) {
         int index = session.calcInstructionNumber(instr);
-        String insn = _rep.signature(m) + "/assign/instruction" + index; // Not using _rep.instruction() because we do not want to be identified by our instr
+        String insn = _rep.signature(m) + "/assign/" + index; // Not using _rep.instruction() because we do not want to be identified by our instr
         //String heap = constant.getMethodRef().toString();
         String heap = (String) constant.getValue();
         String methodId = _rep.signature(m);
@@ -409,7 +409,7 @@ class WalaFactWriter extends JavaFactWriter {
 
     private void writeAssignMethodHandleConstant(IMethod m, SSAInstruction instr, Local l, ConstantValue constant, Session session) {
         int index = session.calcInstructionNumber(instr);
-        String insn = _rep.signature(m) + "/assign/instruction" + index; // Not using _rep.instruction() because we do not want to be identified by our instr
+        String insn = _rep.signature(m) + "/assign/" + index; // Not using _rep.instruction() because we do not want to be identified by our instr
         //String handleName = constant.getMethodRef().toString();
         String handleName =(String) constant.getValue();
         String heap = methodHandleConstant(handleName);
@@ -454,7 +454,7 @@ class WalaFactWriter extends JavaFactWriter {
 
         writeClassHeap(heap, actualType);
         int index = session.calcInstructionNumber(instruction);
-        String insn = _rep.signature(m) + "/assign/instruction" + index; // Not using _rep.instruction() because we do not want to be identified by our instr
+        String insn = _rep.signature(m) + "/assign/" + index; // Not using _rep.instruction() because we do not want to be identified by our instr
         String methodId = _rep.signature(m);
 
         // REVIEW: the class object is not explicitly written. Is this always ok?
@@ -1199,7 +1199,7 @@ class WalaFactWriter extends JavaFactWriter {
             writeLocal(var, declaredExc, methodSig);
             heap = methodSig + "/new " + declaredExc + "/0";
             _db.add(NORMAL_HEAP, heap, declaredExc);
-            newInstr = methodSig + "/assign/instruction" + str(i);
+            newInstr = methodSig + "/assign/" + str(i);
             _db.add(ASSIGN_HEAP_ALLOC, newInstr, str(i), heap, var, methodSig, "0");
             specInvInstr = methodSig +"/" + declaredExc +".<init>/0" ;
             targetRef = "<" + declaredExc + ":  void <init>()>";

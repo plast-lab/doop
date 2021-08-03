@@ -456,7 +456,7 @@ RewriteAssignLocal(?insnid, ?index, ?to, ?from, ?inmethod) :-
     PhiPseudoAssign(?to, ?from, ?block, ?insn),
     Instruction_Method(?block, ?inmethod),
     SSA_InstructionIndex(?insn, ?index),
-    ?insnid = cat(?inmethod, cat("/phiassign/instruction", to_string(?index))).
+    ?insnid = cat(?inmethod, cat("/phiassign/", to_string(?index))).
 
 .decl RewriteAssignNull(?insn:symbol, ?index:number, ?to:symbol, ?inmethod:symbol)
 .output RewriteAssignNull(filename="AssignNull.facts")

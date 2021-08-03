@@ -296,7 +296,7 @@ class PythonRepresentation {
         return signature(inMethod) +
                 "/unsupported " + getKind(instruction) +
                 "/" +  instruction.toString(ir.getSymbolTable()).replace(" ", "") +
-                "/instruction" + index;
+                "/" + index;
     }
 
     /**
@@ -314,7 +314,7 @@ class PythonRepresentation {
             }
         }
 
-        return signature(inMethod) + "/" + getKind(instruction) + "/instruction" + index;
+        return signature(inMethod) + "/" + getKind(instruction) + "/" + index;
     }
 
     String functionInvoke(IMethod inMethod, PythonInvokeInstruction insn, SessionCounter counter)

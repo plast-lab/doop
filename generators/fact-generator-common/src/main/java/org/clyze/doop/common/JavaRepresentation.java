@@ -19,7 +19,7 @@ public class JavaRepresentation {
     }
 
     public static String instructionId(String m, String kind, int index) {
-        return m + "/" + kind + "/instruction" + index;
+        return m + "/" + kind + "/" + index;
     }
 
     public static String numberedInstructionId(String pre, String mid, SessionCounter c) {
@@ -27,7 +27,7 @@ public class JavaRepresentation {
     }
 
     protected static String unsupportedId(String m, String kind, String ins, int index) {
-        return m + "/unsupported " + kind + "/" + ins + "/instruction" + index;
+        return m + "/unsupported " + kind + "/" + ins + "/" + index;
     }
 
     protected static String localId(String m, String l) {
