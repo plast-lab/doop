@@ -34,7 +34,7 @@
  * Reachable
  */
 .decl Reachable(?method:Method)
-
+.decl ReachableClass(?class:ReferenceType)
 .decl ReachableContext(?ctx:configuration.Context, ?method:Method)
 
 // .decl OptLoadInstanceField(?to:Var, ?signature:Field, ?base:Var)

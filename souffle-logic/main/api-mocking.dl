@@ -102,3 +102,34 @@ MockedMethodReturns(?method, ?alloc, "java.lang.String") :-
   ?alloc = "<mock device id>".
 
 #endif // ANDROID
+
+#ifdef X_MODEL_STDLIB
+
+.decl OpaqueInstanceInvocation(?invo:MethodInvocation, ?base:Var, ?method:Method)
+.output OpaqueInstanceInvocation
+OpaqueInstanceInvocation(?invo, ?base, ?method) :-
+  isOpaqueInstruction(?invo),
+  ( _SpecialMethodInvocation(?invo, _, ?method, ?base, _)
+  ; _VirtualMethodInvocation(?invo, _, ?method, ?base, _)).
+
+
+.decl CollectionValueIn(?baseValue:Value, ?value:Value)
+.output CollectionValueIn
+
+CollectionValueIn(?baseValue, ?value) :-
+  OpaqueInstanceInvocation(?invo, ?base, ?method),
+  CollectionMethod(?method, "IN"),
+  ActualParam(_, ?invo, ?arg),
+  mainAnalysis.VarPointsTo(_, ?baseValue, ?ctx, ?base),
+  mainAnalysis.VarPointsTo(_, ?value, ?ctx, ?arg).
+
+mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?ret) :-
+  OpaqueInstanceInvocation(?invo, ?base, ?method),
+  CollectionMethod(?method, "OUT"),
+  AssignReturnValue(?invo, ?ret),
+  mainAnalysis.VarPointsTo(_, ?baseValue, ?ctx, ?base),
+  CollectionValueIn(?baseValue, ?value),
+  isImmutableHContext(?hctx).
+
+#endif // X_MODEL_STDLIB
+

@@ -1,3 +1,6 @@
+.decl AllocatedObjectSupportsFinalize(?heap:HeapAllocation, ?inmethod:Method)
+.decl OverridesFinalize(?class:Type)
+
 AllocatedObjectSupportsFinalize(?heap, ?inmethod) :-
     AssignHeapAllocation(?heap, _, ?inmethod),
     HeapAllocation_Type(?heap, ?class),

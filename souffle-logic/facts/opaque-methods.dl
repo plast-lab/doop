@@ -15,9 +15,6 @@
 .decl isOpaqueInstruction(?insn:OpaqueInstruction)
 .output isOpaqueInstruction
 
-.decl ClassLoaderMethod(?method:Method, ?argIdx:number)
-.output ClassLoaderMethod
-
 // Opaque method invocations
 
 isOpaqueInstruction(?instruction) :-
@@ -29,6 +26,15 @@ isOpaqueInstruction(?instruction) :-
 isOpaqueInstruction(?instruction) :-
    _VirtualMethodInvocation(?instruction, _, ?signature, _, _),
    isOpaqueMethod(?signature).
+
+#define OPAQUE_METHOD(meth) isOpaqueMethod(m) :- isMethod(m), m = meth
+
+/**** Opaque methods and reflection *****/
+
+#if defined(REFLECTION) || defined(LIGHT_REFLECTION_GLUE)
+
+.decl ClassLoaderMethod(?method:Method, ?argIdx:number)
+.output ClassLoaderMethod
 
 #define CLASS_LOADER_METHOD(method, idx) ClassLoaderMethod(?m, idx) :- isMethod(?m), ?m = method
 
@@ -72,8 +78,6 @@ MTEP(6, "<java.lang.invoke.MethodType: java.lang.invoke.MethodType methodType(ja
 isOpaqueMethod(?method) :- ClassLoaderMethod(?method, _).
 isOpaqueMethod(?method) :- MTEntryPoint(_, _, ?method).
 
-#define OPAQUE_METHOD(meth) isOpaqueMethod(m) :- isMethod(m), m = meth
-
 OPAQUE_METHOD("<java.lang.Class: java.lang.String getSimpleName()>").
 OPAQUE_METHOD("<java.lang.Class: java.lang.Object[] getEnumConstants()>").
 OPAQUE_METHOD("<java.lang.invoke.MethodHandle: java.lang.invoke.MethodHandle asType(java.lang.invoke.MethodType)>").
@@ -85,5 +89,122 @@ OPAQUE_METHOD("<java.lang.invoke.MethodHandles$Lookup: java.lang.Class lookupCla
 OPAQUE_METHOD("<java.lang.invoke.MethodType: java.lang.Class parameterType(int)>").
 OPAQUE_METHOD("<java.lang.invoke.MethodType: java.lang.Class returnType()>").
 
+#endif // REFLECTION || LIGHT_REFLECTION_GLUE
+
 // There is special support for dynamic proxies API, API internals are not analyzed.
 OPAQUE_METHOD("<sun.misc.ProxyGenerator: byte[] generateClassFile()>").
+
+
+/**** Opaque methods and standard library modeling *****/
+
+#ifdef X_MODEL_STDLIB
+
+.decl CollectionType(?type:ReferenceType)
+.output CollectionType
+
+#define COLLECTION_TYPE(t) CollectionType(t) :- isReferenceType(t)
+
+COLLECTION_TYPE("java.awt.RenderingHints").
+COLLECTION_TYPE("java.beans.beancontext.BeanContextServicesSupport").
+COLLECTION_TYPE("java.beans.beancontext.BeanContextSupport").
+COLLECTION_TYPE("java.security.AuthProvider").
+COLLECTION_TYPE("java.security.Provider").
+COLLECTION_TYPE("java.util.AbstractCollection").
+COLLECTION_TYPE("java.util.AbstractList").
+COLLECTION_TYPE("java.util.ArrayList").
+COLLECTION_TYPE("java.util.AbstractMap").
+COLLECTION_TYPE("java.util.AbstractSequentialList").
+COLLECTION_TYPE("java.util.AbstractSet").
+COLLECTION_TYPE("java.util.ArrayDeque").
+COLLECTION_TYPE("java.util.ArrayQueue").
+COLLECTION_TYPE("java.util.EnumSet").
+COLLECTION_TYPE("java.util.HashSet").
+COLLECTION_TYPE("java.util.LinkedHashSet").
+COLLECTION_TYPE("java.util.LinkedList").
+COLLECTION_TYPE("java.util.PriorityQueue").
+COLLECTION_TYPE("java.util.Stack").
+COLLECTION_TYPE("java.util.TreeSet").
+COLLECTION_TYPE("java.util.Vector").
+COLLECTION_TYPE("java.util.EnumMap").
+COLLECTION_TYPE("java.util.HashMap").
+COLLECTION_TYPE("java.util.Hashtable").
+COLLECTION_TYPE("java.util.IdentityHashMap").
+COLLECTION_TYPE("java.util.LinkedHashMap").
+COLLECTION_TYPE("java.util.TreeMap").
+COLLECTION_TYPE("java.util.WeakHashMap").
+COLLECTION_TYPE("java.util.Properties").
+COLLECTION_TYPE("java.util.concurrent.ArrayBlockingQueue").
+COLLECTION_TYPE("java.util.concurrent.ConcurrentHashMap").
+COLLECTION_TYPE("java.util.concurrent.ConcurrentSkipListMap").
+COLLECTION_TYPE("java.util.concurrent.ConcurrentHashMap$KeySetView").
+COLLECTION_TYPE("java.util.concurrent.ConcurrentLinkedDeque").
+COLLECTION_TYPE("java.util.concurrent.ConcurrentLinkedQueue").
+COLLECTION_TYPE("java.util.concurrent.ConcurrentSkipListSet").
+COLLECTION_TYPE("java.util.concurrent.CopyOnWriteArrayList").
+COLLECTION_TYPE("java.util.concurrent.CopyOnWriteArraySet").
+COLLECTION_TYPE("java.util.concurrent.DelayQueue").
+COLLECTION_TYPE("java.util.concurrent.LinkedBlockingDeque").
+COLLECTION_TYPE("java.util.concurrent.LinkedBlockingQueue").
+COLLECTION_TYPE("java.util.concurrent.LinkedTransferQueue").
+COLLECTION_TYPE("java.util.concurrent.PriorityBlockingQueue").
+COLLECTION_TYPE("java.util.concurrent.SynchronousQueue").
+COLLECTION_TYPE("java.util.jar.Attributes").
+COLLECTION_TYPE("javax.management.AttributeList").
+COLLECTION_TYPE("javax.management.openmbean.TabularDataSupport").
+COLLECTION_TYPE("javax.management.relation.RoleList").
+COLLECTION_TYPE("javax.management.relation.RoleUnresolvedList").
+COLLECTION_TYPE("javax.print.attribute.standard.JobStateReasons").
+COLLECTION_TYPE("javax.print.attribute.standard.PrinterStateReasons").
+COLLECTION_TYPE("javax.script.SimpleBindings").
+COLLECTION_TYPE("javax.swing.UIDefaults").
+
+.decl CollectionMethodSig(?sig:symbol, ?kind:symbol)
+.output CollectionMethodSig
+
+CollectionMethodSig("void add(int,java.lang.Object)", "IN").
+CollectionMethodSig("boolean add(java.lang.Object)", "IN").
+CollectionMethodSig("java.lang.Object set(int,java.lang.Object)", "IN").
+CollectionMethodSig("java.lang.Object put(java.lang.Object,java.lang.Object)", "IN").
+CollectionMethodSig("java.lang.Object putIfAbsent(java.lang.Object,java.lang.Object)", "IN").
+
+CollectionMethodSig("java.lang.Object get(int)", "OUT").
+CollectionMethodSig("java.lang.Object get(java.lang.Object)", "OUT").
+CollectionMethodSig("java.lang.Object getOrDefault(java.lang.Object,java.lang.Object)", "OUT").
+
+CollectionMethodSig("boolean addAll(int,java.util.Collection)", "").
+CollectionMethodSig("boolean addAll(java.util.Collection)", "").
+CollectionMethodSig("boolean batchRemove(java.util.Collection,boolean)", "").
+CollectionMethodSig("void clear()", "").
+CollectionMethodSig("java.lang.Object clone()", "").
+CollectionMethodSig("boolean contains(java.lang.Object)", "").
+CollectionMethodSig("boolean containsAll(java.util.Collection)", "").
+CollectionMethodSig("void fastRemove(int)", "").
+CollectionMethodSig("java.lang.Object remove(int)", "").
+CollectionMethodSig("boolean remove(java.lang.Object)", "").
+CollectionMethodSig("boolean removeAll(java.util.Collection)", "").
+CollectionMethodSig("boolean removeIf(java.util.function.Predicate)", "").
+CollectionMethodSig("void removeRange(int,int)", "").
+
+CollectionMethodSig("boolean containsKey(java.lang.Object)", "").
+CollectionMethodSig("boolean containsValue(java.lang.Object)", "").
+CollectionMethodSig("java.lang.Object remove(java.lang.Object)", "").
+CollectionMethodSig("void putAll(java.util.Map)", "").
+CollectionMethodSig("boolean remove(java.lang.Object,java.lang.Object)", "").
+CollectionMethodSig("boolean replace(java.lang.Object,java.lang.Object,java.lang.Object)", "").
+CollectionMethodSig("java.lang.Object replace(java.lang.Object,java.lang.Object)", "").
+
+// Mark Collection methods as opaque. This is done in a low-level way (without
+// type hierarchy information) so that opaque methods can be computed early
+// and corresponding method facts are skipped during import.
+
+.decl CollectionMethod(?method:Method, ?kind:symbol)
+.output CollectionMethod
+
+CollectionMethod(?method, ?kind),
+isOpaqueMethod(?method) :-
+  CollectionType(?type),
+  (CollectionMethodSig(?sig, ?kind)),
+  ?method = cat("<", cat(?type, cat(": ", cat(?sig, ">")))),
+  isMethod(?method).
+
+#endif // X_MODEL_STDLIB

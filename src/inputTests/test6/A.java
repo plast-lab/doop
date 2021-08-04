@@ -52,6 +52,17 @@ class Main {
 		foobar5(BAR);
 
 		printfoo(board);
+
+		blaaa();
+	}
+
+	static void blaaa() {
+		try {
+			int a = 10;
+			throw new RuntimeException("" + a);
+		} catch (Exception e) {
+			System.out.println(e.getMessage());
+		}
 	}
 
 	static char playerHasWon(char[][] board) {

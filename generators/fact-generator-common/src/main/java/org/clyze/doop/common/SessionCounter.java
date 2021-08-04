@@ -14,7 +14,7 @@ public class SessionCounter {
     public int nextNumber(String s) {
         Integer x = _tempVarMap.get(s);
 
-        if(x == null)
+        if (x == null)
             x = 0;
 
         _tempVarMap.put(s, x + 1);

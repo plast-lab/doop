@@ -310,13 +310,15 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		def endCol = getLastToken(ctx.methodSig()).symbol.charPositionInLine + 2
 
 		String gDoopId = null
+		String targetReturnType = null    // TODO: NOT IMPLEMENTED
+		String targetParamTypes = null    // TODO: NOT IMPLEMENTED
 		if (ctx.dynamicMethodSig())
 			gDoopId = dynamicInvokeMiddlePart(ctx)
 
 		if (!gDoopId) {
 			def c = methodInvoCounters["$methodClass|$methodName"] as int
 			methodInvoCounters["$methodClass|$methodName"] = c + 1
-			gDoopId = "${method.symbolId}/${methodClass}.$methodName/$c"
+			gDoopId = "${method.symbolId}/${methodClass}.${methodName}/$c"
 		}
 
 		processor.accept new JvmMethodInvocation(
@@ -324,7 +326,10 @@ class JimpleListenerImpl extends JimpleBaseListener {
 				filename,
 				false,
 				methodName,
-				gDoopId, //doopId
+				gDoopId, //symbolId
+				methodClass,
+				targetReturnType,
+				targetParamTypes,
 				method.symbolId, //invokingMethodId
 				false //inIIB
 		)
@@ -395,11 +400,13 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		def line = id.symbol.line
 		def startCol = id.symbol.charPositionInLine + 1
 		def name = stripQuotes(id.text)
+		def endCol = startCol + name.length()
 
 		processor.accept new Usage(
-				new Position(line, line, startCol, startCol + name.length()),
+				new Position(line, line, startCol, endCol),
 				filename,
 				false,
+				getUsageId(filename, line, line, startCol, endCol),
 				"${method.symbolId}/$name", //doopId
 				kind
 		)
@@ -418,9 +425,14 @@ class JimpleListenerImpl extends JimpleBaseListener {
 				new Position(line, line, startCol, endCol),
 				filename,
 				false,
+				getUsageId(filename, line, line, startCol, endCol),
 				"<$klassStr: $type $name>", //doopId
 				kind
 		)
+	}
+
+	static String getUsageId(String filename, def startLine, def endLine, def startCol, def endCol) {
+		return "Usage-${filename}-${endLine}-${endLine}-${startCol}-${endCol}"
 	}
 
 	void addTypeUsage(TerminalNode id) {
@@ -429,13 +441,15 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		def line = id.symbol.line
 		def startCol = id.symbol.charPositionInLine + 1
 		def name = stripQuotes(id.text)
+		def endCol = startCol + name.length()
 
 		if (name == "void") return
 
 		processor.accept new Usage(
-				new Position(line, line, startCol, startCol + name.length()),
+				new Position(line, line, startCol, endCol),
 				filename,
 				false,
+				getUsageId(filename, line, line, startCol, endCol),
 				name, //doopId
 				UsageKind.TYPE
 		)

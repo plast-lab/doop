@@ -113,6 +113,12 @@ InterestingStmt(stmt) :-
 	Instruction_Method(stmt, meth).
 #endif
 
+// Intraprocedural handling of exceptions
+OptBaseFlows(throwVar, catchVar) :-
+	Throw(stmt, throwVar),
+	basic.ExceptionHandler_InRange(handler, stmt),
+	ExceptionHandler_FormalParam(handler, catchVar).
+
 
 ResolveCall(stmt, method) :-
 	isStaticMethodInvocation_Insn(stmt),

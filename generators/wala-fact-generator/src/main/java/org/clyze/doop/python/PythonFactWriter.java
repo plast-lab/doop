@@ -219,7 +219,7 @@ class PythonFactWriter {
         String constant = s.getValue().toString();
         String heapId = writeStringConstant(constant);
 
-        String insn = _rep.signature(m) + "/assign/instruction" + index; // Not using _rep.instruction() because we do not want to be identified by our instr
+        String insn = _rep.signature(m) + "/assign/" + index; // Not using _rep.instruction() because we do not want to be identified by our instr
         String methodId = _rep.signature(m);
 
         _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heapId, _rep.local(m, l), methodId);
@@ -227,7 +227,7 @@ class PythonFactWriter {
 
     private void writeAssignNone(IMethod m, SSAInstruction instruction, Local l, Session session) {
         int index = session.calcInstructionNumber(instruction);
-        String insn = _rep.signature(m) + "/assign/instruction" + index; // Not using _rep.instruction() because we do not want to be identified by our instr
+        String insn = _rep.signature(m) + "/assign/" + index; // Not using _rep.instruction() because we do not want to be identified by our instr
         String methodId = _rep.signature(m);
 
         _db.add(ASSIGN_NONE, insn, str(index), _rep.local(m, l), methodId);
@@ -235,7 +235,7 @@ class PythonFactWriter {
 
     private void writeAssignBoolConstant(IMethod m, SSAInstruction instruction, Local l, ConstantValue constant, Session session) {
         int index = session.calcInstructionNumber(instruction);
-        String insn = _rep.signature(m) + "/assign/instruction" + index; // Not using _rep.instruction() because we do not want to be identified by our instr
+        String insn = _rep.signature(m) + "/assign/" + index; // Not using _rep.instruction() because we do not want to be identified by our instr
         String methodId = _rep.signature(m);
 
         _db.add(ASSIGN_BOOL_CONST, insn, str(index), constant.toString().substring(1), _rep.local(m, l), methodId);
@@ -243,7 +243,7 @@ class PythonFactWriter {
 
     private void writeAssignIntConstant(IMethod m, SSAInstruction instruction, Local l, ConstantValue constant, Session session) {
         int index = session.calcInstructionNumber(instruction);
-        String insn = _rep.signature(m) + "/assign/instruction" + index; // Not using _rep.instruction() because we do not want to be identified by our instr
+        String insn = _rep.signature(m) + "/assign/" + index; // Not using _rep.instruction() because we do not want to be identified by our instr
         String methodId = _rep.signature(m);
 
         _db.add(ASSIGN_INT_CONST, insn, str(index), constant.toString().substring(1), _rep.local(m, l), methodId);
@@ -251,7 +251,7 @@ class PythonFactWriter {
 
     private void writeAssignFloatConstant(IMethod m, SSAInstruction instruction, Local l, ConstantValue constant, Session session) {
         int index = session.calcInstructionNumber(instruction);
-        String insn = _rep.signature(m) + "/assign/instruction" + index; // Not using _rep.instruction() because we do not want to be identified by our instr
+        String insn = _rep.signature(m) + "/assign/" + index; // Not using _rep.instruction() because we do not want to be identified by our instr
         String methodId = _rep.signature(m);
 
         _db.add(ASSIGN_FLOAT_CONST, insn, str(index), constant.toString().substring(1), _rep.local(m, l), methodId);
