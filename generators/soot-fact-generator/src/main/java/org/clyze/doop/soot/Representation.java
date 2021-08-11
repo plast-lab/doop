@@ -90,10 +90,6 @@ class Representation extends JavaRepresentation {
         return methodId + "/@parameter" + i;
     }
 
-    String local(SootMethod m, Local l) {
-        return local(signature(m), l);
-    }
-
     String local(String m, Local l) {
         return stripQuotes(localId(m, l.getName()));
     }
@@ -165,19 +161,11 @@ class Representation extends JavaRepresentation {
         return "unknown";
     }
 
-    String unsupportedId(String inMethod, Stmt stmt, int index) {
-        return unsupportedId(inMethod, getKind(stmt), stmt.toString(), index);
-    }
-
     /**
-     * Text representation of instruction to be used as refmode.
+     * Text representation of instruction to be used as unique instruction identifier.
      */
     String instruction(SootMethod inMethod, Unit unit, int index) {
         return instructionId(signature(inMethod), getKind(unit), index);
-    }
-
-    String instruction(String inMethod, Unit unit, int index) {
-        return instructionId(inMethod, getKind(unit), index);
     }
 
     String invoke(SootMethod inMethod, InvokeExpr expr, SessionCounter counter) {
