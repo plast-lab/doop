@@ -7,11 +7,15 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.clyze.doop.common.InstrInfo;
 import org.clyze.doop.common.Phantoms;
+import org.clyze.doop.common.SessionCounter;
 import soot.*;
 import soot.jimple.*;
 import soot.shimple.PhiExpr;
 import soot.shimple.Shimple;
+
+import static org.clyze.doop.common.JavaRepresentation.numberedInstructionId;
 
 /**
  * Traverses Soot classes and invokes methods in FactWriter to
@@ -66,7 +70,7 @@ class FactGenerator implements Runnable {
             _sootClass.getFields().forEach(this::generate);
 
             for (SootMethod m : new ArrayList<>(_sootClass.getMethods())) {
-                Session session = new Session();
+                SessionCounter session = new SessionCounter();
                 try {
                     generate(m, session);
                 } catch (Throwable t) {
@@ -167,7 +171,7 @@ class FactGenerator implements Runnable {
         return false;
     }
 
-    void generate(SootMethod m, Session session) {
+    void generate(SootMethod m, SessionCounter session) {
         String methodId = _writer.writeMethod(m);
 
         if (m.isPhantom()) {
@@ -230,7 +234,7 @@ class FactGenerator implements Runnable {
         }
     }
 
-    private void generate(SootMethod m, Body b, Session session) {
+    private void generate(SootMethod m, Body b, SessionCounter session) {
         String methodId = _writer._rep.signature(m);
         for(Local l : b.getLocals())
             _writer.writeLocal(methodId, l);
@@ -240,11 +244,12 @@ class FactGenerator implements Runnable {
         for (Unit u : b.getUnits()) {
             u.apply(sw);
 
-            InstrInfo ii = new InstrInfo(_writer, m, u, session, true);
+            String insn = numberedInstructionId(methodId, Representation.getKind(u), session);
+            InstrInfo ii = new InstrInfo(_writer.methodSig(m, null), insn, session.calcInstructionIndex(u));
             iis.put(u, ii);
             if (sw.relevant) {
                 if (u instanceof AssignStmt) {
-                    generate(m, methodId, (AssignStmt) u, ii, session);
+                    generate(m, (AssignStmt) u, ii, session);
                 } else if (u instanceof IdentityStmt) {
                     generate((IdentityStmt) u, ii, session);
                 } else if (u instanceof InvokeStmt) {
@@ -259,7 +264,6 @@ class FactGenerator implements Runnable {
                            (u instanceof SwitchStmt) || (u instanceof NopStmt)) {
                     // processed in second run: we might not know the number of
                     // the unit yet.
-                    // session.calcUnitNumber(u);
                 } else if (u instanceof EnterMonitorStmt) {
                     //TODO: how to handle EnterMonitorStmt when op is not a Local?
                     EnterMonitorStmt stmt = (EnterMonitorStmt) u;
@@ -328,18 +332,17 @@ class FactGenerator implements Runnable {
     /**
      * Assignment statement
      */
-    private void generate(SootMethod inMethod, String inMethodId, AssignStmt stmt, InstrInfo ii, Session session) {
+    private void generate(SootMethod inMethod, AssignStmt stmt, InstrInfo ii, SessionCounter session) {
         if (stmt.getLeftOp() instanceof Local)
             generateLeftLocal(inMethod, stmt, ii, session);
         else
             generateLeftNonLocal(stmt, ii, session);
     }
 
-    private void generateLeftLocal(SootMethod inMethod, AssignStmt stmt, InstrInfo ii, Session session) {
+    private void generateLeftLocal(SootMethod inMethod, AssignStmt stmt, InstrInfo ii, SessionCounter session) {
         Local left = (Local) stmt.getLeftOp();
         Value right = stmt.getRightOp();
 
-        String inMethodId = _writer._rep.signature(inMethod);
         if (right instanceof Local)
             _writer.writeAssignLocal(ii, left, (Local) right);
         else if (right instanceof InvokeExpr)
@@ -401,7 +404,7 @@ class FactGenerator implements Runnable {
             throw new RuntimeException("Cannot handle assignment: " + stmt + " (right: " + right.getClass() + ")");
     }
 
-    private void generateLeftNonLocal(AssignStmt stmt, InstrInfo ii, Session session) {
+    private void generateLeftNonLocal(AssignStmt stmt, InstrInfo ii, SessionCounter session) {
         Value left = stmt.getLeftOp();
         Value right = stmt.getRightOp();
 
@@ -457,7 +460,7 @@ class FactGenerator implements Runnable {
             throw new RuntimeException("Cannot handle assignment: " + stmt + " (right: " + right.getClass() + ")");
     }
 
-    private void generate(IdentityStmt stmt, InstrInfo ii, Session session)
+    private void generate(IdentityStmt stmt, InstrInfo ii, SessionCounter session)
     {
         Value left = stmt.getLeftOp();
         Value right = stmt.getRightOp();
@@ -483,7 +486,7 @@ class FactGenerator implements Runnable {
     /**
      * Return statement
      */
-    private void generate(ReturnStmt stmt, Type returnType, InstrInfo ii, Session session)
+    private void generate(ReturnStmt stmt, Type returnType, InstrInfo ii, SessionCounter session)
     {
         Value v = stmt.getOp();
 
@@ -512,7 +515,7 @@ class FactGenerator implements Runnable {
             throw new RuntimeException("Unhandled return statement: " + stmt);
     }
 
-    private void generate(String inMethod, ThrowStmt stmt, InstrInfo ii, Session session) {
+    private void generate(String inMethod, ThrowStmt stmt, InstrInfo ii, SessionCounter session) {
         Value v = stmt.getOp();
 
         if (v instanceof Local)

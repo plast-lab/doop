@@ -3,12 +3,8 @@ package org.clyze.doop.soot;
 import com.google.common.collect.Lists;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import org.clyze.doop.common.BasicJavaSupport;
-import org.clyze.doop.common.Database;
-import org.clyze.doop.common.JavaFactWriter;
-import org.clyze.doop.common.Phantoms;
-import org.clyze.doop.common.PredicateFile;
-import org.clyze.doop.common.SessionCounter;
+
+import org.clyze.doop.common.*;
 import org.clyze.utils.TypeUtils;
 import soot.*;
 import soot.jimple.*;
@@ -231,7 +227,7 @@ class FactWriter extends JavaFactWriter {
         writeAssignLocal(ii.insn, ii.index, _rep.param(methodId, ref.getIndex()), _rep.local(methodId, to), methodId);
     }
 
-    void writeAssignInvoke(SootMethod inMethod, Stmt stmt, InstrInfo ii, Local to, Session session) {
+    void writeAssignInvoke(SootMethod inMethod, Stmt stmt, InstrInfo ii, Local to, SessionCounter session) {
         writeInvoke(inMethod, stmt, ii, session);     // Ignore return insn value?
         _db.add(ASSIGN_RETURN_VALUE, ii.insn, _rep.local(ii.methodId, to));
     }
@@ -246,7 +242,7 @@ class FactWriter extends JavaFactWriter {
             _db.add(ARRAY_ALLOC, ii.insn, str(pos), _rep.local(ii.methodId, (Local)sizeVal));
     }
 
-    void writeAssignHeapAllocation(Stmt stmt, InstrInfo ii, Local l, Value expr, Session session) {
+    void writeAssignHeapAllocation(Stmt stmt, InstrInfo ii, Local l, Value expr, SessionCounter session) {
         String methodId = ii.methodId;
         String heap = _rep.heapAlloc(methodId, expr, session);
 
@@ -276,11 +272,11 @@ class FactWriter extends JavaFactWriter {
      * NewMultiArray is slightly complicated because an array needs to
      * be allocated separately for every dimension of the array.
      */
-    void writeAssignNewMultiArrayExpr(Stmt stmt, InstrInfo ii, Local l, NewMultiArrayExpr expr, Session session) {
+    void writeAssignNewMultiArrayExpr(Stmt stmt, InstrInfo ii, Local l, NewMultiArrayExpr expr, SessionCounter session) {
         writeAssignNewMultiArrayExprHelper(stmt, ii, l, _rep.local(ii.methodId, l), expr, (ArrayType) expr.getType(), session, 0);
     }
 
-    private void writeAssignNewMultiArrayExprHelper(Stmt stmt, InstrInfo ii, Local l, String assignTo, NewMultiArrayExpr expr, ArrayType arrayType, Session session, int pos) {
+    private void writeAssignNewMultiArrayExprHelper(Stmt stmt, InstrInfo ii, Local l, String assignTo, NewMultiArrayExpr expr, ArrayType arrayType, SessionCounter session, int pos) {
         String methodId = ii.methodId;
         String heap = _rep.heapMultiArrayAlloc(methodId, /* expr, */ arrayType, session);
 
@@ -305,7 +301,7 @@ class FactWriter extends JavaFactWriter {
     // equivalent to code in old Doop. I (YS) tried to have a more compatible
     // approach for comparison purposes.
     /*
-    public void writeAssignNewMultiArrayExpr(SootMethod m, Stmt stmt, Local l, NewMultiArrayExpr expr, Session session) {
+    public void writeAssignNewMultiArrayExpr(SootMethod m, Stmt stmt, Local l, NewMultiArrayExpr expr, SessionCounter session) {
         // what is a normal object?
         String heap = _rep.heapAlloc(m, expr, session);
 
@@ -331,7 +327,7 @@ class FactWriter extends JavaFactWriter {
 
         Type elementType = type;
 
-        int index = session.calcInstructionNumber(stmt);
+        int index = session.calcInstructionIndex(stmt);
         String rep = _rep.instruction(m, stmt, index);
 
         _db.addInput("AssignMultiArrayAllocation",
@@ -525,23 +521,23 @@ class FactWriter extends JavaFactWriter {
         }
     }
 
-    void writeGoto(GotoStmt stmt, InstrInfo ii, Session session) {
+    void writeGoto(GotoStmt stmt, InstrInfo ii, SessionCounter session) {
         Unit to = stmt.getTarget();
-        session.calcUnitNumber(stmt);
-        session.calcUnitNumber(to);
-        int indexTo = session.getUnitNumber(to);
+        session.calcInstructionIndex(stmt);
+        session.calcInstructionIndex(to);
+        int indexTo = session.getInstructionIndex(to);
         _db.add(GOTO, ii.insn, str(ii.index), str(indexTo), ii.methodId);
     }
 
     /**
      * If
      */
-    void writeIf(IfStmt stmt, InstrInfo ii, Session session) {
+    void writeIf(IfStmt stmt, InstrInfo ii, SessionCounter session) {
         Unit to = stmt.getTarget();
         // index was already computed earlier
         int index = ii.index;
-        session.calcUnitNumber(to);
-        int indexTo = session.getUnitNumber(to);
+        session.calcInstructionIndex(to);
+        int indexTo = session.getInstructionIndex(to);
         String insn = ii.insn;
 
         String methodId = ii.methodId;
@@ -585,7 +581,7 @@ class FactWriter extends JavaFactWriter {
         }
     }
 
-    void writeTableSwitch(TableSwitchStmt stmt, InstrInfo ii, Session session) {
+    void writeTableSwitch(TableSwitchStmt stmt, InstrInfo ii, SessionCounter session) {
         String methodId = ii.methodId;
         Value v = writeImmediate(stmt, ii, stmt.getKey(), null, session);
         if(!(v instanceof Local))
@@ -596,20 +592,20 @@ class FactWriter extends JavaFactWriter {
         _db.add(TABLE_SWITCH, insn, str(ii.index), _rep.local(methodId, l), methodId);
 
         for (int tgIndex = stmt.getLowIndex(), i = 0; tgIndex <= stmt.getHighIndex(); tgIndex++, i++) {
-            session.calcUnitNumber(stmt.getTarget(i));
-            int indexTo = session.getUnitNumber(stmt.getTarget(i));
+            session.calcInstructionIndex(stmt.getTarget(i));
+            int indexTo = session.getInstructionIndex(stmt.getTarget(i));
 
             _db.add(TABLE_SWITCH_TARGET, insn, str(tgIndex), str(indexTo));
         }
 
-        session.calcUnitNumber(stmt.getDefaultTarget());
-        int defaultIndex = session.getUnitNumber(stmt.getDefaultTarget());
+        session.calcInstructionIndex(stmt.getDefaultTarget());
+        int defaultIndex = session.getInstructionIndex(stmt.getDefaultTarget());
         _db.add(TABLE_SWITCH_DEFAULT, insn, str(defaultIndex));
     }
 
-    void writeLookupSwitch(LookupSwitchStmt stmt, InstrInfo ii, Session session) {
+    void writeLookupSwitch(LookupSwitchStmt stmt, InstrInfo ii, SessionCounter session) {
         String methodId = ii.methodId;
-        int stmtIndex = session.getUnitNumber(stmt);
+        int stmtIndex = session.getInstructionIndex(stmt);
 
         Value v = writeImmediate(stmt, ii, stmt.getKey(), null, session);
 
@@ -623,28 +619,28 @@ class FactWriter extends JavaFactWriter {
 
         for (int i = 0, end = stmt.getTargetCount(); i < end; i++) {
             int tgIndex = stmt.getLookupValue(i);
-            session.calcUnitNumber(stmt.getTarget(i));
-            int indexTo = session.getUnitNumber(stmt.getTarget(i));
+            session.calcInstructionIndex(stmt.getTarget(i));
+            int indexTo = session.getInstructionIndex(stmt.getTarget(i));
 
             _db.add(LOOKUP_SWITCH_TARGET, insn, str(tgIndex), str(indexTo));
         }
 
-        session.calcUnitNumber(stmt.getDefaultTarget());
-        int defaultIndex = session.getUnitNumber(stmt.getDefaultTarget());
+        session.calcInstructionIndex(stmt.getDefaultTarget());
+        int defaultIndex = session.getInstructionIndex(stmt.getDefaultTarget());
 
         _db.add(LOOKUP_SWITCH_DEFAULT, insn, str(defaultIndex));
     }
 
-    void writeUnsupported(Unit unit, InstrInfo ii, Session session) {
-        int index = session.calcUnitNumber(unit);
+    void writeUnsupported(Unit unit, InstrInfo ii, SessionCounter session) {
+        int index = session.calcInstructionIndex(unit);
         _db.add(UNSUPPORTED_INSTRUCTION, ii.insn, str(index), ii.methodId);
     }
 
     /**
      * Throw statement
      */
-    void writeThrow(String methodId, Unit unit, Local l, Session session) {
-        int index = session.calcUnitNumber(unit);
+    void writeThrow(String methodId, Unit unit, Local l, SessionCounter session) {
+        int index = session.calcInstructionIndex(unit);
         String insn = _rep.throwLocal(methodId, l, session);
         _db.add(THROW, insn, str(index), _rep.local(methodId, l), methodId);
     }
@@ -660,7 +656,7 @@ class FactWriter extends JavaFactWriter {
         writeExceptionHandlerPrevious(_rep.handler(methodId, current, counter), _rep.handler(methodId, previous, counter));
     }
 
-    void writeExceptionHandler(String methodId, Trap handler, Session session) {
+    void writeExceptionHandler(String methodId, Trap handler, SessionCounter session) {
         SootClass exc = handler.getException();
 
         Local caught;
@@ -679,11 +675,11 @@ class FactWriter extends JavaFactWriter {
         }
 
         String insn = _rep.handler(methodId, handler, session);
-        int handlerIndex = session.getUnitNumber(handler.getHandlerUnit());
-        session.calcUnitNumber(handler.getBeginUnit());
-        int beginIndex = session.getUnitNumber(handler.getBeginUnit());
-        session.calcUnitNumber(handler.getEndUnit());
-        int endIndex = session.getUnitNumber(handler.getEndUnit());
+        int handlerIndex = session.getInstructionIndex(handler.getHandlerUnit());
+        session.calcInstructionIndex(handler.getBeginUnit());
+        int beginIndex = session.getInstructionIndex(handler.getBeginUnit());
+        session.calcInstructionIndex(handler.getEndUnit());
+        int endIndex = session.getInstructionIndex(handler.getEndUnit());
         writeExceptionHandler(insn, methodId, handlerIndex, exc.getName(), beginIndex, endIndex);
         writeExceptionHandlerFormal(insn, _rep.local(methodId, caught));
     }
@@ -718,18 +714,18 @@ class FactWriter extends JavaFactWriter {
         _db.add(VAR_SIMPLENAME, local, l.getName());
     }
 
-    private Local freshLocal(String inMethod, String basename, Type type, Session session) {
+    private Local freshLocal(String inMethod, String basename, Type type, SessionCounter session) {
         String varname = basename + session.nextNumber(basename);
         Local l = new JimpleLocal(varname, type);
         writeLocal(inMethod, l);
         return l;
     }
 
-    private FreshAssignLocal newAssignForFreshLocal(String inMethod, String basename, Type type, Session session) {
+    private FreshAssignLocal newAssignForFreshLocal(String inMethod, String basename, Type type, SessionCounter session) {
         return newInstructionWithFreshLocal(inMethod, "fresh-null-assign", basename, type, session);
     }
 
-    private FreshAssignLocal newInstructionWithFreshLocal(String inMethod, String kind, String basename, Type type, Session session) {
+    private FreshAssignLocal newInstructionWithFreshLocal(String inMethod, String kind, String basename, Type type, SessionCounter session) {
         return new FreshAssignLocal(freshLocal(inMethod, basename, type, session),
                 new InstrInfo(inMethod, kind, session));
     }
@@ -744,7 +740,7 @@ class FactWriter extends JavaFactWriter {
         }
     }
 
-    Local writeStringConstantExpression(Stmt stmt, InstrInfo ii, StringConstant constant, Session session) {
+    Local writeStringConstantExpression(Stmt stmt, InstrInfo ii, StringConstant constant, SessionCounter session) {
         // introduce a new temporary variable
         FreshAssignLocal fal = newAssignForFreshLocal(ii.methodId, "$stringconstant", RefType.v("java.lang.String"), session);
         Local l = fal.local;
@@ -752,7 +748,7 @@ class FactWriter extends JavaFactWriter {
         return l;
     }
 
-    Local writeNullExpression(InstrInfo ii, Type type, Session session) {
+    Local writeNullExpression(InstrInfo ii, Type type, SessionCounter session) {
         // introduce a new temporary variable
         FreshAssignLocal fal = newAssignForFreshLocal(ii.methodId, "$null", type, session);
         Local l = fal.local;
@@ -761,7 +757,7 @@ class FactWriter extends JavaFactWriter {
     }
 
     Local writeNumConstantExpression(InstrInfo ii, NumericConstant constant,
-                                     Type explicitType, Session session) {
+                                     Type explicitType, SessionCounter session) {
         Type constantType = (explicitType == null) ? constant.getType() : explicitType;
         // introduce a new temporary variable
         FreshAssignLocal fal = newAssignForFreshLocal(ii.methodId, "$numconstant", constantType, session);
@@ -770,7 +766,7 @@ class FactWriter extends JavaFactWriter {
         return l;
     }
 
-    Local writeClassConstantExpression(InstrInfo ii, ClassConstant constant, Session session) {
+    Local writeClassConstantExpression(InstrInfo ii, ClassConstant constant, SessionCounter session) {
         ClassConstantInfo info = new ClassConstantInfo(constant);
         // introduce a new temporary variable
         FreshAssignLocal fal = info.isMethodType ?
@@ -781,7 +777,7 @@ class FactWriter extends JavaFactWriter {
         return l;
     }
 
-    Local writeMethodHandleConstantExpression(InstrInfo ii, MethodHandle constant, Session session) {
+    Local writeMethodHandleConstantExpression(InstrInfo ii, MethodHandle constant, SessionCounter session) {
         // introduce a new temporary variable
         FreshAssignLocal fal = newAssignForFreshLocal(ii.methodId, "$mhandleconstant", RefType.v("java.lang.invoke.MethodHandle"), session);
         Local l = fal.local;
@@ -789,7 +785,7 @@ class FactWriter extends JavaFactWriter {
         return l;
     }
 
-    private Local writeMethodTypeConstantExpression(InstrInfo ii, DoopAddons.MethodType constant, Session session) {
+    private Local writeMethodTypeConstantExpression(InstrInfo ii, DoopAddons.MethodType constant, SessionCounter session) {
         // introduce a new temporary variable
         FreshAssignLocal fal = newAssignForFreshLocal(ii.methodId, "$methodtypeconstant", RefType.v("java.lang.invoke.MethodType"), session);
         Local l = fal.local;
@@ -797,7 +793,7 @@ class FactWriter extends JavaFactWriter {
         return l;
     }
 
-    private Value writeActualParam(Stmt stmt, InstrInfo ii, InvokeExpr expr, Session session, Value v, int idx) {
+    private Value writeActualParam(Stmt stmt, InstrInfo ii, InvokeExpr expr, SessionCounter session, Value v, int idx) {
         if (v instanceof StringConstant)
             return writeStringConstantExpression(stmt, ii, (StringConstant) v, session);
         else if (v instanceof ClassConstant)
@@ -823,7 +819,7 @@ class FactWriter extends JavaFactWriter {
     }
 
     private void writeActualParams(Stmt stmt, InstrInfo ii, InvokeExpr expr,
-                                   String invokeExprRepr, Session session) {
+                                   String invokeExprRepr, SessionCounter session) {
         String methodId = ii.methodId;
         boolean isInvokedynamic = (expr instanceof DynamicInvokeExpr);
         int count = expr.getArgCount();
@@ -853,14 +849,14 @@ class FactWriter extends JavaFactWriter {
         }
     }
 
-    String writeInvoke(SootMethod inMethod, Stmt stmt, InstrInfo ii, Session session) {
+    String writeInvoke(SootMethod inMethod, Stmt stmt, InstrInfo ii, SessionCounter session) {
         InvokeExpr expr = stmt.getInvokeExpr();
         String insn = _rep.invoke(inMethod, expr, session);
         return writeInvokeHelper(insn, stmt, ii, expr, session);
     }
 
     private String writeInvokeHelper(String insn, Stmt stmt, InstrInfo ii,
-                                     InvokeExpr expr, Session session) {
+                                     InvokeExpr expr, SessionCounter session) {
         writeActualParams(stmt, ii, expr, insn, session);
 
         SootMethodRef exprMethodRef = expr.getMethodRef();
@@ -918,7 +914,7 @@ class FactWriter extends JavaFactWriter {
     }
 
     private Value writeImmediate(Stmt stmt, InstrInfo ii,
-                                 Value v, Type vType, Session session) {
+                                 Value v, Type vType, SessionCounter session) {
         if (v instanceof Constant) {
             if (v instanceof StringConstant)
                 v = writeStringConstantExpression(stmt, ii, (StringConstant) v, session);

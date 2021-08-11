@@ -127,6 +127,10 @@ class Representation extends JavaRepresentation {
                 return "read-field-" + ((FieldRef) rightOp).getFieldRef().name();
             else if (leftOp instanceof FieldRef)
                 return "write-field-" + ((FieldRef) leftOp).getFieldRef().name();
+            else if (rightOp instanceof ArrayRef)
+                return "read-array-idx";
+            else if (leftOp instanceof ArrayRef)
+                return "write-array-idx";
             else
                 return "assign";
         } else if (unit instanceof IdentityStmt)
