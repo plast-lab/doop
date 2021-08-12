@@ -41,3 +41,5 @@ fatJar {
 test {
     useJUnitPlatform()
 }
+
+startScripts.dependsOn fatJar

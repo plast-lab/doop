@@ -85,6 +85,8 @@ frontendGeneratorProjects.each { Project p ->
     }
     // fatJar
     p.tasks.create('fatJar', Jar)
+    p.tasks.fatJar.dependsOn p.tasks.jar
+    distZip.dependsOn p.tasks.fatJar
     // installJar
     p.tasks.create('installJar', Copy)
     p.tasks.installJar {

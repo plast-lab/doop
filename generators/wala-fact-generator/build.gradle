@@ -45,3 +45,5 @@ fatJar {
     with jar
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
 }
+
+startScripts.dependsOn fatJar
