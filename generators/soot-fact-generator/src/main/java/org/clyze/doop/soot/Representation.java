@@ -59,7 +59,7 @@ class Representation extends JavaRepresentation {
         return escaped ? n.substring(1, n.length()-1) : n;
     }
 
-    static String simpleName(SootMethodRef m) {
+    static String simpleName(SootMethodInterface m) {
         return m.getName();
     }
 
@@ -163,13 +163,6 @@ class Representation extends JavaRepresentation {
         } else if (unit instanceof ThrowStmt)
             return "throw";
         return "unknown";
-    }
-
-    /**
-     * Text representation of instruction to be used as unique instruction identifier.
-     */
-    String instruction(SootMethod inMethod, Unit unit, int index) {
-        return instructionId(signature(inMethod), getKind(unit), index);
     }
 
     String invoke(SootMethod inMethod, InvokeExpr expr, SessionCounter counter) {

@@ -1063,7 +1063,7 @@ class FactWriter extends JavaFactWriter {
         final int arity;
         final String retType;
         final String paramTypes;
-        SigInfo(SootMethodRef ref, boolean reverse) {
+        SigInfo(SootMethodInterface ref, boolean reverse) {
             List<Type> paramTypes = ref.getParameterTypes();
             if (reverse)
                 paramTypes = Lists.reverse(paramTypes);
