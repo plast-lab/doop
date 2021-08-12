@@ -334,12 +334,12 @@ class FactGenerator implements Runnable {
      */
     private void generate(SootMethod inMethod, AssignStmt stmt, InstrInfo ii, SessionCounter session) {
         if (stmt.getLeftOp() instanceof Local)
-            generateLeftLocal(inMethod, stmt, ii, session);
+            generateAssignToLocal(inMethod, stmt, ii, session);
         else
-            generateLeftNonLocal(stmt, ii, session);
+            generateAssignToNonLocal(stmt, ii, session);
     }
 
-    private void generateLeftLocal(SootMethod inMethod, AssignStmt stmt, InstrInfo ii, SessionCounter session) {
+    private void generateAssignToLocal(SootMethod inMethod, AssignStmt stmt, InstrInfo ii, SessionCounter session) {
         Local left = (Local) stmt.getLeftOp();
         Value right = stmt.getRightOp();
 
@@ -404,7 +404,7 @@ class FactGenerator implements Runnable {
             throw new RuntimeException("Cannot handle assignment: " + stmt + " (right: " + right.getClass() + ")");
     }
 
-    private void generateLeftNonLocal(AssignStmt stmt, InstrInfo ii, SessionCounter session) {
+    private void generateAssignToNonLocal(AssignStmt stmt, InstrInfo ii, SessionCounter session) {
         Value left = stmt.getLeftOp();
         Value right = stmt.getRightOp();
 

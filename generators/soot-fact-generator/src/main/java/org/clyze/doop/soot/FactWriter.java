@@ -228,8 +228,8 @@ class FactWriter extends JavaFactWriter {
     }
 
     void writeAssignInvoke(SootMethod inMethod, Stmt stmt, InstrInfo ii, Local to, SessionCounter session) {
-        writeInvoke(inMethod, stmt, ii, session);     // Ignore return insn value?
-        _db.add(ASSIGN_RETURN_VALUE, ii.insn, _rep.local(ii.methodId, to));
+        String invokeInstructionId = writeInvoke(inMethod, stmt, ii, session);
+        _db.add(ASSIGN_RETURN_VALUE, invokeInstructionId, _rep.local(ii.methodId, to));
     }
 
     private void writeArraySize(InstrInfo ii, Value sizeVal, int pos, String heap) {
