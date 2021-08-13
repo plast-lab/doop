@@ -59,7 +59,7 @@ class Representation extends JavaRepresentation {
         return escaped ? n.substring(1, n.length()-1) : n;
     }
 
-    static String simpleName(SootMethodRef m) {
+    static String simpleName(SootMethodInterface m) {
         return m.getName();
     }
 
@@ -78,47 +78,47 @@ class Representation extends JavaRepresentation {
         return builder.toString();
     }
 
-    String thisVar(SootMethod m) {
-        return signature(m) + "/@this";
+    String thisVar(String methodId) {
+        return methodId + "/@this";
     }
 
-    String nativeReturnVar(SootMethod m) {
-        return nativeReturnVarOfMethod(signature(m));
+    String nativeReturnVar(String methodId) {
+        return nativeReturnVarOfMethod(methodId);
     }
 
-    String param(SootMethod m, int i) {
-        return signature(m) + "/@parameter" + i;
+    String param(String methodId, int i) {
+        return methodId + "/@parameter" + i;
     }
 
-    String local(SootMethod m, Local l) {
-        return stripQuotes(localId(signature(m), l.getName()));
+    String local(String m, Local l) {
+        return stripQuotes(localId(m, l.getName()));
     }
 
-    String newLocalIntermediate(SootMethod m, Local l, SessionCounter counter) {
+    String newLocalIntermediate(String m, Local l, SessionCounter counter) {
         return newLocalIntermediateId(local(m, l), counter);
     }
 
-    String handler(SootMethod m, Trap trap, SessionCounter counter) {
+    String handler(String methodId, Trap trap, SessionCounter counter) {
         String result = _trapRepr.get(trap);
 
         if(result == null)
         {
             String name = handlerMid(trap.getException().getName());
-            result = numberedInstructionId(signature(m), name, counter);
+            result = numberedInstructionId(methodId, name, counter);
             _trapRepr.put(trap, result);
         }
 
         return result;
     }
 
-    String throwLocal(SootMethod m, Local l, SessionCounter counter) {
+    String throwLocal(String methodId, Local l, SessionCounter counter) {
         String name = throwLocalId(l.getName());
-        return numberedInstructionId(signature(m), name, counter);
+        return numberedInstructionId(methodId, name, counter);
     }
 
-    public static String getKind(Stmt stmt) {
-        if (stmt instanceof AssignStmt) {
-            AssignStmt assignStmt = (AssignStmt) stmt;
+    public static String getKind(Unit unit) {
+        if (unit instanceof AssignStmt) {
+            AssignStmt assignStmt = (AssignStmt) unit;
             Value rightOp = assignStmt.getRightOp();
             Value leftOp = assignStmt.getLeftOp();
             if (rightOp instanceof CastExpr)
@@ -127,44 +127,42 @@ class Representation extends JavaRepresentation {
                 return "read-field-" + ((FieldRef) rightOp).getFieldRef().name();
             else if (leftOp instanceof FieldRef)
                 return "write-field-" + ((FieldRef) leftOp).getFieldRef().name();
+            else if (rightOp instanceof ArrayRef)
+                return "read-array-idx";
+            else if (leftOp instanceof ArrayRef)
+                return "write-array-idx";
             else
                 return "assign";
-        } else if (stmt instanceof IdentityStmt)
+        } else if (unit instanceof IdentityStmt)
             return "assign";
-        else if (stmt instanceof DefinitionStmt)
+        else if (unit instanceof DefinitionStmt)
             return "definition";
-        else if (stmt instanceof EnterMonitorStmt)
+        else if (unit instanceof EnterMonitorStmt)
             return "enter-monitor";
-        else if (stmt instanceof ExitMonitorStmt)
+        else if (unit instanceof ExitMonitorStmt)
             return "exit-monitor";
-        else if (stmt instanceof GotoStmt)
+        else if (unit instanceof GotoStmt)
             return "goto";
-        else if (stmt instanceof IfStmt)
+        else if (unit instanceof IfStmt)
             return "if";
-        else if (stmt instanceof InvokeStmt)
+        else if (unit instanceof InvokeStmt)
             return "invoke";
-        else if (stmt instanceof RetStmt)
+        else if (unit instanceof RetStmt)
             return "ret";
-        else if (stmt instanceof ReturnVoidStmt)
+        else if (unit instanceof ReturnVoidStmt)
             return "return-void";
-        else if (stmt instanceof ReturnStmt)
+        else if (unit instanceof ReturnStmt)
             return "return";
-        else if (stmt instanceof SwitchStmt)
-            return "switch";
-        else if (stmt instanceof ThrowStmt)
+        else if (unit instanceof SwitchStmt) {
+            if (unit instanceof TableSwitchStmt)
+                return "table-switch";
+            else if (unit instanceof LookupSwitchStmt)
+                return "lookup-switch";
+            else
+                return "switch";
+        } else if (unit instanceof ThrowStmt)
             return "throw";
         return "unknown";
-    }
-
-    String unsupportedId(SootMethod inMethod, Stmt stmt, int index) {
-        return unsupportedId(signature(inMethod), getKind(stmt), stmt.toString(), index);
-    }
-
-    /**
-     * Text representation of instruction to be used as refmode.
-     */
-    String instruction(SootMethod inMethod, Stmt stmt, int index) {
-        return instructionId(signature(inMethod), getKind(stmt), index);
     }
 
     String invoke(SootMethod inMethod, InvokeExpr expr, SessionCounter counter) {
@@ -180,7 +178,7 @@ class Representation extends JavaRepresentation {
         return numberedInstructionId(signature(inMethod), midPart, counter);
     }
 
-    String heapAlloc(SootMethod inMethod, Value expr, SessionCounter counter) {
+    String heapAlloc(String inMethod, Value expr, SessionCounter counter) {
         if(expr instanceof NewExpr || expr instanceof NewArrayExpr)
             return heapAlloc(inMethod, expr.getType(), counter);
 	    else if(expr instanceof NewMultiArrayExpr)
@@ -190,11 +188,11 @@ class Representation extends JavaRepresentation {
             throw new RuntimeException("Cannot handle new expression: " + expr);
     }
 
-    String heapMultiArrayAlloc(SootMethod inMethod, /* NewMultiArrayExpr expr, */ ArrayType type, SessionCounter counter) {
+    String heapMultiArrayAlloc(String inMethod, /* NewMultiArrayExpr expr, */ ArrayType type, SessionCounter counter) {
         return heapAlloc(inMethod, type, counter);
     }
 
-    private String heapAlloc(SootMethod inMethod, Type type, SessionCounter counter) {
-        return heapAllocId(signature(inMethod), type.toString(), counter);
+    private String heapAlloc(String inMethod, Type type, SessionCounter counter) {
+        return heapAllocId(inMethod, type.toString(), counter);
     }
 }

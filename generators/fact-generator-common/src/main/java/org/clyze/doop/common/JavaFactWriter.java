@@ -161,7 +161,7 @@ public abstract class JavaFactWriter {
      */
     private void generateFactsForXML(Database db, Iterable<String> xmlRoots,
                                      boolean debug) {
-        // The output directory (the parent of the decode directories)
+        // The output directory (the parent of the "decode" directories)
         String outDir = db.getDirectory();
         for (String xmlRoot : xmlRoots) {
             logger.info("Processing XML files in directory: " + xmlRoot);
@@ -206,12 +206,7 @@ public abstract class JavaFactWriter {
                     e.printStackTrace();
                 }
             }
-            if (fi.type.contains("<")){
-                _db.add(GENERIC_FIELD, "<" + fi.definingClass + ": " + fi.type + " " + fi.name + ">", fi.definingClass, fi.name, fi.type);
-            }
-            else {
-                _db.add(GENERIC_FIELD, "<" + fi.definingClass + ": " + fi.type + " " + fi.name + ">", fi.definingClass, fi.name, fi.type);
-            }
+            _db.add(GENERIC_FIELD, "<" + fi.definingClass + ": " + fi.type + " " + fi.name + ">", fi.definingClass, fi.name, fi.type);
         }
     }
     //_db.add(GENERIC_FIELD_TYPE, fieldInfo.definingClass, fieldInfo.name,
@@ -430,7 +425,7 @@ public abstract class JavaFactWriter {
      *
      * Overloaded JNI names are computed later, in Datalog.
      */
-    protected void writeNativeMethodId(String methodId, String type, String name) {
+    public void writeNativeMethodId(String methodId, String type, String name) {
         String jniMethodId = "Java_" + type.replaceAll("\\.", "_") + "_" + name;
         _db.add(NATIVE_METHOD_ID, methodId, jniMethodId);
     }

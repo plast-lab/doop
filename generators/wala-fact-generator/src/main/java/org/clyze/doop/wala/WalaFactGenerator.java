@@ -250,7 +250,7 @@ class WalaFactGenerator implements Runnable {
                     continue;
                 }
                 generateDefs(m,ir, ((SSACFG.ExceptionHandlerBasicBlock) basicBlock).getCatchInstruction(), typeInference);
-                //session.calcInstructionNumber(((SSACFG.ExceptionHandlerBasicBlock) basicBlock).getCatchInstruction());
+                //session.calcInstructionIndex(((SSACFG.ExceptionHandlerBasicBlock) basicBlock).getCatchInstruction());
                 _writer.writeUnsupported(m, ir, ((SSACFG.ExceptionHandlerBasicBlock) basicBlock).getCatchInstruction(), session);
             }
 
@@ -378,7 +378,7 @@ class WalaFactGenerator implements Runnable {
 //                {
 //                    if(m.getName().toString().equals("initialize") &&
 //                            m.getDeclaringClass().getName().toString().equals("Lokhttp3/internal/cache/DiskLruCache")) {
-//                        System.out.println(instructions[j].iindex + " " +session.getInstructionNumber(instructions[j]) + " " + session.getMaxInstructionNumber(instructions[j]) + " " + instructions[j].toString(ir.getSymbolTable()));
+//                        System.out.println(instructions[j].iindex + " " +session.getInstructionIndex(instructions[j]) + " " + session.getMaxInstructionNumber(instructions[j]) + " " + instructions[j].toString(ir.getSymbolTable()));
 //                        for (int k = 0; k < exceArrays[j].length ; k++) {
 //                            System.out.print(exceArrays[j][k] +" - " + exceTypeArrays[j][k] + ", ");
 //                        }

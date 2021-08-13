@@ -3,13 +3,19 @@ package org.clyze.doop.soot;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.clyze.doop.common.InstrInfo;
 import org.clyze.doop.common.Phantoms;
+import org.clyze.doop.common.SessionCounter;
 import soot.*;
 import soot.jimple.*;
 import soot.shimple.PhiExpr;
 import soot.shimple.Shimple;
+
+import static org.clyze.doop.common.JavaRepresentation.numberedInstructionId;
 
 /**
  * Traverses Soot classes and invokes methods in FactWriter to
@@ -64,7 +70,7 @@ class FactGenerator implements Runnable {
             _sootClass.getFields().forEach(this::generate);
 
             for (SootMethod m : new ArrayList<>(_sootClass.getMethods())) {
-                Session session = new Session();
+                SessionCounter session = new SessionCounter();
                 try {
                     generate(m, session);
                 } catch (Throwable t) {
@@ -165,46 +171,36 @@ class FactGenerator implements Runnable {
         return false;
     }
 
-    void generate(SootMethod m, Session session)
-    {
-        _writer.writeMethod(m);
+    void generate(SootMethod m, SessionCounter session) {
+        String methodId = _writer.writeMethod(m);
 
         if (m.isPhantom()) {
-            _writer.writePhantomMethod(m);
+            _writer.writePhantomMethod(methodId);
             return;
         }
 
         if (isPhantomBased(m))
-            _writer.writePhantomBasedMethod(m);
+            _writer.writePhantomBasedMethod(methodId);
 
         for (String mod : getModifiers(m.getModifiers(), true))
-            _writer.writeMethodModifier(m, mod);
+            _writer.writeMethodModifier(methodId, mod);
 
-        if(!m.isStatic())
-        {
-            _writer.writeThisVar(m);
-        }
+        if (!m.isStatic())
+            _writer.writeThisVar(methodId, m.getDeclaringClass());
 
-        if(m.isNative())
-        {
-            _writer.writeNativeMethodId(m);
-            _writer.writeNativeReturnVar(m);
+        if (m.isNative()) {
+            _writer.writeNativeMethodId(methodId, m.getDeclaringClass().toString(), _writer._rep.simpleName(m));
+            _writer.writeNativeReturnVar(methodId, m.getReturnType());
         }
 
         for(int i = 0 ; i < m.getParameterCount(); i++)
-        {
-            _writer.writeFormalParam(m, i);
-        }
+            _writer.writeFormalParam(methodId, m.getParameterType(i), i);
 
         for(SootClass clazz: m.getExceptions())
-        {
             _writer.writeMethodDeclaresException(m, clazz);
-        }
 
-        if(!(m.isAbstract() || m.isNative()))
-        {
-            if(!m.hasActiveBody())
-            {
+        if(!(m.isAbstract() || m.isNative())) {
+            if(!m.hasActiveBody()) {
                 // This instruction is the bottleneck of
                 // soot-fact-generation.
                 // synchronized(Scene.v()) {
@@ -238,46 +234,46 @@ class FactGenerator implements Runnable {
         }
     }
 
-    private void generate(SootMethod m, Body b, Session session)
-    {
-
+    private void generate(SootMethod m, Body b, SessionCounter session) {
+        String methodId = _writer._rep.signature(m);
         for(Local l : b.getLocals())
-        {
-            _writer.writeLocal(m, l);
-        }
+            _writer.writeLocal(methodId, l);
 
         IrrelevantStmtSwitch sw = new IrrelevantStmtSwitch();
-        for(Unit u : b.getUnits()) {
+        Map<Unit, InstrInfo> iis = new HashMap<>();
+        for (Unit u : b.getUnits()) {
             u.apply(sw);
 
+            String insn = numberedInstructionId(methodId, Representation.getKind(u), session);
+            InstrInfo ii = new InstrInfo(_writer.methodSig(m, null), insn, session.calcInstructionIndex(u));
+            iis.put(u, ii);
             if (sw.relevant) {
                 if (u instanceof AssignStmt) {
-                    generate(m, (AssignStmt) u, session);
+                    generate(m, (AssignStmt) u, ii, session);
                 } else if (u instanceof IdentityStmt) {
-                    generate(m, (IdentityStmt) u, session);
+                    generate((IdentityStmt) u, ii, session);
                 } else if (u instanceof InvokeStmt) {
-                    _writer.writeInvoke(m, (InvokeStmt) u, session);
+                    _writer.writeInvoke(m, (InvokeStmt) u, ii, session);
                 } else if (u instanceof ReturnStmt) {
-                    generate(m, (ReturnStmt) u, session);
+                    generate((ReturnStmt) u, m.getReturnType(), ii, session);
                 } else if (u instanceof ReturnVoidStmt) {
-                    _writer.writeReturnVoid(m, (ReturnVoidStmt)u, session);
+                    _writer.writeReturnVoid(ii);
                 } else if (u instanceof ThrowStmt) {
-                    generate(m, (ThrowStmt) u, session);
+                    generate(methodId, (ThrowStmt) u, ii, session);
                 } else if ((u instanceof GotoStmt) || (u instanceof IfStmt) ||
                            (u instanceof SwitchStmt) || (u instanceof NopStmt)) {
                     // processed in second run: we might not know the number of
                     // the unit yet.
-                    session.calcUnitNumber(u);
                 } else if (u instanceof EnterMonitorStmt) {
                     //TODO: how to handle EnterMonitorStmt when op is not a Local?
                     EnterMonitorStmt stmt = (EnterMonitorStmt) u;
                     if (stmt.getOp() instanceof Local)
-                        _writer.writeEnterMonitor(m, stmt, (Local) stmt.getOp(), session);
+                        _writer.writeEnterMonitor(ii, (Local) stmt.getOp());
                 } else if (u instanceof ExitMonitorStmt) {
                     //TODO: how to handle ExitMonitorStmt when op is not a Local?
                     ExitMonitorStmt stmt = (ExitMonitorStmt) u;
                     if (stmt.getOp() instanceof Local)
-                        _writer.writeExitMonitor(m, stmt, (Local) stmt.getOp(), session);
+                        _writer.writeExitMonitor(ii, (Local) stmt.getOp());
                 } else {
                     throw new RuntimeException("Cannot handle statement: " + u);
                 }
@@ -285,14 +281,14 @@ class FactGenerator implements Runnable {
                 // only reason for assign or invoke statements to be irrelevant
                 // is the invocation of a method on a phantom class
                 if (u instanceof AssignStmt) {
-                    _writer.writeAssignPhantomInvoke(m, (AssignStmt) u, session);
+                    _writer.writeAssignPhantomInvoke(ii);
                     generatePhantom(sw.cause);
                 } else if (u instanceof InvokeStmt) {
                     // record invocation and calculate PhantomInvoke via logic
-                    _writer.writeInvoke(m, (InvokeStmt) u, session);
+                    _writer.writeInvoke(m, (InvokeStmt) u, ii, session);
                     generatePhantom(sw.cause);
                 } else if (u instanceof BreakpointStmt)
-                    _writer.writeBreakpointStmt(m, (BreakpointStmt) u, session);
+                    _writer.writeBreakpointStmt(ii);
                 else
                     throw new RuntimeException("Unexpected irrelevant statement: " + u);
             }
@@ -300,27 +296,23 @@ class FactGenerator implements Runnable {
 
         for(Unit u : b.getUnits()) {
             if (u instanceof GotoStmt) {
-                _writer.writeGoto(m, (GotoStmt)u, session);
+                _writer.writeGoto((GotoStmt)u, iis.get(u), session);
             } else if (u instanceof IfStmt) {
-                _writer.writeIf(m, (IfStmt) u, session);
+                _writer.writeIf((IfStmt) u, iis.get(u), session);
             } else if (u instanceof TableSwitchStmt) {
-                _writer.writeTableSwitch(m, (TableSwitchStmt) u, session);
+                _writer.writeTableSwitch((TableSwitchStmt) u, iis.get(u), session);
             } else if (u instanceof LookupSwitchStmt) {
-                _writer.writeLookupSwitch(m, (LookupSwitchStmt) u, session);
+                _writer.writeLookupSwitch((LookupSwitchStmt) u, iis.get(u), session);
             } else if (!(u instanceof Stmt)) {
                 throw new RuntimeException("Not a statement: " + u);
             }
         }
 
         Trap previous = null;
-        for(Trap t : b.getTraps())
-        {
-            _writer.writeExceptionHandler(m, t, session);
+        for (Trap t : b.getTraps()) {
+            _writer.writeExceptionHandler(methodId, t, session);
             if (previous != null)
-            {
-                _writer.writeExceptionHandlerPrevious(m, t, previous, session);
-            }
-
+                _writer.writeExceptionHandlerPrevious(methodId, t, previous, session);
             previous = t;
         }
     }
@@ -332,7 +324,7 @@ class FactGenerator implements Runnable {
         if (cause instanceof SootClass)
             _writer.writePhantomType(((SootClass)cause).getType());
         else if (cause instanceof SootMethod)
-            _writer.writePhantomMethod((SootMethod)cause);
+            _writer.writePhantomMethod(_writer._rep.signature((SootMethod)cause));
         else
             System.err.println("Ignoring phantom cause: " + cause);
     }
@@ -340,195 +332,123 @@ class FactGenerator implements Runnable {
     /**
      * Assignment statement
      */
-    private void generate(SootMethod inMethod, AssignStmt stmt, Session session)
-    {
-        Value left = stmt.getLeftOp();
-
-        if(left instanceof Local)
-        {
-            generateLeftLocal(inMethod, stmt, session);
-        }
+    private void generate(SootMethod inMethod, AssignStmt stmt, InstrInfo ii, SessionCounter session) {
+        if (stmt.getLeftOp() instanceof Local)
+            generateAssignToLocal(inMethod, stmt, ii, session);
         else
-        {
-            generateLeftNonLocal(inMethod, stmt, session);
-        }
+            generateAssignToNonLocal(stmt, ii, session);
     }
 
-    private void generateLeftLocal(SootMethod inMethod, AssignStmt stmt, Session session)
-    {
+    private void generateAssignToLocal(SootMethod inMethod, AssignStmt stmt, InstrInfo ii, SessionCounter session) {
         Local left = (Local) stmt.getLeftOp();
         Value right = stmt.getRightOp();
 
-        if(right instanceof Local)
-        {
-            _writer.writeAssignLocal(inMethod, stmt, left, (Local) right, session);
-        }
-        else if(right instanceof InvokeExpr)
-        {
-            _writer.writeAssignInvoke(inMethod, stmt, left, (InvokeExpr) right, session);
-        }
-        else if(right instanceof NewExpr)
-        {
-            _writer.writeAssignHeapAllocation(inMethod, stmt, left, right, session);
-        }
-        else if(right instanceof NewArrayExpr)
-        {
-            _writer.writeAssignHeapAllocation(inMethod, stmt, left, right, session);
-        }
-        else if(right instanceof NewMultiArrayExpr)
-        {
-            _writer.writeAssignNewMultiArrayExpr(inMethod, stmt, left, (NewMultiArrayExpr) right, session);
-        }
-        else if(right instanceof StringConstant)
-        {
-            _writer.writeAssignStringConstant(inMethod, stmt, left, (StringConstant) right, session);
-        }
-        else if(right instanceof ClassConstant)
-        {
-            _writer.writeAssignClassConstant(inMethod, stmt, left, (ClassConstant) right, session);
-        }
-        else if(right instanceof NumericConstant)
-        {
-            _writer.writeAssignNumConstant(inMethod, stmt, left, (NumericConstant) right, session);
-        }
-        else if(right instanceof NullConstant)
-        {
-            _writer.writeAssignNull(inMethod, stmt, left, session);
+        if (right instanceof Local)
+            _writer.writeAssignLocal(ii, left, (Local) right);
+        else if (right instanceof InvokeExpr)
+            _writer.writeAssignInvoke(inMethod, stmt, ii, left, session);
+        else if (right instanceof NewExpr)
+            _writer.writeAssignHeapAllocation(stmt, ii, left, right, session);
+        else if (right instanceof NewArrayExpr)
+            _writer.writeAssignHeapAllocation(stmt, ii, left, right, session);
+        else if (right instanceof NewMultiArrayExpr)
+            _writer.writeAssignNewMultiArrayExpr(stmt, ii, left, (NewMultiArrayExpr) right, session);
+        else if (right instanceof StringConstant)
+            _writer.writeAssignStringConstant(stmt, ii, left, (StringConstant) right);
+        else if (right instanceof ClassConstant)
+            _writer.writeAssignClassConstant(ii, left, (ClassConstant) right);
+        else if (right instanceof NumericConstant)
+            _writer.writeAssignNumConstant(ii, left, (NumericConstant) right);
+        else if (right instanceof NullConstant) {
+            _writer.writeAssignNull(ii, left);
             // NoNullSupport: use the line below to remove Null Constants from the facts.
             // _writer.writeUnsupported(inMethod, stmt, session);
-        }
-        else if(right instanceof InstanceFieldRef)
-        {
+        } else if (right instanceof InstanceFieldRef) {
             InstanceFieldRef ref = (InstanceFieldRef) right;
-            _writer.writeLoadInstanceField(inMethod, stmt, ref.getField(), (Local) ref.getBase(), left, session);
-        }
-        else if(right instanceof StaticFieldRef)
-        {
+            _writer.writeLoadInstanceField(ii, ref.getField(), (Local) ref.getBase(), left);
+        } else if (right instanceof StaticFieldRef) {
             StaticFieldRef ref = (StaticFieldRef) right;
-            _writer.writeLoadStaticField(inMethod, stmt, ref.getField(), left, session);
-        }
-        else if(right instanceof ArrayRef)
-        {
+            _writer.writeLoadStaticField(ii, ref.getField(), left);
+        } else if (right instanceof ArrayRef) {
             ArrayRef ref = (ArrayRef) right;
             Local base = (Local) ref.getBase();
             Value index = ref.getIndex();
-            _writer.writeLoadArrayIndex(inMethod, stmt, base, left, index, session);
-        }
-        else if(right instanceof CastExpr)
-        {
+            _writer.writeLoadArrayIndex(stmt, ii, base, left, index);
+        } else if (right instanceof CastExpr) {
             CastExpr cast = (CastExpr) right;
             Value op = cast.getOp();
 
-            if(op instanceof Local)
-            {
-                _writer.writeAssignCast(inMethod, stmt, left, (Local) op, cast.getCastType(), session);
-            }
-            else if(op instanceof NumericConstant)
-            {
+            if (op instanceof Local)
+                _writer.writeAssignCast(ii, left, (Local) op, cast.getCastType());
+            else if (op instanceof NumericConstant) {
                 // seems to always get optimized out, do we need this?
-                _writer.writeAssignCastNumericConstant(inMethod, stmt, left, (NumericConstant) op, cast.getCastType(), session);
-            }
-            else if (op instanceof NullConstant || op instanceof ClassConstant || op instanceof StringConstant)
-            {
-                _writer.writeAssignCastNull(inMethod, stmt, left, cast.getCastType(), session);
-            }
+                _writer.writeAssignCastNumericConstant(ii, left, (NumericConstant) op, cast.getCastType());
+            } else if (op instanceof NullConstant || op instanceof ClassConstant || op instanceof StringConstant)
+                _writer.writeAssignCastNull(ii, left, cast.getCastType());
             else
-            {
                 throw new RuntimeException("Cannot handle assignment: " + stmt + " (op: " + op.getClass() + ")");
-            }
-        }
-        else if(right instanceof PhiExpr)
-        {
-            for(Value alternative : ((PhiExpr) right).getValues())
-            {
-                _writer.writeAssignLocal(inMethod, stmt, left, (Local) alternative, session);
-            }
-        }
-        else if (right instanceof BinopExpr)
-        {
-            _writer.writeAssignBinop(inMethod, stmt, left, (BinopExpr) right, session);
-        }
+        } else if (right instanceof PhiExpr) {
+            for (Value alternative : ((PhiExpr) right).getValues())
+                _writer.writeAssignLocal(new InstrInfo(ii.methodId, "phi-assign", session), left, (Local) alternative);
+        } else if (right instanceof BinopExpr)
+            _writer.writeAssignBinop(ii, left, (BinopExpr) right);
         else if (right instanceof UnopExpr)
-        {
-            _writer.writeAssignUnop(inMethod, stmt, left, (UnopExpr) right, session);
-        }
-        else if (right instanceof InstanceOfExpr)
-        {
+            _writer.writeAssignUnop(ii, left, (UnopExpr) right);
+        else if (right instanceof InstanceOfExpr) {
             InstanceOfExpr expr = (InstanceOfExpr) right;
             if (expr.getOp() instanceof Local)
-                _writer.writeAssignInstanceOf(inMethod, stmt, left, (Local) expr.getOp(), expr.getCheckType(), session);
+                _writer.writeAssignInstanceOf(ii, left, (Local) expr.getOp(), expr.getCheckType());
             else // TODO check if this is possible (instanceof on something that is not a local var)
-                _writer.writeUnsupported(inMethod, stmt, session);
-        }
-        else
-        {
+                _writer.writeUnsupported(stmt, ii, session);
+        } else
             throw new RuntimeException("Cannot handle assignment: " + stmt + " (right: " + right.getClass() + ")");
-        }
     }
 
-    private void generateLeftNonLocal(SootMethod inMethod, AssignStmt stmt, Session session)
-    {
+    private void generateAssignToNonLocal(AssignStmt stmt, InstrInfo ii, SessionCounter session) {
         Value left = stmt.getLeftOp();
         Value right = stmt.getRightOp();
 
         // first make sure we have local variable for the right-hand-side.
         Local rightLocal;
 
-        if(right instanceof Local)
-        {
+        if (right instanceof Local)
             rightLocal = (Local) right;
-        }
-        else if(right instanceof StringConstant)
-        {
-            rightLocal = _writer.writeStringConstantExpression(inMethod, stmt, (StringConstant) right, session);
-        }
-        else if(right instanceof NumericConstant)
-        {
-            rightLocal = _writer.writeNumConstantExpression(inMethod, stmt, (NumericConstant) right, left.getType(), session);
-        }
-        else if(right instanceof NullConstant)
-        {
-            rightLocal = _writer.writeNullExpression(inMethod, stmt, left.getType(), session);
-            // NoNullSupport: use the line below to remove Null Constants from the facts.
+        else if (right instanceof StringConstant)
+            rightLocal = _writer.writeStringConstantExpression(stmt, ii, (StringConstant) right, session);
+        else if (right instanceof NumericConstant)
+            rightLocal = _writer.writeNumConstantExpression(ii, (NumericConstant) right, left.getType(), session);
+        else // NoNullSupport: use the line below to remove Null Constants from the facts.
             // _writer.writeUnsupported(inMethod, stmt, session);
-        }
-        else if(right instanceof ClassConstant)
-        {
-            rightLocal = _writer.writeClassConstantExpression(inMethod, stmt, (ClassConstant) right, session);
-        }
-        else if(right instanceof MethodHandle)
-        {
-            rightLocal = _writer.writeMethodHandleConstantExpression(inMethod, stmt, (MethodHandle) right, session);
-        }
+            if (right instanceof NullConstant)
+                rightLocal = _writer.writeNullExpression(ii, left.getType(), session);
+        else if (right instanceof ClassConstant)
+            rightLocal = _writer.writeClassConstantExpression(ii, (ClassConstant) right, session);
+        else if (right instanceof MethodHandle)
+            rightLocal = _writer.writeMethodHandleConstantExpression(ii, (MethodHandle) right, session);
         else
-        {
             throw new RuntimeException("Cannot handle rhs: " + stmt + " (right: " + right.getClass() + ")");
-        }
 
         // arrays
         //
         // NoNullSupport: use the line below to remove Null Constants from the facts.
         // if(left instanceof ArrayRef && rightLocal != null)
-        if(left instanceof ArrayRef)
-        {
+        if (left instanceof ArrayRef) {
             ArrayRef ref = (ArrayRef) left;
             Local base = (Local) ref.getBase();
             Value index = ref.getIndex();
-            _writer.writeStoreArrayIndex(inMethod, stmt, base, rightLocal, index, session);
+            _writer.writeStoreArrayIndex(stmt, ii, base, rightLocal, index);
         }
         // NoNullSupport: use the line below to remove Null Constants from the facts.
         // else if(left instanceof InstanceFieldRef && rightLocal != null)
-        else if(left instanceof InstanceFieldRef)
-        {
+        else if(left instanceof InstanceFieldRef) {
             InstanceFieldRef ref = (InstanceFieldRef) left;
-            _writer.writeStoreInstanceField(inMethod, stmt, ref.getField(), (Local) ref.getBase(), rightLocal, session);
+            _writer.writeStoreInstanceField(ii, ref.getField(), (Local) ref.getBase(), rightLocal);
         }
         // NoNullSupport: use the line below to remove Null Constants from the facts.
         // else if(left instanceof StaticFieldRef && rightLocal != null)
-        else if(left instanceof StaticFieldRef)
-        {
+        else if(left instanceof StaticFieldRef) {
             StaticFieldRef ref = (StaticFieldRef) left;
-            _writer.writeStoreStaticField(inMethod, stmt, ref.getField(), rightLocal, session);
+            _writer.writeStoreStaticField(ii, ref.getField(), rightLocal);
         }
         // NoNullSupport: use the else part below to remove Null Constants from the facts.
         /*else if(right instanceof NullConstant)
@@ -537,19 +457,17 @@ class FactGenerator implements Runnable {
             // skip, not relevant for pointer analysis
         }*/
         else
-        {
             throw new RuntimeException("Cannot handle assignment: " + stmt + " (right: " + right.getClass() + ")");
-        }
     }
 
-    private void generate(SootMethod inMethod, IdentityStmt stmt, Session session)
+    private void generate(IdentityStmt stmt, InstrInfo ii, SessionCounter session)
     {
         Value left = stmt.getLeftOp();
         Value right = stmt.getRightOp();
 
         if(right instanceof CaughtExceptionRef) {
             // make sure we can jump to statement we do not care about (yet)
-            _writer.writeUnsupported(inMethod, stmt, session);
+            _writer.writeUnsupported(stmt, ii, session);
 
             /* Handled by ExceptionHandler generation (ExceptionHandler:FormalParam).
 
@@ -558,79 +476,54 @@ class FactGenerator implements Runnable {
             */
         }
         else if(left instanceof Local && right instanceof ThisRef)
-        {
-            _writer.writeAssignThisToLocal(inMethod, stmt, (Local) left, session);
-        }
+            _writer.writeAssignThisToLocal(ii, (Local) left);
         else if(left instanceof Local && right instanceof ParameterRef)
-        {
-            _writer.writeAssignLocal(inMethod, stmt, (Local) left, (ParameterRef) right, session);
-        }
+            _writer.writeAssignLocal(ii, (Local) left, (ParameterRef) right);
         else
-        {
             throw new RuntimeException("Cannot handle identity statement: " + stmt);
-        }
     }
 
     /**
      * Return statement
      */
-    private void generate(SootMethod inMethod, ReturnStmt stmt, Session session)
+    private void generate(ReturnStmt stmt, Type returnType, InstrInfo ii, SessionCounter session)
     {
         Value v = stmt.getOp();
 
-        if(v instanceof Local)
-        {
-            _writer.writeReturn(inMethod, stmt, (Local) v, session);
+        if (v instanceof Local)
+            _writer.writeReturn(ii, (Local) v);
+        else if (v instanceof StringConstant) {
+            Local tmp = _writer.writeStringConstantExpression(stmt, ii, (StringConstant) v, session);
+            _writer.writeReturn(ii, tmp);
         }
-        else if(v instanceof StringConstant)
-        {
-            Local tmp = _writer.writeStringConstantExpression(inMethod, stmt, (StringConstant) v, session);
-            _writer.writeReturn(inMethod, stmt, tmp, session);
+        else if (v instanceof ClassConstant) {
+            Local tmp = _writer.writeClassConstantExpression(ii, (ClassConstant) v, session);
+            _writer.writeReturn(ii, tmp);
         }
-        else if(v instanceof ClassConstant)
-        {
-            Local tmp = _writer.writeClassConstantExpression(inMethod, stmt, (ClassConstant) v, session);
-            _writer.writeReturn(inMethod, stmt, tmp, session);
-        }
-        else if(v instanceof NumericConstant)
-        {
-            Local tmp = _writer.writeNumConstantExpression(inMethod, stmt, (NumericConstant) v, inMethod.getReturnType(), session);
-            _writer.writeReturn(inMethod, stmt, tmp, session);
-        }
-        else if(v instanceof MethodHandle)
-        {
-            Local tmp = _writer.writeMethodHandleConstantExpression(inMethod, stmt, (MethodHandle) v, session);
-            _writer.writeReturn(inMethod, stmt, tmp, session);
-        }
-        else if(v instanceof NullConstant)
-        {
-            Local tmp = _writer.writeNullExpression(inMethod, stmt, inMethod.getReturnType(), session);
-            _writer.writeReturn(inMethod, stmt, tmp, session);
+        else if (v instanceof NumericConstant) {
+            Local tmp = _writer.writeNumConstantExpression(ii, (NumericConstant) v, returnType, session);
+            _writer.writeReturn(ii, tmp);
+        } else if(v instanceof MethodHandle) {
+            Local tmp = _writer.writeMethodHandleConstantExpression(ii, (MethodHandle) v, session);
+            _writer.writeReturn(ii, tmp);
+        } else if (v instanceof NullConstant) {
+            Local tmp = _writer.writeNullExpression(ii, returnType, session);
+            _writer.writeReturn(ii, tmp);
             // NoNullSupport: use the line below to remove Null Constants from the facts.
             // _writer.writeUnsupported(inMethod, stmt, session);
-        }
-        else
-        {
+        } else
             throw new RuntimeException("Unhandled return statement: " + stmt);
-        }
     }
 
-    private void generate(SootMethod inMethod, ThrowStmt stmt, Session session)
-    {
+    private void generate(String inMethod, ThrowStmt stmt, InstrInfo ii, SessionCounter session) {
         Value v = stmt.getOp();
 
-        if(v instanceof Local)
-        {
+        if (v instanceof Local)
             _writer.writeThrow(inMethod, stmt, (Local) v, session);
-        }
-        else if(v instanceof NullConstant)
-        {
-            _writer.writeThrowNull(inMethod, stmt, session);
-        }
+        else if (v instanceof NullConstant)
+            _writer.writeThrowNull(ii);
         else
-        {
             throw new RuntimeException("Unhandled throw statement: " + stmt);
-        }
     }
 }
 

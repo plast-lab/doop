@@ -353,7 +353,7 @@ class WalaFactWriter extends JavaFactWriter {
 
         Type elementType = type;
 
-        int index = session.calcInstructionNumber(stmt);
+        int index = session.calcInstructionIndex(stmt);
         String rep = _rep.instruction(m, stmt, session, index);
 
         _db.addInput("AssignMultiArrayAllocation",
@@ -689,7 +689,7 @@ class WalaFactWriter extends JavaFactWriter {
     }
 //
 //    void writeTableSwitch(IMethod inMethod, TableSwitchStmt stmt, Session session) {
-//        int stmtIndex = session.getUnitNumber(stmt);
+//        int stmtIndex = session.getInstructionIndex(stmt);
 //
 //        Value v = writeImmediate(inMethod, stmt, stmt.getKey(), session);
 //
@@ -703,14 +703,14 @@ class WalaFactWriter extends JavaFactWriter {
 //        _db.add(TABLE_SWITCH, insn, str(stmtIndex), _rep.local(inMethod, l), methodId);
 //
 //        for (int tgIndex = stmt.getLowIndex(), i = 0; tgIndex <= stmt.getHighIndex(); tgIndex++, i++) {
-//            session.calcInstructionNumber(stmt.getTarget(i));
-//            int indexTo = session.getUnitNumber(stmt.getTarget(i));
+//            session.calcInstructionIndex(stmt.getTarget(i));
+//            int indexTo = session.getInstructionIndex(stmt.getTarget(i));
 //
 //            _db.add(TABLE_SWITCH_TARGET, insn, str(tgIndex), str(indexTo));
 //        }
 //
-//        session.calcInstructionNumber(stmt.getDefaultTarget());
-//        int defaultIndex = session.getUnitNumber(stmt.getDefaultTarget());
+//        session.calcInstructionIndex(stmt.getDefaultTarget());
+//        int defaultIndex = session.getInstructionIndex(stmt.getDefaultTarget());
 //
 //        _db.add(TABLE_SWITCH_DEFAULT, insn, str(defaultIndex));
 //    }
@@ -733,7 +733,7 @@ class WalaFactWriter extends JavaFactWriter {
         SSAInstruction[] instructions = ir.getInstructions();
         for(int i = 0; i < casesAndLabels.length; i+=2) {
             int tgIndex = casesAndLabels[i];
-            //session.calcInstructionNumber(instructions[casesAndLabels[i+1]]);
+            //session.calcInstructionIndex(instructions[casesAndLabels[i+1]]);
             targetWALAIndex = casesAndLabels[i+1];
             if(inMethod instanceof DexIMethod) {
                 try {
@@ -1286,7 +1286,7 @@ class WalaFactWriter extends JavaFactWriter {
     }
 
 //    void writeAssignPhantomInvoke(IMethod m, Stmt stmt, Session session) {
-////        int index = session.calcInstructionNumber(stmt);
+////        int index = session.calcInstructionIndex(stmt);
 ////        String insn = _rep.instruction(m, stmt, session, index);
 ////        String methodId = writeMethod(m);
 ////
@@ -1294,7 +1294,7 @@ class WalaFactWriter extends JavaFactWriter {
 //    }
 //
 //    void writeBreakpointStmt(IMethod m, Stmt stmt, Session session) {
-////        int index = session.calcInstructionNumber(stmt);
+////        int index = session.calcInstructionIndex(stmt);
 ////        String insn = _rep.instruction(m, stmt, session, index);
 ////        String methodId = writeMethod(m);
 ////

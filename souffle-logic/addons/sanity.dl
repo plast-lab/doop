@@ -58,6 +58,18 @@ Sanity("15", "Duplicate method implementation", ?c) :-
 Sanity("16", "Duplicate method lookup", ?c) :-
   ?c = count : basic.DuplicateMethodLookup(_, _, _, _, _).
 
+Sanity("17", "Instructions with duplicate method", ?c) :-
+  ?c = count : DuplicateMethodInstructions(_, _, _).
+
+Sanity("18", "Duplicate instructions with same method/index", ?c) :-
+  ?c = count : DifferentInstructionsSameIndex(_, _, _).
+
+Sanity("19", "Duplicate StoreArrayIndex_Base", ?c) :-
+  ?c = count : Duplicate_StoreArrayIndex_Base(_, _, _).
+
+Sanity("20", "Duplicate StoreArrayIndex_From", ?c) :-
+  ?c = count : Duplicate_StoreArrayIndex_From(_, _, _).
+
 #ifndef DISABLE_POINTS_TO
 // Every field in {Instance|Static}PointsTo points to correctly typed values
 Sanity("17", "Field in {Static|Instance}FieldPointsTo points to wrongly typed values", ?c) :-
@@ -256,3 +268,37 @@ ArtifactTypeMissingFromHierarchy(?t) :-
   _ClassArtifact(_, ?t, _, _),
   isReferenceType(?t),
   !basic.SubtypeOf(?t, _).
+
+.decl DuplicateMethodInstructions(?insn:Instruction, ?method1:Method, ?method2:Method)
+.output DuplicateMethodInstructions
+
+DuplicateMethodInstructions(?insn, ?method1, ?method2) :-
+  Instruction_Method(?insn, ?method1),
+  Instruction_Method(?insn, ?method2),
+  ?method1 != ?method2.
+
+.decl DifferentInstructionsSameIndex(?insn1:Instruction, ?insn2:Instruction, ?idx:number)
+.output DifferentInstructionsSameIndex
+
+DifferentInstructionsSameIndex(?insn1, ?insn2, ?idx) :-
+  Instruction_Method(?insn1, ?method),
+  Instruction_Method(?insn2, ?method),
+  Instruction_Index(?insn1, ?idx),
+  Instruction_Index(?insn2, ?idx),
+  ?insn1 != ?insn2.
+
+.decl Duplicate_StoreArrayIndex_Base(?insn:Instruction, ?base1:Var, ?base2:Var)
+.output Duplicate_StoreArrayIndex_Base
+
+Duplicate_StoreArrayIndex_Base(?insn, ?base1, ?base2) :-
+  StoreArrayIndex_Base(?insn, ?base1),
+  StoreArrayIndex_Base(?insn, ?base2),
+  ?base1 != ?base2.
+
+.decl Duplicate_StoreArrayIndex_From(?insn:Instruction, ?from1:Var, ?from2:Var)
+.output Duplicate_StoreArrayIndex_From
+
+Duplicate_StoreArrayIndex_From(?insn, ?from1, ?from2) :-
+  StoreArrayIndex_From(?insn, ?from1),
+  StoreArrayIndex_From(?insn, ?from2),
+  ?from1 != ?from2.

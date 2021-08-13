@@ -164,7 +164,7 @@ class PythonFactGenerator implements Runnable{
                     continue;
                 }
                 //generateDefs(m, ir, ((SSACFG.ExceptionHandlerBasicBlock) basicBlock).getCatchInstruction(), typeInference);
-                //session.calcInstructionNumber(((SSACFG.ExceptionHandlerBasicBlock) basicBlock).getCatchInstruction());
+                //session.calcInstructionIndex(((SSACFG.ExceptionHandlerBasicBlock) basicBlock).getCatchInstruction());
                 //_writer.writeUnsupported(m, ir, ((SSACFG.ExceptionHandlerBasicBlock) basicBlock).getCatchInstruction(), session);
             }
 

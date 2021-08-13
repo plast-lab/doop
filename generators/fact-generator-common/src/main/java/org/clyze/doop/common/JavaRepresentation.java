@@ -35,7 +35,7 @@ public class JavaRepresentation {
     }
 
     protected static String newLocalIntermediateId(String s, SessionCounter c) {
-        return s + "/intermediate/" + c.nextNumber(s);
+        return numberedInstructionId(s, "intermediate", c);
     }
 
     public static String heapAllocId(String m, String s, SessionCounter c) {

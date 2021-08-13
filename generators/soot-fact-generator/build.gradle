@@ -35,8 +35,11 @@ fatJar {
     }
     from { configurations.compileClasspath.collect { it.directory ? it : zipTree(it) } }
     with jar
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
 }
 
 test {
     useJUnitPlatform()
 }
+
+startScripts.dependsOn fatJar

@@ -47,7 +47,7 @@ if (project.hasProperty('heapDLVersion'))
     heapDLVersion = project.property('heapDLVersion')
 
 wrapper {
-    gradleVersion = "6.7"
+    gradleVersion = "7.0"
 }
 
 def allGeneratorProjects = subprojects.findAll { it.name.contains('fact-generator') }
@@ -64,7 +64,10 @@ def codeProcessorProject = project(':generators:code-processor')
         repositories {
             mavenLocal()
             mavenCentral()
-            maven { url "http://centauri.di.uoa.gr:8081/artifactory/plast-public" }
+            maven {
+                url "http://centauri.di.uoa.gr:8081/artifactory/plast-public"
+                allowInsecureProtocol true
+            }
         }
     }
 }
@@ -82,6 +85,8 @@ frontendGeneratorProjects.each { Project p ->
     }
     // fatJar
     p.tasks.create('fatJar', Jar)
+    p.tasks.fatJar.dependsOn p.tasks.jar
+    distZip.dependsOn p.tasks.fatJar
     // installJar
     p.tasks.create('installJar', Copy)
     p.tasks.installJar {
@@ -103,7 +108,10 @@ repositories {
     mavenLocal()
     mavenCentral()
     // maven { url "http://centauri.di.uoa.gr:8081/artifactory/plast-deps" }
-    maven { url "http://centauri.di.uoa.gr:8081/artifactory/plast-public" }
+    maven {
+        url "http://centauri.di.uoa.gr:8081/artifactory/plast-public"
+        allowInsecureProtocol true
+    }
     maven { url 'https://jitpack.io' }
     maven {
         name "soot-snapshot"
@@ -137,7 +145,7 @@ compileGroovy {
 // Set dependency version so that they are available to subprojects.
 gradle.rootProject.ext.antlrVersion='4.9.1'
 gradle.rootProject.ext.commonsCliVersion='1.2'
-gradle.rootProject.ext.metadataVersion='2.2.0'
+gradle.rootProject.ext.metadataVersion='2.2.2'
 gradle.rootProject.ext.groovyVersion="3.0.6"
 gradle.rootProject.ext.clueCommonVersion='3.24.2'
 gradle.rootProject.ext.log4jVersion='1.2.17'

@@ -144,8 +144,9 @@ class WalaRepresentation extends JavaRepresentation {
         return numberedInstructionId(signature(m), name, counter);
     }
 
-    //This method takes a MethodReference as a parameter and it does not include "this" as an argument
-    //Had the parameter been an IMethod it would include "this" but Soot signatures don't have it so we keep it this way.
+    // This method takes a MethodReference as a parameter and does not include
+    // "this" as an argument. Had the parameter been an IMethod it would
+    // include "this" but Soot signatures don't have it, so we keep it this way.
     private static String createMethodSignature(MethodReference m) {
         StringBuilder DoopSig = new StringBuilder("<" + fixTypeString(m.getDeclaringClass().toString()) + ": " + fixTypeString(m.getReturnType().toString()) + " " + m.getName() + "(");
         for (int i = 0; i < m.getNumberOfParameters(); i++) {
