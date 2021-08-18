@@ -24,6 +24,8 @@ class SouffleOptions {
     boolean useFunctors
     /** Maximum memory to use. */
     String maxMemory
+    /** Number of jobs to use. */
+    int jobs
 
     SouffleOptions() {}
 
@@ -37,5 +39,6 @@ class SouffleOptions {
         this.removeContexts = options.X_CONTEXT_REMOVER?.value as boolean
         this.useFunctors = options.SOUFFLE_USE_FUNCTORS?.value as boolean
         this.maxMemory = options.MAX_MEMORY?.value as String
+        this.jobs = options.SOUFFLE_JOBS?.value as int
     }
 }
