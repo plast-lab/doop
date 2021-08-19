@@ -114,6 +114,7 @@ class SouffleScript {
 				compilationCommand << ("--provenance=explain" as String)
 			if (options.liveProf)
 				compilationCommand << ("--live-profile" as String)
+                        compilationCommand << ("-j${options.jobs}" as String)
 
 			log.info "Compiling Datalog..."
 			log.debug "Compilation command: $compilationCommand"
