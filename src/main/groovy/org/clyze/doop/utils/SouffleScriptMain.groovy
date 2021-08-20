@@ -44,6 +44,7 @@ souffleOpts.profile = profile.toBoolean()
 souffleOpts.provenance = provenance.toBoolean()
 souffleOpts.debug = debug.toBoolean()
 souffleOpts.forceRecompile = recompile.toBoolean()
+souffleOpts.jobs = jobs.toInteger()
 File scriptFile = new File(scriptFilePath)
 File factsDir = new File(factsDirPath)
 
@@ -53,6 +54,6 @@ if (interpret && interpret.toBoolean()) {
 } else {
     def generatedFile = script.compile(scriptFile, outDir, souffleOpts)
     println "Compilation time (sec)\t${script.compilationTime}\n"
-    script.run(generatedFile, factsDir, outDir, jobs.toInteger(), 5000, null, souffleOpts)
+    script.run(generatedFile, factsDir, outDir, 5000, null, souffleOpts)
 }
 println "Execution time (sec)\t${script.executionTime}\n"

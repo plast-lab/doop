@@ -191,9 +191,8 @@ class SouffleScript {
 		return ret
 	}
 
-	def run(File analysisBinary, File factsDir, File outDir,
-	        int jobs, long monitoringInterval, Closure monitorClosure,
-			SouffleOptions options) {
+	def run(File analysisBinary, File factsDir, File outDir, long monitoringInterval,
+			Closure monitorClosure, SouffleOptions options) {
 
 		if (analysisBinary == null) {
 			log.info "No binary found, aborting."
@@ -202,7 +201,7 @@ class SouffleScript {
 
 		File db = new File(outDir, 'database')
 		List<String> executionCommand = getUtilsPrefix(options)
-		executionCommand.addAll([analysisBinary.canonicalPath, '-j' + jobs,
+		executionCommand.addAll([analysisBinary.canonicalPath, '-j' + options.jobs,
 								 '-F' + factsDir.canonicalPath,
 								 '-D' + db.canonicalPath] as List<String>)
 		if (options.profile)
@@ -226,7 +225,7 @@ class SouffleScript {
 	}
 
     def interpretScript(File origScriptFile, File outDir, File factsDir,
-                        int jobs, SouffleOptions options) {
+                        SouffleOptions options) {
 
 		setScriptFileViaCPP(origScriptFile, outDir)
 
@@ -237,7 +236,7 @@ class SouffleScript {
 
 		List<String> interpretationCommand = getUtilsPrefix(options)
 		interpretationCommand.addAll(['souffle', scriptFile.canonicalPath,
-									  '-j' + jobs, '-F' + factsDir.canonicalPath,
+									  '-j' + options.jobs, '-F' + factsDir.canonicalPath,
 									  '-D' + db.canonicalPath] as List<String>)
         if (options.profile)
             interpretationCommand<< ("-p${outDir}/profile.txt" as String)
