@@ -126,7 +126,6 @@ public class ArtifactScanner {
                         processClass(zipFile.getInputStream(entry), new File(zipFile.getName()), classProc);
                     } catch (Exception ex) {
                         ex.printStackTrace();
-                        System.err.println(ex.toString());
                         System.err.println("Error while preprocessing entry \"" + entryName + "\", it will be ignored.");
                     }
                 } else if (generalProc != null)

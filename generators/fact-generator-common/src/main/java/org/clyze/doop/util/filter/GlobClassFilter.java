@@ -12,6 +12,7 @@ public class GlobClassFilter implements ClassFilter {
     private final ArrayList<String> otherPatterns;
     private final boolean matchEverything;
 
+    @SuppressWarnings("DuplicateExpressions")
     public GlobClassFilter(String glob) {
         String[] patterns = glob.split(File.pathSeparator);
 

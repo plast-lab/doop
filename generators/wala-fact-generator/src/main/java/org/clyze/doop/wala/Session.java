@@ -20,7 +20,7 @@ public class Session extends SessionCounter {
      * When looking for the index of an instruction in most cases we need the "first" index that is stored in _instructions
      * In some cases (ex. when creating ranges of exception handlers) you may need the "last" index.
      *
-     * In general it is very important to understand how to correctly use Session when applying changes to the WALA front end
+     * In general, it is very important to understand how to correctly use Session when applying changes to the WALA front end
      * Unnecessary calls to calcInstructionIndex() (in contrast with the SOOT front end where they do not affect the facts) can create wrong facts.
      */
     private final Map<SSAInstruction, Integer> _instructions = new HashMap<>();
