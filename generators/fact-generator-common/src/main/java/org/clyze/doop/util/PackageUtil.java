@@ -34,8 +34,8 @@ public class PackageUtil {
 			packages = getPackagesForJAR(archive);
 		else if (name.endsWith(".apk"))
 			packages = getPackagesForAPK(archive);
-		else if (name.endsWith(".aar"))
-			packages = getPackagesForAAR(archive);
+		else if (name.endsWith(".aar") || name.endsWith(".war"))
+			packages = getPackagesForFatArchive(archive);
 		else if (name.endsWith(".class"))
 			packages = getPackagesForBytecode(archive);
 		else
@@ -113,10 +113,19 @@ public class PackageUtil {
 		return idx == -1 ? Regex.exact(s) : Regex.wild(s.substring(0, idx));
 	}
 
-	private static Set<Regex> getPackagesForAAR(File aar) throws IOException {
+	/**
+	 * Helper method to process fat archives, i.e. code archives that may contain
+	 * multiple .jar files in addition to .class files. Currently supported
+	 * formats: AAR, WAR.
+	 *
+	 * @param ar             the code archive
+	 * @return               the package regex set
+	 * @throws IOException   on archive processing error
+	 */
+	private static Set<Regex> getPackagesForFatArchive(File ar) throws IOException {
 		Set<Regex> ret = new HashSet<>();
 		Set<String> tmpDirs = new HashSet<>();
-		for (String jar : ContainerUtils.toJars(Collections.singletonList(aar.getCanonicalPath()), true, tmpDirs))
+		for (String jar : ContainerUtils.toJars(Collections.singletonList(ar.getCanonicalPath()), true, tmpDirs))
 			ret.addAll(getPackagesForJAR(new File(jar)));
 		JHelper.cleanUp(tmpDirs);
 		return ret;

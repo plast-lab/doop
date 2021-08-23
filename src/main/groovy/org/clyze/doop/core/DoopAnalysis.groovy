@@ -18,7 +18,6 @@ import org.codehaus.groovy.runtime.StackTraceUtils
 
 import java.lang.reflect.Field
 import java.lang.reflect.InvocationTargetException
-import java.nio.file.FileSystems
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
@@ -309,14 +308,9 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
     }
 
-    private List<String> getInputArgsJars(Set<String> tmpDirs) {
-        def inputArgs = inputFiles.collect() { File f -> ["-i", f.toString()] }.flatten() as Collection<String>
-        return ContainerUtils.toJars(inputArgs as List<String>, false, tmpDirs)
-    }
 
-    private List<String> getDepsJars(Set<String> tmpDirs) {
-        def deps = libraryFiles.collect { File f -> ["-ld", f.toString()] }.flatten() as Collection<String>
-        return ContainerUtils.toJars(deps as List<String>, false, tmpDirs)
+    private static List<String> flattenArgs(List<File> files, String opt) {
+        return files.collect() { File f -> [opt, f.toString()] }.flatten() as List<String>
     }
 
     protected void runFrontEnd(Set<String> tmpDirs, FrontEnd frontEnd, CHA cha) {
@@ -324,8 +318,8 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         if (platform != "android" && platform != "java")
             throw new RuntimeException("Unsupported platform: ${platform}")
 
-        def inputArgs = getInputArgsJars(tmpDirs)
-        def deps = getDepsJars(tmpDirs)
+        def inputArgs = flattenArgs(inputFiles, '-i')
+        def deps = flattenArgs(libraryFiles, '-ld')
         List<File> platforms = options.PLATFORMS.value as List<File>
         if (!platforms) {
             throw new RuntimeException("internal option '${options.PLATFORMS.name}' is empty")
@@ -651,8 +645,8 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
     protected void runPython(Set<String> tmpDirs) {
         Collection<String> params = []
         Collection<String> depArgs = []
-        def inputArgs = getInputArgsJars(tmpDirs)
-        def deps = getDepsJars(tmpDirs)
+        def inputArgs = flattenArgs(inputFiles, '-i')
+        def deps = flattenArgs(libraryFiles, '-ld')
 
         def platform = options.PLATFORM.value.toString().tokenize("_")[0]
         assert platform == "python"
