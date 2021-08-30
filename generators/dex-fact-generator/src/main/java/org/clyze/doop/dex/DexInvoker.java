@@ -45,12 +45,12 @@ public class DexInvoker {
         BasicJavaSupport java = new BasicJavaSupport(dexParams, new ArtifactScanner());
 
         try (Database db = new Database(outDir)) {
-            java.preprocessInputs(db);
+            Set<String> tmpDirs = new HashSet<>();
+            java.preprocessInputs(db, tmpDirs);
 
             DexFactWriter writer = new DexFactWriter(db, dexParams, cha);
             AndroidSupport android = new DexAndroidSupport(dexParams, java);
             try {
-                Set<String> tmpDirs = new HashSet<>();
                 android.processInputs(tmpDirs);
                 writer.writePreliminaryFacts(java, dexParams._debug);
                 System.out.println("Writing components...");

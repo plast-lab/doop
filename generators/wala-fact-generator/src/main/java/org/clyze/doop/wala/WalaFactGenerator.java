@@ -214,7 +214,7 @@ class WalaFactGenerator implements Runnable {
         SSACFG cfg = ir.getControlFlowGraph();
         SSACFG.ExceptionHandlerBasicBlock previousHandlerBlock = null;
         TypeInference typeInference;
-        if(_android) { //Sometimes DalvikTypeInference fails due to assertion so we try with normal TypeInference
+        if(_android) { // Sometimes DalvikTypeInference fails due to assertion, so we try with normal TypeInference.
             try {
                 typeInference = DalvikTypeInference.make(ir, true);
             }

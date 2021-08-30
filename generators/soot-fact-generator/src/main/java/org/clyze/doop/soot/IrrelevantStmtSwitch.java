@@ -18,9 +18,8 @@ class IrrelevantStmtSwitch implements StmtSwitch
             // bootstrap method is declared in a phantom class.
             if (right instanceof DynamicInvokeExpr)
                 inspectBootstrapMethod((DynamicInvokeExpr)right);
-            // An assignment instruction is irrelevant if the right
-            // hand side is an invoke expression of a method of a
-            // phantom class.
+            // An assignment instruction is irrelevant if the right-hand
+            // side is an invoke expression of a method of a phantom class.
             else if (right instanceof InvokeExpr)
                 inspectInvoke((InvokeExpr)right);
         }

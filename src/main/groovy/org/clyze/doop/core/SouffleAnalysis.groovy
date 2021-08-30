@@ -49,7 +49,6 @@ class SouffleAnalysis extends DoopAnalysis {
 		def executorService = Executors.newSingleThreadExecutor()
 		String analysisBinaryPath = options.USE_ANALYSIS_BINARY.value as String
 		boolean runInterpreted = options.SOUFFLE_MODE.value == DoopAnalysisFamily.SOUFFLE_INTERPRETED
-		int jobs = options.SOUFFLE_JOBS.value as int
 		long monitorInterval = (options.X_MONITORING_INTERVAL.value as long) * 1000
 		SouffleOptions souffleOpts = new SouffleOptions(options)
 
@@ -87,11 +86,10 @@ class SouffleAnalysis extends DoopAnalysis {
 				log.info "[CHA...]"
 				def methodLookupFile = new File("${Doop.souffleLogicPath}/addons/server-logic/method-lookup-ext.dl")
                 if (runInterpreted) {
-                    script.interpretScript(methodLookupFile, outDir, factsDir,
-                                           jobs, souffleOpts)
+                    script.interpretScript(methodLookupFile, outDir, factsDir, souffleOpts)
                 } else {
 				    def generatedFile0 = script.compile(methodLookupFile, outDir, souffleOpts)
-				    script.run(generatedFile0, factsDir, outDir, jobs,
+				    script.run(generatedFile0, factsDir, outDir,
 						       monitorInterval, monitorClosure, souffleOpts)
                 }
 				log.info "[CHA Done]"
@@ -108,10 +106,10 @@ class SouffleAnalysis extends DoopAnalysis {
 
 			if (!options.DRY_RUN.value) {
 				if (runInterpreted) {
-					script.interpretScript(analysis, outDir, factsDir, jobs, souffleOpts)
+					script.interpretScript(analysis, outDir, factsDir, souffleOpts)
 				} else {
 				    File analysisBinary = analysisBinaryPath ? new File(analysisBinaryPath) : generatedFile
-				    script.run(analysisBinary, factsDir, outDir, jobs, 
+				    script.run(analysisBinary, factsDir, outDir,
 						       monitorInterval, monitorClosure, souffleOpts)
 				}
 

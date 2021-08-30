@@ -113,7 +113,7 @@ class SoufflePartitionedAnalysis extends SouffleAnalysis {
                     @Override
                     void run() {
                         def childScript = newScriptForAnalysis(executor)
-                        childScript.run(generatedFile, childFactsDir, childOutDir, options.SOUFFLE_JOBS.value as int,
+                        childScript.run(generatedFile, childFactsDir, childOutDir,
                                         (options.X_MONITORING_INTERVAL.value as long) * 1000, monitorClosure, souffleOpts)
                         runtimeMetricsFile.append("analysis execution time (sec)\t${childScript.executionTime}\n")
                     }

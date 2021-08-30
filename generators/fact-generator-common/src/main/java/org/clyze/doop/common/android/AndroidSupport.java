@@ -82,9 +82,8 @@ public abstract class AndroidSupport {
             parameters.getDependencies().add(generatedR);
         }
 
-        // If inputs are in AAR format, extract and use their JAR entries.
-        parameters.setInputs(ContainerUtils.toJars(parameters.getInputs(), false, tmpDirs));
-        parameters.setDependencies(ContainerUtils.toJars(parameters.getDependencies(), false, tmpDirs));
+        // Process AAR inputs.
+        parameters.processFatArchives(tmpDirs);
 
         List<String> inputs = parameters.getInputs();
         int inputsSize = inputs.size();

@@ -19,6 +19,7 @@ import org.clyze.doop.common.Database;
 import org.clyze.doop.common.DoopErrorCodeException;
 import org.clyze.doop.common.Driver;
 import org.clyze.doop.common.Parameters;
+import org.clyze.utils.JHelper;
 
 import java.io.IOException;
 import java.util.*;
@@ -82,6 +83,7 @@ class WalaInvoker {
         BasicJavaSupport java = new BasicJavaSupport(walaParameters, new ArtifactScanner());
         String outputDir = walaParameters.getOutputDir();
 
+        Set<String> tmpDirs = new HashSet<>();
         try (Database db = new Database(outputDir)) {
             WalaRepresentation rep = new WalaRepresentation();
             WalaFactWriter walaFactWriter = new WalaFactWriter(db, walaParameters, rep);
@@ -98,7 +100,7 @@ class WalaInvoker {
             else
                 cache = new AnalysisCacheImpl();
 
-            java.preprocessInputs(db);
+            java.preprocessInputs(db, tmpDirs);
             walaFactWriter.writePreliminaryFacts(java, walaParameters._debug);
             db.flush();
 
@@ -142,6 +144,7 @@ class WalaInvoker {
             db.flush();
         } finally {
             Driver.waitForExecutorShutdown(java.getExecutor());
+            JHelper.cleanUp(tmpDirs);
         }
     }
 

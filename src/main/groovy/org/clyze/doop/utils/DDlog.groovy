@@ -154,12 +154,12 @@ class DDlog extends SouffleScript {
     }
 
     @Override
-    def run(File cacheFile, File factsDir, File outDir, int jobs, long monitoringInterval,
+    def run(File cacheFile, File factsDir, File outDir, long monitoringInterval,
             Closure monitorClosure, SouffleOptions options) {
 
         checkOptions(options)
 	    def db = new File(outDir, "database")
-        log.info "Running the analysis (using ${jobs} jobs)..."
+        log.info "Running the analysis (using ${options.jobs} jobs)..."
         try {
             executionTime = Helper.timing {
                 def dump = "${db.canonicalPath}/dump"
@@ -168,7 +168,7 @@ class DDlog extends SouffleScript {
                 // Hack: use script to get away with redirection.
                 def analysisBinary = cacheFile.absolutePath
                 def cmdRun = ((options.profile && new File(SouffleScript.TIME_UTIL).exists()) ? [SouffleScript.TIME_UTIL] : []) as List
-                cmdRun += "${Doop.doopHome}/bin/run-with-redirection.sh ${dat} ${dump} ${analysisBinary} -w ${jobs} --no-print".split().toList()
+                cmdRun += "${Doop.doopHome}/bin/run-with-redirection.sh ${dat} ${dump} ${analysisBinary} -w ${options.jobs} --no-print".split().toList()
                 executeCmd(cmdRun, null)
             }
             log.info "Analysis execution time (sec): ${executionTime}"
@@ -217,8 +217,7 @@ class DDlog extends SouffleScript {
 	}
 
     @Override
-    def interpretScript(File origScriptFile, File outDir, File factsDir,
-                        int jobs, org.clyze.doop.utils.SouffleOptions options) {
+    def interpretScript(File origScriptFile, File outDir, File factsDir, SouffleOptions options) {
         throw DoopErrorCodeException.error27("Option 'interpret' is not supported.")
     }
 }

@@ -7,7 +7,6 @@ import java.lang.management.RuntimeMXBean;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
-
 import org.apache.log4j.Logger;
 import org.clyze.doop.common.ArtifactEntry;
 import org.clyze.doop.common.ArtifactScanner;
@@ -109,7 +108,7 @@ public class Main {
 
         boolean writeFacts = !sootParameters.noFacts();
         try (Database db = new Database(outDir, writeFacts)) {
-            java.preprocessInputs(db);
+            java.preprocessInputs(db, tmpDirs);
 
             AtomicInteger errors = new AtomicInteger(0);
             if (android != null)
@@ -150,7 +149,7 @@ public class Main {
                 System.out.println("Done.");
             }
         } finally {
-            // Clean up any temporary directories used for AAR extraction.
+            // Clean up any temporary directories used for WAR/AAR extraction.
             JHelper.cleanUp(tmpDirs);
         }
     }
@@ -177,8 +176,7 @@ public class Main {
             }
         }
 
-        List<String> allLibs = sootParameters.getDependenciesAndPlatformLibs();
-        for (String lib : ContainerUtils.toJars(allLibs, false, tmpDirs)) {
+        for (String lib : sootParameters.getDependenciesAndPlatformLibs()) {
             System.out.println("Adding archive for resolving: " + lib);
             addToSootClassPath(scene, lib);
         }

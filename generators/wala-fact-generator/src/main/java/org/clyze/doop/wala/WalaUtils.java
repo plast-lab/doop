@@ -204,9 +204,9 @@ public class WalaUtils {
     /*
      * Getting methodType (the method descriptor in JVM format) and the name of a method returns the method signature
      * example createMethodSignature("([DLjava/lang/Object;)V", "methName") returns "void methName(double[],java.lang.Object)"
-     * Non primitive types get followed by ';' while primitive types or (arrays of them) get followed by nothing
+     * Non-primitive types get followed by ';' while primitive types or (arrays of them) get followed by nothing
      * After getting the return type we split the parameter types using ';' each of the split strings can contain
-     * many primitive types and one non primitive type
+     * many primitive types and one non-primitive type.
      */
     public static String createMethodSignature(String methodType, String methodName)
     {
@@ -238,7 +238,7 @@ public class WalaUtils {
                     switch (ch) {
                         case 'L':
                             signature.append(fixTypeString(s.substring(i)));
-                            i = s.length();     //When we reach a non primitive type it can not be followed by anything
+                            i = s.length();     //When we reach a non-primitive type it can not be followed by anything
                             break;
                         case 'Z':
                             signature.append("boolean");

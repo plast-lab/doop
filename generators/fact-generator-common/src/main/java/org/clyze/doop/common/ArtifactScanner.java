@@ -126,29 +126,11 @@ public class ArtifactScanner {
                         processClass(zipFile.getInputStream(entry), new File(zipFile.getName()), classProc);
                     } catch (Exception ex) {
                         ex.printStackTrace();
-                        System.err.println(ex.toString());
                         System.err.println("Error while preprocessing entry \"" + entryName + "\", it will be ignored.");
                     }
                 } else if (generalProc != null)
                     generalProc.accept(zipFile, entry, entryName);
             }
-        }
-    }
-
-    /**
-     * Helper method to generate the "class-artifact" table for a list of inputs.
-     *
-     * @param inputs   a list of inputs (such as JAR or APK files)
-     */
-    public void onlyRegisterArtifactClasses(Iterable<String> inputs) throws IOException {
-        for (String input : inputs) {
-            String lower = input.toLowerCase();
-            if (lower.endsWith(".jar") || lower.endsWith(".zip"))
-                processArchive(input, null, null);
-            else if (lower.endsWith(".apk"))
-                processAPKClasses(input, null);
-            else if (lower.endsWith(".aar"))
-                System.err.println("AAR input not supported for class-artifact table: " + input);
         }
     }
 

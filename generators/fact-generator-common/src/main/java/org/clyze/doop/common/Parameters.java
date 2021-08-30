@@ -10,6 +10,7 @@ import java.util.stream.Stream;
 import org.apache.log4j.Logger;
 import org.clyze.doop.util.filter.ClassFilter;
 import org.clyze.doop.util.filter.GlobClassFilter;
+import org.clyze.utils.ContainerUtils;
 import org.clyze.utils.JHelper;
 
 /**
@@ -297,5 +298,20 @@ public class Parameters {
         Logger logger = Logger.getLogger(c);
         logger.info("Logging initialized, using directory: " + logDir);
         return logger;
+    }
+
+    /**
+     * If inputs contain JARs (such as AAR/WAR inputs), extract and use
+     * their JAR entries.
+     *
+     * @param tmpDirs      the set of temporary directories (for clean-up actions)
+     */
+    public void processFatArchives(Set<String> tmpDirs) {
+        Set<String> jarLibs = new HashSet<>();
+        setInputs(ContainerUtils.toJars(getInputs(), false, jarLibs, tmpDirs));
+        setDependencies(ContainerUtils.toJars(getDependencies(), false, jarLibs, tmpDirs));
+        getDependencies().addAll(jarLibs);
+        System.out.println("inputs = " + getInputs());
+        System.out.println("libraries = " + getDependencies());
     }
 }

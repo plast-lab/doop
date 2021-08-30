@@ -318,7 +318,7 @@ class DexMethodFactWriter extends JavaFactWriter {
         }
     }
 
-    private void writeRegisterType(int reg, String regType) { // , Map<Integer, String> regTypes) {
+    private void writeRegisterType(int reg, String regType) {
         // regTypes.put(reg, regType);
         writeLocal(local(reg), regType, methId);
     }

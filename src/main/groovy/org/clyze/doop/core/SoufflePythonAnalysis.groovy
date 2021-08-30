@@ -31,15 +31,12 @@ class SoufflePythonAnalysis extends SouffleAnalysis {
         def script = newScriptForAnalysis(executor)
         SouffleOptions souffleOpts = new SouffleOptions(options)
         if (options.SOUFFLE_MODE.value == DoopAnalysisFamily.SOUFFLE_INTERPRETED) {
-            script.interpretScript(analysis, outDir, factsDir, options.SOUFFLE_JOBS.value as int, souffleOpts)
+            script.interpretScript(analysis, outDir, factsDir, souffleOpts)
         } else {
             def generatedFile = script.compile(analysis, outDir, souffleOpts)
 
             script.run(generatedFile, factsDir, outDir,
-                    options.SOUFFLE_JOBS.value as int,
-                    (options.X_MONITORING_INTERVAL.value as long) * 1000,
-                    monitorClosure,
-                    souffleOpts)
+                    (options.X_MONITORING_INTERVAL.value as long) * 1000, monitorClosure, souffleOpts)
 
         }
 

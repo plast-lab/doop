@@ -84,7 +84,7 @@ class SouffleScalerMultiPhaseAnalysis extends SouffleAnalysis {
 			if (!options.X_SERIALIZE_FACTGEN_COMPILATION.value) {
 			    generatedFile0 = compilationFuture.get()
             }
-			script.run(generatedFile0, factsDir, outDir, options.SOUFFLE_JOBS.value as int,
+			script.run(generatedFile0, factsDir, outDir,
 					(options.X_MONITORING_INTERVAL.value as long) * 1000, monitorClosure, souffleOpts)
 
 			int dbSize = (sizeOfDirectory(database) / 1024).intValue()
@@ -138,7 +138,7 @@ class SouffleScalerMultiPhaseAnalysis extends SouffleAnalysis {
 			if (!options.X_SERIALIZE_FACTGEN_COMPILATION.value) {
 				generatedFile = compilationFuture.get()
 			}
-			script.run(generatedFile, factsDir, outDir, options.SOUFFLE_JOBS.value as int,
+			script.run(generatedFile, factsDir, outDir,
 					   (options.X_MONITORING_INTERVAL.value as long) * 1000, monitorClosure, souffleOpts)
 
 			int dbSize = (sizeOfDirectory(database) / 1024).intValue()
