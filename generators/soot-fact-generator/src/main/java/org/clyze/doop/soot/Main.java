@@ -176,8 +176,7 @@ public class Main {
             }
         }
 
-        List<String> allLibs = sootParameters.getDependenciesAndPlatformLibs();
-        for (String lib : ContainerUtils.toJars(allLibs, false, tmpDirs)) {
+        for (String lib : sootParameters.getDependenciesAndPlatformLibs()) {
             System.out.println("Adding archive for resolving: " + lib);
             addToSootClassPath(scene, lib);
         }

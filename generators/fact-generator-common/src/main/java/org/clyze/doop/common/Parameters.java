@@ -307,8 +307,10 @@ public class Parameters {
      * @param tmpDirs      the set of temporary directories (for clean-up actions)
      */
     public void processFatArchives(Set<String> tmpDirs) {
-        setInputs(ContainerUtils.toJars(getInputs(), false, tmpDirs));
-        setDependencies(ContainerUtils.toJars(getDependencies(), false, tmpDirs));
+        Set<String> jarLibs = new HashSet<>();
+        setInputs(ContainerUtils.toJars(getInputs(), false, jarLibs, tmpDirs));
+        setDependencies(ContainerUtils.toJars(getDependencies(), false, jarLibs, tmpDirs));
+        getDependencies().addAll(jarLibs);
         System.out.println("inputs = " + getInputs());
         System.out.println("libraries = " + getDependencies());
     }

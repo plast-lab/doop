@@ -125,8 +125,11 @@ public class PackageUtil {
 	private static Set<Regex> getPackagesForFatArchive(File ar) throws IOException {
 		Set<Regex> ret = new HashSet<>();
 		Set<String> tmpDirs = new HashSet<>();
-		for (String jar : ContainerUtils.toJars(Collections.singletonList(ar.getCanonicalPath()), true, tmpDirs))
+		Set<String> jarLibs = new HashSet<>();
+		for (String jar : ContainerUtils.toJars(Collections.singletonList(ar.getCanonicalPath()), true, jarLibs, tmpDirs))
 			ret.addAll(getPackagesForJAR(new File(jar)));
+		for (String jarLib : jarLibs)
+			ret.addAll(getPackagesForJAR(new File(jarLib)));
 		JHelper.cleanUp(tmpDirs);
 		return ret;
 	}
