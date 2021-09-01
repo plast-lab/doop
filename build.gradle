@@ -1,4 +1,5 @@
 import java.nio.file.Files
+import java.nio.file.Paths
 import static java.nio.file.attribute.PosixFilePermissions.*
 
 buildscript {
@@ -371,9 +372,8 @@ test {
         exceptionFormat = 'full'
     }
     environment.DOOP_HOME = projectDir
-    java.nio.file.Path lbTestHomeDir = Files.createTempDirectory("lb-test-home-dir", onWindows ? ([] as java.nio.file.attribute.FileAttribute[]) : asFileAttribute(fromString("rwxrwxrwx")))
+    java.nio.file.Path lbTestHomeDir = Files.createTempDirectory(Paths.get('build'), 'lb-test-home-dir', onWindows ? ([] as java.nio.file.attribute.FileAttribute[]) : asFileAttribute(fromString("rwxrwxrwx")))
     environment.HOME = lbTestHomeDir.toString()
-    lbTestHomeDir.toFile().deleteDir()
 }
 
 // Copy resources to src/test/resources or they will not be found by tests.
