@@ -69,6 +69,16 @@ class SouffleAnalysis extends DoopAnalysis {
 			})
 		}
 
+		File generatedFile
+		if (options.X_SERIALIZE_FACTGEN_COMPILATION.value) {
+			if (runInterpreted)
+				log.info "Ignoring option --${options.X_SERIALIZE_FACTGEN_COMPILATION.name} when running in interpreted mode."
+			else {
+				generatedFile = compilationFuture.get()
+				System.gc()
+			}
+		}
+
 		try {
 			log.info "[Task FACTS...]"
 			generateFacts()
@@ -91,7 +101,6 @@ class SouffleAnalysis extends DoopAnalysis {
 
 			if (options.FACTS_ONLY.value) return
 
-			File generatedFile
 			if (!analysisBinaryPath && !runInterpreted) {
 				if (!options.X_SERIALIZE_FACTGEN_COMPILATION.value) {
 					generatedFile = compilationFuture.get()
