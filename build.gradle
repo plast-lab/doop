@@ -48,7 +48,7 @@ if (project.hasProperty('heapDLVersion'))
     heapDLVersion = project.property('heapDLVersion')
 
 wrapper {
-    gradleVersion = "7.0"
+    gradleVersion = "6.7"
 }
 
 def allGeneratorProjects = subprojects.findAll { it.name.contains('fact-generator') }
@@ -67,7 +67,7 @@ def codeProcessorProject = project(':generators:code-processor')
             mavenCentral()
             maven {
                 url "http://centauri.di.uoa.gr:8081/artifactory/plast-public"
-                allowInsecureProtocol true
+                allowInsecureProtocol true    // for Gradle 7 compatibility
             }
         }
     }
@@ -111,7 +111,7 @@ repositories {
     // maven { url "http://centauri.di.uoa.gr:8081/artifactory/plast-deps" }
     maven {
         url "http://centauri.di.uoa.gr:8081/artifactory/plast-public"
-        allowInsecureProtocol true
+        allowInsecureProtocol true // for Gradle 7 compatibility
     }
     maven { url 'https://jitpack.io' }
     maven {
