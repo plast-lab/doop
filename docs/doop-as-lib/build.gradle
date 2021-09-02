@@ -27,7 +27,7 @@ configurations {
     logic      { transitive = false }
 }
 
-def groovyVersion='3.0.6'
+def groovyVersion='3.0.8'
 def doopVersion = '4.+'
 dependencies {
     logic          "org.clyze:doop:${doopVersion}:logic-files"
