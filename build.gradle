@@ -372,9 +372,9 @@ test {
         exceptionFormat = 'full'
     }
     environment.DOOP_HOME = projectDir
-    File buildDir = new File(projectDir, 'build')
-    buildDir.mkdirs()    // needed for 'clean' target
-    java.nio.file.Path lbTestHomeDir = Files.createTempDirectory(buildDir.toPath(), 'lb-test-home-dir', onWindows ? ([] as java.nio.file.attribute.FileAttribute[]) : asFileAttribute(fromString("rwxrwxrwx")))
+    File tmpDir = new File(getTmpDir())
+    tmpDir.mkdirs()    // needed for 'clean' targets
+    java.nio.file.Path lbTestHomeDir = Files.createTempDirectory(tmpDir.toPath(), 'lb-test-home-dir', onWindows ? ([] as java.nio.file.attribute.FileAttribute[]) : asFileAttribute(fromString("rwxrwxrwx")))
     environment.HOME = lbTestHomeDir.toString()
 }
 
@@ -423,12 +423,14 @@ task cleanTestResources {
 }
 clean.dependsOn cleanTestResources
 
+def getTmpDir() { return System.getenv('DOOP_TMP')   ?: "$projectDir/tmp" }
+
 task fullClean {
     description 'Clean everything, including caches and analysis results.'
     doLast {
         def out   = System.getenv('DOOP_OUT')   ?: "$projectDir/out"
         def cache = System.getenv('DOOP_CACHE') ?: "$projectDir/cache"
-        def tmp   = System.getenv('DOOP_TMP')   ?: "$projectDir/tmp"
+        def tmp   = getTmpDir()
         file(out      ).list().each { f -> delete "$out/$f" }
         file(cache    ).list().each { f -> delete "$cache/$f" }
         file(tmp      ).list().each { f -> delete "$tmp/$f" }
