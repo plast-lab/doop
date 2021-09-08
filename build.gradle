@@ -1,4 +1,5 @@
 import java.nio.file.Files
+import java.nio.file.Paths
 import static java.nio.file.attribute.PosixFilePermissions.*
 
 buildscript {
@@ -47,7 +48,7 @@ if (project.hasProperty('heapDLVersion'))
     heapDLVersion = project.property('heapDLVersion')
 
 wrapper {
-    gradleVersion = "7.0"
+    gradleVersion = "6.7"
 }
 
 def allGeneratorProjects = subprojects.findAll { it.name.contains('fact-generator') }
@@ -66,7 +67,7 @@ def codeProcessorProject = project(':generators:code-processor')
             mavenCentral()
             maven {
                 url "http://centauri.di.uoa.gr:8081/artifactory/plast-public"
-                allowInsecureProtocol true
+                allowInsecureProtocol true    // for Gradle 7 compatibility
             }
         }
     }
@@ -110,7 +111,7 @@ repositories {
     // maven { url "http://centauri.di.uoa.gr:8081/artifactory/plast-deps" }
     maven {
         url "http://centauri.di.uoa.gr:8081/artifactory/plast-public"
-        allowInsecureProtocol true
+        allowInsecureProtocol true // for Gradle 7 compatibility
     }
     maven { url 'https://jitpack.io' }
     maven {
@@ -371,9 +372,10 @@ test {
         exceptionFormat = 'full'
     }
     environment.DOOP_HOME = projectDir
-    java.nio.file.Path lbTestHomeDir = Files.createTempDirectory("lb-test-home-dir", onWindows ? ([] as java.nio.file.attribute.FileAttribute[]) : asFileAttribute(fromString("rwxrwxrwx")))
+    File tmpDir = new File(getTmpDir())
+    tmpDir.mkdirs()    // needed for 'clean' targets
+    java.nio.file.Path lbTestHomeDir = Files.createTempDirectory(tmpDir.toPath(), 'lb-test-home-dir', onWindows ? ([] as java.nio.file.attribute.FileAttribute[]) : asFileAttribute(fromString("rwxrwxrwx")))
     environment.HOME = lbTestHomeDir.toString()
-    lbTestHomeDir.toFile().deleteDir()
 }
 
 // Copy resources to src/test/resources or they will not be found by tests.
@@ -421,12 +423,14 @@ task cleanTestResources {
 }
 clean.dependsOn cleanTestResources
 
+def getTmpDir() { return System.getenv('DOOP_TMP')   ?: "$projectDir/tmp" }
+
 task fullClean {
     description 'Clean everything, including caches and analysis results.'
     doLast {
         def out   = System.getenv('DOOP_OUT')   ?: "$projectDir/out"
         def cache = System.getenv('DOOP_CACHE') ?: "$projectDir/cache"
-        def tmp   = System.getenv('DOOP_TMP')   ?: "$projectDir/tmp"
+        def tmp   = getTmpDir()
         file(out      ).list().each { f -> delete "$out/$f" }
         file(cache    ).list().each { f -> delete "$cache/$f" }
         file(tmp      ).list().each { f -> delete "$tmp/$f" }

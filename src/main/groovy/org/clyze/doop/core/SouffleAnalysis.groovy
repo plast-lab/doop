@@ -71,8 +71,12 @@ class SouffleAnalysis extends DoopAnalysis {
 
 		File generatedFile
 		if (options.X_SERIALIZE_FACTGEN_COMPILATION.value) {
-			generatedFile = compilationFuture.get()
-			System.gc()
+			if (runInterpreted)
+				log.info "Ignoring option --${options.X_SERIALIZE_FACTGEN_COMPILATION.name} when running in interpreted mode."
+			else {
+				generatedFile = compilationFuture.get()
+				System.gc()
+			}
 		}
 
 		try {

@@ -9,6 +9,13 @@ last-analysis
 checksums.properties
 doop.properties
 src/main/resources/git-hash.txt
+src/test/resources/AndroidCallbacks.txt
+src/test/resources/EasyTaintWrapperSource.txt
+src/test/resources/apktool-cli-2.4.2.jar
+src/test/resources/git-hash.txt
+src/test/resources/log4j.properties
+src/test/resources/timeout
+src/test/resources/*-fact-generator.jar
 
 # dynamically generated class
 tests/115-invokedynamic/InvokedynamicClass.class
