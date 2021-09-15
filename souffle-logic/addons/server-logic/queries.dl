@@ -386,6 +386,7 @@ Server_Metrics("Results threshold", X_SERVER_LOGIC_THRESHOLD).
 // --Metrics //
 
 .output mainAnalysis.ReachableClass(IO="file",filename="ReachableClass.csv",delimiter="\t")
+.output MainClass(IO="file",filename="MainClass.csv",delimiter="\t")
 
 // Information flow //
 
