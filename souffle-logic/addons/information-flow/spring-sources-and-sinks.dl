@@ -1,22 +1,22 @@
 #include "common-transfer-methods.dl"
 
 // Spring-specific sources-sinks-sanitizers
-LeakingSinkMethodPattern(0, "<javax.servlet.jsp.JspWriter: void print\(.*\)>").
-LeakingSinkMethodPattern(0, "<javax.servlet.jsp.JspWriter: void println\(.*\)>").
-LeakingSinkMethodPattern(0, "<java.io.Writer: void write\(.*\)>").
-LeakingSinkMethodPattern(0, "<java.io.Writer: java.io.Writer append\(.*\)>").
+LeakingSinkMethodPattern(0, "<javax.servlet.jsp.JspWriter: void print\\(.*\\)>").
+LeakingSinkMethodPattern(0, "<javax.servlet.jsp.JspWriter: void println\\(.*\\)>").
+LeakingSinkMethodPattern(0, "<java.io.Writer: void write\\(.*\\)>").
+LeakingSinkMethodPattern(0, "<java.io.Writer: java.io.Writer append\\(.*\\)>").
 // "javax.servlet.http.HttpServletResponse([C)V"])" // TODO it's an interface?
-LeakingSinkMethodPattern(0, "<java.io.PrintWriter: void write\(.*\)>").
-LeakingSinkMethodPattern(0, "<java.io.PrintWriter: java.io.Writer append\(.*\)>").
-LeakingSinkMethodPattern(0, "<java.io.PrintWriter: void print\(.*\)>").
-LeakingSinkMethodPattern(0, "<java.io.PrintWriter: void println\(.*\)>").
-LeakingSinkMethodPattern(0, "<java.sql.Statement: void addBatch\(java.lang.String\)>").
-LeakingSinkMethodPattern(0, "<java.sql.Statement: int executeUpdate\(.*\)>").
-LeakingSinkMethodPattern(0, "<java.sql.Statement: boolean execute\(.*\)>").
-LeakingSinkMethodPattern(0, "<java.sql.Statement: java.sql.ResultSet executeQuery\(.*\)>").
-LeakingSinkMethodPattern(0, "<java.sql.Connection: java.sql.PreparedStatement prepareStatement\(.*\)>").
-LeakingSinkMethodPattern(0, "<java.sql.Connection: java.sql.CallableStatement prepareCall\(.*\)>").
-LeakingSinkMethodPattern(0, "<java.sql.PreparedStatement: void setString\(.*\)>").
+LeakingSinkMethodPattern(0, "<java.io.PrintWriter: void write\\(.*\\)>").
+LeakingSinkMethodPattern(0, "<java.io.PrintWriter: java.io.Writer append\\(.*\\)>").
+LeakingSinkMethodPattern(0, "<java.io.PrintWriter: void print\\(.*\\)>").
+LeakingSinkMethodPattern(0, "<java.io.PrintWriter: void println\\(.*\\)>").
+LeakingSinkMethodPattern(0, "<java.sql.Statement: void addBatch\\(java.lang.String\\)>").
+LeakingSinkMethodPattern(0, "<java.sql.Statement: int executeUpdate\\(.*\\)>").
+LeakingSinkMethodPattern(0, "<java.sql.Statement: boolean execute\\(.*\\)>").
+LeakingSinkMethodPattern(0, "<java.sql.Statement: java.sql.ResultSet executeQuery\\(.*\\)>").
+LeakingSinkMethodPattern(0, "<java.sql.Connection: java.sql.PreparedStatement prepareStatement\\(.*\\)>").
+LeakingSinkMethodPattern(0, "<java.sql.Connection: java.sql.CallableStatement prepareCall\\(.*\\)>").
+LeakingSinkMethodPattern(0, "<java.sql.PreparedStatement: void setString\\(.*\\)>").
 
 
 .decl SanitizationMethodIffBaseUntainted(?meth: Method)
