@@ -21,5 +21,5 @@ GlideReifiedType(?value, ?type) :-
 // Superset of Glide rules (matches all methods instead of just "public" ones).
 GlideReifiedType(?value, ?type) :-
   isClassType(?type),
-  match("com.bumptech.glide.load.ImageHeaderParser\\$.*", ?type),
+  match("com.bumptech.glide.load.ImageHeaderParser[$].*", ?type),
   ?value = cat("<Glide special value of type ", cat(?type, ">")).

@@ -1,23 +1,23 @@
 #include "common-transfer-methods.dl"
 
-TaintSourceMethodPattern("<javax.servlet.ServletRequest: .* get.*\\(.*\\)>").
-TaintSourceMethodPattern("<javax.servlet.ServletContext: .* get.*\\(.*\\)>").
-TaintSourceMethodPattern("<javax.servlet.ServletConfig: .* get.*\\(.*\\)>").
-TaintSourceMethodPattern("<javax.servlet.http.Cookie: .* get.*\\(.*\\)>").
-TaintSourceMethodPattern("<javax.servlet.http.HttpServletRequest: .* get.*\\(.*\\)>").
-TaintSourceMethodPattern("<javax.servlet.http.HttpSession: .* get.*\\(.*\\)>").
-TaintSourceMethodPattern("<javax.servlet.ServletRequest: .* get.*\\(.*\\)>").
-TaintSourceMethodPattern("<java.io.BufferedReader: java.lang.String readLine\\(\\)>").
-TaintSourceMethodPattern("<java.net.URLDecoder: java.lang.String decode\\(java.lang.String,java.lang.String\\)>").
-TaintSourceMethodPattern("<com.oreilly.servlet.MultipartRequest: java.lang.String getParameter\\(java.lang.String\\)>").
-TaintSourceMethodPattern("<javax.servlet.http.HttpServletResponse: java.io.PrintWriter getWriter\\(\\)>").
-LeakingSinkMethodPattern(0, "<java.io.Print.*: void println\\(.*\\)>").
-LeakingSinkMethodPattern(0, "<java.sql.Statement: .* execute.*\\(.*\\)>").
-LeakingSinkMethodPattern(0, "<javax.servlet.http.HttpServletResponse: void sendRedirect\\(.*\\)>").
-LeakingSinkMethodPattern(0, "<java.io.File: void <init>\\(.*\\)>").
-LeakingSinkMethodPattern(0, "<java.io.File.*er: void <init>\\(.*\\)>").
-LeakingSinkMethodPattern(0, "<java.io.File.*Stream: void <init>\\(.*\\)>").
-LeakingSinkMethodPattern(0, "<java.sql.Connection: java.sql.PreparedStatement prepareStatement\\(.*\\)>").
+TaintSourceMethodPattern("<javax.servlet.ServletRequest: .* get.*[(].*[)]>").
+TaintSourceMethodPattern("<javax.servlet.ServletContext: .* get.*[(].*[)]>").
+TaintSourceMethodPattern("<javax.servlet.ServletConfig: .* get.*[(].*[)]>").
+TaintSourceMethodPattern("<javax.servlet.http.Cookie: .* get.*[(].*[)]>").
+TaintSourceMethodPattern("<javax.servlet.http.HttpServletRequest: .* get.*[(].*[)]>").
+TaintSourceMethodPattern("<javax.servlet.http.HttpSession: .* get.*[(].*[)]>").
+TaintSourceMethodPattern("<javax.servlet.ServletRequest: .* get.*[(].*[)]>").
+TaintSourceMethodPattern("<java.io.BufferedReader: java.lang.String readLine[(][)]>").
+TaintSourceMethodPattern("<java.net.URLDecoder: java.lang.String decode[(]java.lang.String,java.lang.String[)]>").
+TaintSourceMethodPattern("<com.oreilly.servlet.MultipartRequest: java.lang.String getParameter[(]java.lang.String[)]>").
+TaintSourceMethodPattern("<javax.servlet.http.HttpServletResponse: java.io.PrintWriter getWriter[(][)]>").
+LeakingSinkMethodPattern(0, "<java.io.Print.*: void println[(].*[)]>").
+LeakingSinkMethodPattern(0, "<java.sql.Statement: .* execute.*[(].*[)]>").
+LeakingSinkMethodPattern(0, "<javax.servlet.http.HttpServletResponse: void sendRedirect[(].*[)]>").
+LeakingSinkMethodPattern(0, "<java.io.File: void <init>[(].*[)]>").
+LeakingSinkMethodPattern(0, "<java.io.File.*er: void <init>[(].*[)]>").
+LeakingSinkMethodPattern(0, "<java.io.File.*Stream: void <init>[(].*[)]>").
+LeakingSinkMethodPattern(0, "<java.sql.Connection: java.sql.PreparedStatement prepareStatement[(].*[)]>").
 
 TaintSourceMethod(?label, ?overriddenMethod) :-
    TaintSourceMethod(?label, ?method),

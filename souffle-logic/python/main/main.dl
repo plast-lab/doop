@@ -35,7 +35,7 @@
   ReachableContext(?initialContext, ?function) :-
     isInitialContext(?initialContext),
     isFunction(?function),
-    match(".*\\.py>", ?function).
+    match(".*[.]py>", ?function).
 
   configuration.InitContextRequest("<<immutable-context>>").
   configuration.InitContextRequest("<<initial-context>>").

@@ -10,7 +10,7 @@ Stats_Simple_JavaUtilInsensVarPointsTo(?value, ?var) :-
 
 Stats_Simple_JavaUtilVarPointsTo(?hctx, ?value, ?ctx, ?var) :-
   Method_DeclaringType(?method, ?type),
-  match("java\\.util\\..*", ?type),
+  match("java[.]util[.].*", ?type),
   Var_DeclaringMethod(?var, ?method),
   mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?var).
 
