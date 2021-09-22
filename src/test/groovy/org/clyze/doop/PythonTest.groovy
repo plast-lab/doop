@@ -18,7 +18,7 @@ class PythonTest extends Specification {
 		Analysis analysis = Main.analysis
 
 		then:
-		relationHasApproxSize(analysis, "mainAnalysis.VarPointsTo", 4)
+		relationHasExactSize(analysis, "mainAnalysis.VarPointsTo", 4)
 
         where:
         mode << [[], ["--Xisolate-fact-generation"]]

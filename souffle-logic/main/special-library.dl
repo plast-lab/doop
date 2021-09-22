@@ -21,7 +21,7 @@ SpecialLibraryClass(?class) :-
   isClassType(?class),
   !ApplicationClass(?class),
   isType(?class),
-  match("java\\.util.*", ?class).
+  match("java[.]util.*", ?class).
 */
 CollectionClass(?class) :-
   isClassType(?class),

@@ -221,7 +221,7 @@ MockObject(?mockObj, ?type) :-
 
 isSpringApplication(1) :-
   isClassType(?type),
-  match("org\.springframework\.context.*", ?type).
+  match("org[.]springframework[.]context.*", ?type).
 
 .decl PossibleEntryPointClass(?type:Type)
 
@@ -374,8 +374,8 @@ ConcreteBean_Id(?class, ?id) :-
   XMLNodeAttribute(?XMLFile, ?nodeId, "0", "id", "id", ?id),
   XMLNodeAttribute(?XMLFile, ?nodeId, "1", "class", "class", ?class),
   isClassType(?class),
-  !match("java\..*", ?class),
-  !match("sun\..*", ?class).
+  !match("java[.].*", ?class),
+  !match("sun[.].*", ?class).
 
 Bean_Parent(?id, ?parentId) :-
   XMLNodeAttribute(?XMLFile, ?nodeId, "0", "id", "id", ?id),
