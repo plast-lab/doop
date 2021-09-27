@@ -21,7 +21,7 @@ RESET = '\033[0m'
 YELLOW = '\033[33m'
 BOLD = '\033[1m'
 
-def run_pre_analysis(initArgs):
+def run_pre_analysis(preanalysis_id, initArgs):
     args = list(initArgs)
     for opt in ['-a', '--analysis']:
         if opt in args:
@@ -32,17 +32,17 @@ def run_pre_analysis(initArgs):
     args = args + ['-a', PRE_ANALYSIS]
     args = args + ['--Xzipper-pre']
     args = args + ['--cache']
-    args = args + ['--id', APP + "-zipper-ci"]
-    args = args + ['--input-id', APP+"-facts"]
-    args = args + ['--Xsymlink-input-facts']
+    args = args + ['--id', preanalysis_id]
+    # args = args + ['--input-id', APP+"-facts"]
+    # args = args + ['--Xsymlink-input-facts']
     cmd = ' '.join(args)
     print YELLOW + BOLD + 'Running pre-analysis ...' + RESET
-    # print cmd
+    print cmd
     os.system(cmd)
 
-    ci_analysis_facts = os.path.join(DOOP_OUT, APP + '-zipper-ci', 'facts')
+    ci_analysis_facts = os.path.join(DOOP_OUT, preanalysis_id, 'database')
 
-    cache_facts_dir = os.path.join(ZIPPER_CACHE, APP, 'facts')
+    cache_facts_dir = os.path.join(ZIPPER_CACHE, APP, 'database')
     if not os.path.exists(cache_facts_dir):
         shutil.copytree(ci_analysis_facts, cache_facts_dir)
     else:
@@ -119,15 +119,19 @@ def run_cached(args):
 def run(args):
     if not os.path.exists("zipper"):
         os.mkdir("zipper")
-    run_pre_analysis(args)
-    ci_analysis_database = os.path.join(DOOP_OUT, 'context-insensitive', APP + '-zipper-ci', 'database')
+    preanalysis_id = APP + "-zipper-ci"
+    run_pre_analysis(preanalysis_id, args)
+    ci_analysis_database = os.path.join(DOOP_OUT, preanalysis_id, 'database')
     dump_required_doop_results(APP, ci_analysis_database, os.path.join(ZIPPER_CACHE, APP))
     zipper_file = run_zipper(APP, os.path.join(ZIPPER_CACHE, APP), os.path.join(ZIPPER_OUT, APP))
     run_main_analysis(args, zipper_file)
 
 
 if __name__ == '__main__':
-    if sys.argv[-1] == 'cache':
+    if len(sys.argv) < 2:
+        print("Usage:")
+        print("  zipper.py DOOP_ARGS... APP [cache]")
+    elif sys.argv[-1] == 'cache':
         APP = sys.argv[-2]
         run(sys.argv[1:-2])
     else:
