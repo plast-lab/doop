@@ -525,7 +525,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "PRECISE_GENERICS",
 					name: "Xprecise-generics",
 					group: GROUP_EXPERIMENTAL,
-					description: "Precise handling for maps and collections",
+					description: "Precise handling for maps and collections.",
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
@@ -1078,7 +1078,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "X_R_OUT_DIR",
 					name: "XR-out-dir",
 					group: GROUP_EXPERIMENTAL,
-					description: "When linking .aar inputs, place generated R code in R_OUT_DIR",
+					description: "When linking .aar inputs, place generated R code in <R_OUT_DIR>.",
 					argName: "R_OUT_DIR",
 					argInputType: InputType.MISC
 			),
