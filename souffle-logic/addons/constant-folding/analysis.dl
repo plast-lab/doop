@@ -145,7 +145,7 @@ IntConstFolding(?instr, ?var, ?value, ?meth, ?use) :-
 IntConstFolding(?instr, ?var, ?value, ?meth, ?use) :-
     AssignBinaryNonZeroRight(?instr, ?var, ?left, ?right, ?meth, ?use1, ?use2),
     _OperatorAt(?instr, "%"),
-    ?use1 < 5, ?use2 < 5, ?use1 >= ?use1, ?use = ?use1 + 1,
+    ?use1 < 5, ?use2 < 5, ?use1 >= ?use2, ?use = ?use1 + 1,
     ?use < 5,
     ?value = ?left % ?right.
 
