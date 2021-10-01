@@ -326,6 +326,14 @@ code out/app/database/jimple out/app/database/doop.sarif
 
 ![Visual Studio Code example](docs/vscode-sarif-example.png)
 
+### Running Scaler
+
+To analyze a program with [Scaler](https://silverbullettt.bitbucket.io/papers/fse2018.pdf):
+
+```
+./doop -i app.jar -a fully-guided-context-sensitive --Xscaler-pre
+```
+
 ## License
 UPL (see [LICENSE](LICENSE)).
 
