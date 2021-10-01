@@ -267,18 +267,6 @@ task printExtClasspath {
     }
 }
 
-task scaler(type: JavaExec) {
-    description 'Run Scaler'
-    group = 'Doop'
-    main = 'ptatoolkit.scaler.doop.Main'
-    classpath = sourceSets.main.runtimeClasspath.filter {
-        !it.name.startsWith("zipper")
-    }
-    if (project.hasProperty("args"))
-        args project.property("args").split()
-    //jvmArgs = ['-Xmx=48g']
-}
-
 task zipper(type: JavaExec) {
     description 'Run Zipper'
     group = 'Doop'
