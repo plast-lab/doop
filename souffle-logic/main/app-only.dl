@@ -1,3 +1,5 @@
+#ifdef APP_ONLY
+
 // First make all methods be opaque if not app!
 isOpaqueMethod(?signature) :-
   isMethod(?signature),
@@ -44,3 +46,5 @@ VarPointsTo(?hctx, ?val, ?ctx, ?ret) :-
   FakeInstanceFieldPointsTo(?hctx, ?val, ?valType, ?basehctx, ?baseVal),
   basic.SubtypeOf(?valType, ?retType).
  .plan 1:(2,1,3)
+
+#endif // APP_ONLY

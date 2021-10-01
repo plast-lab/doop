@@ -427,6 +427,12 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forCacheID: true
 			),
 			new BooleanAnalysisOption(
+					id: "APP_ONLY",
+					name: "app-only",
+					description: "Only analyze the application input(s), ignore libraries/platform.",
+					forPreprocessor: true
+			),
+			new BooleanAnalysisOption(
 					id: "ANDROID",
 					name: "android",
 					description: "Force Android mode for code inputs that are not in .apk format.",
