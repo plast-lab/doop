@@ -10,7 +10,7 @@ import static org.clyze.doop.TestUtils.*
  */
 class CrudeScalerTest extends Specification {
 
-	@spock.lang.Ignore
+	// @spock.lang.Ignore
 	@Unroll
 	def "Crude testing scaler analysis"() {
 		when:
@@ -18,9 +18,8 @@ class CrudeScalerTest extends Specification {
 		Analysis analysis = Main.analysis
 
 		then:
-		relationHasApproxSize(analysis, "CallGraphEdge", 1086574)
-		relationHasApproxSize(analysis, "VarPointsTo", 6643270)
-		relationHasApproxSize(analysis, "ApplicationMethod", 2680)
-		relationHasApproxSize(analysis, "Reachable", 10311)
+		relationHasApproxSize(analysis, "CallGraphEdge", 460285)
+		relationHasApproxSize(analysis, "VarPointsTo", 4171899)
+		relationHasApproxSize(analysis, "Reachable", 10297)
 	}
 }
