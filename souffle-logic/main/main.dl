@@ -99,6 +99,8 @@
 #include "../addons/dacapo/rules.dl"
 #endif // DACAPO, DACAPO_BACH
 
+#include "app-only.dl"
+
 #include "phantom-dead.dl"
 
   .init configuration = Configuration
@@ -132,3 +134,4 @@
 #ifdef SARIF
 #include "../addons/sarif/sarif.dl"
 #endif // SARIF
+
