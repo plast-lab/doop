@@ -383,10 +383,12 @@ Server_Metrics("#HeapAllocation", ?n) :- ?n = count:{isHeapAllocation(_)}.
 Server_Metrics("#MethodInvocation", ?n) :- ?n = count:{isMethodInvocation(_)}.
 Server_Metrics("Results threshold", X_SERVER_LOGIC_THRESHOLD).
 
+// Output all classes with "main" entry points.
+.output basic.AnyMainMethodDeclaration(IO="file",filename="ClassWithMain.csv",delimiter="\t")
+
 // --Metrics //
 
 .output mainAnalysis.ReachableClass(IO="file",filename="ReachableClass.csv",delimiter="\t")
-.output MainClass(IO="file",filename="MainClass.csv",delimiter="\t")
 
 // Information flow //
 

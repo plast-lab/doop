@@ -9,21 +9,25 @@
 #include "type-hierarchy.dl"
 #include "native-strings.dl"
 
-.decl MainMethodDeclaration(?method:Method)
-
-MainMethodDeclaration(?method) :-
-#ifdef DISCOVER_MAIN_METHODS
-   // Consider every main() in the application a "main method".
-   ApplicationClass(?type),
-#else
-   // Use input facts for "main" methods.
-   MainClass(?type),
-#endif // DISCOVER_MAIN_METHODS
+.decl AnyMainMethodDeclaration(?method:Method, ?type:ClassType)
+AnyMainMethodDeclaration(?method, ?type) :-
    Method_DeclaringType(?method, ?type),
    Method_SimpleName(?method, "main"),
    Method_Descriptor(?method, "void(java.lang.String[])"),
    Method_Modifier("public", ?method),
    Method_Modifier("static", ?method).
+
+.decl MainMethodDeclaration(?method:Method)
+
+MainMethodDeclaration(?method) :-
+#ifdef DISCOVER_MAIN_METHODS
+  // Consider every main() in the application a "main method".
+  ApplicationClass(?type),
+#else
+  // Use input facts for "main" methods.
+  MainClass(?type),
+#endif // DISCOVER_MAIN_METHODS
+  AnyMainMethodDeclaration(?method, ?type).
 
 #ifdef ANDROID
 // Android apps start by running ActivityThread.main() or other
