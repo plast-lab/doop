@@ -69,14 +69,14 @@ public class GlobClassFilter implements ClassFilter {
             for (String pattern : otherPatterns) {
                 if (pattern.equals("*")) {
                     return PackageUtils.getPackageName(className).isEmpty();
-                } else if (className.equalsIgnoreCase(pattern))
+                } else if (className.equals(pattern))
                     return true;
             }
 
         if (packages != null) {
             pkgName = PackageUtils.getPackageName(className);
             for (String pkg : packages)
-                if (pkgName.toLowerCase(Locale.ROOT).startsWith(pkg))
+                if (pkgName.startsWith(pkg))
                     return true;
 	    }
         return false;
