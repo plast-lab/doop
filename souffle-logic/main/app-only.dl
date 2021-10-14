@@ -1,0 +1,50 @@
+#ifdef APP_ONLY
+
+// First make all methods be opaque if not app!
+isOpaqueMethod(?signature) :-
+  isMethod(?signature),
+  !ApplicationMethod(?signature).
+
+// Next, treat opaque methods as stores/loads
+.decl OpaqueMethodInvocation(?instruction:MethodInvocation, ?base:Var, ?sigCallee:Method)
+OpaqueMethodInvocation(?instruction, ?base, ?sigCallee) :-
+  (SpecialMethodInvocation_Base(?instruction, ?base);
+   VirtualMethodInvocation_Base(?instruction, ?base)),
+  MethodInvocation_Method(?instruction, ?sigCallee),
+  isOpaqueMethod(?sigCallee). 
+
+.decl OpaqueMethodInvocationParam(?instruction:MethodInvocation, ?base:Var, ?param:Var)
+OpaqueMethodInvocationParam(?instruction, ?base, ?param) :-
+  OpaqueMethodInvocation(?instruction, ?base, _),
+  ActualParam(_, ?instruction, ?param).
+
+.decl OpaqueMethodInvocationReturn(?instruction:MethodInvocation, ?base:Var, ?ret:Var)
+OpaqueMethodInvocationReturn(?instruction, ?base, ?ret) :-
+  OpaqueMethodInvocation(?instruction, ?base, _),
+  AssignReturnValue(?instruction, ?ret).
+
+.decl FakeStoreInstanceField(?basehctx:configuration.HContext, ?baseVal:Value, ?ctx:configuration.Context, ?from:Var)
+FakeStoreInstanceField(?basehctx, ?baseVal, ?ctx, ?from) :-
+  OpaqueMethodInvocationParam(_, ?base, ?from),
+  VarPointsTo(?basehctx, ?baseVal, ?ctx, ?base).
+
+.decl FakeLoadInstanceField(?basehctx:configuration.HContext, ?baseVal:Value, ?ctx:configuration.Context, ?to:Var, ?toType:Type)
+FakeLoadInstanceField(?basehctx, ?baseVal, ?ctx, ?ret, ?type) :-
+  OpaqueMethodInvocationReturn(_, ?base, ?ret),
+  VarPointsTo(?basehctx, ?baseVal, ?ctx, ?base),
+  Var_Type(?ret, ?type).
+
+.decl FakeInstanceFieldPointsTo(?hctx:configuration.HContext, ?value:Value, ?valType:Type, ?basehctx:configuration.HContext, ?basevalue:Value)
+FakeInstanceFieldPointsTo(?hctx, ?val, ?valType, ?basehctx, ?baseVal) :-
+  FakeStoreInstanceField(?basehctx, ?baseVal, ?ctx, ?from),
+  VarPointsTo(?hctx, ?val, ?ctx, ?from),
+  Value_Type(?val, ?valType).
+ .plan 1:(2,1,3)
+
+VarPointsTo(?hctx, ?val, ?ctx, ?ret) :-
+  FakeLoadInstanceField(?basehctx, ?baseVal, ?ctx, ?ret, ?retType),
+  FakeInstanceFieldPointsTo(?hctx, ?val, ?valType, ?basehctx, ?baseVal),
+  basic.SubtypeOf(?valType, ?retType).
+ .plan 1:(2,1,3)
+
+#endif // APP_ONLY
