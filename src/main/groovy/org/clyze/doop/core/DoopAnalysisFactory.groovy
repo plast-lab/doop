@@ -264,7 +264,9 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			.findAll { it.forCacheID && it.argInputType == InputType.MISC && it.value }
 		for (AnalysisOption opt : miscFileOpts) {
 			if (opt != options.TAMIFLEX || opt.value != "dummy") {
-				checksums += [CheckSum.checksum(new File(opt.value as String), HASH_ALGO)]
+				(opt.value instanceof Collection ? opt.value : [opt.value]).each { String value ->
+					checksums += [CheckSum.checksum(new File(value as String), HASH_ALGO)]
+				}
 			}
 		}
 

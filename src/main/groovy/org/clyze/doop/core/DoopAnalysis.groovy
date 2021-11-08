@@ -182,6 +182,18 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             File origTamFile = new File(options.TAMIFLEX.value.toString())
             gen0.writeTamiflexFacts(origTamFile)
         }
+
+        if (options.X_EXTRA_FACTS.value) {
+            for (String extraFactsPath : options.X_EXTRA_FACTS.value as Collection<String>) {
+                File extraFacts = new File(extraFactsPath)
+                if (extraFacts.exists()) {
+                    log.info "Augmenting facts with file: ${extraFactsPath}"
+                    Files.copy(extraFacts.toPath(), new File(database, extraFacts.name).toPath())
+                } else
+                    log.warn "WARNING: facts file does not exist: ${extraFactsPath}"
+            }
+
+        }
     }
 
     /**

@@ -1038,6 +1038,17 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					value: [],
 					multipleValues: true
 			),
+			new AnalysisOption<List<String>>(
+					id: "X_EXTRA_FACTS",
+					name: "Xextra-facts",
+					group: GROUP_EXPERIMENTAL,
+					description: "Include files with extra facts.",
+					argName: "FILE",
+					argInputType: InputType.MISC,
+					value: [],
+					multipleValues: true,
+					forCacheID: true
+			),
 			new BooleanAnalysisOption(
 					id: "X_CONTEXT_REMOVER",
 					name: "Xcontext-remover",
