@@ -266,7 +266,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			if (opt != options.TAMIFLEX || opt.value != "dummy") {
 				Collection<String> values = opt.value instanceof Collection ?
 						opt.value :
-						(opt.value instanceof File ? [(opt.value as File).canonicalPath] : [opt.value.toString])
+						(opt.value instanceof File ? [(opt.value as File).canonicalPath] : [opt.value.toString()])
 				values.each { String value ->
 					checksums += [CheckSum.checksum(new File(value as String), HASH_ALGO)]
 				}
