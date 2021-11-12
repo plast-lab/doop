@@ -408,6 +408,9 @@ Server_LeakingTaintedInformation(?fromLabel, ?toLabel, ?invocation, ?value) :-
 
 #endif // INFORMATION_FLOW
 
+// Type hierarchy
+.output basic.SubtypeOf
+
 // Application-marking relations
 .output ApplicationClass
 .output ApplicationField
