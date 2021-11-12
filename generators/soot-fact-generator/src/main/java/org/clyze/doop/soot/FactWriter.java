@@ -3,13 +3,15 @@ package org.clyze.doop.soot;
 import com.google.common.collect.Lists;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import org.clyze.doop.common.*;
 import org.clyze.utils.TypeUtils;
 import soot.*;
 import soot.jimple.*;
 import soot.jimple.internal.JimpleLocal;
 import soot.jimple.toolkits.typing.fast.BottomType;
+import soot.shimple.PhiExpr;
 import soot.tagkit.*;
 import soot.util.backend.ASMBackendUtils;
 
@@ -25,6 +27,7 @@ class FactWriter extends JavaFactWriter {
     private final Map<String, Type> _varTypeMap = new ConcurrentHashMap<>();
     private final Phantoms phantoms;
     private final Collection<Object> seenPhantoms = new HashSet<>();
+    private final Map<Unit, Collection<InstrInfo>> expandedPhiNodes = new HashMap<>();
 
     FactWriter(Database db, SootParameters params, Representation rep, Phantoms phantoms) {
         super(db, params);
@@ -225,6 +228,30 @@ class FactWriter extends JavaFactWriter {
     void writeAssignLocal(InstrInfo ii, Local to, ParameterRef ref) {
         String methodId = ii.methodId;
         writeAssignLocal(ii.insn, ii.index, _rep.param(methodId, ref.getIndex()), _rep.local(methodId, to), methodId);
+    }
+
+    void writePhiAssign(InstrInfo ii, AssignStmt stmt, Local left, PhiExpr phiExpr, SessionCounter session) {
+        Collection<InstrInfo> newAssignments = new ArrayList<>();
+        for (Value alternative : (phiExpr).getValues()) {
+            InstrInfo altInstrInfo = new InstrInfo(ii.methodId, "phi-assign", session);
+            writeAssignLocal(altInstrInfo, left, (Local) alternative);
+            newAssignments.add(altInstrInfo);
+        }
+        expandedPhiNodes.put(stmt, newAssignments);
+    }
+
+    void writeWithPossiblePhiTarget(Unit target, SessionCounter session,
+                                            Consumer<Integer> writerLambda) {
+        Collection<InstrInfo> phiNodes = expandedPhiNodes.get(target);
+        if (phiNodes == null) {
+            session.calcInstructionIndex(target);
+            int indexTo = session.getInstructionIndex(target);
+            writerLambda.accept(indexTo);
+        } else {
+            Collection<Integer> targetIndices = phiNodes.stream().map(ii -> ii.index).collect(Collectors.toList());
+            for (int indexTo : targetIndices)
+                writerLambda.accept(indexTo);
+        }
     }
 
     void writeAssignInvoke(SootMethod inMethod, Stmt stmt, InstrInfo ii, Local to, SessionCounter session) {
@@ -522,22 +549,16 @@ class FactWriter extends JavaFactWriter {
     }
 
     void writeGoto(GotoStmt stmt, InstrInfo ii, SessionCounter session) {
-        Unit to = stmt.getTarget();
         session.calcInstructionIndex(stmt);
-        session.calcInstructionIndex(to);
-        int indexTo = session.getInstructionIndex(to);
-        _db.add(GOTO, ii.insn, str(ii.index), str(indexTo), ii.methodId);
+        writeWithPossiblePhiTarget(stmt.getTarget(), session, (indexTo -> _db.add(GOTO, ii.insn, str(ii.index), str(indexTo), ii.methodId)));
     }
 
     /**
      * If
      */
-    void writeIf(IfStmt stmt, InstrInfo ii, SessionCounter session) {
-        Unit to = stmt.getTarget();
+    void writeIf(IfStmt stmt, InstrInfo ii, int indexTo) {
         // index was already computed earlier
         int index = ii.index;
-        session.calcInstructionIndex(to);
-        int indexTo = session.getInstructionIndex(to);
         String insn = ii.insn;
 
         String methodId = ii.methodId;
@@ -591,16 +612,18 @@ class FactWriter extends JavaFactWriter {
         String insn = ii.insn;
         _db.add(TABLE_SWITCH, insn, str(ii.index), _rep.local(methodId, l), methodId);
 
-        for (int tgIndex = stmt.getLowIndex(), i = 0; tgIndex <= stmt.getHighIndex(); tgIndex++, i++) {
-            session.calcInstructionIndex(stmt.getTarget(i));
-            int indexTo = session.getInstructionIndex(stmt.getTarget(i));
-
-            _db.add(TABLE_SWITCH_TARGET, insn, str(tgIndex), str(indexTo));
-        }
+        writeTableSwitchTarget(stmt, session, insn);
 
         session.calcInstructionIndex(stmt.getDefaultTarget());
         int defaultIndex = session.getInstructionIndex(stmt.getDefaultTarget());
         _db.add(TABLE_SWITCH_DEFAULT, insn, str(defaultIndex));
+    }
+
+    private void writeTableSwitchTarget(TableSwitchStmt stmt, SessionCounter session, String insn) {
+        for (int tgIndex = stmt.getLowIndex(), i = 0; tgIndex <= stmt.getHighIndex(); tgIndex++, i++) {
+            String tgIndexStr = str(tgIndex);
+            writeWithPossiblePhiTarget(stmt.getTarget(i), session, (indexTo -> _db.add(TABLE_SWITCH_TARGET, insn, tgIndexStr, str(indexTo))));
+        }
     }
 
     void writeLookupSwitch(LookupSwitchStmt stmt, InstrInfo ii, SessionCounter session) {
@@ -617,18 +640,19 @@ class FactWriter extends JavaFactWriter {
 
         _db.add(LOOKUP_SWITCH, insn, str(stmtIndex), _rep.local(methodId, l), methodId);
 
-        for (int i = 0, end = stmt.getTargetCount(); i < end; i++) {
-            int tgIndex = stmt.getLookupValue(i);
-            session.calcInstructionIndex(stmt.getTarget(i));
-            int indexTo = session.getInstructionIndex(stmt.getTarget(i));
-
-            _db.add(LOOKUP_SWITCH_TARGET, insn, str(tgIndex), str(indexTo));
-        }
+        writeLookupSwitchTarget(stmt, session, insn);
 
         session.calcInstructionIndex(stmt.getDefaultTarget());
         int defaultIndex = session.getInstructionIndex(stmt.getDefaultTarget());
 
         _db.add(LOOKUP_SWITCH_DEFAULT, insn, str(defaultIndex));
+    }
+
+    private void writeLookupSwitchTarget(LookupSwitchStmt stmt, SessionCounter session, String insn) {
+        for (int i = 0, end = stmt.getTargetCount(); i < end; i++) {
+            int tgIndex = stmt.getLookupValue(i);
+            writeWithPossiblePhiTarget(stmt.getTarget(i), session, (indexTo -> _db.add(LOOKUP_SWITCH_TARGET, insn, str(tgIndex), str(indexTo))));
+        }
     }
 
     void writeUnsupported(Unit unit, InstrInfo ii, SessionCounter session) {

@@ -298,7 +298,8 @@ class FactGenerator implements Runnable {
             if (u instanceof GotoStmt) {
                 _writer.writeGoto((GotoStmt)u, iis.get(u), session);
             } else if (u instanceof IfStmt) {
-                _writer.writeIf((IfStmt) u, iis.get(u), session);
+                IfStmt ifStmt = (IfStmt)u;
+                _writer.writeWithPossiblePhiTarget(ifStmt.getTarget(), session, (indexTo -> _writer.writeIf(ifStmt, iis.get(u), indexTo)));
             } else if (u instanceof TableSwitchStmt) {
                 _writer.writeTableSwitch((TableSwitchStmt) u, iis.get(u), session);
             } else if (u instanceof LookupSwitchStmt) {
@@ -388,8 +389,7 @@ class FactGenerator implements Runnable {
             else
                 throw new RuntimeException("Cannot handle assignment: " + stmt + " (op: " + op.getClass() + ")");
         } else if (right instanceof PhiExpr) {
-            for (Value alternative : ((PhiExpr) right).getValues())
-                _writer.writeAssignLocal(new InstrInfo(ii.methodId, "phi-assign", session), left, (Local) alternative);
+            _writer.writePhiAssign(ii, stmt, left, (PhiExpr) right, session);
         } else if (right instanceof BinopExpr)
             _writer.writeAssignBinop(ii, left, (BinopExpr) right);
         else if (right instanceof UnopExpr)
