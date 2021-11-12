@@ -43,7 +43,7 @@ mainClassName = "org.clyze.doop.Main"
 // Windows support flag.
 def onWindows = System.properties['os.name'].toLowerCase().contains('windows')
 
-def heapDLVersion = "1.1.11"
+def heapDLVersion = "1.1.13"
 if (project.hasProperty('heapDLVersion'))
     heapDLVersion = project.property('heapDLVersion')
 
@@ -65,10 +65,11 @@ def codeProcessorProject = project(':generators:code-processor')
         repositories {
             mavenLocal()
             mavenCentral()
-            maven {
-                url "http://centauri.di.uoa.gr:8081/artifactory/plast-public"
-                allowInsecureProtocol true    // for Gradle 7 compatibility
-            }
+            maven { url 'https://clyze.jfrog.io/artifactory/default-maven-local' }
+            // maven {
+            //     url "http://centauri.di.uoa.gr:8081/artifactory/plast-public"
+            //     allowInsecureProtocol true    // for Gradle 7 compatibility
+            // }
         }
     }
 }
@@ -109,10 +110,11 @@ repositories {
     mavenLocal()
     mavenCentral()
     // maven { url "http://centauri.di.uoa.gr:8081/artifactory/plast-deps" }
-    maven {
-        url "http://centauri.di.uoa.gr:8081/artifactory/plast-public"
-        allowInsecureProtocol true // for Gradle 7 compatibility
-    }
+    // maven {
+    //     url "http://centauri.di.uoa.gr:8081/artifactory/plast-public"
+    //     allowInsecureProtocol true // for Gradle 7 compatibility
+    // }
+    maven { url 'https://clyze.jfrog.io/artifactory/default-maven-local' }
     maven { url 'https://jitpack.io' }
     maven {
         name "soot-snapshot"
@@ -122,8 +124,6 @@ repositories {
         name "soot-release"
         url "https://soot-build.cs.uni-paderborn.de/nexus/repository/soot-release"
     }
-    if (heapDLVersion == "master-SNAPSHOT")
-        maven { url 'https://jitpack.io' }
 }
 
 configurations {
@@ -146,15 +146,16 @@ compileGroovy {
 // Set dependency version so that they are available to subprojects.
 gradle.rootProject.ext.antlrVersion='4.9.1'
 gradle.rootProject.ext.commonsCliVersion='1.2'
-gradle.rootProject.ext.metadataVersion='2.2.3'
+gradle.rootProject.ext.metadataVersion='2.2.4'
 gradle.rootProject.ext.groovyVersion='3.0.8'
-gradle.rootProject.ext.clueCommonVersion='3.25.0'
+gradle.rootProject.ext.clueCommonVersion='3.25.2'
 gradle.rootProject.ext.log4jVersion='1.2.17'
 gradle.rootProject.ext.spockVersion='2.0-groovy-3.0'
 
 dependencies {
     // apktool "ext:apktool:2.4.0"                              // old artifactory dependency
-    apktool 'Apktool-fork.brut.apktool:apktool-cli:2.4.2'       // needed for decoding APK inputs
+    // apktool 'Apktool-fork.brut.apktool:apktool-cli:2.4.2'    // artifactory dependency
+    apktool files('local-dependencies/apktool-cli-2.4.2.jar')   // needed for decoding APK inputs
     api project(path: ':generators:fact-generator-common', configuration: 'shadow')
     api codeProcessorProject
     implementation "org.codehaus.groovy:groovy:${groovyVersion}",      // Groovy
