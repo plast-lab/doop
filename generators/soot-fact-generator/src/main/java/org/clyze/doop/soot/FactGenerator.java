@@ -234,6 +234,18 @@ class FactGenerator implements Runnable {
         }
     }
 
+    /**
+     * Check if a unit (instruction) is going to be transformed to a set of other
+     * instructions that will replace it. Used to detect instruction index disruptions.
+     *
+     * @param u   the instruction to check
+     * @return    true if the instruction will be transformed
+     */
+    private static boolean isTransformedAway(Unit u) {
+        // Phi assignments are currently the only pattern captured.
+        return (u instanceof AssignStmt && ((AssignStmt)u).getRightOp() instanceof PhiExpr);
+    }
+
     private void generate(SootMethod m, Body b, SessionCounter session) {
         String methodId = _writer._rep.signature(m);
         for(Local l : b.getLocals())
@@ -245,8 +257,13 @@ class FactGenerator implements Runnable {
             u.apply(sw);
 
             String insn = numberedInstructionId(methodId, Representation.getKind(u), session);
-            InstrInfo ii = new InstrInfo(_writer.methodSig(m, null), insn, session.calcInstructionIndex(u));
-            iis.put(u, ii);
+            InstrInfo ii = null;
+            // Skip instruction index numbering for phi assignments, so that no holes
+            // (..., i, i+2,...) appear in instruction indices (issue #48).
+            if (!isTransformedAway(u)) {
+                ii = new InstrInfo(_writer.methodSig(m, null), insn, session.calcInstructionIndex(u));
+                iis.put(u, ii);
+            }
             if (sw.relevant) {
                 if (u instanceof AssignStmt) {
                     generate(m, (AssignStmt) u, ii, session);
@@ -389,7 +406,7 @@ class FactGenerator implements Runnable {
             else
                 throw new RuntimeException("Cannot handle assignment: " + stmt + " (op: " + op.getClass() + ")");
         } else if (right instanceof PhiExpr) {
-            _writer.writePhiAssign(ii, stmt, left, (PhiExpr) right, session);
+            _writer.writePhiAssign(_writer.methodSig(inMethod, null), stmt, left, (PhiExpr) right, session);
         } else if (right instanceof BinopExpr)
             _writer.writeAssignBinop(ii, left, (BinopExpr) right);
         else if (right instanceof UnopExpr)
