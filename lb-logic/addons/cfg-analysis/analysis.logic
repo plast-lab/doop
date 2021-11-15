@@ -20,13 +20,13 @@ Instruction:Prev[?insn] = ?prev <-
    OptInstructionFromMethodIndex[?inMethod, ?i - 1] = ?prev.
 
 JumpTarget(?insn, ?goto) <-
-   Goto:Target[?goto] = ?targetIndex,
+   Goto:Target(?goto, ?targetIndex),
    OptInstructionFromMethodIndex[Instruction:Method[?goto], ?targetIndex] = ?insn.
 JumpTarget(?insn, ?if) <-
-   If:Target[?if] = ?targetIndex,
+   If:Target(?if, ?targetIndex),
    OptInstructionFromMethodIndex[Instruction:Method[?if], ?targetIndex] = ?insn.   
 JumpTarget(?insn, ?sw) <-
-   (Switch:Target[?sw,_] = ?targetIndex ; Switch:DefaultTarget[?sw] = ?targetIndex),
+   (Switch:Target(?sw,_, ?targetIndex) ; Switch:DefaultTarget[?sw] = ?targetIndex),
    OptInstructionFromMethodIndex[Instruction:Method[?sw], ?targetIndex] = ?insn.   
 
 IsJumpTarget(?insn) <-

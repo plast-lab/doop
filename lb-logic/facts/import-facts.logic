@@ -866,7 +866,7 @@ _Goto(?ref, ?index, ?to, ?method) ->
 +Instruction:Id(?x:?ref),
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
-+Goto:Target[?x] = ?to <-
++Goto:Target(?x, ?to) <-
    _Goto(?ref, ?index, ?to, ?method).
 
 
@@ -887,7 +887,7 @@ _If(?ref, ?index, ?to, ?method) ->
 +Instruction:Id(?x:?ref),
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
-+If:Target[?x] = ?to <-
++If:Target(?x, ?to) <-
    _If(?ref, ?index, ?to, ?method).
 
 // Switch Statements
@@ -941,7 +941,7 @@ _TableSwitch:Target(?ref, ?value, ?target) ->
 
 +TableSwitch:Insn(?x),
 +Instruction:Id(?x:?ref),
-+Switch:Target[?x, ?value] = ?target <-
++Switch:Target(?x, ?value, ?target) <-
    _TableSwitch:Target(?ref, ?value, ?target).
 
 lang:physical:storageModel[`_LookupSwitch:Target] = "DelimitedFile".
@@ -956,7 +956,7 @@ _LookupSwitch:Target(?ref, ?value, ?target) ->
 
 +LookupSwitch:Insn(?x),
 +Instruction:Id(?x:?ref),
-+Switch:Target[?x, ?value] = ?target <-
++Switch:Target(?x, ?value, ?target) <-
    _LookupSwitch:Target(?ref, ?value, ?target).
 
 // Default target

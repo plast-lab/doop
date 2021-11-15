@@ -270,16 +270,16 @@ If:Var(?insn, ?pos, ?var) ->
 Throw:Var[?insn] = ?var ->
    Throw:Insn(?insn), Var(?var).
 
-Goto:Target[?insn] = ?index ->
+Goto:Target(?insn, ?index) ->
    Goto:Insn(?insn), int[32](?index).
 
-If:Target[?insn] = ?index ->
+If:Target(?insn, ?index) ->
    If:Insn(?insn), int[32](?index).
 
 Switch:Key[?insn] = ?key ->
    Switch:Insn(?insn), Var(?key).
 
-Switch:Target[?insn, ?value] = ?index ->
+Switch:Target(?insn, ?value, ?index) ->
    Switch:Insn(?insn), int[32](?value), int[32](?index).
 
 Switch:DefaultTarget[?insn] = ?index ->
