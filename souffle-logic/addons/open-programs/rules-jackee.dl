@@ -158,7 +158,7 @@ mainAnalysis.InstanceFieldPointsTo(?hctx, ?mockBeanObject, ?injectedField, ?base
   mainAnalysis.Value_Type(?basevalue, ?decltype),
   Field_DeclaringType(?injectedField, ?decltype),
   InjectionAnnotatedField(?injectedField),
-  Field_Annotation(?injectedField, "javax.annotationResource"),
+  Field_Annotation(?injectedField, "javax.annotation.Resource"),
   !BeanResource(?injectedField, _, _),
   Field_Type(?injectedField, ?fieldType),
   basic.SubtypeOf(?resourceClass, ?fieldType),
