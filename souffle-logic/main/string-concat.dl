@@ -72,3 +72,15 @@ VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
   VarFlowsFromStringFactory(?ctx, ?var, ?factoryHctx, ?factoryValue).
 
 #endif // REFLECTION_SUBSTRING_ANALYSIS
+
+// Issue #46: Java 9+ string concatenation. If "x = makeConcatWithConstants(...)",
+// then make "x" point to a mock string concatenation result.
+// TODO: reflection substring analysis can be informed from the method arguments.
+VarPointsTo(?hctx, ?heap, ?ctx, ?var),
+MockValueConsMacro(?heap, "java.lang.String") :-
+  DynamicMethodInvocation_Bootstrap(?insn, "<java.lang.invoke.StringConcatFactory: java.lang.invoke.CallSite makeConcatWithConstants(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType,java.lang.String,java.lang.Object[])>"),
+  Instruction_Method(?insn, ?method),
+  ReachableContext(?ctx, ?method),
+  isImmutableHContext(?hctx),
+  AssignReturnValue(?insn, ?var),
+  ?heap = "<mock string concatenation result>".
