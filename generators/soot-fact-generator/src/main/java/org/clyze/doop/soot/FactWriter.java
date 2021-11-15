@@ -230,10 +230,10 @@ class FactWriter extends JavaFactWriter {
         writeAssignLocal(ii.insn, ii.index, _rep.param(methodId, ref.getIndex()), _rep.local(methodId, to), methodId);
     }
 
-    void writePhiAssign(InstrInfo ii, AssignStmt stmt, Local left, PhiExpr phiExpr, SessionCounter session) {
+    void writePhiAssign(String methodId, AssignStmt stmt, Local left, PhiExpr phiExpr, SessionCounter session) {
         Collection<InstrInfo> newAssignments = new ArrayList<>();
         for (Value alternative : (phiExpr).getValues()) {
-            InstrInfo altInstrInfo = new InstrInfo(ii.methodId, "phi-assign", session);
+            InstrInfo altInstrInfo = new InstrInfo(methodId, "phi-assign", session);
             writeAssignLocal(altInstrInfo, left, (Local) alternative);
             newAssignments.add(altInstrInfo);
         }
