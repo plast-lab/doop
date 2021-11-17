@@ -8,6 +8,7 @@ TaintSourceMethodPattern("<javax.servlet.http.HttpServletRequest: .* get.*[(].*[
 TaintSourceMethodPattern("<javax.servlet.http.HttpSession: .* get.*[(].*[)]>").
 TaintSourceMethodPattern("<javax.servlet.ServletRequest: .* get.*[(].*[)]>").
 TaintSourceMethodPattern("<java.io.BufferedReader: java.lang.String readLine[(][)]>").
+TaintSourceMethodPattern("<java.io.BufferedReader: java.lang.String readLine[(]boolean[)]>").
 TaintSourceMethodPattern("<java.net.URLDecoder: java.lang.String decode[(]java.lang.String,java.lang.String[)]>").
 TaintSourceMethodPattern("<com.oreilly.servlet.MultipartRequest: java.lang.String getParameter[(]java.lang.String[)]>").
 TaintSourceMethodPattern("<javax.servlet.http.HttpServletResponse: java.io.PrintWriter getWriter[(][)]>").
