@@ -321,7 +321,8 @@ Then start Visual Studio Code to view the intermediate code annotated
 with the analysis results:
 
 ```
-code out/app/database/jimple out/app/database/doop.sarif
+cd out/app/database
+code jimple doop.sarif
 ```
 
 ![Visual Studio Code example](docs/vscode-sarif-example.png)
