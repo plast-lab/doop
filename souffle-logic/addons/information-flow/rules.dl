@@ -238,6 +238,13 @@ MethodInvocationInContext(?ctx, ?invocation, ?tomethod) :-
   mainAnalysis.CallGraphEdge(?ctx, ?invocation, _, ?tomethod).
 #endif // INFORMATION_FLOW_HIGH_SOUNDNESS
 
+// This captures the pattern x = invokedynamic(y) and transfers taint from
+// y to x, when such an instruction is marked with AssignInvokedynamic.
+VarIsTaintedFromVar(?type, ?ctx, ?ret, ?ctx, ?arg) :-
+  mainAnalysis.AssignInvokedynamic(?insn, ?ret, _, ?type),
+  ActualParam(_, ?insn, ?arg),
+  TaintedVarPointsTo(_, ?ctx, ?arg).
+
 /**
  * Sinks and leaks (on top of points-to reasoning)
  */
