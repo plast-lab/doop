@@ -107,6 +107,7 @@ benchmarks = {
 #'ImplicitFlows/ImplicitFlow2': 2,
 #'ImplicitFlows/ImplicitFlow3': 2,
 #'ImplicitFlows/ImplicitFlow4': 2,
+#'InterAppCommunication/SendSMS': 1,
 'InterAppCommunication/StartActivityForResult1': 2, # previously 1
 'InterComponentCommunication/ActivityCommunication1': 1,
 'InterComponentCommunication/ActivityCommunication2': 1,
@@ -184,6 +185,7 @@ experiments_full = [
 #       ['1type+H refl', ['-a', '1-type-sensitive+heap'] + REFL_PARAMS],
 #       ['2obj+H', ['-a', '2-object-sensitive+heap']],
 #       ['2obj+H refl', ['-a', '2-object-sensitive+heap'] + REFL_PARAMS],
+#       ['df', ['-a', 'data-flow']],
 ]
 
 class Experiment:
