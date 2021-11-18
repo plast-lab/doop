@@ -231,6 +231,14 @@ ReifiedLibraryObject(?type, cat("<Android library object ", cat(?type, ">"))) :-
 ReifiedAndroidObjectValue(?value, ?type) :-
   ReifiedLibraryObject(?type, ?value).
 
+// Make "void onCreate(Bundle)" reachable.
+ForcedReachableAndroidContext(?ctx, ?method) :-
+  ReachableLayoutControl(?activityType),
+  Activity(?activityType),
+  Method_DeclaringType(?method, ?activityType),
+  Method_SimpleName(?method, "onCreate"),
+  Method_JVMDescriptor(?method, "(Landroid/os/Bundle;)V"),
+  isImmutableContext(?ctx).
 
 /**
  * View objects
