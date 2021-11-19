@@ -28,7 +28,7 @@ class InformationFlowTest extends DoopSpec {
         then:
         isSensitiveLayoutControl(analysis, '7878787878', 'android.widget.EditText')
         relationHasApproxSize(analysis, "AppTaintedVar", 2663)
-        relationHasApproxSize(analysis, "AppTaintedVarPointsTo", 52181)
+        relationHasApproxSize(analysis, "AppTaintedVarPointsTo", 82178)
     }
 
     // @spock.lang.Ignore
