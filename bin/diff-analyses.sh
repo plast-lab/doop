@@ -21,6 +21,15 @@ function diffFiles() {
     fi
 }
 
+function diffFilesWithCut() {
+    local CUT_SPEC="$1"
+    local FACT_FILE="$2"
+    echo "[*] Comparing facts: ${FACT_FILE}..."
+    cut -f ${CUT_SPEC} ${DB1}/${FACT_FILE} > ${DB1}/${FACT_FILE}.1
+    cut -f ${CUT_SPEC} ${DB2}/${FACT_FILE} > ${DB2}/${FACT_FILE}.1
+    diffFiles true ${DB1}/${FACT_FILE}.1 ${DB2}/${FACT_FILE}.1
+}
+
 if [ "$1" == "" ] || [ "$2" == "" ]; then
     echo "Usage: diff-analyses.sh DIR1 DIR2"
     echo ""
@@ -30,6 +39,9 @@ fi
 
 DIR1="$1"
 DIR2="$2"
+
+echo "[*] Comparing 'meta' analysis configurations..."
+diffFiles false ${DIR1}/meta ${DIR2}/meta
 
 echo "[*] Comparing logic..."
 LOGIC_FILES=$(ls ${DIR1}/gen_*.dl ${DIR2}/gen_*.dl | xargs)
@@ -45,8 +57,14 @@ pushd ${DB2} &> /dev/null
 FACT_FILES_2=$(ls *.facts | xargs)
 popd &> /dev/null
 
-FACT_FILES=$(echo "${FACT_FILES_1} ${FACT_FILES_2}" | sort -u)
+FACT_FILES=$(echo "${FACT_FILES_1} ${FACT_FILES_2}" | sed -e 's/ /\n/g' | sort -u | xargs)
 for FACT_FILE in ${FACT_FILES}; do
+    if [ "${FACT_FILE}" == "XMLNode.facts" ] || [ "${FACT_FILE}" == "XMLNodeAttribute.facts" ]; then
+        continue
+    fi
     echo "[*] Comparing facts: ${FACT_FILE}..."
     diffFiles true ${DB1}/${FACT_FILE} ${DB2}/${FACT_FILE}
 done
+
+diffFilesWithCut '2-' XMLNode.facts
+diffFilesWithCut '2-' XMLNodeAttribute.facts
