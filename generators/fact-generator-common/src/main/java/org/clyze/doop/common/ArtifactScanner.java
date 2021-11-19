@@ -39,7 +39,7 @@ public class ArtifactScanner {
 
     private final Map<String, Set<ArtifactEntry>> artifactToClassMap = new ConcurrentHashMap<>();
     private final Logger logger = Logger.getLogger(getClass());
-    private final Set<GenericFieldInfo> genericFields = new HashSet<>();
+    private final Set<GenericFieldInfo> genericFields = ConcurrentHashMap.newKeySet();
 
     Set<GenericFieldInfo> getGenericFields() { return genericFields; }
 

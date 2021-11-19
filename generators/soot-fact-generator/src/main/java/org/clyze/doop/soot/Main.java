@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import org.apache.log4j.Logger;
@@ -191,7 +192,7 @@ public class Main {
         if (sootParameters._allowPhantom)
             Options.v().set_allow_phantom_refs(true);
 
-        Set<SootClass> classes = new HashSet<>();
+        Set<SootClass> classes = ConcurrentHashMap.newKeySet();
         ClassAdder classAdder = (android != null) ? android : java;
         if (sootParameters._factsSubSet == SootParameters.FactsSubSet.APP) {
             System.out.println("WARNING: only application classes will be used.");

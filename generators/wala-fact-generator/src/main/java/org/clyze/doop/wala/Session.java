@@ -1,10 +1,8 @@
 package org.clyze.doop.wala;
 
 import com.ibm.wala.ssa.SSAInstruction;
-
-import java.util.HashMap;
 import java.util.Map;
-
+import java.util.concurrent.ConcurrentHashMap;
 import org.clyze.doop.common.SessionCounter;
 
 public class Session extends SessionCounter {
@@ -23,8 +21,8 @@ public class Session extends SessionCounter {
      * In general, it is very important to understand how to correctly use Session when applying changes to the WALA front end
      * Unnecessary calls to calcInstructionIndex() (in contrast with the SOOT front end where they do not affect the facts) can create wrong facts.
      */
-    private final Map<SSAInstruction, Integer> _instructions = new HashMap<>();
-    private final Map<SSAInstruction, Integer> _instructionsMaxIndex = new HashMap<>();
+    private final Map<SSAInstruction, Integer> _instructions = new ConcurrentHashMap<>();
+    private final Map<SSAInstruction, Integer> _instructionsMaxIndex = new ConcurrentHashMap<>();
     private int index = 0;
 
     /**

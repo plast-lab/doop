@@ -26,8 +26,8 @@ class FactWriter extends JavaFactWriter {
     final Representation _rep;
     private final Map<String, Type> _varTypeMap = new ConcurrentHashMap<>();
     private final Phantoms phantoms;
-    private final Collection<Object> seenPhantoms = new HashSet<>();
-    private final Map<Unit, Collection<InstrInfo>> expandedPhiNodes = new HashMap<>();
+    private final Collection<Object> seenPhantoms = ConcurrentHashMap.newKeySet();
+    private final Map<Unit, Collection<InstrInfo>> expandedPhiNodes = new ConcurrentHashMap<>();
 
     FactWriter(Database db, SootParameters params, Representation rep, Phantoms phantoms) {
         super(db, params);
