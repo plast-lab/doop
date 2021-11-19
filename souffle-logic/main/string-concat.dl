@@ -73,14 +73,18 @@ VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
 
 #endif // REFLECTION_SUBSTRING_ANALYSIS
 
+.decl AssignInvokedynamic(?insn:DynamicMethodInvocation_Insn, ?ret:Var, ?value:Value, ?type:Type)
+.output AssignInvokedynamic
+
 // Issue #46: Java 9+ string concatenation. If "x = makeConcatWithConstants(...)",
 // then make "x" point to a mock string concatenation result.
 // TODO: reflection substring analysis can be informed from the method arguments.
-VarPointsTo(?hctx, ?heap, ?ctx, ?var),
+AssignInvokedynamic(?insn, ?ret, ?heap, "java.lang.String"),
+VarPointsTo(?hctx, ?heap, ?ctx, ?ret),
 MockValueConsMacro(?heap, "java.lang.String") :-
   DynamicMethodInvocation_Bootstrap(?insn, "<java.lang.invoke.StringConcatFactory: java.lang.invoke.CallSite makeConcatWithConstants(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType,java.lang.String,java.lang.Object[])>"),
   Instruction_Method(?insn, ?method),
   ReachableContext(?ctx, ?method),
   isImmutableHContext(?hctx),
-  AssignReturnValue(?insn, ?var),
+  AssignReturnValue(?insn, ?ret),
   ?heap = "<mock string concatenation result>".

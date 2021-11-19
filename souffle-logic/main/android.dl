@@ -231,6 +231,14 @@ ReifiedLibraryObject(?type, cat("<Android library object ", cat(?type, ">"))) :-
 ReifiedAndroidObjectValue(?value, ?type) :-
   ReifiedLibraryObject(?type, ?value).
 
+// Make "void onCreate(Bundle)" reachable.
+ForcedReachableAndroidContext(?ctx, ?method) :-
+  ReachableLayoutControl(?activityType),
+  Activity(?activityType),
+  Method_DeclaringType(?method, ?activityType),
+  Method_SimpleName(?method, "onCreate"),
+  Method_JVMDescriptor(?method, "(Landroid/os/Bundle;)V"),
+  isImmutableContext(?ctx).
 
 /**
  * View objects
@@ -621,6 +629,11 @@ VarPointsTo(?hctx, ?value, ?ctx, ?formal) :-
 #ifndef X_CONTEXT_REMOVER
  .plan 1:(2,1,3,4)
 #endif // X_CONTEXT_REMOVER
+
+FormalOfForcedReachableContext(?ctx, ?formal, ?formalType) :-
+  ForcedReachableAndroidContext(?ctx, ?meth),
+  FormalParam(_, ?meth, ?formal),
+  Var_Type(?formal, ?formalType).
 
 // Attempt at a policy that yields a reasonable compromise between
 // precision and completeness: ask for real objects of a most-refined

@@ -298,6 +298,7 @@ class FactGenerator implements Runnable {
                 // only reason for assign or invoke statements to be irrelevant
                 // is the invocation of a method on a phantom class
                 if (u instanceof AssignStmt) {
+                    generate(m, (AssignStmt) u, ii, session);
                     _writer.writeAssignPhantomInvoke(ii);
                     generatePhantom(sw.cause);
                 } else if (u instanceof InvokeStmt) {
