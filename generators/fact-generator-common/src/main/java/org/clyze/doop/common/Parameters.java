@@ -4,9 +4,9 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import org.apache.log4j.Logger;
 import org.clyze.doop.util.filter.ClassFilter;
 import org.clyze.doop.util.filter.GlobClassFilter;
@@ -307,7 +307,7 @@ public class Parameters {
      * @param tmpDirs      the set of temporary directories (for clean-up actions)
      */
     public void processFatArchives(Set<String> tmpDirs) {
-        Set<String> jarLibs = new HashSet<>();
+        Set<String> jarLibs = ConcurrentHashMap.newKeySet();
         setInputs(ContainerUtils.toJars(getInputs(), false, jarLibs, tmpDirs));
         setDependencies(ContainerUtils.toJars(getDependencies(), false, jarLibs, tmpDirs));
         getDependencies().addAll(jarLibs);

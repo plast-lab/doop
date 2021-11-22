@@ -1,7 +1,7 @@
 package org.clyze.doop.common;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class SessionCounter {
 
@@ -9,13 +9,13 @@ public class SessionCounter {
      * Keep the current count of temporary vars of a certain kind,
      * identified by base name.
      */
-    private final Map<String, Integer> _tempVarMap = new HashMap<>();
+    private final Map<String, Integer> _tempVarMap = new ConcurrentHashMap<>();
     /**
      * Keeps the unique index of an instruction in the method. This cannot be
      * computed up front,because temporary variables (and assignments to them
      * from constants) will be inserted while the IR is being processed.
      */
-    private final Map<Object, Integer> _units = new HashMap<>();
+    private final Map<Object, Integer> _units = new ConcurrentHashMap<>();
     /** Instruction index counter. */
     private int index = 0;
 

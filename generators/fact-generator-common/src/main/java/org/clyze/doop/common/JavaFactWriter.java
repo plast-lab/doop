@@ -1,5 +1,8 @@
 package org.clyze.doop.common;
 
+import java.io.File;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -7,9 +10,6 @@ import org.apache.log4j.Logger;
 import org.clyze.doop.common.scanner.antlr.GenericTypeLexer;
 import org.clyze.doop.common.scanner.antlr.GenericTypeParser;
 import org.clyze.doop.common.scanner.antlr.PrintVisitor;
-
-import java.io.File;
-import java.util.*;
 
 import static org.clyze.doop.common.PredicateFile.*;
 
@@ -32,7 +32,7 @@ public abstract class JavaFactWriter {
         this._extractMoreStrings = params._extractMoreStrings;
         this._writeArtifactsMap = params._writeArtifactsMap;
         this._regMethods = params._scanNativeCode;
-        this.methodStrings = _regMethods ? new HashSet<>() : null;
+        this.methodStrings = _regMethods ? ConcurrentHashMap.newKeySet() : null;
     }
 
     public Set<String> getMethodStrings() {

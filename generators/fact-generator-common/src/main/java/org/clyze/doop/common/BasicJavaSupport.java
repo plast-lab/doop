@@ -4,8 +4,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 
@@ -14,15 +14,15 @@ import java.util.concurrent.ExecutorService;
  */
 public class BasicJavaSupport {
 
-    protected final Set<String> classesInApplicationJars = new HashSet<>();
-    protected final Set<String> classesInLibraryJars = new HashSet<>();
-    protected final Set<String> classesInDependencyJars = new HashSet<>();
+    protected final Set<String> classesInApplicationJars = ConcurrentHashMap.newKeySet();
+    protected final Set<String> classesInLibraryJars = ConcurrentHashMap.newKeySet();
+    protected final Set<String> classesInDependencyJars = ConcurrentHashMap.newKeySet();
     private final PropertyProvider propertyProvider = new PropertyProvider();
     private final Parameters parameters;
     private final ArtifactScanner artScanner;
     // Executor for async big tasks such as apk decoding or library scanning.
     private final ExecutorService exec = Executors.newFixedThreadPool(3);
-    public final Collection<String> xmlRoots = new HashSet<>();
+    public final Collection<String> xmlRoots = ConcurrentHashMap.newKeySet();
 
     public BasicJavaSupport(Parameters parameters, ArtifactScanner artScanner) {
         this.parameters = parameters;

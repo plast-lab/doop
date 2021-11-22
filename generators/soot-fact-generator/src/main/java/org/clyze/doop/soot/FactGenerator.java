@@ -3,9 +3,9 @@ package org.clyze.doop.soot;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.clyze.doop.common.InstrInfo;
 import org.clyze.doop.common.Phantoms;
@@ -252,7 +252,7 @@ class FactGenerator implements Runnable {
             _writer.writeLocal(methodId, l);
 
         IrrelevantStmtSwitch sw = new IrrelevantStmtSwitch();
-        Map<Unit, InstrInfo> iis = new HashMap<>();
+        Map<Unit, InstrInfo> iis = new ConcurrentHashMap<>();
         for (Unit u : b.getUnits()) {
             u.apply(sw);
 

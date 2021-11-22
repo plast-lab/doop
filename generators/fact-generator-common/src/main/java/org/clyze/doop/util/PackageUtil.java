@@ -3,6 +3,7 @@ package org.clyze.doop.util;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import org.apache.commons.collections4.Trie;
@@ -28,7 +29,7 @@ public class PackageUtil {
 	 * Any classes that are not included in packages are also retrieved.
 	 */
 	public static Set<String> getPackages(File archive) throws IOException {
-		Set<Regex> packages = new HashSet<>();
+		Set<Regex> packages = ConcurrentHashMap.newKeySet();
 		String name = archive.getName().toLowerCase();
 		if (name.endsWith(".jar") || name.endsWith(".zip"))
 			packages = getPackagesForJAR(archive);
@@ -44,7 +45,7 @@ public class PackageUtil {
 	}
 
 	private static Set<String> reducePackages(Collection<Regex> packages) {
-		Set<String> ret = new HashSet<>();
+		Set<String> ret = ConcurrentHashMap.newKeySet();
 		Trie<String, Regex> trie = new PatriciaTrie<>();
 		// Exact regular expressions are added to the return set, while prefix
 		// expressions are put into a trie to be reduced.
@@ -86,7 +87,7 @@ public class PackageUtil {
 	}
 
 	private static Set<Regex> getPackagesForAPK(File apk) throws IOException {
-		Set<Regex> pkgs = new HashSet<>();
+		Set<Regex> pkgs = ConcurrentHashMap.newKeySet();
 		MultiDexContainer<?> multiDex = loadDexContainer(apk, null);
 		for (String dex : multiDex.getDexEntryNames()) {
 			DexBackedDexFile dexFile = (DexBackedDexFile)multiDex.getEntry(dex).getDexFile();
@@ -123,9 +124,9 @@ public class PackageUtil {
 	 * @throws IOException   on archive processing error
 	 */
 	private static Set<Regex> getPackagesForFatArchive(File ar) throws IOException {
-		Set<Regex> ret = new HashSet<>();
-		Set<String> tmpDirs = new HashSet<>();
-		Set<String> jarLibs = new HashSet<>();
+		Set<Regex> ret = ConcurrentHashMap.newKeySet();
+		Set<String> tmpDirs = ConcurrentHashMap.newKeySet();
+		Set<String> jarLibs = ConcurrentHashMap.newKeySet();
 		for (String jar : ContainerUtils.toJars(Collections.singletonList(ar.getCanonicalPath()), true, jarLibs, tmpDirs))
 			ret.addAll(getPackagesForJAR(new File(jar)));
 		for (String jarLib : jarLibs)
@@ -145,7 +146,7 @@ public class PackageUtil {
 	private static Set<Regex> getPackagesForJAR(File jar) throws IOException {
 		ZipFile zip = new ZipFile(jar);
 		Enumeration<? extends ZipEntry> entries = zip.entries();
-		Set<Regex> packages = new HashSet<>();
+		Set<Regex> packages = ConcurrentHashMap.newKeySet();
 		while (entries.hasMoreElements()) {
 			final ZipEntry ze = entries.nextElement();
 			if (ze.getName().endsWith(".class"))
