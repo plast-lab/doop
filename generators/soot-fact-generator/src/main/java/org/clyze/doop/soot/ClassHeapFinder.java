@@ -1,8 +1,8 @@
 package org.clyze.doop.soot;
 
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.concurrent.ConcurrentHashMap;
 import org.clyze.utils.TypeUtils;
 import soot.*;
 import soot.jimple.*;
@@ -18,7 +18,8 @@ class ClassHeapFinder {
      */
     public Collection<String> getUnrecordedTypes(Iterable<SootClass> classes) {
         scan(classes);
-        Collection<String> ret = new HashSet<>(classHeapTypes);
+        Collection<String> ret = ConcurrentHashMap.<String>newKeySet();
+        ret.addAll(classHeapTypes);
         ret.removeAll(recordedTypes);
         return ret;
     }
