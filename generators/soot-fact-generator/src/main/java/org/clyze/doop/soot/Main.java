@@ -85,7 +85,7 @@ public class Main {
         BasicJavaSupport_Soot java = new BasicJavaSupport_Soot(sootParameters, new ArtifactScanner());
 
         // Set of temporary directories to be cleaned up after analysis ends.
-        Set<String> tmpDirs = new HashSet<>();
+        Set<String> tmpDirs = ConcurrentHashMap.<String>newKeySet();
 
         // Set up Soot options that depend on target platform (Android/Java).
         AndroidSupport_Soot android;
@@ -192,7 +192,7 @@ public class Main {
         if (sootParameters._allowPhantom)
             Options.v().set_allow_phantom_refs(true);
 
-        Set<SootClass> classes = ConcurrentHashMap.newKeySet();
+        Set<SootClass> classes = ConcurrentHashMap.<SootClass>newKeySet();
         ClassAdder classAdder = (android != null) ? android : java;
         if (sootParameters._factsSubSet == SootParameters.FactsSubSet.APP) {
             System.out.println("WARNING: only application classes will be used.");
@@ -228,7 +228,8 @@ public class Main {
 
         classes.stream().filter(sootParameters::isApplicationClass).forEachOrdered(SootClass::setApplicationClass);
 
-        classes = new HashSet<>(scene.getClasses());
+        classes = ConcurrentHashMap.<SootClass>newKeySet();
+        classes.addAll(scene.getClasses());
         System.out.println("Total classes in Scene: " + classes.size());
 
         if (mainClass != null && classes.stream().noneMatch((SootClass sc) -> sc.getName().equals(mainClass)))
@@ -393,7 +394,8 @@ public class Main {
     private static void generateIR(BasicJavaSupport_Soot java, Scene scene,
                                    Set<SootClass> classes, SootDriver driver,
                                    String outDir) throws DoopErrorCodeException {
-        Set<SootClass> jimpleClasses = new HashSet<>(classes);
+        Set<SootClass> jimpleClasses = ConcurrentHashMap.<SootClass>newKeySet();
+        jimpleClasses.addAll(classes);
         Collection<String> allClassNames = new ArrayList<>();
         Map<String, Set<ArtifactEntry>> artifactToClassMap = java.getArtifactScanner().getArtifactToClassMap();
         for (String artifact : artifactToClassMap.keySet()) {

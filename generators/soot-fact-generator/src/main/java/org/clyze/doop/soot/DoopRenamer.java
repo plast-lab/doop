@@ -1,15 +1,15 @@
 package org.clyze.doop.soot;
 
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.concurrent.ConcurrentHashMap;
 import soot.*;
 import soot.jimple.DefinitionStmt;
 import soot.shimple.Shimple;
 
-import java.util.Collection;
-import java.util.HashSet;
-
 class DoopRenamer {
     static void transform(Body body) {
-        Collection<Local> transformedLocals = new HashSet<>();
+        Collection<Local> transformedLocals = ConcurrentHashMap.<Local>newKeySet();
         int linenumber = 0;
 
         // For all statements, see whether they def a var.
