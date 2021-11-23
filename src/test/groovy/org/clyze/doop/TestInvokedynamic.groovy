@@ -101,4 +101,17 @@ class TestInvokedynamic extends DoopSpec {
         where:
         fullReflection << [true, false]
     }
+
+    // https://bitbucket.org/yanniss/doop/issues/46/
+    // @spock.lang.Ignore
+    def "Java 11 String concatenation"() {
+        when:
+        String input = this.class.getResource('/java11-string-concat.jar').file
+        def args = ['-a', 'context-insensitive', '-i', input, '--platform', 'java_11', '--id', 'test-java11-string-concat', '--generate-jimple', '-Ldebug'] + souffleInterpreter
+        Main.main2(args as String[])
+        Analysis analysis = Main.analysis
+
+        then:
+        varPointsTo(analysis, '<Main: void main(java.lang.String[])>/l3#_5', '<mock string concatenation result>')
+    }
 }
