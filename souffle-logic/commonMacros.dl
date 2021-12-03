@@ -70,7 +70,7 @@
    isMethodInvocation(ins), \
    isStaticMethodInvocation_Insn(ins)
 
-#define NUM_CONSTANT(n, type) cat(cat(cat("num-constant-", n), "/"), type)
+#define NUM_CONSTANT(n) cat("num-constant-", n)
 
 // Android-specific macro to qualify unqualified types in layout controls.
 // Heuristic: if the name is unqualified, it may come from android.view or

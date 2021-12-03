@@ -82,16 +82,18 @@ class DexClassFactWriter extends JavaFactWriter {
     private void writeField(Field fieldRef) {
         FieldInfo fi = new DexFieldInfo(fieldRef);
         String fieldId = fi.getFieldId();
-        _db.add(FIELD_SIGNATURE, fieldId, fi.definingClass, fi.name, fi.type);
+        String fieldType = fi.type;
+        _db.add(FIELD_SIGNATURE, fieldId, fi.definingClass, fi.name, fieldType);
         EncodedValue e = fieldRef.getInitialValue();
         if (e != null) {
             InitialValue initialValue = new InitialValue(e);
             String val = initialValue.value;
             if (val != null) {
                 _db.add(FIELD_INITIAL_VALUE, fieldId, val);
-                if (initialValue.type == InitialValue.IVType.NUMBER)
-                    writeNumConstantRawInt(val);
-                else if (initialValue.type == InitialValue.IVType.STRING)
+                if (initialValue.type == InitialValue.IVType.NUMBER) {
+                    if (fieldType.equals("int") || fieldType.equals("long"))
+                        writeNumConstantRawInt(val, fieldType);
+                } else if (initialValue.type == InitialValue.IVType.STRING)
                     writeStringConstant(val);
             }
         }

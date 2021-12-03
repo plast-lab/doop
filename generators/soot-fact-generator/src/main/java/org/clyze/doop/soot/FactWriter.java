@@ -434,8 +434,14 @@ class FactWriter extends JavaFactWriter {
     void writeAssignCastNumericConstant(InstrInfo ii, Local to, NumericConstant constant, Type t) {
         String methodId = ii.methodId;
         String val = constant.toString();
-        if (constant instanceof ArithmeticConstant)
-            writeNumConstantRawInt(val);
+        if (constant instanceof ArithmeticConstant) {
+            if (constant instanceof LongConstant)
+                writeNumConstantRawInt(val, "long");
+            else if (constant instanceof IntConstant)
+                writeNumConstantRawInt(val, "int");
+            else
+                System.err.println("WARNING: arithmetic constant is not long/int: " + constant);
+        }
         _db.add(ASSIGN_CAST_NUM_CONST, ii.insn, str(ii.index), val, _rep.local(methodId, to), writeType(t), methodId);
     }
 
@@ -1047,15 +1053,21 @@ class FactWriter extends JavaFactWriter {
                 String val = ((ConstantValueTag)tag).getConstant().toString();
                 _db.add(FIELD_INITIAL_VALUE, fieldId, val);
                 // Put constant in appropriate "raw" input facts.
-                if ((tag instanceof IntegerConstantValueTag) ||
-                    (tag instanceof DoubleConstantValueTag) ||
-                    (tag instanceof LongConstantValueTag) ||
-                    (tag instanceof FloatConstantValueTag)) {
+                String tagType = null;
+                if (tag instanceof IntegerConstantValueTag)
+                    tagType = "int";
+                else if (tag instanceof DoubleConstantValueTag)
+                    tagType = "double";
+                else if (tag instanceof LongConstantValueTag)
+                    tagType = "long";
+                else if (tag instanceof FloatConstantValueTag)
+                    tagType = "float";
+                if (tagType != null) {
                     // Trim last non-digit qualifier (e.g. 'L' in long constants).
                     int len = val.length();
                     if (!Character.isDigit(val.charAt(len-1)))
                         val = val.substring(0, len-1);
-                    writeNumConstantRawInt(val);
+                    writeNumConstantRawInt(val, tagType);
                 } else if (tag instanceof StringConstantValueTag) {
                     writeStringConstant(val);
                 } else

@@ -752,8 +752,17 @@ class DexMethodFactWriter extends JavaFactWriter {
                 String className = number.getClass().getSimpleName();
                 // Due to the many subclasses of Number (possibly coming from
                 // libraries), check type name instead of using instanceof.
-                if (className.contains("Integer") || className.contains("Long") || className.contains("Short") || className.contains("Byte"))
-                    writeNumConstantRawInt(value);
+                String valueType = null;
+                if (className.contains("Integer"))
+                    valueType = "int";
+                else if (className.contains("Long"))
+                    valueType = "long";
+                else if (className.contains("Short"))
+                    valueType = "short";
+                else if (className.contains("Byte"))
+                    valueType = "byte";
+                if (valueType != null)
+                    writeNumConstantRawInt(value, valueType);
                 _db.add(ARRAY_INITIAL_VALUE_FROM_CONST, insn, str(originalIndex), local(regDest), str(idx), value, heapId, methId);
             }
         } catch (Exception ex) {

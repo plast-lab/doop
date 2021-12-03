@@ -125,8 +125,8 @@ public abstract class JavaFactWriter {
         _db.add(SENSITIVE_LAYOUT_CONTROL, id.toString(), viewClassName, parentID.toString());
     }
 
-    public void writeNumConstantRawInt(String val) {
-        _db.add(NUM_CONSTANT_RAW_INT, val);
+    public void writeNumConstantRawInt(String val, String valType) {
+        _db.add(NUM_CONSTANT_RAW_INT, val, valType);
     }
 
     /**

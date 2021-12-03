@@ -80,7 +80,7 @@ VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
    (AssignNumConstant_Id(?insn, ?const);
     AssignCastNumConstant_Id(?insn, ?const)),
    AssignInstruction_To(?insn, ?to),
-   NumConstantRawInt(?const),
+   NumConstantRawInt(?const, ?toType),
    Var_Type(?to, ?toType),
    Value_Num(?value, ?const, ?toType),
    isImmutableHContext(?hctx).
@@ -259,7 +259,7 @@ ReachableStoreStaticFieldFrom(?from) :-
  */
 StaticFieldPointsTo(?hctx, ?value, ?signature) :-
   FieldInitialValue(?signature, ?const),
-  NumConstantRawInt(?const),
+  NumConstantRawInt(?const, ?fieldType),
   Field_Type(?signature, ?fieldType),
   Value_Num(?value, ?const, ?fieldType),
   isImmutableHContext(?hctx).
@@ -281,7 +281,7 @@ ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?baseHeap) :-
   ReachableContext(?ctx, ?inMethod),
   Instruction_Method(?i, ?inMethod),
   ArrayInitialValueFromConst(?i, _, ?to, _, ?const, ?baseHeap, _),
-  NumConstantRawInt(?const),
+  NumConstantRawInt(?const, ?toType),
   Var_Type(?to, ?toType),
   Value_Num(?value, ?const, ?toType),
   isImmutableHContext(?hctx).
@@ -731,13 +731,15 @@ ReachableValue(?hctx, ?value) :-
 
 #ifdef ANDROID
 // Constant integer values, used on Android to find component ids.
+// Value_Type is not a function for these values, since they are
+// assumed to be implicitly converted to any integer type.
 Value_Num(?constValue, ?n, ?type),
 isValue(?constValue),
 Value_Type(?constValue, ?type),
 Value_DeclaringType(?constValue, ?declaringType) :-
-  CreateIntValue(?n, ?declaringType),
+  CreateIntValue(?n, ?type, ?declaringType),
   isIntegerType(?type),
-  ?constValue = NUM_CONSTANT(?n, ?type).
+  ?constValue = NUM_CONSTANT(?n).
 #endif // ANDROID
 
 #ifndef DISABLE_POINTS_TO

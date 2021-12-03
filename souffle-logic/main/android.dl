@@ -737,8 +737,8 @@ VarPointsTo(?hctx, ?controlValue, ?ctx, ?ret) :-
   VarsAtInvocationRetrievingLayoutControl(?ret, ?var),
   VarPointsTo(?hctx, ?value, ?ctx, ?var),
   LayoutControlObjectValueFromId(?controlValue, ?numId),
-  NumConstantRawInt(?numId),
   Var_Type(?ret, ?retType),
+  NumConstantRawInt(?numId, ?retType),
   Value_Num(?value, ?numId, ?retType).
 ///// HACK, HACK, HACK below!!!!!
 ///// ids seemed broken, so I just return whatever. Fixed now (?)

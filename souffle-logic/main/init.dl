@@ -26,18 +26,20 @@ Value_Type(?heapValue, ?type) :-
 // nested classes. REVIEW to generalize.
 // Numeric constants are prepended with *num-constant-* to distinguish
 // them from allocations that share the same string value.
-CreateIntValue(?const, ?className) :-
+CreateIntValue(?const, ?type, ?className) :-
   AssignNumConstant_Id(?insn, ?const),
-  NumConstantRawInt(?const),
+  NumConstantRawInt(?const, ?type),
+  (?type = "int" ; ?type = "long"),
   Instruction_Method(?insn, ?meth),
   Method_SimpleName(?meth, "<clinit>"),
   Method_DeclaringType(?meth, ?className),
   isReferenceType(?className),
   contains(".R$", ?className).
 
-CreateIntValue(?const, ?className) :-
+CreateIntValue(?const, ?type, ?className) :-
   FieldInitialValue(?fld, ?const),
-  NumConstantRawInt(?const),
+  NumConstantRawInt(?const, ?type),
+  (?type = "int" ; ?type = "long"),
   Field_DeclaringType(?fld, ?className),
   isReferenceType(?className),
   contains(".R$", ?className).
