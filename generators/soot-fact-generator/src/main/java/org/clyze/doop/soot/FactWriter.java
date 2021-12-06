@@ -811,7 +811,7 @@ class FactWriter extends JavaFactWriter {
         // introduce a new temporary variable
         FreshAssignLocal fal = newAssignForFreshLocal(ii.methodId, "$mhandleconstant", RefType.v("java.lang.invoke.MethodHandle"), session);
         Local l = fal.local;
-        writeAssignMethodHandleConstant(ii, l, constant);
+        writeAssignMethodHandleConstant(fal.ii, l, constant);
         return l;
     }
 
