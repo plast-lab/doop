@@ -731,14 +731,12 @@ ReachableValue(?hctx, ?value) :-
 
 #ifdef ANDROID
 // Constant integer values, used on Android to find component ids.
-// Value_Type is not a function for these values, since they are
-// assumed to be implicitly converted to any integer type.
 Value_Num(?constValue, ?n, ?type),
 isValue(?constValue),
 Value_Type(?constValue, ?type),
 Value_DeclaringType(?constValue, ?declaringType) :-
   CreateIntValue(?n, ?type, ?declaringType),
-  isIntegerType(?type),
+  Type_int(?type),
   ?constValue = NUM_CONSTANT(?n).
 #endif // ANDROID
 

@@ -1,3 +1,4 @@
+.decl NumConstantRawInt(?const:symbol, ?type:Type)
 .decl AndroidAppComponent(?type:symbol)
 .decl ReifiedComponent(?type:ReferenceType, ?value:Value)
 .decl ReifiedLayoutControl(?type:ReferenceType, ?id:symbol, ?value:Value)

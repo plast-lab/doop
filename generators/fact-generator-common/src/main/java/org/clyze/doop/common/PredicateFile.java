@@ -96,7 +96,7 @@ public enum PredicateFile
     NATIVE_RETURN_VAR("NativeReturnVar"),
     NATIVE_XREF("NativeXRef"),
     NORMAL_HEAP("NormalHeap"),
-    NUM_CONSTANT_RAW_INT("NumConstantRawInt"),
+    NUM_CONSTANT_RAW("NumConstantRaw"),
     OPERATOR_AT("OperatorAt"),
     PARAM_ANNOTATION("Param-Annotation"),
     PHANTOM_BASED_METHOD("PhantomBasedMethod"),

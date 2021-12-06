@@ -745,6 +745,11 @@ VarPointsTo(?hctx, ?controlValue, ?ctx, ?ret) :-
 //  Value_Num(?value, _, _),
 //  LayoutControlObjectValueFromId(?controlValue, _).
 
+// Array initial values from interesting integer constants.
+CreateIntValue(?const, ?type, "java.lang.Object") :-
+  NumConstantRawInt(?const, ?type),
+  ( ArrayInitialValueFromConst(_, _, _, _, ?const, _, _)
+  ; ArrayInitialValueFromConst(_, _, _, _, ?const, _, _)).
 
 /**
  * Multidimensional arrays in Android may use reflection, e.g. this:

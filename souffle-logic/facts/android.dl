@@ -55,7 +55,7 @@ isType(?id) :-
 .input AndroidId(filename="AndroidId.facts")
 .input AndroidIncludeXML(filename="AndroidIncludeXML.facts")
 
-// NumConstantRawInt
+// ArrayInitialValueFromConst
 
 .decl ArrayInitialValueFromConst(?instruction:Instruction, ?index:number, ?to:Var, ?arrayIndex:number, ?const:symbol, ?baseHeap:HeapAllocation, ?method:Method)
 .input ArrayInitialValueFromConst(filename="ArrayInitialValueFromConst.facts")
@@ -64,12 +64,6 @@ isInstruction(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method) :-
   ArrayInitialValueFromConst(?instruction, ?index, _, _, _, _, ?method).
-
-CreateIntValue(?const, ?type, "java.lang.Object") :-
-  NumConstantRawInt(?const, ?type),
-  (?type = "int" ; ?type = "long"),
-  ( ArrayInitialValueFromConst(_, _, _, _, ?const, _, _)
-  ; ArrayInitialValueFromConst(_, _, _, _, ?const, _, _)).
 
 .decl ArrayInitialValueFromLocal(?instruction:Instruction, ?index:number, ?to:Var, ?arrayIndex:number, ?from:Var, ?baseHeap:HeapAllocation, ?method:Method)
 .input ArrayInitialValueFromLocal(filename="ArrayInitialValueFromLocal.facts")

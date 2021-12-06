@@ -436,9 +436,9 @@ class FactWriter extends JavaFactWriter {
         String val = constant.toString();
         if (constant instanceof ArithmeticConstant) {
             if (constant instanceof LongConstant)
-                writeNumConstantRawInt(val, "long");
+                writeNumConstantRaw(val, "long");
             else if (constant instanceof IntConstant)
-                writeNumConstantRawInt(val, "int");
+                writeNumConstantRaw(val, "int");
             else
                 System.err.println("WARNING: arithmetic constant is not long/int: " + constant);
         }
@@ -1067,7 +1067,7 @@ class FactWriter extends JavaFactWriter {
                     int len = val.length();
                     if (!Character.isDigit(val.charAt(len-1)))
                         val = val.substring(0, len-1);
-                    writeNumConstantRawInt(val, tagType);
+                    writeNumConstantRaw(val, tagType);
                 } else if (tag instanceof StringConstantValueTag) {
                     writeStringConstant(val);
                 } else

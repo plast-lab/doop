@@ -762,7 +762,7 @@ class DexMethodFactWriter extends JavaFactWriter {
                 else if (className.contains("Byte"))
                     valueType = "byte";
                 if (valueType != null)
-                    writeNumConstantRawInt(value, valueType);
+                    writeNumConstantRaw(value, valueType);
                 _db.add(ARRAY_INITIAL_VALUE_FROM_CONST, insn, str(originalIndex), local(regDest), str(idx), value, heapId, methId);
             }
         } catch (Exception ex) {
