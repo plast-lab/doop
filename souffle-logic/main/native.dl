@@ -259,6 +259,8 @@ SimulateNativeStaticToVirtual(
   "<java.lang.ref.Finalizer: void invokeFinalizeMethod(java.lang.Object)>",
   "<java.lang.Object: void finalize()>").
 
+#ifndef ANDROID
+
 /**********************************************************************************
  *
  * java.security.AccessController
@@ -300,7 +302,6 @@ SimulateNativeStaticToVirtual(
   "<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedExceptionAction,java.security.AccessControlContext)>",
   "<java.security.PrivilegedExceptionAction: java.lang.Object run()>").
 
-#ifndef ANDROID
 /**********************************************************************************
  *
  * sun.misc.Perf
@@ -310,6 +311,7 @@ SimulateNativeAllocation(
   "<sun.misc.Perf: java.nio.ByteBuffer createLong(java.lang.String,int,int,long)>",
   "<sun.misc.Perf: java.nio.ByteBuffer createLong(java.lang.String,int,int,long)>/new java.nio.DirectByteBuffer/0",
   "<java.nio.DirectByteBuffer: void <init>()>").
+
 #endif // ANDROID
 
 /**********************************************************************************
