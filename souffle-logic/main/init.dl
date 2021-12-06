@@ -20,6 +20,13 @@ Value_Type(?heapValue, ?type) :-
   HeapAllocation_Type(?heapValue, ?type).
 
 #ifdef ANDROID
+// Android "R" resource classes.
+.decl ResourceType(?className: ReferenceType)
+.output ResourceType
+ResourceType(?className) :-
+  isReferenceType(?className),
+  contains(".R$", ?className).
+
 // Only create values for numeric constants in a static initializer
 // (or initial field value) inside a class whose name contains
 // ".R$". We are trying to capture just the constants in Android "R"
@@ -33,16 +40,13 @@ CreateIntValue(?const, ?type, ?className) :-
   Instruction_Method(?insn, ?meth),
   Method_SimpleName(?meth, "<clinit>"),
   Method_DeclaringType(?meth, ?className),
-  isReferenceType(?className),
-  contains(".R$", ?className).
-
+  ResourceType(?className).
 CreateIntValue(?const, ?type, ?className) :-
   FieldInitialValue(?fld, ?const),
   NumConstantRawInt(?const, ?type),
   (?type = "int" ; ?type = "long"),
   Field_DeclaringType(?fld, ?className),
-  isReferenceType(?className),
-  contains(".R$", ?className).
+  ResourceType(?className).
 #endif // ANDROID
 
 
