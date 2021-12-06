@@ -432,17 +432,17 @@ class FactGenerator implements Runnable {
         if (right instanceof Local)
             rightLocal = (Local) right;
         else if (right instanceof StringConstant)
-            rightLocal = _writer.writeStringConstantExpression(stmt, ii, (StringConstant) right, session);
+            rightLocal = _writer.writeStringConstantExpression(stmt, ii.methodId, (StringConstant) right, session);
         else if (right instanceof NumericConstant)
-            rightLocal = _writer.writeNumConstantExpression(ii, (NumericConstant) right, left.getType(), session);
+            rightLocal = _writer.writeNumConstantExpression(ii.methodId, (NumericConstant) right, left.getType(), session);
         else // NoNullSupport: use the line below to remove Null Constants from the facts.
             // _writer.writeUnsupported(inMethod, stmt, session);
             if (right instanceof NullConstant)
-                rightLocal = _writer.writeNullExpression(ii, left.getType(), session);
+                rightLocal = _writer.writeNullExpression(ii.methodId, left.getType(), session);
         else if (right instanceof ClassConstant)
-            rightLocal = _writer.writeClassConstantExpression(ii, (ClassConstant) right, session);
+            rightLocal = _writer.writeClassConstantExpression(ii.methodId, (ClassConstant) right, session);
         else if (right instanceof MethodHandle)
-            rightLocal = _writer.writeMethodHandleConstantExpression(ii, (MethodHandle) right, session);
+            rightLocal = _writer.writeMethodHandleConstantExpression(ii.methodId, (MethodHandle) right, session);
         else
             throw new RuntimeException("Cannot handle rhs: " + stmt + " (right: " + right.getClass() + ")");
 
@@ -511,21 +511,21 @@ class FactGenerator implements Runnable {
         if (v instanceof Local)
             _writer.writeReturn(ii, (Local) v);
         else if (v instanceof StringConstant) {
-            Local tmp = _writer.writeStringConstantExpression(stmt, ii, (StringConstant) v, session);
+            Local tmp = _writer.writeStringConstantExpression(stmt, ii.methodId, (StringConstant) v, session);
             _writer.writeReturn(ii, tmp);
         }
         else if (v instanceof ClassConstant) {
-            Local tmp = _writer.writeClassConstantExpression(ii, (ClassConstant) v, session);
+            Local tmp = _writer.writeClassConstantExpression(ii.methodId, (ClassConstant) v, session);
             _writer.writeReturn(ii, tmp);
         }
         else if (v instanceof NumericConstant) {
-            Local tmp = _writer.writeNumConstantExpression(ii, (NumericConstant) v, returnType, session);
+            Local tmp = _writer.writeNumConstantExpression(ii.methodId, (NumericConstant) v, returnType, session);
             _writer.writeReturn(ii, tmp);
         } else if(v instanceof MethodHandle) {
-            Local tmp = _writer.writeMethodHandleConstantExpression(ii, (MethodHandle) v, session);
+            Local tmp = _writer.writeMethodHandleConstantExpression(ii.methodId, (MethodHandle) v, session);
             _writer.writeReturn(ii, tmp);
         } else if (v instanceof NullConstant) {
-            Local tmp = _writer.writeNullExpression(ii, returnType, session);
+            Local tmp = _writer.writeNullExpression(ii.methodId, returnType, session);
             _writer.writeReturn(ii, tmp);
             // NoNullSupport: use the line below to remove Null Constants from the facts.
             // _writer.writeUnsupported(inMethod, stmt, session);
