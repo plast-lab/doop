@@ -20,27 +20,35 @@ Value_Type(?heapValue, ?type) :-
   HeapAllocation_Type(?heapValue, ?type).
 
 #ifdef ANDROID
+// Android "R" resource classes.
+.decl ResourceType(?className: ReferenceType)
+.output ResourceType
+ResourceType(?className) :-
+  isReferenceType(?className),
+  contains(".R$", ?className).
+
+// R resources only define integer ids.
+.output NumConstantRawInt
+NumConstantRawInt(?const, ?type) :- NumConstantRaw(?const, ?type), Type_int(?type).
+
 // Only create values for numeric constants in a static initializer
 // (or initial field value) inside a class whose name contains
 // ".R$". We are trying to capture just the constants in Android "R"
 // nested classes. REVIEW to generalize.
 // Numeric constants are prepended with *num-constant-* to distinguish
 // them from allocations that share the same string value.
-CreateIntValue(?const, ?className) :-
+CreateIntValue(?const, ?type, ?className) :-
   AssignNumConstant_Id(?insn, ?const),
-  NumConstantRawInt(?const),
+  NumConstantRawInt(?const, ?type),
   Instruction_Method(?insn, ?meth),
   Method_SimpleName(?meth, "<clinit>"),
   Method_DeclaringType(?meth, ?className),
-  isReferenceType(?className),
-  contains(".R$", ?className).
-
-CreateIntValue(?const, ?className) :-
+  ResourceType(?className).
+CreateIntValue(?const, ?type, ?className) :-
   FieldInitialValue(?fld, ?const),
-  NumConstantRawInt(?const),
+  NumConstantRawInt(?const, ?type),
   Field_DeclaringType(?fld, ?className),
-  isReferenceType(?className),
-  contains(".R$", ?className).
+  ResourceType(?className).
 #endif // ANDROID
 
 

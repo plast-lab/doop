@@ -478,7 +478,7 @@ class WalaFactWriter extends JavaFactWriter {
         String type = from.getType().toString();
         String value = from.getValue();
         if (type.equals("int") || type.equals("long"))
-            writeNumConstantRawInt(value);
+            writeNumConstantRaw(value, type);
         _db.add(ASSIGN_CAST_NUM_CONST, insn, str(index), value, _rep.local(m, to), writeType(t), methodId);
     }
 

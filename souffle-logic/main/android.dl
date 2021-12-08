@@ -737,14 +737,19 @@ VarPointsTo(?hctx, ?controlValue, ?ctx, ?ret) :-
   VarsAtInvocationRetrievingLayoutControl(?ret, ?var),
   VarPointsTo(?hctx, ?value, ?ctx, ?var),
   LayoutControlObjectValueFromId(?controlValue, ?numId),
-  NumConstantRawInt(?numId),
   Var_Type(?ret, ?retType),
+  NumConstantRawInt(?numId, ?retType),
   Value_Num(?value, ?numId, ?retType).
 ///// HACK, HACK, HACK below!!!!!
 ///// ids seemed broken, so I just return whatever. Fixed now (?)
 //  Value_Num(?value, _, _),
 //  LayoutControlObjectValueFromId(?controlValue, _).
 
+// Array initial values from interesting integer constants.
+CreateIntValue(?const, ?type, "java.lang.Object") :-
+  NumConstantRawInt(?const, ?type),
+  ( ArrayInitialValueFromConst(_, _, _, _, ?const, _, _)
+  ; ArrayInitialValueFromConst(_, _, _, _, ?const, _, _)).
 
 /**
  * Multidimensional arrays in Android may use reflection, e.g. this:

@@ -1182,13 +1182,10 @@ MockHeapConsMacro(?heap, ?type) :-
 
 
 // Relation that triggers the creation of (non-heap) number constants from imported facts.
-.decl CreateIntValue(?n:symbol, ?declaringType:ReferenceType)
+.decl CreateIntValue(?n:symbol, ?type:Type, ?declaringType:ReferenceType)
 
-.decl NumConstantRawInt(?const:symbol)
-.input NumConstantRawInt(filename="NumConstantRawInt.facts")
-
-// Assume that raw constants are created by java.lang.Object (which is always reachable).
-CreateIntValue(?const, "java.lang.Object") :- NumConstantRawInt(?const).
+.decl NumConstantRaw(?const:symbol, ?type:Type)
+.input NumConstantRaw(filename="NumConstantRaw.facts")
 
 // XML facts.
 .decl XMLNode(?file:symbol, ?nodeId:symbol, ?parentNodeId:symbol, ?namespaceURI:symbol, ?localName:symbol, ?qName:symbol)

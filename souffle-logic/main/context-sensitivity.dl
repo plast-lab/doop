@@ -68,6 +68,7 @@ VarPointsTo(?hctx, ?null, ?toCtx, ?to) :-
    ReachableContext(?toCtx, ?inmethod),
    isImmutableHContext(?hctx).
 
+#ifdef ANDROID
 /**
  * Assignment of numeric constant. Currently context-insensitive and
  * only used for Android analyses, hence the ad hoc logic to match
@@ -80,10 +81,11 @@ VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
    (AssignNumConstant_Id(?insn, ?const);
     AssignCastNumConstant_Id(?insn, ?const)),
    AssignInstruction_To(?insn, ?to),
-   NumConstantRawInt(?const),
+   NumConstantRawInt(?const, ?toType),
    Var_Type(?to, ?toType),
    Value_Num(?value, ?const, ?toType),
    isImmutableHContext(?hctx).
+#endif // ANDROID
 
 #endif // DISABLE_POINTS_TO
 
@@ -259,7 +261,7 @@ ReachableStoreStaticFieldFrom(?from) :-
  */
 StaticFieldPointsTo(?hctx, ?value, ?signature) :-
   FieldInitialValue(?signature, ?const),
-  NumConstantRawInt(?const),
+  NumConstantRawInt(?const, ?fieldType),
   Field_Type(?signature, ?fieldType),
   Value_Num(?value, ?const, ?fieldType),
   isImmutableHContext(?hctx).
@@ -281,7 +283,7 @@ ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?baseHeap) :-
   ReachableContext(?ctx, ?inMethod),
   Instruction_Method(?i, ?inMethod),
   ArrayInitialValueFromConst(?i, _, ?to, _, ?const, ?baseHeap, _),
-  NumConstantRawInt(?const),
+  NumConstantRawInt(?const, ?toType),
   Var_Type(?to, ?toType),
   Value_Num(?value, ?const, ?toType),
   isImmutableHContext(?hctx).
@@ -735,9 +737,9 @@ Value_Num(?constValue, ?n, ?type),
 isValue(?constValue),
 Value_Type(?constValue, ?type),
 Value_DeclaringType(?constValue, ?declaringType) :-
-  CreateIntValue(?n, ?declaringType),
-  isIntegerType(?type),
-  ?constValue = NUM_CONSTANT(?n, ?type).
+  CreateIntValue(?n, ?type, ?declaringType),
+  Type_int(?type),
+  ?constValue = NUM_CONSTANT(?n).
 #endif // ANDROID
 
 #ifndef DISABLE_POINTS_TO

@@ -434,8 +434,14 @@ class FactWriter extends JavaFactWriter {
     void writeAssignCastNumericConstant(InstrInfo ii, Local to, NumericConstant constant, Type t) {
         String methodId = ii.methodId;
         String val = constant.toString();
-        if (constant instanceof ArithmeticConstant)
-            writeNumConstantRawInt(val);
+        if (constant instanceof ArithmeticConstant) {
+            if (constant instanceof LongConstant)
+                writeNumConstantRaw(val, "long");
+            else if (constant instanceof IntConstant)
+                writeNumConstantRaw(val, "int");
+            else
+                System.err.println("WARNING: arithmetic constant is not long/int: " + constant);
+        }
         _db.add(ASSIGN_CAST_NUM_CONST, ii.insn, str(ii.index), val, _rep.local(methodId, to), writeType(t), methodId);
     }
 
@@ -604,7 +610,7 @@ class FactWriter extends JavaFactWriter {
 
     void writeTableSwitch(TableSwitchStmt stmt, InstrInfo ii, SessionCounter session) {
         String methodId = ii.methodId;
-        Value v = writeImmediate(stmt, ii, stmt.getKey(), null, session);
+        Value v = writeImmediate(stmt, methodId, stmt.getKey(), null, session);
         if(!(v instanceof Local))
             throw new RuntimeException("Unexpected key for TableSwitch statement " + v + " " + v.getClass());
 
@@ -630,7 +636,7 @@ class FactWriter extends JavaFactWriter {
         String methodId = ii.methodId;
         int stmtIndex = session.getInstructionIndex(stmt);
 
-        Value v = writeImmediate(stmt, ii, stmt.getKey(), null, session);
+        Value v = writeImmediate(stmt, methodId, stmt.getKey(), null, session);
 
         if(!(v instanceof Local))
             throw new RuntimeException("Unexpected key for TableSwitch statement " + v + " " + v.getClass());
@@ -764,48 +770,48 @@ class FactWriter extends JavaFactWriter {
         }
     }
 
-    Local writeStringConstantExpression(Stmt stmt, InstrInfo ii, StringConstant constant, SessionCounter session) {
+    Local writeStringConstantExpression(Stmt stmt, String methodId, StringConstant constant, SessionCounter session) {
         // introduce a new temporary variable
-        FreshAssignLocal fal = newAssignForFreshLocal(ii.methodId, "$stringconstant", RefType.v("java.lang.String"), session);
+        FreshAssignLocal fal = newAssignForFreshLocal(methodId, "$stringconstant", RefType.v("java.lang.String"), session);
         Local l = fal.local;
         writeAssignStringConstant(stmt, fal.ii, l, constant);
         return l;
     }
 
-    Local writeNullExpression(InstrInfo ii, Type type, SessionCounter session) {
+    Local writeNullExpression(String methodId, Type type, SessionCounter session) {
         // introduce a new temporary variable
-        FreshAssignLocal fal = newAssignForFreshLocal(ii.methodId, "$null", type, session);
+        FreshAssignLocal fal = newAssignForFreshLocal(methodId, "$null", type, session);
         Local l = fal.local;
         writeAssignNull(fal.ii, l);
         return l;
     }
 
-    Local writeNumConstantExpression(InstrInfo ii, NumericConstant constant,
+    Local writeNumConstantExpression(String methodId, NumericConstant constant,
                                      Type explicitType, SessionCounter session) {
         Type constantType = (explicitType == null) ? constant.getType() : explicitType;
         // introduce a new temporary variable
-        FreshAssignLocal fal = newAssignForFreshLocal(ii.methodId, "$numconstant", constantType, session);
+        FreshAssignLocal fal = newAssignForFreshLocal(methodId, "$numconstant", constantType, session);
         Local l = fal.local;
         writeAssignNumConstant(fal.ii, l, constant);
         return l;
     }
 
-    Local writeClassConstantExpression(InstrInfo ii, ClassConstant constant, SessionCounter session) {
+    Local writeClassConstantExpression(String methodId, ClassConstant constant, SessionCounter session) {
         ClassConstantInfo info = new ClassConstantInfo(constant);
         // introduce a new temporary variable
         FreshAssignLocal fal = info.isMethodType ?
-            newAssignForFreshLocal(ii.methodId, "$methodtypeconstant", RefType.v("java.lang.invoke.MethodType"), session) :
-            newAssignForFreshLocal(ii.methodId, "$classconstant", RefType.v("java.lang.Class"), session);
+            newAssignForFreshLocal(methodId, "$methodtypeconstant", RefType.v("java.lang.invoke.MethodType"), session) :
+            newAssignForFreshLocal(methodId, "$classconstant", RefType.v("java.lang.Class"), session);
         Local l = fal.local;
         writeAssignClassConstant(fal.ii, l, info);
         return l;
     }
 
-    Local writeMethodHandleConstantExpression(InstrInfo ii, MethodHandle constant, SessionCounter session) {
+    Local writeMethodHandleConstantExpression(String methodId, MethodHandle constant, SessionCounter session) {
         // introduce a new temporary variable
-        FreshAssignLocal fal = newAssignForFreshLocal(ii.methodId, "$mhandleconstant", RefType.v("java.lang.invoke.MethodHandle"), session);
+        FreshAssignLocal fal = newAssignForFreshLocal(methodId, "$mhandleconstant", RefType.v("java.lang.invoke.MethodHandle"), session);
         Local l = fal.local;
-        writeAssignMethodHandleConstant(ii, l, constant);
+        writeAssignMethodHandleConstant(fal.ii, l, constant);
         return l;
     }
 
@@ -819,18 +825,18 @@ class FactWriter extends JavaFactWriter {
 
     private Value writeActualParam(Stmt stmt, InstrInfo ii, InvokeExpr expr, SessionCounter session, Value v, int idx) {
         if (v instanceof StringConstant)
-            return writeStringConstantExpression(stmt, ii, (StringConstant) v, session);
+            return writeStringConstantExpression(stmt, ii.methodId, (StringConstant) v, session);
         else if (v instanceof ClassConstant)
-            return writeClassConstantExpression(ii, (ClassConstant) v, session);
+            return writeClassConstantExpression(ii.methodId, (ClassConstant) v, session);
         else if (v instanceof NumericConstant)
-            return writeNumConstantExpression(ii, (NumericConstant) v, null, session);
+            return writeNumConstantExpression(ii.methodId, (NumericConstant) v, null, session);
         else if (v instanceof MethodHandle)
-            return writeMethodHandleConstantExpression(ii, (MethodHandle) v, session);
+            return writeMethodHandleConstantExpression(ii.methodId, (MethodHandle) v, session);
         else if (v instanceof NullConstant) {
             // Giving the type of the formal argument to be used in the creation of
             // temporary var for the actual argument (whose value is null).
             Type argType = expr.getMethodRef().getParameterType(idx);
-            return writeNullExpression(ii, argType, session);
+            return writeNullExpression(ii.methodId, argType, session);
         } else if (v instanceof Constant) {
             DoopAddons.MethodType mt = DoopAddons.methodType(v);
             if (mt != null)
@@ -937,15 +943,15 @@ class FactWriter extends JavaFactWriter {
         writeInvokedynamic(insn, index, getBootstrapSig(di), dynInfo.getName(), dynSig.retType, dynSig.arity, dynSig.paramTypes, di.getHandleTag(), methodId);
     }
 
-    private Value writeImmediate(Stmt stmt, InstrInfo ii,
+    private Value writeImmediate(Stmt stmt, String methodId,
                                  Value v, Type vType, SessionCounter session) {
         if (v instanceof Constant) {
             if (v instanceof StringConstant)
-                v = writeStringConstantExpression(stmt, ii, (StringConstant) v, session);
+                v = writeStringConstantExpression(stmt, methodId, (StringConstant) v, session);
             else if (v instanceof ClassConstant)
-                v = writeClassConstantExpression(ii, (ClassConstant) v, session);
+                v = writeClassConstantExpression(methodId, (ClassConstant) v, session);
             else if (v instanceof NumericConstant)
-                v = writeNumConstantExpression(ii, (NumericConstant) v, vType, session);
+                v = writeNumConstantExpression(methodId, (NumericConstant) v, vType, session);
             else
                 System.err.println("ERROR: unknown type of immediate: " + v.getClass());
         }
@@ -1047,15 +1053,21 @@ class FactWriter extends JavaFactWriter {
                 String val = ((ConstantValueTag)tag).getConstant().toString();
                 _db.add(FIELD_INITIAL_VALUE, fieldId, val);
                 // Put constant in appropriate "raw" input facts.
-                if ((tag instanceof IntegerConstantValueTag) ||
-                    (tag instanceof DoubleConstantValueTag) ||
-                    (tag instanceof LongConstantValueTag) ||
-                    (tag instanceof FloatConstantValueTag)) {
+                String tagType = null;
+                if (tag instanceof IntegerConstantValueTag)
+                    tagType = "int";
+                else if (tag instanceof DoubleConstantValueTag)
+                    tagType = "double";
+                else if (tag instanceof LongConstantValueTag)
+                    tagType = "long";
+                else if (tag instanceof FloatConstantValueTag)
+                    tagType = "float";
+                if (tagType != null) {
                     // Trim last non-digit qualifier (e.g. 'L' in long constants).
                     int len = val.length();
                     if (!Character.isDigit(val.charAt(len-1)))
                         val = val.substring(0, len-1);
-                    writeNumConstantRawInt(val);
+                    writeNumConstantRaw(val, tagType);
                 } else if (tag instanceof StringConstantValueTag) {
                     writeStringConstant(val);
                 } else
