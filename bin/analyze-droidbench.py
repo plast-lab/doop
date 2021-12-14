@@ -1,4 +1,4 @@
-#! /usr/bin/python -u
+#! /usr/bin/python3 -u
 """Analyzes Droidbench benchmarks and checks the results
 
 Usage:
