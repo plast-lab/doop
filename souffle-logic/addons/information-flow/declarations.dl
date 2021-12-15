@@ -5,6 +5,10 @@
 .type InformationLabel = symbol
 .decl isInformationLabel(?id:symbol)
 
+/** Taint specifications that may come from the user. */
+.decl TaintSpec(?type:symbol, ?tag:symbol, ?id:symbol)
+.input TaintSpec(filename="TaintSpec.facts")
+
 // Use macro to substitute to handle context types when points-to reasoning is disabled.
 #ifdef DISABLE_POINTS_TO
 #define CONTEXT symbol
