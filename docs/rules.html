@@ -106,6 +106,7 @@
 <li> .decl TaintObjTransfer(fromCtx:mainAnalysis.configuration.Context, from:Var, toCtx:mainAnalysis.configuration.Context, to:Var)</li>
 <li> .decl TaintSourceMethod(?label:InformationLabel, ?method:Method)</li>
 <li> .decl TaintSourceMethodWithOverrides(?label:InformationLabel, ?method:Method)</li>
+<li> .decl TaintSpec(?type:symbol, ?tag:symbol, ?id:symbol)</li>
 <li> .decl TaintTransferMethodInvocationInContext(?ctx:CONTEXT, ?index:number, ?invocation:MethodInvocation)</li>
 <li> .decl TaintedObjectSerialized(?declaringType:Type, ?source:symbol, ?type:Type, ?hctx:mainAnalysis.configuration.HContext, ?val:Value, ?ctx:mainAnalysis.configuration.Context, ?base:Var)</li>
 <li> .decl TaintedValue(?value:Value)</li>
@@ -198,7 +199,6 @@
 <li> .decl MockObjFromField(?fieldType:ReferenceType)</li>
 <li> .decl MockObjFromFormal(?type:ReferenceType)</li>
 <li> .decl MockObjFromOpenProgramEntryPoint(?class:ReferenceType)</li>
-<li> .decl MockObject(?value:Value, ?class:ReferenceType)</li>
 <li> .decl MockObjectContext(?hctx:mainAnalysis.configuration.HContext, ?value:Value, ?class:ReferenceType)</li>
 <li> .decl MockObjectForComponentType(?value:Value, ?arrayType:ArrayType)</li>
 <li> .decl MockObjectForType(?value:Value, ?staticType:ReferenceType)</li>
@@ -262,7 +262,6 @@
 <li> .decl MockObjFromField(?type:ReferenceType)</li>
 <li> .decl MockObjFromFormal(?type:ReferenceType)</li>
 <li> .decl MockObjFromOpenProgramEntryPoint(?value:Value)</li>
-<li> .decl MockObject(?value:Value, ?type:ReferenceType)</li>
 <li> .decl MockOpenProgramEntryPoint(?class:Type, ?method:Method)</li>
 <li> .decl OpenProgramEntryPoint(?method:Method)</li>
 <li> .decl PossibleOpenProgramEntryPoint(?class:Type, ?method:Method)</li>
@@ -368,6 +367,10 @@
 <ul>
 <li> .decl ArtifactTypeMissingFromHierarchy(?t:ReferenceType)</li>
 <li> .decl ClassTypeIsInterfaceType(?type:ReferenceType)</li>
+<li> .decl DifferentInstructionsSameIndex(?insn1:Instruction, ?insn2:Instruction, ?idx:number)</li>
+<li> .decl DuplicateMethodInstructions(?insn:Instruction, ?method1:Method, ?method2:Method)</li>
+<li> .decl Duplicate_StoreArrayIndex_Base(?insn:Instruction, ?base1:Var, ?base2:Var)</li>
+<li> .decl Duplicate_StoreArrayIndex_From(?insn:Instruction, ?from1:Var, ?from2:Var)</li>
 <li> .decl FieldPointsToWronglyTypedValue(?field:Field, ?fieldType:Type, ?value:Value, ?valueType:Type)</li>
 <li> .decl ForceTypeCompatibility(?valueType:Type, ?varType:Type)</li>
 <li> .decl HeapAllocationHasNoType(?heap:HeapAllocation)</li>
@@ -410,7 +413,9 @@
 <h2> addons/server-logic/queries.dl </h2>
 <ul>
 <li> .decl Server_Array_Values(?arrayValue:Value, ?value:Value)</li>
+<li> .decl Server_Field_Read(?fld:Field, ?instruction:Instruction)</li>
 <li> .decl Server_Field_ShadowedBy(?fld:Field, ?shadowFld:Field)</li>
+<li> .decl Server_Field_Write(?fld:Field, ?instruction:Instruction)</li>
 <li> .decl Server_IField_Values(?baseValue:Value, ?fld:Field, ?value:Value)</li>
 <li> .decl Server_IField_Values_Count(?baseValue:Value, ?fld:Field, ?n:number)</li>
 <li> .decl Server_Invocation_Values(?fromMethod:Method, ?invo:MethodInvocation, ?toMethod:Method)</li>
@@ -608,8 +613,6 @@
 <li> .decl Metrics_Method_OutgoingMethods_Count(?method:Method, ?n:number)</li>
 <li> .decl Metrics_Value_AsReceiver_Count(?value:Value, ?n:number)</li>
 <li> .decl PointsToCountPerType(?type:Type, Y:number)</li>
-<li> .decl ReachableApplicationClass(?class:symbol)</li>
-<li> .decl ReachableClass(?class:symbol)</li>
 <li> .decl ReachableDependencyClass(?class:symbol)</li>
 <li> .decl ReachableSDKClass(?class:symbol)</li>
 <li> .decl SDKMethodDirectlyReachableFromApplication(?method:symbol)</li>
@@ -894,6 +897,7 @@
 <li> .decl OptMethodRetFormal(m:Method, nth:number)</li>
 <li> .decl PointerFlows(x:Var, y:Var)</li>
 <li> .decl ResolveCall(stmt: MethodInvocation, method: Method)</li>
+<li> .decl ResolveCallDirect(stmt: MethodInvocation, method: Method)</li>
 <li> .decl SelfFlows(x:Var)</li>
 </ul>
 <h2> analyses/data-flow/setup.dl </h2>
@@ -1894,6 +1898,7 @@
 </ul>
 <h2> basic/basic.dl </h2>
 <ul>
+<li> .decl AnyMainMethodDeclaration(?method:Method, ?type:ClassType)</li>
 <li> .decl MainMethodDeclaration(?method:Method)</li>
 </ul>
 <h2> basic/classes-scc.dl </h2>
@@ -1919,7 +1924,18 @@
 <li> .decl TypeToSCCId(?type:Type, ?idType:number)</li>
 <li> .decl TypeTransitivelyRefersToOther(typeFrom: Type, typeTo: Type)</li>
 </ul>
-<h2> basic/finalization-declarations.dl </h2>
+<h2> basic/exceptions.dl </h2>
+<ul>
+<li> .decl ExceptionHandler_Before(?before:ExceptionHandler, ?handler:ExceptionHandler)</li>
+<li> .decl ExceptionHandler_Impossible(?type:Type, ?h2:ExceptionHandler, ?insn:Instruction)</li>
+<li> .decl ExceptionHandler_InRange(?handler:ExceptionHandler, ?instruction:Instruction)</li>
+<li> .decl ExceptionHandler_SameBlock_PartialOrder(?repr:ExceptionHandler, ?handler:ExceptionHandler)</li>
+<li> .decl ExceptionHandler_SameBlock_Repr(?handler:ExceptionHandler, ?repr:ExceptionHandler)</li>
+<li> .decl ExceptionHandler_SameInsn_PartialOrder(?h1:ExceptionHandler, ?h2:ExceptionHandler, ?insn:Instruction)</li>
+<li> .decl ExceptionHandler_SameInsn_Repr(?insn:Instruction, ?repr:ExceptionHandler)</li>
+<li> .decl ExceptionHandler_TypeIsCaught(?type:Type, ?block:ExceptionHandler)</li>
+</ul>
+<h2> basic/finalization.dl </h2>
 <ul>
 <li> .decl AllocatedObjectSupportsFinalize(?heap:HeapAllocation, ?inmethod:Method)</li>
 <li> .decl OverridesFinalize(?class:Type)</li>
@@ -2075,6 +2091,7 @@
 <li> .decl ExceptionHandler_Method(?handler:ExceptionHandler, ?inmethod:Method)</li>
 <li> .decl ExceptionHandler_Previous(?handler:ExceptionHandler, ?previous:ExceptionHandler)</li>
 <li> .decl ExceptionHandler_Type(?handler:ExceptionHandler, ?type:Type)</li>
+<li> .decl ExercisedEntryPointMethod(?class:Type, ?method:Method)</li>
 <li> .decl ExitMonitor_Var(?insn:ExitMonitor_Insn, ?var:Var)</li>
 <li> .decl FieldInstruction_Signature(?insn:FieldInstruction, ?sign:Field)</li>
 <li> .decl Field_Annotation(?fld:Field, ?annotation:Annotation)</li>
@@ -2121,6 +2138,9 @@
 <li> .decl Method_ParamTypes(?method:Method, ?params:symbol)</li>
 <li> .decl Method_ReturnType(?method:Method, ?returnType:Type)</li>
 <li> .decl Method_SimpleName(?method:Method, ?simpleName:symbol)</li>
+<li> .decl MockObjFromOpenProgramEntryPointArg(?value:Value)</li>
+<li> .decl MockObjFromOpenProgramEntryPointReceiver(?value:Value)</li>
+<li> .decl MockObject(?value:Value, ?class:ReferenceType)</li>
 <li> .decl Modifier_abstract(?mod:Modifier)</li>
 <li> .decl Modifier_final(?mod:Modifier)</li>
 <li> .decl Modifier_private(?mod:Modifier)</li>
@@ -2162,6 +2182,7 @@
 <li> .decl Type_object(?t:ReferenceType)</li>
 <li> .decl Type_short(?t:PrimitiveType)</li>
 <li> .decl Type_void(?t:Type)</li>
+<li> .decl UnmockableFormalOfForcedReachableContext(?formal:Var, ?formalType:Type)</li>
 <li> .decl Var_DeclaringMethod(?var:Var, ?method:Method)</li>
 <li> .decl Var_SimpleName(?var:Var, ?simplename:symbol)</li>
 <li> .decl Var_Type(?var:Var, ?type:Type)</li>
@@ -2289,8 +2310,8 @@
 </ul>
 <h2> facts/imports.dl </h2>
 <ul>
-<li> .decl CreateIntValue(?n:symbol, ?declaringType:ReferenceType)</li>
-<li> .decl NumConstantRawInt(?const:symbol)</li>
+<li> .decl CreateIntValue(?n:symbol, ?type:Type, ?declaringType:ReferenceType)</li>
+<li> .decl NumConstantRaw(?const:symbol, ?type:Type)</li>
 <li> .decl PhantomBasedMethod(?m:Method)</li>
 <li> .decl PhantomMethod(?m:Method)</li>
 <li> .decl PhantomType(?t:ReferenceType)</li>
@@ -2399,6 +2420,9 @@
 <h2> facts/opaque-methods.dl </h2>
 <ul>
 <li> .decl ClassLoaderMethod(?method:Method, ?argIdx:number)</li>
+<li> .decl CollectionMethod(?method:Method, ?kind:symbol)</li>
+<li> .decl CollectionMethodSig(?sig:symbol, ?kind:symbol)</li>
+<li> .decl CollectionType(?type:ReferenceType)</li>
 <li> .decl MTEntryPoint(?id:number, ?invo:MethodInvocation, ?sig:Method)</li>
 <li> .decl isOpaqueInstruction(?insn:OpaqueInstruction)</li>
 </ul>
@@ -2421,6 +2445,7 @@
 <li> .decl LibraryReachableAppListenerType(?type:ReferenceType)</li>
 <li> .decl ListenerType(?type:ReferenceType)</li>
 <li> .decl MultiDimensionalArrayTemp(?value:Value, ?invocation:MethodInvocation, ?type:Type, ?ctx:configuration.Context, ?from:Var)</li>
+<li> .decl NumConstantRawInt(?const:symbol, ?type:Type)</li>
 <li> .decl OverridingProtectedMethodOfComponent(?meth:Method)</li>
 <li> .decl OverridingProtectedOnMethodOfLayoutControl(?meth:Method)</li>
 <li> .decl OverridingProtectedOnMethodOfReachableListener(?meth:Method)</li>
@@ -2498,9 +2523,21 @@
 </ul>
 <h2> main/api-mocking.dl </h2>
 <ul>
+<li> .decl CollectionValueIn(?baseValue:Value, ?value:Value)</li>
 <li> .decl GetSystemServiceMethod(?method:Method)</li>
 <li> .decl MockedMethodReturns(?method:Method, ?alloc:HeapAllocation, ?type:ReferenceType)</li>
+<li> .decl OpaqueInstanceInvocation(?invo:MethodInvocation, ?base:Var, ?method:Method)</li>
+<li> .decl ShallowMockedMethod(?method:Method)</li>
 <li> .decl SystemService(?type:ReferenceType)</li>
+</ul>
+<h2> main/app-only.dl </h2>
+<ul>
+<li> .decl FakeInstanceFieldPointsTo(?hctx:configuration.HContext, ?value:Value, ?valType:Type, ?basehctx:configuration.HContext, ?basevalue:Value)</li>
+<li> .decl FakeLoadInstanceField(?basehctx:configuration.HContext, ?baseVal:Value, ?ctx:configuration.Context, ?to:Var, ?toType:Type)</li>
+<li> .decl FakeStoreInstanceField(?basehctx:configuration.HContext, ?baseVal:Value, ?ctx:configuration.Context, ?from:Var)</li>
+<li> .decl OpaqueMethodInvocation(?instruction:MethodInvocation, ?base:Var, ?sigCallee:Method)</li>
+<li> .decl OpaqueMethodInvocationParam(?instruction:MethodInvocation, ?base:Var, ?param:Var)</li>
+<li> .decl OpaqueMethodInvocationReturn(?instruction:MethodInvocation, ?base:Var, ?ret:Var)</li>
 </ul>
 <h2> main/basic-context-sensitivity.dl </h2>
 <ul>
@@ -2549,6 +2586,7 @@
 <li> .decl OptReturnAssign(?toCtx:configuration.Context, ?to:Var, ?fromCtx:configuration.Context, ?from:Var)</li>
 <li> .decl OptStoreArrayIndex(?from:Var, ?base:Var)</li>
 <li> .decl Reachable(?method:Method)</li>
+<li> .decl ReachableClass(?class:ReferenceType)</li>
 <li> .decl ReachableContext(?ctx:configuration.Context, ?method:Method)</li>
 <li> .decl StaticFieldPointsTo(?hctx:configuration.HContext, ?value:Value, ?sig:Field)</li>
 <li> .decl StoreHeapArrayIndex(?basehctx:configuration.HContext, ?basevalue:Value, ?ctx:configuration.Context, ?from:Var)</li>
@@ -2638,22 +2676,11 @@
 <li> .decl Value_byDynamicHeap(?heap:HeapAllocation, ?value:Value)</li>
 <li> .decl isImmutableDCTX(?dctx:DynamicContext)</li>
 </ul>
-<h2> main/exceptions-declarations.dl </h2>
-<ul>
-<li> .decl ExceptionHandler_Before(?before:ExceptionHandler, ?handler:ExceptionHandler)</li>
-<li> .decl ExceptionHandler_Impossible(?type:Type, ?h2:ExceptionHandler, ?insn:Instruction)</li>
-<li> .decl ExceptionHandler_InRange(?handler:ExceptionHandler, ?instruction:Instruction)</li>
-<li> .decl ExceptionHandler_SameBlock_PartialOrder(?repr:ExceptionHandler, ?handler:ExceptionHandler)</li>
-<li> .decl ExceptionHandler_SameBlock_Repr(?handler:ExceptionHandler, ?repr:ExceptionHandler)</li>
-<li> .decl ExceptionHandler_SameInsn_PartialOrder(?h1:ExceptionHandler, ?h2:ExceptionHandler, ?insn:Instruction)</li>
-<li> .decl ExceptionHandler_SameInsn_Repr(?insn:Instruction, ?repr:ExceptionHandler)</li>
-<li> .decl ExceptionHandler_TypeIsCaught(?type:Type, ?block:ExceptionHandler)</li>
-<li> .decl Instruction_Throws(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?insn:Instruction)</li>
-<li> .decl ThrowPointsTo(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?method:Method)</li>
-</ul>
 <h2> main/exceptions.dl </h2>
 <ul>
+<li> .decl Instruction_Throws(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?insn:Instruction)</li>
 <li> .decl ProxyNullInvokeResult(?callerCtx:configuration.Context, ?invo:MethodInvocation, ?calleeCtx:configuration.Context)</li>
+<li> .decl ThrowPointsTo(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?method:Method)</li>
 <li> .decl isProxyCCE(?value:Value)</li>
 <li> .decl isProxyNPE(?value:Value)</li>
 <li> .decl isProxyUTE(?value:Value)</li>
@@ -2707,17 +2734,12 @@
 <ul>
 <li> .decl AllApplicationConcreteImplementations(?class:ClassType, ?type:Type)</li>
 <li> .decl ApplicationConcreteType(?type:ClassType)</li>
-<li> .decl ExercisedEntryPointMethod(?class:Type, ?method:Method)</li>
 <li> .decl ForcedReachableContext(?ctx:configuration.Context, ?meth:Method)</li>
 <li> .decl FormalOfForcedReachableContext(?ctx:configuration.Context, ?formal:Var, ?formalType:Type)</li>
-<li> .decl MockObjFromOpenProgramEntryPointArg(?value:Value)</li>
-<li> .decl MockObjFromOpenProgramEntryPointReceiver(?value:Value)</li>
-<li> .decl MockObject(?value:Value, ?class:ReferenceType)</li>
 <li> .decl ServletParamType(?paramType:ReferenceType)</li>
 <li> .decl SpecialConcreteImplementations(?class:ClassType, ?type:ReferenceType)</li>
 <li> .decl TypeHasApplicationConcreteSubtypes(?type:Type)</li>
 <li> .decl TypeToConcreteImplementation(?type:ReferenceType, ?class:ClassType)</li>
-<li> .decl UnmockableFormalOfForcedReachableContext(?formal:Var, ?formalType:Type)</li>
 </ul>
 <h2> main/in-out-flow.dl </h2>
 <ul>
@@ -2728,6 +2750,17 @@
 <li> .decl LocalVarFlow(?to:Var, ?from:Var)</li>
 <li> .decl ReturnFlowMethodInvocationParam(?param:Var, ?invo:MethodInvocation)</li>
 <li> .decl StoreFlowThroughHeap(?to:Var, from:Var)</li>
+</ul>
+<h2> main/init.dl </h2>
+<ul>
+<li> .decl ResourceType(?className: ReferenceType)</li>
+</ul>
+<h2> main/lists.dl </h2>
+<ul>
+<li> .decl LinkedListNode(?list:Value, ?idx:number, ?node:Value)</li>
+<li> .decl LinkedListNodePointsTo(?list:Value, ?idx:number, ?node:Value, ?val:Value)</li>
+<li> .decl ListElementPointsTo(?list:Value, ?val:Value)</li>
+<li> .decl MonitoredList(?list:Value)</li>
 </ul>
 <h2> main/main.dl </h2>
 <ul>
@@ -3126,6 +3159,7 @@
 </ul>
 <h2> main/string-concat.dl </h2>
 <ul>
+<li> .decl AssignInvokedynamic(?insn:DynamicMethodInvocation_Insn, ?ret:Var, ?value:Value, ?type:Type)</li>
 <li> .decl ReflectionStringConstantFlowsIntoStringFactory(?hctx:configuration.HContext, ?value:Value, ?factoryHctx:configuration.HContext, ?factoryValue:Value)</li>
 <li> .decl ReflectionStringConstantVarPointsTo(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var)</li>
 <li> .decl StringFactoryVar(?var:Var)</li>
@@ -3845,4 +3879,4 @@
 <li> .decl isUnboundMethodOrFunctionObjectAllocation(?h: FunctionObjectAllocation)</li>
 <li> .decl isValue(?value:Value)</li>
 </ul>
-<p>Timestamp: 2021-06-11 15:17:12.708975</p></body></html>
+<p>Timestamp: 2021-12-16 16:16:49.205365</p></body></html>
