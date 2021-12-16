@@ -28,8 +28,8 @@ RUN mkdir /souffle && wget https://github.com/souffle-lang/souffle/releases/down
 
 ## ddlog
 ## Rust (binary release)
-RUN mkdir /rust && cd /rust && wget https://static.rust-lang.org/dist/rust-1.41.0-x86_64-unknown-linux-gnu.tar.gz -O /rust/rust-1.41.0-x86_64-unknown-linux-gnu.tar.gz && tar xf rust-1.41.0-x86_64-unknown-linux-gnu.tar.gz
-RUN cd /rust/rust-1.41.0-x86_64-unknown-linux-gnu && ./install.sh
+RUN mkdir /rust && cd /rust && wget https://static.rust-lang.org/dist/rust-1.57.0-x86_64-unknown-linux-gnu.tar.gz -O /rust/rust-1.57.0-x86_64-unknown-linux-gnu.tar.gz && tar xf rust-1.57.0-x86_64-unknown-linux-gnu.tar.gz
+RUN cd /rust/rust-1.57.0-x86_64-unknown-linux-gnu && ./install.sh
 ## Haskell stack
 RUN curl -sSL https://get.haskellstack.org/ | sh
 ## Clone ddlog (on specific commit)
