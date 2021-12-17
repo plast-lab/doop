@@ -18,11 +18,11 @@ class OpenProgramsTest extends DoopSpec {
         Analysis analysis = analyzeTest('ivy-open-programs', 'org.apache.ivy:ivy:2.3.0', options, 'context-insensitive')
 
         then:
-        metricIsApprox(analysis, "call graph edges (INS)", 449_742)
-        metricIsApprox(analysis, "reachable methods (INS)", 67_412)
-        metricIsApprox(analysis, "array index points-to (INS)", 531_103)
-        metricIsApprox(analysis, "instance field points-to (INS)", 6_055_773)
-        metricIsApprox(analysis, "var points-to (INS)", 69_132_048)
+        metricIsApprox(analysis, "call graph edges (INS)", 109_805)
+        metricIsApprox(analysis, "reachable methods (INS)", 18_950)
+        metricIsApprox(analysis, "array index points-to (INS)", 53_077)
+        metricIsApprox(analysis, "instance field points-to (INS)", 389_306)
+        metricIsApprox(analysis, "var points-to (INS)", 6_888_742)
 
 	where:
 	    profile << ['jackee'] // 'servlets-only']
@@ -35,7 +35,7 @@ class OpenProgramsTest extends DoopSpec {
         // Some analyses do not support full stats or server logic.
         Main.main((String[])(['-i', Artifacts.HELLO_JAR,
                               '-a', 'context-insensitive', '-Ldebug', '--dry-run',
-			      '--souffle-force-recompile', '--souffle-mode', 'translated',
+                              '--souffle-force-recompile', '--souffle-mode', 'translated',
                               '--id', "dry-run-open-programs-${profile}", '--cache']))
         Analysis analysis = Main.analysis
 
