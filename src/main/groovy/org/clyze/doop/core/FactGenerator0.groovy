@@ -181,53 +181,29 @@ class FactGenerator0 {
             return
         }
 
+        String elementId = fields[3]
         switch (fields[0]) {
             case "ROOT":
-                factsFile(ROOT.name).withWriterAppend { it << (fields[3] + "\n") }
+                factsFile(ROOT.name).withWriterAppend { it << (elementId + "\n") }
                 break
             case "KEEP":
-                // Support both two- and three-column format (ignore last column).
-                if (fields.length == 2 || fields.length == 3)
-                    factsFile(KEEP_METHOD.name).withWriterAppend { it << (fields[1] + "\n") }
-                else
-                    log.warn "WARNING: malformed line (should be 2 or 3 columns, tab-separated): ${line}"
+                factsFile(KEEP_METHOD.name).withWriterAppend { it << (elementId + "\n") }
                 break
             case "TAINT":
-                factsFile(TAINTSPEC.name).withWriterAppend { it << (fields[1] + "\t" + fields[2] + "\t" + fields[3] + "\n") }
+                factsFile(TAINTSPEC.name).withWriterAppend { it << (fields[1] + "\t" + fields[2] + "\t" + elementId + "\n") }
                 break
             case "REMOVE":
             case "OBFUSCATE":
                 log.warn "WARNING: ignoring line, not useful for analysis: $line"
                 break
             case "KEEP_CLASS":
-                if (fields.length == 2)
-                    factsFile(KEEP_CLASS.name).withWriterAppend { it << (fields[1] + "\n") }
-                else
-                    log.warn "WARNING: malformed line (should be 2 or 3 columns, tab-separated): ${line}"
+                factsFile(KEEP_CLASS.name).withWriterAppend { it << (elementId + "\n") }
                 break
             case "KEEP_CLASS_MEMBERS":
-                // Support both two- and three-column format (ignore last column).
-                if (fields.length == 2 || fields.length == 3)
-                    factsFile(KEEP_CLASS_MEMBERS.name).withWriterAppend { it << (fields[1] + "\n") }
-                else
-                    log.warn "WARNING: malformed line (should be 2 or 3 columns, tab-separated): ${line}"
+                factsFile(KEEP_CLASS_MEMBERS.name).withWriterAppend { it << (elementId + "\n") }
                 break
             case "KEEP_CLASSES_WITH_MEMBERS":
-                if (fields.length == 3) {
-                    String typeId = fields[1]
-                    String ruleHash = fields[2]
-                    int colonIdx = typeId.indexOf(':')
-                    if (colonIdx < 0) {
-                        log.warn "WARNING: malformed type in spec line: ${line}"
-                        return
-                    }
-                    factsFile(KEEP_CLASSES_WITH_MEMBERS.name).withWriterAppend { it << (typeId + "\t" + ruleHash + "\n") }
-                    Map<String, Integer> typeCounts = ruleCounts.computeIfAbsent(ruleHash, { new HashMap<String, Integer>() })
-                    String typePrefix = typeId.substring(1, colonIdx)
-                    typeCounts.compute(typePrefix, { String k1, Integer v1 -> (v1 == null) ? 1 : v1 + 1 })
-                }
-                else
-                    log.warn "WARNING: malformed line (should be 4 columns, tab-separated): ${line}"
+                factsFile(KEEP_CLASSES_WITH_MEMBERS.name).withWriterAppend { it << (elementId + "\n") }
                 break
             default:
                 log.warn "WARNING: unsupported spec line: ${line}"
