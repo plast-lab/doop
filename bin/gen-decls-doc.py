@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Generate a list of all Souffle declarations. Used for documentation purposes.
 

@@ -18,6 +18,8 @@ import static org.clyze.doop.core.FactGenerator0.PredicateFile0.*
 @CompileStatic
 class FactGenerator0 {
 
+    private static final int KEEP_SPEC_COLUMNS = 5
+
     private File factsDir
 
     private enum PredicateFile0 {
@@ -29,6 +31,7 @@ class FactGenerator0 {
         MAIN_CLASS("MainClass"),
         ROOT("RootCodeElement"),
         SENSITIVE_LAYOUT_CONTROL("SensitiveLayoutControl"),
+        TAINTSPEC("TaintSpec"),
         TAMIFLEX("Tamiflex");
 
         private final String name
@@ -140,7 +143,7 @@ class FactGenerator0 {
             return
 
         if ((new File(specPath)).exists()) {
-            log.info "Reading keep specification from: ${specPath}"
+            log.info "Reading specification from: ${specPath}"
             Files.lines(Paths.get(specPath)).withCloseable { Stream<String> stream ->
                 try {
 
@@ -173,13 +176,14 @@ class FactGenerator0 {
     private void processKeepSpecLine(Database db, String line) {
         String[] fields = line.split("\t")
 
+        if (fields.length != KEEP_SPEC_COLUMNS) {
+            log.warn("WARNING: malformed line (should be $KEEP_SPEC_COLUMNS columns): $line")
+            return
+        }
+
         switch (fields[0]) {
             case "ROOT":
-                // Support both two- and three-column format (ignore last column).
-                if (fields.length == 2 || fields.length == 3)
-                    factsFile(ROOT.name).withWriterAppend { it << (fields[1] + "\n") }
-                else
-                    log.warn "WARNING: malformed line (should be 2 or 3 columns, tab-separated): ${line}"
+                factsFile(ROOT.name).withWriterAppend { it << (fields[3] + "\n") }
                 break
             case "KEEP":
                 // Support both two- and three-column format (ignore last column).
@@ -187,6 +191,13 @@ class FactGenerator0 {
                     factsFile(KEEP_METHOD.name).withWriterAppend { it << (fields[1] + "\n") }
                 else
                     log.warn "WARNING: malformed line (should be 2 or 3 columns, tab-separated): ${line}"
+                break
+            case "TAINT":
+                factsFile(TAINTSPEC.name).withWriterAppend { it << (fields[1] + "\t" + fields[2] + "\t" + fields[3] + "\n") }
+                break
+            case "REMOVE":
+            case "OBFUSCATE":
+                log.warn "WARNING: ignoring line, not useful for analysis: $line"
                 break
             case "KEEP_CLASS":
                 if (fields.length == 2)

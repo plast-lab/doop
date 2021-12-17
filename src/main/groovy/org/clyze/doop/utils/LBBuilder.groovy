@@ -16,7 +16,6 @@ class LBBuilder {
 		this.cpp = cpp
 		this.outDir = outDir
 		script = File.createTempFile("run", ".lb", outDir)
-		script.deleteOnExit()
 		writer = script.newPrintWriter()
 	}
 

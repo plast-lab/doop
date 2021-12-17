@@ -108,3 +108,11 @@ TaintSourceMethod(?label, ?overrideMethod) :-
   TaintSourceMethodWithOverrides(?label, ?method),
   basic.MethodOverridesOther(?overrideMethod, ?method).
 
+// User-provided taint sources (methods).
+TaintSourceMethod(?label, ?method) :-
+  TaintSpec("TAINT_SOURCE", ?label, ?method),
+  isMethod(?method).
+// User-provided taint sinks (methods).
+LeakingSinkMethod(?label, ?method) :-
+  TaintSpec("TAINT_SINK", ?label, ?method),
+  isMethod(?method).
