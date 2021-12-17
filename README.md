@@ -223,7 +223,7 @@ The Differential Datalog (DDlog) engine is currently supported for the
 "micro" analysis.
 
 Setup: clone DDlog in a directory, check out commit
-with tag `v0.19.0`, then set environment
+with tag `v1.2.3`, then set environment
 variable `DDLOG_DIR` to point to that directory. Run `stack build` and
 `stack install` to build and install a local binary of DDlog.
 
