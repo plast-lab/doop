@@ -291,10 +291,10 @@ class SouffleScript {
 					// Fallback (non-portable).
 					// executor.execute("ln -s ${libfunctors} libfunctors.so".split().toList()) { log.info it }
 				} catch (FileAlreadyExistsException) {
-					log.warn "WARNING: could not create link to ${libName}, file already exists."
+					log.warn "WARNING: Could not create link to ${libName}, file already exists."
 				}
 			} else {
-				log.warn "WARNING: no ${libName} in environment variable ${envVar} = '${ldLibPath}'"
+				log.warn "WARNING: No ${libName} in environment variable ${envVar} = '${ldLibPath}'"
 			}
 		}
 	}

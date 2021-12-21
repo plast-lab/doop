@@ -14,7 +14,7 @@ abstract class DoopBenchmark extends DoopSpec {
 	def setupSpec() {
 		doopBenchmarksDir = System.getenv(DOOP_BENCHMARKS)
 		if (!doopBenchmarksDir) {
-			System.err.println("WARNING: environment variable ${DOOP_BENCHMARKS} not set.")
+			System.err.println("WARNING: Environment variable ${DOOP_BENCHMARKS} not set.")
 		}
 	}
 }

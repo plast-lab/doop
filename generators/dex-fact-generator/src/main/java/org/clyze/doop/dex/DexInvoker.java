@@ -34,7 +34,7 @@ public class DexInvoker {
         try {
             JHelper.tryInitLogging("DEBUG", dexParams.getLogDir(), true, "dex-fact-generator.log");
         } catch (IOException ex) {
-            System.err.println("WARNING: could not initialize logging");
+            System.err.println("WARNING: Could not initialize logging");
             throw DoopErrorCodeException.error18(ex);
         }
 

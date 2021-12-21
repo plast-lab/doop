@@ -164,7 +164,7 @@ class FactGenerator0 {
                 }
             }
         } else
-            log.warn "WARNING: cannot read keep specification: ${specPath}"
+            log.warn "WARNING: Cannot read keep specification: ${specPath}"
     }
 
     /**
@@ -177,7 +177,7 @@ class FactGenerator0 {
         String[] fields = line.split("\t")
 
         if (fields.length != KEEP_SPEC_COLUMNS) {
-            log.warn("WARNING: malformed line (should be $KEEP_SPEC_COLUMNS columns): $line")
+            log.warn("WARNING: Malformed line (should be $KEEP_SPEC_COLUMNS columns): $line")
             return
         }
 
@@ -194,7 +194,7 @@ class FactGenerator0 {
                 break
             case "REMOVE":
             case "OBFUSCATE":
-                log.warn "WARNING: ignoring line, not useful for analysis: $line"
+                log.warn "WARNING: Ignoring line, not useful for analysis: $line"
                 break
             case "KEEP_CLASS":
                 factsFile(KEEP_CLASS.name).withWriterAppend { it << (elementId + "\n") }
@@ -206,7 +206,7 @@ class FactGenerator0 {
                 factsFile(KEEP_CLASSES_WITH_MEMBERS.name).withWriterAppend { it << (elementId + "\n") }
                 break
             default:
-                log.warn "WARNING: unsupported spec line: ${line}"
+                log.warn "WARNING: Unsupported spec line: ${line}"
         }
     }
 

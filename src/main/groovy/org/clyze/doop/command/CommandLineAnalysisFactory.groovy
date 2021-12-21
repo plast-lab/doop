@@ -89,7 +89,7 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
 		options.INPUTS.value = (!options.INPUT_ID.value && cli['is']) ? cli['is'] : []
 		// Get the libraryFiles of the analysis (short option: l)
 		if (options.INPUT_ID.value && cli['ls']) {
-			log.warn "WARNING: ignoring libraries (--${options.INPUT_ID.name})."
+			log.warn "WARNING: Ignoring libraries (--${options.INPUT_ID.name})."
 		}
 		options.LIBRARIES.value = (!options.INPUT_ID.value && cli['ls']) ? cli['ls'] : []
 

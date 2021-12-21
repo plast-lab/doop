@@ -17,7 +17,7 @@ abstract class ServerAnalysisTests extends DoopSpec {
 	def setupSpec() {
 		serverAnalysisTestsDir = System.getenv(SERVER_ANALYSIS_TESTS_DIR)
 		if (!serverAnalysisTestsDir) {
-			System.err.println("Error: environment variable ${SERVER_ANALYSIS_TESTS_DIR} not set, cannot run server analysis tests")
+			System.err.println("ERROR: Environment variable ${SERVER_ANALYSIS_TESTS_DIR} not set, cannot run server analysis tests")
 		}
 		assert null != serverAnalysisTestsDir
 	}

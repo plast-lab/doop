@@ -317,7 +317,7 @@ class LB3Analysis extends DoopAnalysis {
 				if (extraLogic.endsWith(".logic"))
 					lbBuilder.include(extraLogic as String)
 				else
-					log.warn "WARNING: ignoring file not ending in .logic: ${extraLogic}"
+					log.warn "WARNING: Ignoring file not ending in .logic: ${extraLogic}"
 			}
 		}
 	}
