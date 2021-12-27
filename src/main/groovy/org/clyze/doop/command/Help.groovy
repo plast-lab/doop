@@ -46,7 +46,7 @@ class Help {
             String groupId = cli['h']
             String group = groupMap.get(groupId)
             if (group == null)
-                println "WARNING: section ${groupId} does not exist."
+                println "WARNING: Section ${groupId} does not exist."
             else {
                 Collection<Option> opts = builder.options.options.findAll { (it instanceof GOption) && ((it as GOption).group == group) }
                 printGroup(group, opts)

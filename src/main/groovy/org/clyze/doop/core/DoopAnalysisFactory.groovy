@@ -481,7 +481,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
 		if (options.REFLECTION_METHOD_HANDLES.value &&
 			!options.REFLECTION_CLASSIC.value && !options.LIGHT_REFLECTION_GLUE.value) {
-			throw new RuntimeException("Error: option " + options.REFLECTION_METHOD_HANDLES.name + " needs one of: " +
+			throw new RuntimeException("ERROR: Option " + options.REFLECTION_METHOD_HANDLES.name + " needs one of: " +
 									   "--${options.REFLECTION_CLASSIC.name} --${options.LIGHT_REFLECTION_GLUE.name}")
 		}
 
@@ -496,7 +496,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		}
 
 		if (options.LIGHT_REFLECTION_GLUE.value && options.REFLECTION.value) {
-			throw new RuntimeException("Error: option --" + options.LIGHT_REFLECTION_GLUE.name + " is not supported when reflection support is enabled.")
+			throw new RuntimeException("ERROR: Option --" + options.LIGHT_REFLECTION_GLUE.name + " is not supported when reflection support is enabled.")
 		}
 
 		if (options.TAMIFLEX.value) {
@@ -506,7 +506,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		// Cached facts and profiling are compatible: profiling
 		// commands are added to the .dat file during fact generation.
 		if (options.VIA_DDLOG.value && options.CACHE.value && options.SOUFFLE_PROFILE.value) {
-			throw new RuntimeException("Error: options --" + options.CACHE.name + " and --" + options.SOUFFLE_PROFILE.name + " are not compatible when running via the DDlog converter.")
+			throw new RuntimeException("ERROR: Options --" + options.CACHE.name + " and --" + options.SOUFFLE_PROFILE.name + " are not compatible when running via the DDlog converter.")
 		}
 
 		if (options.X_NO_SSA.value) {

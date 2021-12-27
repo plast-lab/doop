@@ -53,7 +53,7 @@ class ConfigurationGenerator {
         final Map<String, List<Field>> rFields = new HashMap<>()
 
         if (methodsTable == null)
-            println "WARNING: method information is not available."
+            println "WARNING: Method information is not available."
         else {
             File appReachable = new File(analysisOutDir, 'database/' + methodsTable)
             if (appReachable.exists()) {
@@ -71,17 +71,17 @@ class ConfigurationGenerator {
                             rMethods.putIfAbsent(m.type, new LinkedList<Method>())
                             rMethods.get(m.type).add(m)
                         } catch (Exception ex) {
-                            System.err.println("ERROR: could not process line: '${doopId}'")
+                            System.err.println("ERROR: Could not process line: '${doopId}'")
                             ex.printStackTrace()
                         }
                     }
                 }
             } else
-                println("WARNING: file does not exist: " + appReachable.canonicalPath)
+                println("WARNING: File does not exist: " + appReachable.canonicalPath)
         }
 
         if (fieldsTable == null)
-            println "WARNING: field information is not available."
+            println "WARNING: Field information is not available."
         else {
             File reachableFields = new File(analysisOutDir, 'database/' + fieldsTable)
             if (reachableFields.exists()) {
@@ -95,7 +95,7 @@ class ConfigurationGenerator {
                     }
                 }
             } else
-                println("WARNING: file does not exist: " + reachableFields.canonicalPath)
+                println("WARNING: File does not exist: " + reachableFields.canonicalPath)
         }
 
         SortedSet<String> allDeclaredConstructors_Types = new TreeSet<>()

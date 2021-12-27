@@ -45,7 +45,7 @@ class DexFactWriter extends JavaFactWriter {
             cha.registerReferencedMethod(MethodFacts.methodId(methRef));
 
         if (dex.getMethodHandleSection().size() > 0)
-            System.err.println("WARNING: method handles are not yet supported.");
+            System.err.println("WARNING: Method handles are not yet supported.");
     }
 
 }

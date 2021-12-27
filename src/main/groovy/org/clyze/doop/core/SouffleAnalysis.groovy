@@ -172,13 +172,13 @@ class SouffleAnalysis extends DoopAnalysis {
 		if (options.SANITY.value) {
 			cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/addons/sanity.dl")
 			if (options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value) {
-				log.warn("WARNING: the sanity check is not fully compatible with --" + options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.name)
+				log.warn("WARNING: The sanity check is not fully compatible with --" + options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.name)
 			}
 			if (options.DISTINGUISH_ALL_STRING_CONSTANTS.value) {
-				log.warn("WARNING: the sanity check is not fully compatible with --" + options.DISTINGUISH_ALL_STRING_CONSTANTS.name)
+				log.warn("WARNING: The sanity check is not fully compatible with --" + options.DISTINGUISH_ALL_STRING_CONSTANTS.name)
 			}
 			if (options.NO_MERGES.value) {
-				log.warn("WARNING: the sanity check is not fully compatible with --" + options.NO_MERGES.name)
+				log.warn("WARNING: The sanity check is not fully compatible with --" + options.NO_MERGES.name)
 			}
 		}
 
@@ -195,7 +195,7 @@ class SouffleAnalysis extends DoopAnalysis {
 					log.info "Adding extra logic file ${extraLogicPath}"
 					cpp.includeAtEnd("${analysis}", extraLogicPath)
 				} else
-					log.warn "WARNING: ignoring file not ending in .dl: ${extraLogicPath}"
+					log.warn "WARNING: Ignoring file not ending in .dl: ${extraLogicPath}"
 			}
 		}
 	}
@@ -243,7 +243,7 @@ class SouffleAnalysis extends DoopAnalysis {
 				new ConfigurationGenerator(outDir.canonicalPath, configurationsDir.canonicalPath).generateConfigurations()
 			}
 		} catch (Throwable t) {
-			log.error "ERROR: configuration generation failed: ${t.message}"
+			log.error "ERROR: Configuration generation failed: ${t.message}"
 		}
 
 		try {

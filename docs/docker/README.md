@@ -11,21 +11,21 @@ To create a Docker container for Doop:
 ```
 
 (2) Find the resulting archive, e.g.,
-"build/distributions/doop-4.24.2.zip" and copy it to the Dockerfile
+"build/distributions/doop-4.24.9.zip" and copy it to the Dockerfile
 directory.
 
 ```
-cp build/distributions/doop-4.24.2.zip docs/docker/
+cp build/distributions/doop-4.24.9.zip docs/docker/
 ```
 
-(3) Edit the Dockerfile and set DOOP_VERSION to the base name of the
-archive (omit the file extension).
+(3) Edit file `docs/docker/Dockerfile` and set DOOP_VERSION to the
+base name of the archive (omit the file extension).
 
 (4) Run:
 
 ```
 cd docs/docker
-docker build -t doop-4.24.2 . --no-cache
+docker build -t doop-4.24.9 . --no-cache
 ```
 
 (5) Create a local directory for Doop's cache/out directories (needed
@@ -43,7 +43,7 @@ the container (if `realpath` is not available, replace with absolute
 path of doop-data):
 
 ```
-docker container create --name doop_container -v $(realpath ./doop-data):/data -t doop-4.24.2
+docker container create --name doop_container -v $(realpath ./doop-data):/data -t doop-4.24.9
 ```
 
 Start the container:
@@ -62,8 +62,8 @@ relations:
 
 ```
 root@af6ca7193b3d:/# cd $DOOP_HOME
-root@af6ca7193b3d:/doop/doop-4.24.2# bin/doop -i /path/to/app.jar -a context-insensitive --id test
-root@af6ca7193b3d:/doop/doop-4.24.2# ls /data/out/context-insensitive/test/database/
+root@af6ca7193b3d:/doop/doop-4.24.9# bin/doop -i /path/to/app.jar -a context-insensitive --id test
+root@af6ca7193b3d:/doop/doop-4.24.9# ls /data/out/context-insensitive/test/database/
 ```
 
 ## Publishing in Docker Hub ##
@@ -71,8 +71,8 @@ root@af6ca7193b3d:/doop/doop-4.24.2# ls /data/out/context-insensitive/test/datab
 The following commands publish the Doop image to the [gfour/doop repository](https://hub.docker.com/r/gfour/doop) in Docker Hub:
 
 ```
-docker tag doop-4.24.2 gfour/doop:4.24.2
-docker push gfour/doop:4.24.2
+docker tag doop-4.24.9 gfour/doop:4.24.9
+docker push gfour/doop:4.24.9
 ```
 
 ## Notes ##

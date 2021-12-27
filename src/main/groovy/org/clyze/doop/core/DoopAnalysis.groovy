@@ -190,7 +190,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                     log.info "Augmenting facts with file: ${extraFactsPath}"
                     Files.copy(extraFacts.toPath(), new File(database, extraFacts.name).toPath())
                 } else
-                    log.warn "WARNING: facts file does not exist: ${extraFactsPath}"
+                    log.warn "WARNING: Facts file does not exist: ${extraFactsPath}"
             }
 
         }
@@ -391,7 +391,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             // functionality may introduce some imprecision.
             def check = { AnalysisOption opt ->
                 if (opt.value)
-                    println "WARNING: option --${options.SCAN_NATIVE_CODE.name} is not fully compatible with --${opt.name}"
+                    println "WARNING: Option --${options.SCAN_NATIVE_CODE.name} is not fully compatible with --${opt.name}"
             }
             check(options.X_DEX_FACT_GEN)
             check(options.WALA_FACT_GEN)
@@ -480,7 +480,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             params += ["--failOnMissingClasses", missingClasses.absolutePath ]
             // Restarting on fact generation error can only happen reliably in isolated mode.
             if (!options.X_ISOLATE_FACTGEN.value) {
-                log.warn "WARNING: option --${options.THOROUGH_FACT_GEN.name} turns on --${options.X_ISOLATE_FACTGEN.name}"
+                log.warn "WARNING: Option --${options.THOROUGH_FACT_GEN.name} turns on --${options.X_ISOLATE_FACTGEN.name}"
                 options.X_ISOLATE_FACTGEN.value = true
             }
         }

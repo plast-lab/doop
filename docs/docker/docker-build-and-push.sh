@@ -2,7 +2,7 @@
 
 set -e
 
-DOOP_VERSION=4.24.2
+DOOP_VERSION=4.24.9
 DOOP_ID=doop-${DOOP_VERSION}
 
 echo "Building ${DOOP_ID}..."

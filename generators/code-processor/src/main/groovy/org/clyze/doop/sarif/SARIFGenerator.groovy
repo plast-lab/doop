@@ -64,12 +64,12 @@ abstract class SARIFGenerator {
         if (db == null || out == null) {
             this.parseOnly = true
             if (standalone)
-                println "WARNING: running parsing check only, see usage help for more options."
+                println "WARNING: Running parsing check only, see usage help for more options."
         } else {
             this.parseOnly = !readSARIFRelations()
             boolean mkdir = out.mkdirs()
             if (standalone && !mkdir)
-                println "WARNING: directory ${out} already exists."
+                println "WARNING: Directory ${out} already exists."
         }
     }
 
@@ -90,14 +90,14 @@ abstract class SARIFGenerator {
         for (String line : sarifDesc.readLines()) {
             String[] parts = line.tokenize('\t')
             if (parts.length != 6)
-                throw new RuntimeException("ERROR: bad relation arity in ${SARIF_DESC}")
+                throw new RuntimeException("ERROR: Bad relation arity in ${SARIF_DESC}")
             RMetadata rm = new RMetadata(name: parts[0], doopIdPosition: parts[1] as int, contentType: parts[2], resultMessage: parts[3], ruleDescription: parts[4], ruleIndex: ruleIndex++, level: parts[5])
             allMetadata.add rm
             String relationName = parts[0]
             println "Reading relation: ${relationName}"
             File rel = new File(db, "${relationName}.csv")
             if (!rel.exists()) {
-                println "ERROR: relation does not exist and will not be included in SARIF output: ${rel.canonicalPath}"
+                println "ERROR: Relation does not exist and will not be included in SARIF output: ${rel.canonicalPath}"
                 continue
             }
             Map<String, List<String[]>> relLines = new HashMap<>()
@@ -110,7 +110,7 @@ abstract class SARIFGenerator {
                     relationMetadata.add(rm)
                     doopIds.put(doopId, relationMetadata)
                 } catch (Throwable t) {
-                    println "ERROR: processing line fails: ${relLine} -> (parts: ${relParts})"
+                    println "ERROR: Processing line fails: ${relLine} -> (parts: ${relParts})"
                     t.printStackTrace()
                 }
             }
@@ -184,7 +184,7 @@ abstract class SARIFGenerator {
                             if (c.isInstance(sym))
                                 results.addAll resultsForSymbol(symbolId, sym, metadata)
                             else if (!(sym instanceof Usage))
-                                println "ERROR: wrong content type for element ${metadata.contentType}, class = ${c}"
+                                println "ERROR: Wrong content type for element ${metadata.contentType}, class = ${c}"
                             break
                         }
                     }

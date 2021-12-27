@@ -1235,7 +1235,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			if (ifDir) {
 				File ifSubDir = new File("${ifDir}/addons/information-flow")
 				if (!ifSubDir || !ifSubDir.exists()) {
-					println "WARNING: cannot process information flow directory: ${ifSubDir}"
+					println "WARNING: Cannot process information flow directory: ${ifSubDir}"
 					return
 				}
 				ifSubDir.eachFile { File f ->
