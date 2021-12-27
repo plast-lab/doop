@@ -179,7 +179,8 @@ class FactGenerator0 {
         if (fields.length != KEEP_SPEC_COLUMNS) {
             log.warn("WARNING: Malformed line (should be $KEEP_SPEC_COLUMNS columns): $line")
             return
-        }
+        } else
+            log.debug "Processing line: $fields"
 
         String elementId = fields[3]
         switch (fields[0]) {
