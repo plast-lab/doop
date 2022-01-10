@@ -48,7 +48,7 @@ if (project.hasProperty('heapDLVersion'))
     heapDLVersion = project.property('heapDLVersion')
 
 wrapper {
-    gradleVersion = "6.7"
+    gradleVersion = "7.3.3"
 }
 
 def allGeneratorProjects = subprojects.findAll { it.name.contains('fact-generator') }
@@ -147,10 +147,10 @@ compileGroovy {
 gradle.rootProject.ext.antlrVersion='4.9.1'
 gradle.rootProject.ext.commonsCliVersion='1.2'
 gradle.rootProject.ext.metadataVersion='2.4.0'
-gradle.rootProject.ext.groovyVersion='3.0.8'
+gradle.rootProject.ext.groovyVersion='3.0.9'
 gradle.rootProject.ext.clueCommonVersion='3.25.2'
 gradle.rootProject.ext.log4jVersion='1.2.17'
-gradle.rootProject.ext.spockVersion='2.0-groovy-3.0'
+gradle.rootProject.ext.spockVersion='2.1M2-groovy-3.0'
 
 dependencies {
     // apktool "ext:apktool:2.4.0"                              // old artifactory dependency
