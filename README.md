@@ -335,6 +335,14 @@ To analyze a program with [Scaler](https://silverbullettt.bitbucket.io/papers/fs
 ./doop -i app.jar -a fully-guided-context-sensitive --Xscaler-pre
 ```
 
+### Releasing Doop
+
+To skip running the full test suite when releasing Doop, run the following:
+
+```
+./gradlew release -Dskip.tests=true
+```
+
 ## License
 UPL (see [LICENSE](LICENSE)).
 

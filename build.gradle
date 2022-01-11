@@ -19,7 +19,7 @@ plugins {
     id 'java-library'
     id 'maven-publish'
     //see https://github.com/researchgate/gradle-release
-    id 'net.researchgate.release' version '2.6.0'
+    id 'net.researchgate.release' version '2.8.1'
 }
 
 // Warning: -Xss is restricted in recent Java versions.
@@ -48,7 +48,7 @@ if (project.hasProperty('heapDLVersion'))
     heapDLVersion = project.property('heapDLVersion')
 
 wrapper {
-    gradleVersion = "6.7"
+    gradleVersion = "7.3.3"
 }
 
 def allGeneratorProjects = subprojects.findAll { it.name.contains('fact-generator') }
@@ -146,11 +146,11 @@ compileGroovy {
 // Set dependency version so that they are available to subprojects.
 gradle.rootProject.ext.antlrVersion='4.9.1'
 gradle.rootProject.ext.commonsCliVersion='1.2'
-gradle.rootProject.ext.metadataVersion='2.3.0'
-gradle.rootProject.ext.groovyVersion='3.0.8'
-gradle.rootProject.ext.clueCommonVersion='3.25.2'
+gradle.rootProject.ext.metadataVersion='2.4.1'
+gradle.rootProject.ext.groovyVersion='3.0.9'
+gradle.rootProject.ext.clueCommonVersion='3.25.3'
 gradle.rootProject.ext.log4jVersion='1.2.17'
-gradle.rootProject.ext.spockVersion='2.0-groovy-3.0'
+gradle.rootProject.ext.spockVersion='2.1-M2-groovy-3.0'
 
 dependencies {
     // apktool "ext:apktool:2.4.0"                              // old artifactory dependency
@@ -366,6 +366,9 @@ test {
     java.nio.file.Path lbTestHomeDir = Files.createTempDirectory(tmpDir.toPath(), 'lb-test-home-dir', onWindows ? ([] as java.nio.file.attribute.FileAttribute[]) : asFileAttribute(fromString("rwxrwxrwx")))
     environment.HOME = lbTestHomeDir.toString()
 }
+// Workaround from https://stackoverflow.com/questions/4597850/gradle-build-without-tests/4600845#4600845
+// since "./gradlew release -x test" may be broken in recent Gradle releases.
+test.onlyIf { ! Boolean.getBoolean('skip.tests') }
 
 // Copy resources to src/test/resources or they will not be found by tests.
 task copyResourcesForTest {
@@ -501,6 +504,7 @@ if (project.hasProperty('artifactory_user')) {
                     password artifactory_password
                 }
                 url "$artifactory_contextUrl/libs-public-release-local"
+                allowInsecureProtocol true
             }
         }
     }

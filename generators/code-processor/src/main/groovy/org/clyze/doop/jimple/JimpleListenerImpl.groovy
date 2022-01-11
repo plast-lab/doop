@@ -87,6 +87,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 				position,
 				filename,
 				false,
+				null,
 				className,
 				packageName,
 				qualifiedName,
@@ -119,6 +120,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 				position,
 				filename,
 				false,
+				null,
 				name,
 				"<${klass.symbolId}: $type $name>", //doopId
 				type,
@@ -156,6 +158,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 				position,
 				filename,
 				false,
+				null,
 				name,
 				klass.symbolId, //declaringClassId
 				retType,
@@ -284,6 +287,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 				new Position(line, line, startCol, endCol),
 				filename,
 				false,
+				null,
 				"${method.symbolId}/new $type/$c", //doopId
 				type,
 				method.symbolId, //allocatingMethodId
@@ -325,6 +329,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 				new Position(line, line, startCol, endCol),
 				filename,
 				false,
+				null,
 				methodName,
 				gDoopId, //symbolId
 				methodClass,
@@ -380,6 +385,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 				new Position(line, line, startCol, startCol + name.length()),
 				filename,
 				false,
+				null,
 				name,
 				"${method.symbolId}/$name", //doopId
 				null, //type, provided later
@@ -406,6 +412,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 				new Position(line, line, startCol, endCol),
 				filename,
 				false,
+				null,
 				getUsageId(filename, line, line, startCol, endCol),
 				"${method.symbolId}/$name", //doopId
 				kind
@@ -425,6 +432,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 				new Position(line, line, startCol, endCol),
 				filename,
 				false,
+				null,
 				getUsageId(filename, line, line, startCol, endCol),
 				"<$klassStr: $type $name>", //doopId
 				kind
@@ -449,6 +457,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 				new Position(line, line, startCol, endCol),
 				filename,
 				false,
+				null,
 				getUsageId(filename, line, line, startCol, endCol),
 				name, //doopId
 				UsageKind.TYPE
