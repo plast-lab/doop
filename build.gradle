@@ -19,7 +19,7 @@ plugins {
     id 'java-library'
     id 'maven-publish'
     //see https://github.com/researchgate/gradle-release
-    id 'net.researchgate.release' version '2.6.0'
+    id 'net.researchgate.release' version '2.8.1'
 }
 
 // Warning: -Xss is restricted in recent Java versions.
