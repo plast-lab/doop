@@ -366,6 +366,9 @@ test {
     java.nio.file.Path lbTestHomeDir = Files.createTempDirectory(tmpDir.toPath(), 'lb-test-home-dir', onWindows ? ([] as java.nio.file.attribute.FileAttribute[]) : asFileAttribute(fromString("rwxrwxrwx")))
     environment.HOME = lbTestHomeDir.toString()
 }
+// Workaround from https://stackoverflow.com/questions/4597850/gradle-build-without-tests/4600845#4600845
+// since "./gradlew release -x test" may be broken in recent Gradle releases.
+test.onlyIf { ! Boolean.getBoolean('skip.tests') }
 
 // Copy resources to src/test/resources or they will not be found by tests.
 task copyResourcesForTest {
