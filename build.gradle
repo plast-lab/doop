@@ -1,5 +1,4 @@
 import java.nio.file.Files
-import java.nio.file.Paths
 import static java.nio.file.attribute.PosixFilePermissions.*
 
 buildscript {
@@ -164,7 +163,7 @@ dependencies {
             "commons-logging:commons-logging:1.1",              // Logging wrapper
             "log4j:log4j:${log4jVersion}",                      // Logging implementation
             "commons-cli:commons-cli:${commonsCliVersion}",     // Command line processor
-            "commons-io:commons-io:2.4",                        // File Utils
+            'commons-io:commons-io:2.11.0',                     // File Utils
             "org.clyze:clue-common:${clueCommonVersion}"
     api "org.clyze:HeapDL:$heapDLVersion"
     implementation "com.google.guava:guava:27.1-jre"                   // for Scaler
