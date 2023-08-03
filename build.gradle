@@ -64,11 +64,11 @@ def codeProcessorProject = project(':generators:code-processor')
         repositories {
             mavenLocal()
             mavenCentral()
-            maven { url 'https://clyze.jfrog.io/artifactory/default-maven-local' }
-            // maven {
-            //     url "http://centauri.di.uoa.gr:8081/artifactory/plast-public"
-            //     allowInsecureProtocol true    // for Gradle 7 compatibility
-            // }
+            // maven { url 'https://clyze.jfrog.io/artifactory/default-maven-local' }
+            maven {
+                url "http://centauri.di.uoa.gr:8081/artifactory/plast-public"
+                allowInsecureProtocol true    // for Gradle 7 compatibility
+            }
         }
     }
 }
@@ -108,12 +108,14 @@ frontendGeneratorProjects.each { Project p ->
 repositories {
     mavenLocal()
     mavenCentral()
-    // maven { url "http://centauri.di.uoa.gr:8081/artifactory/plast-deps" }
-    // maven {
-    //     url "http://centauri.di.uoa.gr:8081/artifactory/plast-public"
-    //     allowInsecureProtocol true // for Gradle 7 compatibility
-    // }
-    maven { url 'https://clyze.jfrog.io/artifactory/default-maven-local' }
+    maven { url "http://centauri.di.uoa.gr:8081/artifactory/plast-deps"
+        allowInsecureProtocol true
+    }
+    maven {
+        url "http://centauri.di.uoa.gr:8081/artifactory/plast-public"
+        allowInsecureProtocol true // for Gradle 7 compatibility
+    }
+    // maven { url 'https://clyze.jfrog.io/artifactory/default-maven-local' }
     maven { url 'https://jitpack.io' }
     maven {
         name "soot-snapshot"
