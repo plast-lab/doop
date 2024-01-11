@@ -3,7 +3,7 @@ plugins {
     id 'java-library'
 }
 
-String asmVersion = '8.0.1'
+String asmVersion = '9.4'
 
 // WARNING: dependencies below should be minimal, since every
 // dependency will be included as-is *in each* fact generator "fat" JAR.
