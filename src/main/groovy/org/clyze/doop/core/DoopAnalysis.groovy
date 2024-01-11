@@ -135,9 +135,22 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
     protected void linkOrCopyFacts(File fromDir) {
         if (options.X_SYMLINK_INPUT_FACTS.value) {
             try {
+
                 fromDir.eachFile { file ->
                     Files.createSymbolicLink(new File(factsDir, file.name).toPath(), file.toPath())
                 }
+
+				// Additional processing of X_EXTRA_FACTS parameters is required.
+				if (options.X_EXTRA_FACTS.value) {
+					for (String extraFactsPath : options.X_EXTRA_FACTS.value as Collection<String>) {
+						File extraFacts = new File(extraFactsPath)
+						if (extraFacts.exists()) {
+							log.info "Augmenting facts with file: ${extraFactsPath}"
+							Files.copy(extraFacts.toPath(), new File(database, extraFacts.name).toPath())
+						} else
+							log.warn "WARNING: Facts file does not exist: ${extraFactsPath}"
+					}
+				}
                 return
             } catch (UnsupportedOperationException ignored) {
                 log.warn("WARNING: Filesystem does not support symbolic links, copying directory instead...")
@@ -344,6 +357,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         Collection<String> params = ["--application-regex", options.APP_REGEX.value.toString()]
 
         if (Logger.rootLogger.debugEnabled) {
+			log.debug "Soot Debug"
             params.add("--debug")
         }
 
