@@ -21,8 +21,8 @@ repositories {
 dependencies {
     api project(path: ':generators:fact-generator-common', configuration: 'shadow')
 
-    // implementation "ca.mcgill.sable:soot:4.0.0"
-    implementation "org.soot-oss:soot:4.4.1"
+    implementation "ca.mcgill.sable:soot:4.0.0"
+    // implementation "org.soot-oss:soot:4.4.1"
 
     testImplementation "org.codehaus.groovy:groovy-all:${groovyVersion}"  // Groovy
     testImplementation "org.spockframework:spock-core:${spockVersion}"

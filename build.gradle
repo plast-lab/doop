@@ -23,7 +23,7 @@ plugins {
 
 // Warning: -Xss is restricted in recent Java versions.
 def factGenXmx='20000m'
-def factGenStack='20000m'
+def factGenStack='1000m'
 def defaultFactGenJvmArgs = ["-DmaxHeapSize=${factGenXmx}", "-DstackSize=${factGenStack}"]
 
 // Should the fact generators be linked as normal Java libraries? By

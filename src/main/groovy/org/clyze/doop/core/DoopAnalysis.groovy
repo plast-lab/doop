@@ -146,7 +146,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 						File extraFacts = new File(extraFactsPath)
 						if (extraFacts.exists()) {
 							log.info "Augmenting facts with file: ${extraFactsPath}"
-							Files.copy(extraFacts.toPath(), new File(database, extraFacts.name).toPath())
+							Files.copy(extraFacts.toPath(), new File(database, extraFacts.name).toPath(), StandardCopyOption.REPLACE_EXISTING)
 						} else
 							log.warn "WARNING: Facts file does not exist: ${extraFactsPath}"
 					}
