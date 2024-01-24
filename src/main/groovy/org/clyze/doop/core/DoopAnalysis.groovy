@@ -163,7 +163,14 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             deleteQuietly(factsDir)
         factsDir.mkdirs()
         log.debug "Copying: ${fromDir} -> ${factsDir}"
-        FileOps.copyDirContents(fromDir, factsDir)
+        
+		// FileOps.copyDirContents(fromDir, factsDir)
+
+		fromDir.eachFile { file ->
+					if (file.name.endsWith(".facts")) {
+						Files.copy(file.toPath(), new File(factsDir, file.name).toPath(), StandardCopyOption.REPLACE_EXISTING)
+					}
+		}
 
 		// Additional processing of X_EXTRA_FACTS parameters is required.
 		if (options.X_EXTRA_FACTS.value) {
