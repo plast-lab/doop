@@ -136,9 +136,11 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         if (options.X_SYMLINK_INPUT_FACTS.value) {
             try {
 
-                fromDir.eachFile { file ->
-                    Files.createSymbolicLink(new File(factsDir, file.name).toPath(), file.toPath())
-                }
+				fromDir.eachFile { file ->
+					if (file.name.endsWith(".facts")) {
+						Files.createSymbolicLink(new File(factsDir, file.name).toPath(), file.toPath())
+					}
+				}
 
 				// Additional processing of X_EXTRA_FACTS parameters is required.
 				if (options.X_EXTRA_FACTS.value) {
@@ -162,6 +164,18 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         factsDir.mkdirs()
         log.debug "Copying: ${fromDir} -> ${factsDir}"
         FileOps.copyDirContents(fromDir, factsDir)
+
+		// Additional processing of X_EXTRA_FACTS parameters is required.
+		if (options.X_EXTRA_FACTS.value) {
+			for (String extraFactsPath : options.X_EXTRA_FACTS.value as Collection<String>) {
+				File extraFacts = new File(extraFactsPath)
+				if (extraFacts.exists()) {
+					log.info "Augmenting facts with file: ${extraFactsPath}"
+					Files.copy(extraFacts.toPath(), new File(database, extraFacts.name).toPath(), StandardCopyOption.REPLACE_EXISTING)
+				} else
+					log.warn "WARNING: Facts file does not exist: ${extraFactsPath}"
+			}
+		}
     }
 
     /**
