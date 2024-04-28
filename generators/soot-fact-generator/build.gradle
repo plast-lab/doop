@@ -8,22 +8,12 @@ mainClassName = 'org.clyze.doop.soot.Main'
 
 repositories {
     mavenCentral()
-    maven {
-        name "soot-snapshot"
-        url "https://soot-build.cs.uni-paderborn.de/nexus/repository/soot-snapshot"
-    }
-    maven {
-        name "soot-release"
-        url "https://soot-build.cs.uni-paderborn.de/nexus/repository/soot-release"
-    }
 }
 
 dependencies {
     api project(path: ':generators:fact-generator-common', configuration: 'shadow')
 
-    // implementation "ca.mcgill.sable:soot:4.0.0"
-    implementation "org.soot-oss:soot:4.2.1"
-
+    implementation "org.soot-oss:soot:4.5.0"
     testImplementation "org.codehaus.groovy:groovy-all:${groovyVersion}"  // Groovy
     testImplementation "org.spockframework:spock-core:${spockVersion}"
 }
