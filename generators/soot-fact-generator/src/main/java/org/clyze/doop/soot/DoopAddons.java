@@ -66,7 +66,7 @@ public class DoopAddons {
 
     public static void retrieveAllSceneClassesBodies(Integer _cores) {
         // The old coffi front-end is not thread-safe
-        boolean runSeq = (_cores == null) || Options.v().coffi();
+        boolean runSeq = (_cores == null);
         int threadNum = runSeq ? 1 : _cores;
         CountingThreadPoolExecutor executor = new CountingThreadPoolExecutor(threadNum,
                                                                              threadNum, 30, TimeUnit.SECONDS,

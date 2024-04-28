@@ -80,7 +80,47 @@ class ClassHeapFinder {
      * @param s  the low-level JVM id of the type
      * @return   a Soot Type
      */
-    public static Type raiseTypeWithSoot(String s) {
-        return soot.coffi.Util.v().jimpleTypeOfFieldDescriptor(s);
+    public static Type raiseTypeWithSoot(String descriptor) {
+        boolean isArray = false;
+
+        int numDimensions;
+        for(numDimensions = 0; descriptor.startsWith("["); descriptor = descriptor.substring(1)) {
+            isArray = true;
+            ++numDimensions;
+        }
+
+        Object baseType;
+        if (descriptor.equals("B")) {
+            baseType = ByteType.v();
+        } else if (descriptor.equals("C")) {
+            baseType = CharType.v();
+        } else if (descriptor.equals("D")) {
+            baseType = DoubleType.v();
+        } else if (descriptor.equals("F")) {
+            baseType = FloatType.v();
+        } else if (descriptor.equals("I")) {
+            baseType = IntType.v();
+        } else if (descriptor.equals("J")) {
+            baseType = LongType.v();
+        } else if (descriptor.equals("V")) {
+            baseType = VoidType.v();
+        } else if (descriptor.startsWith("L")) {
+            if (!descriptor.endsWith(";")) {
+                throw new RuntimeException("Class reference does not end with ;");
+            }
+
+            String className = descriptor.substring(1, descriptor.length() - 1);
+            baseType = RefType.v(className.replace('/', '.'));
+        } else if (descriptor.equals("S")) {
+            baseType = ShortType.v();
+        } else {
+            if (!descriptor.equals("Z")) {
+                throw new RuntimeException("Unknown field type: " + descriptor);
+            }
+
+            baseType = BooleanType.v();
+        }
+
+        return (Type)(isArray ? ArrayType.v((Type)baseType, numDimensions) : baseType);
     }
 }
