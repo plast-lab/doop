@@ -1,9 +1,9 @@
 plugins {
-    id 'com.github.johnrengelman.shadow' version '6.1.0'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
     id 'java-library'
 }
 
-String asmVersion = '8.0.1'
+String asmVersion = '9.7'
 
 // WARNING: dependencies below should be minimal, since every
 // dependency will be included as-is *in each* fact generator "fat" JAR.
@@ -11,17 +11,17 @@ dependencies {
     api("org.clyze:clue-common:${clueCommonVersion}") {
         exclude group: 'com.google.code.gson', module: 'gson'
         exclude group: 'org.apache.ivy', module: 'ivy'
-        exclude group: 'org.codehaus.groovy', module: 'groovy-all'
+        exclude group: 'org.apache.groovy', module: 'groovy-all'
     }
     api "org.clyze:metadata-model:${metadataVersion}"
     implementation "org.ow2.asm:asm-tree:${asmVersion}",    // Java bytecode library
                    "org.ow2.asm:asm-util:${asmVersion}"
-    implementation 'org.smali:dexlib2:2.4.0'                // Dexlib2: library for reading/modifying/writing Android dex files
+    implementation 'org.smali:dexlib2:2.5.2'                // Dexlib2: library for reading/modifying/writing Android dex files
     implementation 'net.dongliu:apk-parser:2.6.10'          // needed for reading binary XML entries from APK inputs
     implementation "org.antlr:antlr4-runtime:${antlrVersion}"
     api 'org.clyze:native-scanner:0.6.6'
     api "log4j:log4j:${log4jVersion}"            // Logging implementation
-    implementation 'org.apache.commons:commons-collections4:4.1'
+    implementation 'org.apache.commons:commons-collections4:4.3'
 }
 
 compileJava {

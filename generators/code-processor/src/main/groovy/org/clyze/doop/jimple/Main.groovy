@@ -1,5 +1,6 @@
 package org.clyze.doop.jimple
 
+import groovy.cli.commons.CliBuilder
 import groovy.transform.CompileStatic
 import org.apache.commons.cli.CommandLine
 import org.apache.commons.cli.GnuParser

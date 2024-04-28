@@ -4,7 +4,7 @@ import groovy.transform.CompileStatic
 
 // Reads a context-insensitive.dl file and removes all context fields
 // from its relations. This code is a search & replace heuristic.
-@CompileStatic
+//@CompileStatic
 class ContextRemover {
 	// Relations containing context fields (but also other fields).
 	static Map<String, List<Integer>> fieldsToRemove = [:]

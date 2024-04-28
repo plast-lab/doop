@@ -1,5 +1,6 @@
 package org.clyze.doop.input
 
+import groovy.ant.FileNameFinder
 import groovy.transform.CompileStatic
 import groovy.transform.TupleConstructor
 import org.clyze.analysis.InputType
