@@ -16,7 +16,6 @@ src/test/resources/git-hash.txt
 src/test/resources/log4j.properties
 src/test/resources/timeout
 src/test/resources/*-fact-generator.jar
-
 # dynamically generated class
 tests/115-invokedynamic/InvokedynamicClass.class
 
@@ -30,6 +29,9 @@ doop-nexgen.iml
 
 #netbeans files
 .nb-gradle
+
+#vs-code files
+.vscode
 
 #emacs files
 *~
