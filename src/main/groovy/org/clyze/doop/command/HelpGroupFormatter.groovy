@@ -9,7 +9,7 @@ import org.apache.commons.cli.Options
  * A CliBuilder formatter that groups options per group when printing
  * the usage message. Assumes long options exist for all options.
  */
-//@CompileStatic
+@CompileStatic
 class HelpGroupFormatter extends HelpFormatter {
 
     static final String CONFIGURATION_OPTIONS = "Configuration options"
@@ -63,7 +63,7 @@ class HelpGroupFormatter extends HelpFormatter {
      */
     static int calcMaxWidth(Options opts) {
         (opts.options as Collection<Option>).collect { opt ->
-            opt.longOpt.size() + (opt.hasArg() ? (opt.argName ?: argName).size() + 3 : 0)
+            opt.longOpt.size() + (opt.hasArg() ? (opt.argName ?: "").size() + 3 : 0)
         }.max()
     }
 }
