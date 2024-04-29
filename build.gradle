@@ -146,7 +146,7 @@ gradle.rootProject.ext.metadataVersion='2.4.1'
 gradle.rootProject.ext.groovyVersion='4.0.21'
 gradle.rootProject.ext.clueCommonVersion='3.25.3'
 gradle.rootProject.ext.log4jVersion='1.2.17'
-gradle.rootProject.ext.spockVersion='2.1-M2-groovy-3.0'
+gradle.rootProject.ext.spockVersion='2.4-M4-groovy-4.0'
 
 dependencies {
     // apktool "ext:apktool:2.4.0"                              // old artifactory dependency
@@ -347,24 +347,24 @@ compileJava {
     options.compilerArgs << '-Xlint:unchecked'
 }
 
-// test {
-//    useJUnitPlatform()
-//    // failFast = true
-//    maxParallelForks = 1
-//    // forkEvery = 1
-//    jvmArgs.addAll(['-DreservedCodeCacheSize=1g'] + defaultFactGenJvmArgs)
-//    testLogging {
-//        exceptionFormat = 'full'
-//    }
-//    environment.DOOP_HOME = projectDir
-//    File tmpDir = new File(getTmpDir())
-//    tmpDir.mkdirs()    // needed for 'clean' targets
-//    java.nio.file.Path lbTestHomeDir = Files.createTempDirectory(tmpDir.toPath(), 'lb-test-home-dir', onWindows ? ([] as java.nio.file.attribute.FileAttribute[]) : asFileAttribute(fromString("rwxrwxrwx")))
-//    environment.HOME = lbTestHomeDir.toString()
-// }
-// // Workaround from https://stackoverflow.com/questions/4597850/gradle-build-without-tests/4600845#4600845
-// // since "./gradlew release -x test" may be broken in recent Gradle releases.
-// test.onlyIf { ! Boolean.getBoolean('skip.tests') }
+ test {
+    useJUnitPlatform()
+    // failFast = true
+    maxParallelForks = 1
+    // forkEvery = 1
+    jvmArgs(['-DreservedCodeCacheSize=1g'] + defaultFactGenJvmArgs)
+    testLogging {
+        exceptionFormat = 'full'
+    }
+    environment.DOOP_HOME = projectDir
+    File tmpDir = new File(getTmpDir())
+    tmpDir.mkdirs()    // needed for 'clean' targets
+    java.nio.file.Path lbTestHomeDir = Files.createTempDirectory(tmpDir.toPath(), 'lb-test-home-dir', onWindows ? ([] as java.nio.file.attribute.FileAttribute[]) : asFileAttribute(fromString("rwxrwxrwx")))
+    environment.HOME = lbTestHomeDir.toString()
+ }
+ // Workaround from https://stackoverflow.com/questions/4597850/gradle-build-without-tests/4600845#4600845
+ // since "./gradlew release -x test" may be broken in recent Gradle releases.
+ test.onlyIf { ! Boolean.getBoolean('skip.tests') }
 
 // Copy resources to src/test/resources or they will not be found by tests.
 tasks.register('copyResourcesForTest') {

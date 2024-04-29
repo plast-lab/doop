@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicInteger
  * call processElement() for every code element identified
  * and finally call generateSARIF() to generate the SARIF output.
  */
-//@CompileStatic
+@CompileStatic
 abstract class SARIFGenerator {
     /** The name of the Doop relation that informs the processor. */
     private static final String SARIF_DESC = 'SARIF_InterestingRelation.csv'
@@ -43,8 +43,9 @@ abstract class SARIFGenerator {
     /** List of all metadata, to be used to generate the rules list for SARIF. */
     private final List<RMetadata> allMetadata = new LinkedList<>()
     /** The JVM metadata symbols supported. */
-    private static final List<Class> JVM_SYMBOLS = Arrays.asList(JvmClass.class, JvmField.class, JvmMethod.class,
-            JvmMethodInvocation.class, JvmHeapAllocation.class, JvmVariable.class, Usage.class)
+    private static final Class[] JVM_SYMBOLS_ARRAY = [JvmClass.class, JvmField.class, JvmMethod.class,
+                                                    JvmMethodInvocation.class, JvmHeapAllocation.class, JvmVariable.class, Usage.class]
+    private static final List<Class> JVM_SYMBOLS = Arrays.asList(JVM_SYMBOLS_ARRAY)
 
     protected SARIFGenerator(File db, File out, String version, boolean standalone) {
         this.db = db

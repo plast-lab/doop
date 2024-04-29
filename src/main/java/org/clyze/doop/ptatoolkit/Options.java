@@ -4,7 +4,7 @@ public class Options {
 
 	private String app;
 	private String analysis = "";
-	private boolean isDebug = false;
+	private final boolean isDebug = false;
 
 	public String getApp() {
 		return app;

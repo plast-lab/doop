@@ -14,7 +14,7 @@ dependencies {
     api project(path: ':generators:fact-generator-common', configuration: 'shadow')
 
     implementation "org.soot-oss:soot:4.5.0"
-    testImplementation "org.codehaus.groovy:groovy-all:${groovyVersion}"  // Groovy
+    testImplementation "org.apache.groovy:groovy-all:${groovyVersion}"  // Groovy
     testImplementation "org.spockframework:spock-core:${spockVersion}"
 }
 
