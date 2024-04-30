@@ -144,7 +144,7 @@ gradle.rootProject.ext.antlrVersion='4.9.1'
 gradle.rootProject.ext.commonsCliVersion='1.2'
 gradle.rootProject.ext.metadataVersion='2.4.1'
 gradle.rootProject.ext.groovyVersion='4.0.21'
-gradle.rootProject.ext.clueCommonVersion='3.25.3'
+gradle.rootProject.ext.clueCommonVersion='3.25.4'
 gradle.rootProject.ext.log4jVersion='1.2.17'
 gradle.rootProject.ext.spockVersion='2.4-M4-groovy-4.0'
 
@@ -161,7 +161,7 @@ dependencies {
             "log4j:log4j:${log4jVersion}",                      // Logging implementation
             "commons-cli:commons-cli:${commonsCliVersion}",     // Command line processor
             'commons-io:commons-io:2.11.0',                     // File Utils
-            "org.clyze:clue-common:${clueCommonVersion}"
+            "com.github.plast-lab:clue-common:${clueCommonVersion}"
     api "org.clyze:HeapDL:$heapDLVersion"
     implementation 'com.google.guava:guava:33.1.0-jre'          // for Scaler
 
@@ -428,9 +428,11 @@ tasks.register('fullClean') {
 }
 fullClean.dependsOn clean
 
-tasks.register('printClasspath') {
+tasks.register('printRuntimeClasspath')  {
+    def runtimeClasspath = sourceSets.main.runtimeClasspath
+    inputs.files( runtimeClasspath )
     doLast {
-        configurations.compile.each { println it }
+        println runtimeClasspath.asPath
     }
 }
 
