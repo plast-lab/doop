@@ -45,7 +45,6 @@ mainClassName = "org.clyze.doop.Main"
 // Windows support flag.
 def onWindows = System.properties['os.name'].toLowerCase().contains('windows')
 
-def heapDLVersion = "1.1.13"
 if (project.hasProperty('heapDLVersion'))
     heapDLVersion = project.property('heapDLVersion')
 
@@ -68,10 +67,10 @@ def codeProcessorProject = project(':generators:code-processor')
             mavenLocal()
             mavenCentral()
             // maven { url 'https://clyze.jfrog.io/artifactory/default-maven-local' }
-            maven {
-                url "http://centauri.di.uoa.gr:8081/artifactory/plast-public"
-                allowInsecureProtocol true    // for Gradle 7 compatibility
-            }
+            // maven {
+            //     url "http://centauri.di.uoa.gr:8081/artifactory/plast-public"
+            //     allowInsecureProtocol true    // for Gradle 7 compatibility
+            // }
         }
     }
 }
@@ -111,15 +110,16 @@ frontendGeneratorProjects.each { Project p ->
 repositories {
     mavenLocal()
     mavenCentral()
-    maven { url "http://centauri.di.uoa.gr:8081/artifactory/plast-deps"
-        allowInsecureProtocol true
-    }
-    maven {
-        url "http://centauri.di.uoa.gr:8081/artifactory/plast-public"
-        allowInsecureProtocol true // for Gradle 7 compatibility
-    }
-    // maven { url 'https://clyze.jfrog.io/artifactory/default-maven-local' }
     maven { url 'https://jitpack.io' }
+    // maven { url "http://centauri.di.uoa.gr:8081/artifactory/plast-deps"
+    //     allowInsecureProtocol true
+    // }
+    // maven {
+    //     url "http://centauri.di.uoa.gr:8081/artifactory/plast-public"
+    //     allowInsecureProtocol true // for Gradle 7 compatibility
+    // }
+    // maven { url 'https://clyze.jfrog.io/artifactory/default-maven-local' }
+    
 }
 
 configurations {
@@ -142,11 +142,12 @@ compileGroovy {
 // Set dependency version so that they are available to subprojects.
 gradle.rootProject.ext.antlrVersion='4.9.1'
 gradle.rootProject.ext.commonsCliVersion='1.2'
-gradle.rootProject.ext.metadataVersion='2.4.1'
+gradle.rootProject.ext.metadataVersion='2.2.3'
 gradle.rootProject.ext.groovyVersion='4.0.21'
 gradle.rootProject.ext.clueCommonVersion='3.25.4'
 gradle.rootProject.ext.log4jVersion='1.2.17'
 gradle.rootProject.ext.spockVersion='2.4-M4-groovy-4.0'
+def heapDLVersion = "1.1.18"
 
 dependencies {
     // apktool "ext:apktool:2.4.0"                              // old artifactory dependency
@@ -154,6 +155,8 @@ dependencies {
     apktool files('local-dependencies/apktool-cli-2.4.2.jar')   // needed for decoding APK inputs
     api project(path: ':generators:fact-generator-common', configuration: 'shadow')
     api codeProcessorProject
+    api "com.github.plast-lab:HeapDL:$heapDLVersion"
+
     implementation "org.apache.groovy:groovy:${groovyVersion}",      // Groovy
             "org.apache.groovy:groovy-ant:${groovyVersion}",
             "org.apache.groovy:groovy-cli-commons:${groovyVersion}", // Command line processor (Groovy wrapper)
@@ -161,12 +164,10 @@ dependencies {
             "log4j:log4j:${log4jVersion}",                      // Logging implementation
             "commons-cli:commons-cli:${commonsCliVersion}",     // Command line processor
             'commons-io:commons-io:2.11.0',                     // File Utils
-            "com.github.plast-lab:clue-common:${clueCommonVersion}"
-    api "org.clyze:HeapDL:$heapDLVersion"
-    implementation 'com.google.guava:guava:33.1.0-jre'          // for Scaler
+            "com.github.plast-lab:clue-common:${clueCommonVersion}",
+            "com.google.guava:guava:33.1.0-jre"                 // for Scaler
 
-    runtimeOnly "org.clyze:jphantom:1.3"                        // JPhantom is a runtime dependency
-
+    runtimeOnly "com.github.gbalats:jphantom:d55b16808f"                        // JPhantom is a runtime dependency
     testImplementation "org.spockframework:spock-core:${spockVersion}"
 }
 

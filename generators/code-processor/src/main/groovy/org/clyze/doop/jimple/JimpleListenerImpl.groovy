@@ -28,7 +28,6 @@ import java.util.regex.Pattern
 import static org.clyze.doop.jimple.JimpleParser.*
 //import static org.clyze.doop.common.JavaRepresentation.stripQuotes
 
-@CompileStatic
 class JimpleListenerImpl extends JimpleBaseListener {
 
 	String filename
