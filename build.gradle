@@ -167,7 +167,7 @@ dependencies {
             "com.github.plast-lab:clue-common:${clueCommonVersion}",
             "com.google.guava:guava:33.1.0-jre"                 // for Scaler
 
-    runtimeOnly "com.github.gbalats:jphantom:d55b16808f"                        // JPhantom is a runtime dependency
+    runtimeOnly "org.clyze:jphantom:1.3"                        // JPhantom is a runtime dependency
     testImplementation "org.spockframework:spock-core:${spockVersion}"
 }
 
