@@ -78,7 +78,7 @@ dependencies {
 <dependency>
     <groupId>com.github.plast-lab</groupId>
     <artifactId>Doop</artifactId>
-    <version>Tag</version>
+    <version>4.24.13</version>
 </dependency>
 ```
 
