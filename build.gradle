@@ -455,6 +455,14 @@ artifacts {
     archives javadocJar
 }
 
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+        }
+    }
+}
+
 // Make publishing tasks trigger subproject builds.
 Closure shadowDep = { Task it ->
     it.dependsOn(':generators:fact-generator-common:shadowJar')
