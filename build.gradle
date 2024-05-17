@@ -471,69 +471,69 @@ Closure shadowDep = { Task it ->
 tasks.withType(PublishToMavenRepository).configureEach { shadowDep(it) }
 tasks.withType(PublishToMavenLocal).configureEach { shadowDep(it) }
 
-if (project.hasProperty('artifactory_user')) {
+// if (project.hasProperty('artifactory_user')) {
 
-    // Generate a jar with all the logic files
-    tasks.register('logicFilesJar', Jar) {
-        into('souffle-logic') { from "souffle-logic" }
-    }
+//     // Generate a jar with all the logic files
+//     tasks.register('logicFilesJar', Jar) {
+//         into('souffle-logic') { from "souffle-logic" }
+//     }
 
-    publishing {
-        publications {
-            mavenJava(MavenPublication) {
-                from components.java
-                artifact tasks.sourcesJar
-                artifact tasks.javadocJar
+//     publishing {
+//         publications {
+//             mavenJava(MavenPublication) {
+//                 from components.java
+//                 artifact tasks.sourcesJar
+//                 artifact tasks.javadocJar
 
-                artifact logicFilesJar {
-                    archiveClassifier.set( "logic-files")
-                }
-            }
+//                 artifact logicFilesJar {
+//                     archiveClassifier.set( "logic-files")
+//                 }
+//             }
 
-            // Publish fact-generator-common and code-processor.
-            [[project(':generators:fact-generator-common'), "fact-generator-common-${version}-all.jar"],
-	         [codeProcessorProject, "code-processor-${version}.jar"]]
-            .forEach { List l ->
-                Project p = l[0]
-                create(p.name, MavenPublication) {
-                    // The artifact generator can be a file or a Gradle task
-                    def artifactGenerator = p.file('build/libs/' + l[1])
-                    artifact(artifactGenerator) {
-                        groupId 'org.clyze'
-                        artifactId p.name
-                    }
-                }
-            }
-        }
+//             // Publish fact-generator-common and code-processor.
+//             [[project(':generators:fact-generator-common'), "fact-generator-common-${version}-all.jar"],
+// 	         [codeProcessorProject, "code-processor-${version}.jar"]]
+//             .forEach { List l ->
+//                 Project p = l[0]
+//                 create(p.name, MavenPublication) {
+//                     // The artifact generator can be a file or a Gradle task
+//                     def artifactGenerator = p.file('build/libs/' + l[1])
+//                     artifact(artifactGenerator) {
+//                         groupId 'org.clyze'
+//                         artifactId p.name
+//                     }
+//                 }
+//             }
+//         }
 
-        repositories {
-            maven {
-                credentials {
-                    username artifactory_user
-                    password artifactory_password
-                }
-                url "$artifactory_contextUrl/libs-public-release-local"
-                allowInsecureProtocol true
-            }
-        }
-    }
+//         repositories {
+//             maven {
+//                 credentials {
+//                     username artifactory_user
+//                     password artifactory_password
+//                 }
+//                 url "$artifactory_contextUrl/libs-public-release-local"
+//                 allowInsecureProtocol true
+//             }
+//         }
+//     }
 
-    release {
-        failOnSnapshotDependencies = false
+//     release {
+//         failOnSnapshotDependencies = false
 
-        git {
-           commitVersionFileOnly = true
-        }
-    }
+//         git {
+//            commitVersionFileOnly = true
+//         }
+//     }
 
-    afterReleaseBuild.dependsOn publish
+//     afterReleaseBuild.dependsOn publish
 
-    tasks.release.doLast {
-        println "WARNING: Tag may not be pushed upstream, please use:"
-        println "WARNING:   git remote add upstream <UPSTREAM_REPO>"
-        println "WARNING:   git push upstream <TAG>"
-    }
-}
+//     tasks.release.doLast {
+//         println "WARNING: Tag may not be pushed upstream, please use:"
+//         println "WARNING:   git remote add upstream <UPSTREAM_REPO>"
+//         println "WARNING:   git push upstream <TAG>"
+//     }
+// }
 
 /* Handy for debugging task dependencies
 gradle.taskGraph.whenReady {taskGraph ->
