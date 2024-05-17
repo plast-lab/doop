@@ -44,19 +44,26 @@ Support:
 
 Add the JitPack repository to your root build.gradle or pom.xml
 
-### build.gradle configuration
+### build.gradle configuration for Gradle
 
 ```
 dependencyResolutionManagement {
-		repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-		repositories {
-			mavenCentral()
-			maven { url 'https://jitpack.io' }
-		}
+	repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+	repositories {
+		mavenCentral()
+		maven { url 'https://jitpack.io' }
 	}
+}
 ```
 
-### pom.xml configuration
+### Add the dependency in build.gradle
+```
+dependencies {
+    implementation 'com.github.plast-lab:Doop:4:24:13'
+}
+```
+
+### pom.xml configuration for Maven
 ```
 <repositories>
 	<repository>
@@ -65,13 +72,6 @@ dependencyResolutionManagement {
 	</repository>
 </repositories>
 ```
-### Add the dependency in build.gradle
-```
-dependencies {
-    implementation 'com.github.plast-lab:Doop:4:24:13'
-}
-```
-
 ### Add the dependency in pom.xml
 
 ```
