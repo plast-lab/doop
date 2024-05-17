@@ -40,6 +40,48 @@ Support:
 
 (b) [Discord server](https://discord.gg/4q7rj5s)
 
+## Using Doop as a Library
+
+Add the JitPack repository to your root build.gradle or pom.xml
+
+### build.gradle configuration
+
+```
+dependencyResolutionManagement {
+		repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+		repositories {
+			mavenCentral()
+			maven { url 'https://jitpack.io' }
+		}
+	}
+```
+
+### pom.xml configuration
+```
+<repositories>
+	<repository>
+	    <id>jitpack.io</id>
+	    <url>https://jitpack.io</url>
+	</repository>
+</repositories>
+```
+### Add the dependency in build.gradle
+```
+dependencies {
+    implementation 'com.github.plast-lab:Doop:4:24:13'
+}
+```
+
+### Add the dependency in pom.xml
+
+```
+<dependency>
+    <groupId>com.github.plast-lab</groupId>
+    <artifactId>Doop</artifactId>
+    <version>Tag</version>
+</dependency>
+```
+
 ## Benchmarks & Platform Lib
 
 For a variety of benchmarks, you could clone (or download) the [doop-benchmarks](https://bitbucket.org/yanniss/doop-benchmarks) repository.
