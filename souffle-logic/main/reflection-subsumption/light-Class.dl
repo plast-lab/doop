@@ -1,0 +1,79 @@
+#ifdef REFLECTION
+#error "light-Class.dl is not compatible with full reflection support"
+#endif // REFLECTION
+
+// A few rules to handle expressions 'X.class' and 'Class.forName("X")' (the
+// first is compiled to the latter behind the scenes). These rules are usually
+// effective when string constants are distinguished.
+
+.decl ReifiedClass(?type:ReferenceType, ?value:Value)
+
+// Taken from reflection/rules.dl.
+ReifiedClass(?type, ?classHeap) :-
+  isReferenceType(?type),
+  ClassHeap_InstanceType(?classHeap, ?type),
+  isValue(?classHeap).
+
+// Taken from reflection/declarations.dl.
+.decl java_lang_Class_forName(?invocation:MethodInvocation, ?inmethod:Method)
+.output java_lang_Class_forName
+
+// Taken from reflection/rules.dl.
+java_lang_Class_forName(?invocation, ?inmethod) :-
+  ( ?sig = "<java.lang.Class: java.lang.Class forName(java.lang.String)>",
+    isMethod(?sig) ;
+    ?sig = "<java.lang.Class: java.lang.Class forName(java.lang.String,boolean,java.lang.ClassLoader)>",
+    isMethod(?sig) ),
+  StaticMethodInvocation(?invocation, ?sig, ?inmethod).
+
+.decl ReflectiveAssignClassConstant(?ctx:configuration.Context, ?invocation:MethodInvocation, ?type:ReferenceType)
+
+// Similar to java.lang.Class.dl but simplified.
+ReflectiveAssignClassConstant(?ctx, ?invocation, ?type) :-
+  java_lang_Class_forName(?invocation, ?inmethod),
+  ReachableContext(?ctx, ?inmethod),
+  ActualParam(0, ?invocation, ?param),
+  VarPointsTo(_, ?string, ?ctx, ?param),
+  // The following three lines are taken from string-constants.dl.
+  isStringConstant(?string),
+  isReferenceType(?type),
+  ord(?type) = ord(?string).
+
+// Taken from reflection/rules.dl.
+/**
+ * Not every virtual method invocation has a return value, so we need
+ * to initialize classes separate from the VarPointsTo rule.
+ */
+InitializedClass(?type) :-
+  ReflectiveAssignClassConstant(_, _, ?type).
+
+// Tweaked from reflection/rules.dl.
+VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
+  isImmutableHContext(?hctx),
+  ReflectiveAssignClassConstant(?ctx, ?invocation, ?type),
+  // ApplicationClass(?type),
+  ReifiedClass(?type, ?value),
+  AssignReturnValue(?invocation, ?return).
+
+// Taken from java.lang.Class.dl.
+.decl Enums(?enumsArray:Value, ?enumType:Type, ?ctx:configuration.Context, ?return:Var)
+
+// This is an opaque invocation, so we read its facts directly.
+Enums(?enumsArray, ?enumType, ?ctx, ?return),
+MockValueConsMacro(?enumsArray, cat(?enumType, "[]")) :-
+  ReachableContext(?ctx, ?caller),
+  _VirtualMethodInvocation(?invocation, _, ?method, ?base, ?caller),
+  ?method = "<java.lang.Class: java.lang.Object[] getEnumConstants()>",
+  VarPointsTo(_, ?classValue, ?ctx, ?base),
+  ReifiedClass(?enumType, ?classValue),
+  basic.SubtypeOf(?enumType, "java.lang.Enum"),
+  AssignReturnValue(?invocation, ?return),
+  ?enumsArray = cat("<Enums array for ", cat(?enumType, ">")).
+
+VarPointsTo(?hctx, ?enumsArray, ?ctx, ?return),
+ArrayIndexPointsTo(?hctx0, ?enumValue, ?hctx, ?enumsArray) :-
+  Enums(?enumsArray, ?enumType, ?ctx, ?return),
+  Field_DeclaringType(?fld, ?enumType),
+  StaticFieldPointsTo(?hctx, ?enumValue, ?fld),
+  Value_Type(?enumValue, ?enumType),
+  isImmutableHContext(?hctx0).

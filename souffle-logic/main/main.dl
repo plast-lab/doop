@@ -23,7 +23,7 @@
 #include "method-handles.dl"
 
 #if defined(REFLECTION)
-#include "reflection/declarations.dl"
+#include "reflection-subsumption/declarations.dl"
 #endif // REFLECTION
 
 #ifdef SCALER_PRE_ANALYSIS
@@ -71,10 +71,10 @@
 #include "export.dl"
 
 #if defined(REFLECTION)
-#include "reflection/rules.dl"
+#include "reflection-subsumption/rules.dl"
 #elif defined(LIGHT_REFLECTION_GLUE)
-#include "reflection/light-Class.dl"
-#include "reflection/light-reflection-glue.dl"
+#include "reflection-subsumption/light-Class.dl"
+#include "reflection-subsumption/light-reflection-glue.dl"
 #endif // REFLECTION / LIGHT_REFLECTION_GLUE
 
 // Dynamic proxies supports two kinds of reflection: standard reflection and
@@ -83,11 +83,11 @@
 
 // If no reflection support is available, at least handle Class objects.
 #if !defined(REFLECTION) && !defined(LIGHT_REFLECTION_GLUE)
-#include "reflection/light-Class.dl"
+#include "reflection-subsumption/light-Class.dl"
 #endif // REFLECTION, LIGHT_REFLECTION_GLUE
 
-#include "reflection/dynamic-proxies.dl"
-#include "reflection/dynamic-proxies-delta.dl"
+#include "reflection-subsumption/dynamic-proxies.dl"
+#include "reflection-subsumption/dynamic-proxies-delta.dl"
 
 #endif // REFLECTION_DYNAMIC_PROXIES
 

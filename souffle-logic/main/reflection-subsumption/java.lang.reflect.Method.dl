@@ -1,0 +1,91 @@
+/*************************************************************
+ * Method.invoke
+ *
+ *   public Object invoke(Object obj, Object[] args)
+ *
+ * If the underlying method is static, then the specified obj argument is
+ * ignored. It may be null. If the number of formal parameters required by the
+ * underlying method is 0, the supplied args array may be of length 0 or null.
+ *
+ * If the underlying field is static, the class that declared the field is
+ * initialized if it has not already been initialized.
+ *
+ * TODO Check if class initialization handled by reflective.logic
+ ************************************************************/
+.decl ReflectiveMethodInvocation(?ctx:configuration.Context, ?invocation:MethodInvocation, ?signature:Method)
+
+ReflectiveMethodInvocation(?ctx, ?invocation, ?signature) :-
+  java_lang_reflect_Method_invoke(?invocation, ?from),
+  VarPointsTo(_, ?method, ?ctx, ?from),
+  ReifiedMethod(?signature, ?method).
+
+.decl ReflectiveBaseVar(?invocation:MethodInvocation, ?base:Var)
+
+ReflectiveBaseVar(?invocation, ?base) :-
+  java_lang_reflect_Method_invoke(?invocation, _),
+  ActualParam(0, ?invocation, ?base).
+
+.decl ReflectiveAssignReturnValue(?invocation:MethodInvocation, ?var:Var)
+
+ReflectiveAssignReturnValue(?invocation, ?var) :-
+  java_lang_reflect_Method_invoke(?invocation, _),
+  AssignReturnValue(?invocation, ?var).
+
+.decl ReflectiveActualParams(?invocation:MethodInvocation, ?argsParam:Var)
+
+ReflectiveActualParams(?invocation, ?argsParam) :-
+  java_lang_reflect_Method_invoke(?invocation, _),
+  ActualParam(1, ?invocation, ?argsParam).
+
+/*************************************************************
+ * java.lang.reflect.Method.getDeclaredAnnotations()
+ *
+ *   public Annotation[] getDeclaredAnnotations()
+ *
+ *************************************************************/
+
+.decl PopulateAnnotationsForMethod(?annotationsArray:Value, ?method:Method, ?hctx:configuration.HContext)
+
+MockValueConsMacro(?annotationsArray, "java.lang.annotation.Annotation[]"),
+VarPointsTo(?hctx, ?annotationsArray, ?ctx, ?to),
+PopulateAnnotationsForMethod(?annotationsArray, ?method, ?hctx) :-
+  java_lang_reflect_Method_getDeclaredAnnotations(?invocation, ?to, ?from),
+  VarPointsTo(?hctx, ?methodValue, ?ctx, ?from),
+  ReifiedMethod(?method, ?methodValue),
+  // Spec: each invocation creates a new annotation array.
+  ?annotationsArray = cat("<annotations array for method ", cat(?method, cat(" at ", cat(?invocation, ">")))),
+  isImmutableHContext(?hctx).
+
+MockValueConsMacro(?annotationValue, "java.lang.annotation.Annotation"),
+ArrayIndexPointsTo(?hctx, ?annotationValue, ?hctx, ?annotationsArray) :-
+  PopulateAnnotationsForMethod(?annotationsArray, ?method, ?hctx),
+  Method_Annotation(?method, ?annotation),
+  ?annotationValue = cat("<annotation ", cat(?annotation, cat(" for ", cat(?method, ">")))).
+
+/*************************************************************
+ * java.lang.reflect.Method.getParameterAnnotations()
+ *
+ *   public Annotation[][] getParameterAnnotations()
+ *
+ *************************************************************/
+
+.decl PopulateParameterAnnotationsForMethod(?annotationsArray:Value, ?method:Method, ?hctx:configuration.HContext, ?invocation:MethodInvocation)
+
+MockValueConsMacro(?annotationsArray, "java.lang.annotation.Annotation[][]"),
+VarPointsTo(?hctx, ?annotationsArray, ?ctx, ?to),
+PopulateParameterAnnotationsForMethod(?annotationsArray, ?method, ?hctx, ?invocation) :-
+  java_lang_reflect_Method_getParameterAnnotations(?invocation, ?to, ?from),
+  VarPointsTo(?hctx, ?methodValue, ?ctx, ?from),
+  ReifiedMethod(?method, ?methodValue),
+  // Spec: each invocation creates a new annotation array.
+  ?annotationsArray = cat("<method parameter annotations array for method ", cat(?method, cat(" at ", cat(?invocation, ">")))),
+  isImmutableHContext(?hctx).
+
+MockValueConsMacro(?paramAnnotations, "java.lang.annotation.Annotation[]"),
+ArrayIndexPointsTo(?hctx, ?paramAnnotations, ?hctx, ?annotationsArray),
+MockValueConsMacro(?annotationValue, "java.lang.annotation.Annotation"),
+ArrayIndexPointsTo(?hctx, ?annotationValue, ?hctx, ?paramAnnotations) :-
+  PopulateParameterAnnotationsForMethod(?annotationsArray, ?method, ?hctx, ?invocation),
+  Param_Annotation(?method, ?i, ?annotation),
+  ?paramAnnotations = cat("<parameter annotations array for parameter ", cat(?annotation, cat(" at ", cat(?invocation, ">")))),
+  ?annotationValue = cat("<annotation ", cat(?annotation, cat(" for parameter ", cat(to_string(?i), cat(" of method ", cat(?method, ">")))))).
