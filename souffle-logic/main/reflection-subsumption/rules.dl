@@ -462,7 +462,12 @@ ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee) :-
 #ifdef REFLECTION_CONTEXT_SENSITIVITY
 ReflectiveMergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
 ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee),
+<<<<<<< HEAD
 VarPointsTo(?hctx, "top", ?calleeCtx, ?this)
+=======
+ReflectiveVarPointsTo(?hctx, ?value, ?calleeCtx, ?this),
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
+>>>>>>> 3cdb3d1c01f4a31ac03c36aa7465240361fb190d
   :-
   ReflectiveSpecialMethodInvocation(?invocation, ?callee, ?callerCtx, ?base),
   VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
@@ -474,7 +479,12 @@ VarPointsTo(?hctx, "top", ?calleeCtx, ?this)
 #else
 /** This VarPointsTo is ok **/
 ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee),
+<<<<<<< HEAD
 VarPointsTo(?hctx, "top", ?calleeCtx, ?this)
+=======
+ReflectiveVarPointsTo(?hctx, ?value, ?calleeCtx, ?this),
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
+>>>>>>> 3cdb3d1c01f4a31ac03c36aa7465240361fb190d
   :-
   ReflectiveSpecialMethodInvocation(?invocation, ?callee, ?callerCtx, ?base),
   VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
@@ -494,7 +504,12 @@ VarPointsTo(?hctx, "top", ?calleeCtx, ?this)
 #ifdef REFLECTION_CONTEXT_SENSITIVITY
 ReflectiveMergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
 ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
+<<<<<<< HEAD
 VarPointsTo(?hctx, "top", ?calleeCtx, ?this)
+=======
+ReflectiveVarPointsTo(?hctx, ?value, ?calleeCtx, ?this),
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
+>>>>>>> 3cdb3d1c01f4a31ac03c36aa7465240361fb190d
   :-
   ReflectiveVirtualMethodInvocation(?signature, ?invocation, ?callerCtx, ?base),
   VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
@@ -508,7 +523,12 @@ VarPointsTo(?hctx, "top", ?calleeCtx, ?this)
 #else
 /** This VarPointsTo is ok **/
 ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
+<<<<<<< HEAD
 VarPointsTo(?hctx, "top", ?calleeCtx, ?this)
+=======
+ReflectiveVarPointsTo(?hctx, ?value, ?calleeCtx, ?this),
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
+>>>>>>> 3cdb3d1c01f4a31ac03c36aa7465240361fb190d
   :-
   ReflectiveVirtualMethodInvocation(?signature, ?invocation, ?callerCtx, ?base),
   VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
@@ -556,7 +576,12 @@ InitializedClass(?type) :-
   ReflectiveAssignClassConstant(_, _, ?type).
 
 /** This VarPointsTo is ok **/
+<<<<<<< HEAD
 VarPointsTo(?hctx, "top", ?ctx, ?return) :-
+=======
+ReflectiveVarPointsTo(?hctx, ?value, ?ctx, ?return), 
+VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
+>>>>>>> 3cdb3d1c01f4a31ac03c36aa7465240361fb190d
   isImmutableHContext(?hctx),
   ReflectiveAssignClassConstant(?ctx, ?invocation, ?type),
   ReifiedClass(?type, ?value),
@@ -572,7 +597,12 @@ VarPointsTo(?hctx, "top", ?ctx, ?return) :-
 .decl ReflectiveAssignMethodConstant(?ctx:configuration.Context, ?to:Var, ?signature:Method)
 
 /** This VarPointsTo is ok **/
+<<<<<<< HEAD
 VarPointsTo(?hctx, "top", ?ctx, ?to) :-
+=======
+ReflectiveVarPointsTo(?hctx, ?value, ?ctx, ?to),
+VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
+>>>>>>> 3cdb3d1c01f4a31ac03c36aa7465240361fb190d
   isImmutableHContext(?hctx),
   ReflectiveAssignMethodConstant(?ctx, ?to, ?signature),
   ReifiedMethod(?signature, ?value).
@@ -583,7 +613,12 @@ VarPointsTo(?hctx, "top", ?ctx, ?to) :-
 
 .decl ReflectiveAssignFieldConstant(?ctx:configuration.Context, ?to:Var, ?signature:Field)
 
+<<<<<<< HEAD
 VarPointsTo(?hctx, "top", ?ctx, ?to) :-
+=======
+ReflectiveVarPointsTo(?hctx, ?value, ?ctx, ?to), 
+VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
+>>>>>>> 3cdb3d1c01f4a31ac03c36aa7465240361fb190d
   isImmutableHContext(?hctx),
   ReflectiveAssignFieldConstant(?ctx, ?to, ?signature),
   ReifiedField(?signature, ?value).
@@ -599,7 +634,12 @@ VarPointsTo(?hctx, "top", ?ctx, ?to) :-
 #ifdef REFLECTION_CONTEXT_SENSITIVITY
 ReflectiveRecordMacro(?ctx, ?value, ?hctx),
 InitializedClass(?type),
+<<<<<<< HEAD
 VarPointsTo(?hctx, "top", ?ctx, ?var) :-
+=======
+ReflectiveVarPointsTo(?hctx, ?value, ?ctx, ?var), 
+VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
+>>>>>>> 3cdb3d1c01f4a31ac03c36aa7465240361fb190d
   AssignReflectiveAllocation(?instruction, ?type, ?ctx, ?var), // recursive
   ReflectiveAllocation(?instruction, ?type, ?value),
   Var_Type(?var, ?vartype),
@@ -607,7 +647,12 @@ VarPointsTo(?hctx, "top", ?ctx, ?var) :-
 #else
 /** This VarPointsTo is ok **/
 InitializedClass(?type),
+<<<<<<< HEAD
 VarPointsTo(?hctx, "top", ?ctx, ?var) :-
+=======
+ReflectiveVarPointsTo(?hctx, ?value, ?ctx, ?var), 
+VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
+>>>>>>> 3cdb3d1c01f4a31ac03c36aa7465240361fb190d
   isImmutableHContext(?hctx),
   AssignReflectiveAllocation(?instruction, ?type, ?ctx, ?var), // recursive
   ReflectiveAllocation(?instruction, ?type, ?value),
@@ -654,7 +699,12 @@ LoadReflectiveValueArrayIndex(?calleeCtx, ?to, ?basehctx, ?basevalue) :-
   VarPointsTo(?basehctx, ?basevalue, ?callerCtx, ?base).
 
 /** This VarPointsTo is PROBABLY ok **/
+<<<<<<< HEAD
 VarPointsTo(?hctx, "top", ?ctx, ?to) :-
+=======
+ReflectiveVarPointsTo(?hctx, ?value, ?ctx, ?to),
+VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
+>>>>>>> 3cdb3d1c01f4a31ac03c36aa7465240361fb190d
   LoadReflectiveValueArrayIndex(?ctx, ?to, ?basehctx, ?basevalue),
   ArrayIndexPointsTo(?hctx, ?value, ?basehctx, ?basevalue),
   Var_Type(?to, ?type),
@@ -674,7 +724,12 @@ VarPointsTo(?hctx, "top", ?ctx, ?to) :-
  *************************************************************/
 
 /** This VarPointsTo is ok **/
+<<<<<<< HEAD
 VarPointsTo(?hctx, "top", ?ctx, ?to) :-
+=======
+ReflectiveVarPointsTo(?hctx, ?value, ?ctx, ?to),
+VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
+>>>>>>> 3cdb3d1c01f4a31ac03c36aa7465240361fb190d
   ReflectiveLoadStaticField(?ctx, ?to, ?signature),
   StaticFieldPointsTo(?hctx, ?value, ?signature),
   Value_Type(?value, ?valuetype),
@@ -766,7 +821,12 @@ ReflectiveHeapInterproceduralAssign(?sig, ?toCtx, ?to,?fromCtx, ?from) :-
   !Value_Null(?basevalue).
   .plan 1:(2,1)
 
+<<<<<<< HEAD
 VarPointsTo(?hctx, "top", ?toCtx, ?to) :-
+=======
+ReflectiveVarPointsTo(?hctx, ?value, ?toCtx, ?to),
+VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
+>>>>>>> 3cdb3d1c01f4a31ac03c36aa7465240361fb190d
   ReflectiveHeapInterproceduralAssign(?sig, ?toCtx, ?to, ?fromCtx, ?from),
   VarPointsTo(?hctx, ?value, ?fromCtx, ?from),
   NotSpecialObject(?value),
@@ -789,7 +849,12 @@ InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
 #else // FEATHERWEIGHT_ANALYSIS
 
 /** This VarPointsTo is ok **/
+<<<<<<< HEAD
 VarPointsTo(?hctx, "top", ?ctx, ?to) :-
+=======
+ReflectiveVarPointsTo(?hctx, ?value, ?toCtx, ?to),
+VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
+>>>>>>> 3cdb3d1c01f4a31ac03c36aa7465240361fb190d
   ReflectiveLoadHeapInstanceField(?ctx, ?to, ?signature, ?basehctx, ?basevalue),
   InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue),
   Value_Type(?value, ?valuetype),
@@ -1053,7 +1118,12 @@ SpecialMissingGetValueFromGetField(?invocation, cat(cat("<special object for mis
 // These may flow to casts, so we'll get useful info back.
 
 /** This VarPointsTo is ok **/
+<<<<<<< HEAD
 VarPointsTo(?hctx, "top", ?ctx, ?return) :-
+=======
+ReflectiveVarPointsTo(?hctx, ?value, ?ctx, ?return),
+VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
+>>>>>>> 3cdb3d1c01f4a31ac03c36aa7465240361fb190d
   SpecialMissingForNameValue(?invocation, ?value),
   Instruction_Method(?invocation, ?inmethod),
   ReachableContext(?ctx, ?inmethod),
@@ -1066,7 +1136,12 @@ VarPointsTo(?hctx, "top", ?ctx, ?return) :-
 // (of type Object and not Class) that remembers the forName site.
 
 /** This VarPointsTo is ok **/
+<<<<<<< HEAD
 VarPointsTo(?hctx, "top", ?ctx, ?to) :-
+=======
+ReflectiveVarPointsTo(?hctx, ?specialvalue, ?ctx, ?to),
+VarPointsTo(?hctx, ?specialvalue, ?ctx, ?to) :-
+>>>>>>> 3cdb3d1c01f4a31ac03c36aa7465240361fb190d
   isImmutableHContext(?hctx),
   java_lang_Class_newInstance(_, ?to, ?var),
   VarPointsTo(_, ?specialclass, ?ctx, ?var),
@@ -1076,7 +1151,12 @@ VarPointsTo(?hctx, "top", ?ctx, ?to) :-
 // Similar flow of special object through get[Declared]Constructor
 
 /** This VarPointsTo is NOT ok, but produces FEWER tuples **/
+<<<<<<< HEAD
 VarPointsTo(?hctx, "top", ?ctx, ?to) :-
+=======
+ReflectiveVarPointsTo(?hctx, ?specialConstructorValue, ?ctx, ?to),
+VarPointsTo(?hctx, ?specialConstructorValue, ?ctx, ?to) :-
+>>>>>>> 3cdb3d1c01f4a31ac03c36aa7465240361fb190d
   isImmutableHContext(?hctx),
   (java_lang_Class_getConstructor(?to, ?var);
    java_lang_Class_getDeclaredConstructor(?to, ?var)),
@@ -1105,7 +1185,12 @@ OptForNameFromGetConstructors(?forNameInvocation, ?ctx, ?to) :-
 // in the end Constructor.newInstance is handled similarly to Class.newInstance.
 
 /** This VarPointsTo is ok **/
+<<<<<<< HEAD
 VarPointsTo(?hctx, "top", ?ctx, ?to) :-
+=======
+ReflectiveVarPointsTo(?hctx, ?specialvalue, ?ctx, ?to),
+VarPointsTo(?hctx, ?specialvalue, ?ctx, ?to) :-
+>>>>>>> 3cdb3d1c01f4a31ac03c36aa7465240361fb190d
   isImmutableHContext(?hctx),
   java_lang_reflect_Constructor_newInstance(_, ?to, ?var),
   VarPointsTo(_, ?specialConstructor, ?ctx, ?var),
@@ -1269,7 +1354,12 @@ BackwardHighConfidenceReflectiveAssignClassConstant(?forNameInvocation, ?type)  
 // we can track all uses of results returned by that getMethod invocation
 
 /** This VarPointsTo is ok **/
+<<<<<<< HEAD
 VarPointsTo(?hctx, "top", ?ctx, ?return) :-
+=======
+ReflectiveVarPointsTo(?hctx, ?value, ?ctx, ?return),
+VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
+>>>>>>> 3cdb3d1c01f4a31ac03c36aa7465240361fb190d
   SpecialMissingGetMethodValue(?invocation, ?value),
   AssignReturnValue(?invocation, ?return),
   Instruction_Method(?invocation, ?inmethod),
@@ -1281,7 +1371,12 @@ VarPointsTo(?hctx, "top", ?ctx, ?return) :-
 // the original getMethod invocation site.
 
 /** This VarPointsTo is ok **/
+<<<<<<< HEAD
 VarPointsTo(?hctx, "top", ?ctx, ?var) :-
+=======
+ReflectiveVarPointsTo(?hctx, ?specialvalue, ?ctx, ?var),
+VarPointsTo(?hctx, ?specialvalue, ?ctx, ?var) :-
+>>>>>>> 3cdb3d1c01f4a31ac03c36aa7465240361fb190d
   java_lang_reflect_Method_invoke(?invocation, ?methodVar),
   VarPointsTo(_, ?specialMethodValue, ?ctx, ?methodVar),
   SpecialMissingGetMethodValue(?getMethodInvocation, ?specialMethodValue),
@@ -1331,7 +1426,12 @@ OptFieldType(?type, ?signature, ?declaringClassType) :-
 
 // special value returned by a getField
 /** This VarPointsTo is ok **/
+<<<<<<< HEAD
 VarPointsTo(?hctx, "top", ?ctx, ?return) :-
+=======
+ReflectiveVarPointsTo(?hctx, ?value, ?ctx, ?return),
+VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
+>>>>>>> 3cdb3d1c01f4a31ac03c36aa7465240361fb190d
   SpecialMissingGetFieldValue(?invocation, ?value),
   Instruction_Method(?invocation, ?inmethod),
   ReachableContext(?ctx, ?inmethod),
@@ -1341,7 +1441,12 @@ VarPointsTo(?hctx, "top", ?ctx, ?return) :-
 // Make a "get" call over a special field (which knows its getField origin)
 // return a special object that also remembers the original getField call.
 /** This VarPointsTo is ok **/
+<<<<<<< HEAD
 VarPointsTo(?hctx, "top", ?ctx, ?var) :-
+=======
+ReflectiveVarPointsTo(?hctx, ?specialvalue, ?ctx, ?var),
+VarPointsTo(?hctx, ?specialvalue, ?ctx, ?var) :-
+>>>>>>> 3cdb3d1c01f4a31ac03c36aa7465240361fb190d
   java_lang_reflect_Field_get(?invocation, _, ?fieldVar),
   VarPointsTo(_, ?specialFieldValue, ?ctx, ?fieldVar),
   SpecialMissingGetFieldValue(?getFieldInvocation, ?specialFieldValue),
@@ -1413,7 +1518,12 @@ OptInvokeOnSpecialMissingGetMethodsValue(?getMethodsInvocation, ?ctx, ?invocatio
 
 // Make an invoke return a special object that remembers the method it's
 // supposed to be called on.
+<<<<<<< HEAD
 VarPointsTo(?hctx, "top", ?ctx, ?var) :-
+=======
+ReflectiveVarPointsTo(?hctx, ?specialvalue, ?ctx, ?var),
+VarPointsTo(?hctx, ?specialvalue, ?ctx, ?var) :-
+>>>>>>> 3cdb3d1c01f4a31ac03c36aa7465240361fb190d
   isImmutableHContext(?hctx),
   OptInvokeOnSpecialMissingGetMethodsValue(?getMethodsInvocation , ?ctx, ?invocation),
   SpecialMissingInvokeValueFromGetMethods(?getMethodsInvocation, ?specialvalue),
@@ -1485,7 +1595,12 @@ OptGetOnSpecialMissingGetFieldsValue(?getFieldsInvocation, ?ctx, ?invocation) :-
 
 // Make a get return a special object that remembers the field it's
 // supposed to be called on.
+<<<<<<< HEAD
 VarPointsTo(?hctx, "top", ?ctx, ?var) :-
+=======
+ReflectiveVarPointsTo(?hctx, ?specialvalue, ?ctx, ?var),
+VarPointsTo(?hctx, ?specialvalue, ?ctx, ?var) :-
+>>>>>>> 3cdb3d1c01f4a31ac03c36aa7465240361fb190d
   isImmutableHContext(?hctx),
   OptGetOnSpecialMissingGetFieldsValue(?getFieldsInvocation, ?ctx, ?invocation),
   SpecialMissingGetValueFromGetFields(?getFieldsInvocation, ?specialvalue),
@@ -1603,7 +1718,12 @@ OptMarkerReflectiveObject(?invocation, ?value) :-
 // flow to it, we invent a new object (with the cast's type) and let if flow
 // from the cast!
 // REVIEW_ the reuse of hctx is arbitrary
+<<<<<<< HEAD
 VarPointsTo(?hctx, "top", ?ctx, ?to) :-
+=======
+ReflectiveVarPointsTo(?hctx, ?value, ?ctx, ?to),
+VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
+>>>>>>> 3cdb3d1c01f4a31ac03c36aa7465240361fb190d
   Opt2AssignCast(_, ?type, ?to, ?from),
   VarPointsTo(?hctx, ?markervalue, ?ctx, ?from),
   OptMarkerReflectiveObject(?invocation, ?markervalue),
