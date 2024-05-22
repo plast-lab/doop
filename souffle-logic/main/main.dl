@@ -71,7 +71,7 @@
 #include "export.dl"
 
 #if defined(REFLECTION)
-#include "reflection/rules.dl"
+#include "reflection-subsumption/rules.dl"
 #elif defined(LIGHT_REFLECTION_GLUE)
 #include "reflection/light-Class.dl"
 #include "reflection/light-reflection-glue.dl"
