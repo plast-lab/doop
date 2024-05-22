@@ -1,0 +1,18 @@
+#ifdef REFLECTION_DYNAMIC_PROXIES
+
+// For every interface, we create a dummy dynamic proxy class.
+// TODO Proxy classes are public only if all their interfaces are
+// public, otherwise they are non-public (i.e. no modifier).
+isType(?proxy),
+isType("java.lang.reflect.Proxy"),
+isClassType("java.lang.reflect.Proxy"),
+isClassType(?proxy),
+isReferenceType("java.lang.reflect.Proxy"),
+isReferenceType(?proxy),
+ProxyClass(?proxy),
+ClassModifier("final", ?proxy),
+DirectSuperclass(?proxy, "java.lang.reflect.Proxy"),
+DirectSuperinterface(?proxy, ?interface) :-
+  isInterfaceType(?interface),
+  ?proxy = cat("$Proxy$for$", ?interface).
+#endif // REFLECTION_DYNAMIC_PROXIES
