@@ -44,8 +44,8 @@ public class Database implements Closeable, Flushable {
             // if (factsFile.exists()) {
             //     factsFile.delete();
             // }
-            if (!(factsFile.createNewFile())) {
-                System.out.println(factsFile.getPath() + " already exists.");
+            if (factsFile.createNewFile()) {
+                System.out.println("Created missing facts file: " + factsFile.getPath());
             }
         }
 
