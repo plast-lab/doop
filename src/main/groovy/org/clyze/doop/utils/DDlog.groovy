@@ -81,7 +81,7 @@ class DDlog extends SouffleScript {
     }
 
     @Override
-	File compile(File origScriptFile, File outDir, SouffleOptions options) {
+	File compile(File origScriptFile, File factsDir, File outDir, SouffleOptions options) {
 
         checkOptions(options)
 

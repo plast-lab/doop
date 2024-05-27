@@ -33,7 +33,7 @@ class SoufflePythonAnalysis extends SouffleAnalysis {
         if (options.SOUFFLE_MODE.value == DoopAnalysisFamily.SOUFFLE_INTERPRETED) {
             script.interpretScript(analysis, outDir, factsDir, souffleOpts)
         } else {
-            def generatedFile = script.compile(analysis, outDir, souffleOpts)
+            def generatedFile = script.compile(analysis, factsDir, outDir, souffleOpts)
 
             script.run(generatedFile, factsDir, outDir,
                     (options.X_MONITORING_INTERVAL.value as long) * 1000, monitorClosure, souffleOpts)

@@ -4,6 +4,7 @@ import java.io.*;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.Map;
+import java.nio.file.Paths;
 
 public class Database implements Closeable, Flushable {
     private static final char SEP = '\t';
@@ -37,8 +38,17 @@ public class Database implements Closeable, Flushable {
 
         this._writers = new EnumMap<>(PredicateFile.class);
 
-        for (PredicateFile predicateFile : EnumSet.allOf(PredicateFile.class))
+        for (PredicateFile predicateFile : EnumSet.allOf(PredicateFile.class)) {
             _writers.put(predicateFile, predicateFile.getWriter(new File(directory), ".facts"));
+            File factsFile = new File(String.valueOf(Paths.get(directory, PredicateFile.valueOf(predicateFile.name()) + ".facts")));
+            // if (factsFile.exists()) {
+            //     factsFile.delete();
+            // }
+            if (!(factsFile.createNewFile())) {
+                System.out.println(factsFile.getPath() + " already exists.");
+            }
+        }
+
     }
 
     public String getDirectory() {

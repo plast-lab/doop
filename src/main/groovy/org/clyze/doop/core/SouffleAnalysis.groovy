@@ -62,7 +62,7 @@ class SouffleAnalysis extends DoopAnalysis {
 				@Override
 				File call() {
 					log.info "[Task COMPILE...]"
-					def generatedFile = script.compile(analysis, outDir, souffleOpts)
+					def generatedFile = script.compile(analysis, factsDir, outDir, souffleOpts)
 					log.info "[Task COMPILE Done]"
 					return generatedFile
 				}
@@ -92,7 +92,7 @@ class SouffleAnalysis extends DoopAnalysis {
                 if (runInterpreted) {
                     script.interpretScript(methodLookupFile, outDir, factsDir, souffleOpts)
                 } else {
-				    def generatedFile0 = script.compile(methodLookupFile, outDir, souffleOpts)
+				    def generatedFile0 = script.compile(methodLookupFile, factsDir, outDir, souffleOpts)
 				    script.run(generatedFile0, factsDir, outDir,
 						       monitorInterval, monitorClosure, souffleOpts)
                 }

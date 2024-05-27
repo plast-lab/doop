@@ -60,7 +60,7 @@ class SouffleGenericsMultiPhaseAnalysis extends SouffleAnalysis {
 				@Override
 				File call() {
 					log.info "[Task COMPILE...]"
-					def generatedFile0 = script.compile(preAnalysis, outDir, souffleOpts)
+					def generatedFile0 = script.compile(preAnalysis, factsDir, outDir, souffleOpts)
 					log.info "[Task COMPILE Done]"
 					return generatedFile0
 				}
@@ -86,7 +86,7 @@ class SouffleGenericsMultiPhaseAnalysis extends SouffleAnalysis {
 			if (!options.X_SERIALIZE_FACTGEN_COMPILATION.value) {
 			    generatedFile0 = compilationFuture.get()
             }
-			script.run(generatedFile0, factsDir, outDir,
+			script.run(generatedFile0 as File, factsDir, outDir,
 					(options.X_MONITORING_INTERVAL.value as long) * 1000, monitorClosure, souffleOpts)
 
 			int dbSize = (sizeOfDirectory(database) / 1024).intValue()
@@ -156,7 +156,7 @@ class SouffleGenericsMultiPhaseAnalysis extends SouffleAnalysis {
 				@Override
 				File call() {
 					log.info "[Task COMPILE...]"
-					def generatedFile = script.compile(analysis, outDir, souffleOpts)
+					def generatedFile = script.compile(analysis, factsDir, outDir, souffleOpts)
 					log.info "[Task COMPILE Done]"
 					return generatedFile
 				}
@@ -176,7 +176,7 @@ class SouffleGenericsMultiPhaseAnalysis extends SouffleAnalysis {
 			if (!options.X_SERIALIZE_FACTGEN_COMPILATION.value) {
 				generatedFile = compilationFuture.get()
 			}
-			script.run(generatedFile, factsDir, outDir,
+			script.run(generatedFile as File, factsDir, outDir,
 					   (options.X_MONITORING_INTERVAL.value as long) * 1000, monitorClosure, souffleOpts)
 
 			int dbSize = (sizeOfDirectory(database) / 1024).intValue()

@@ -39,7 +39,7 @@ class SoufflePartitionedAnalysis extends SouffleAnalysis {
                 @Override
                 File call() {
                     log.info "[Task COMPILE...]"
-                    def generatedFile = script.compile(analysis, outDir, souffleOpts)
+                    def generatedFile = script.compile(analysis, factsDir, outDir, souffleOpts)
                     log.info "[Task COMPILE Done]"
                     return generatedFile
                 }

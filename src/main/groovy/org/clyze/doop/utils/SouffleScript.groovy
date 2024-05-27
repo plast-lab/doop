@@ -71,7 +71,7 @@ class SouffleScript {
 		return CheckSum.checksum(c2, DoopAnalysisFactory.HASH_ALGO)
 	}
 
-	File compile(File origScriptFile, File outDir,
+	File compile(File origScriptFile, File factsDir, File outDir,
                  SouffleOptions options) {
 
 		setScriptFileViaCPP(origScriptFile, outDir)
@@ -105,6 +105,8 @@ class SouffleScript {
 			}
 
 			def compilationCommand = "${souffleCmd} ${outputOpts} ${scriptFilePath}".split().toList()
+			if (factsDir)
+				compilationCommand << ("-F${factsDir}" as String)
 			if (options.profile)
 				compilationCommand << ("-p${outDir}/profile.txt" as String)
 			if (options.debug)
