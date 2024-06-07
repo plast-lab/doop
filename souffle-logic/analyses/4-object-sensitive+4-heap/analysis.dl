@@ -16,8 +16,8 @@
   ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, ?calleeCtx) :-
     ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, _),
     ?hctx = [?hctxValue1, ?hctxValue2, ?hctxValue3, ?hctxValue4],
-    ?calleeCtx = [?hctxValue1, ?hctxValue2, ?hctxValue3, ?value],
-    ?hctxValue4 = ?hctxValue4.
+    ?calleeCtx = [?hctxValue2, ?hctxValue3, ?hctxValue4, ?value],
+    ?hctxValue1 = ?hctxValue1.
 
   StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
     StaticContextRequest(?callerCtx, ?invo),
