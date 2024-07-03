@@ -1,3 +1,5 @@
+#define BOUND_VAR_POINTS_TO(hctx, value, ctx, var) VarPointsTo_Bounded(hctx, value, ctx, var, (ord(value)) % 101)
+
 #include "main.dl"
 #include "basic-context-sensitivity.dl"
 

@@ -85,7 +85,7 @@ MethodType_Arity(?mtConv, ?arity) :-
 
 // Model of MethodType.returnType().
 OpaqueCallGraphEdge(?invo, ?sig),
-VarPointsTo(?hctx, ?classValue, ?ctx, ?ret) :-
+BOUND_VAR_POINTS_TO(?hctx, ?classValue, ?ctx, ?ret) :-
   _VirtualMethodInvocation(?invo, _, ?sig, ?base, ?method),
   ?sig = "<java.lang.invoke.MethodType: java.lang.Class returnType()>",
   ReachableContext(?ctx, ?method),
@@ -97,7 +97,7 @@ VarPointsTo(?hctx, ?classValue, ?ctx, ?ret) :-
 // Imprecise model of MethodType.parameterType(), since we do not track
 // primitive values (for its argument).
 OpaqueCallGraphEdge(?invo, ?sig),
-VarPointsTo(?hctx, ?classValue, ?ctx, ?ret) :-
+BOUND_VAR_POINTS_TO(?hctx, ?classValue, ?ctx, ?ret) :-
   _VirtualMethodInvocation(?invo, _, ?sig, ?base, ?method),
   ?sig = "<java.lang.invoke.MethodType: java.lang.Class parameterType(int)>",
   ReachableContext(?ctx, ?method),
@@ -321,7 +321,7 @@ MethodHandleCGE_Arg(?callerCtx, ?calleeCtx, ?actual, ?formal, ?actualType, ?form
 
 #ifndef DISABLE_POINTS_TO
 // This rule covers exact matching of argument types.
-VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
+BOUND_VAR_POINTS_TO(?hctx, ?val, ?calleeCtx, ?formal) :-
   MethodHandleCGE_Arg(?callerCtx, ?calleeCtx, ?actual, ?formal, ?actualType, ?formalType, _),
   VarPointsTo(?hctx, ?val, ?callerCtx, ?actual),
   basic.SubtypeOf(?actualType, ?formalType).
@@ -330,7 +330,7 @@ VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
 // This rule covers boxing of arguments for MethodHandle.invoke(). Since the
 // original arguments are primitive values, VarPointsTo may not be available.
 // This is an expensive rule and is thus guarded for the full reflective case.
-VarPointsTo(?immHctx, ?val, ?calleeCtx, ?formal) :-
+BOUND_VAR_POINTS_TO(?immHctx, ?val, ?calleeCtx, ?formal) :-
   MethodHandleCGE_Arg(_, ?calleeCtx, _, ?formal, ?actualType, ?formalType, "invoke"),
   BoxTypeConversion(?actualType, ?formalType),
   BoxAllocation(?val, ?formalType),
@@ -338,7 +338,7 @@ VarPointsTo(?immHctx, ?val, ?calleeCtx, ?formal) :-
 #endif // REFLECTION_METHOD_HANDLES
 
 // Pass receiver to instance methods.
-VarPointsTo(?hctx, ?val, ?calleeCtx, ?this) :-
+BOUND_VAR_POINTS_TO(?hctx, ?val, ?calleeCtx, ?this) :-
   MethodHandleCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?method, _, _),
   !Method_Modifier("static", ?method),
   ActualParam(0, ?invo, ?actual),
@@ -349,7 +349,7 @@ VarPointsTo(?hctx, ?val, ?calleeCtx, ?this) :-
   basic.SubtypeOf(?actualType, ?thisType).
 
 // Get return value.
-VarPointsTo(?hctx, ?val, ?callerCtx, ?var) :-
+BOUND_VAR_POINTS_TO(?hctx, ?val, ?callerCtx, ?var) :-
   MethodHandleCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?method, _, _),
   ReturnVar(?ret, ?method),
   VarPointsTo(?hctx, ?val, ?calleeCtx, ?ret),
@@ -436,7 +436,7 @@ OpaqueCallGraphEdge(?invo, ?sig) :-
 
 #ifndef DISABLE_POINTS_TO
 // Case 1: method handle constant exists.
-VarPointsTo(?hctx, ?mh, ?ctx, ?var) :-
+BOUND_VAR_POINTS_TO(?hctx, ?mh, ?ctx, ?var) :-
   AssignMethodHandleToVarRequest(?method, ?paramTypes, ?retType, ?hctx, ?ctx, ?var),
   MethodHandleConstant_Method(?mh, ?method),
   MethodHandleConstant_ParamTypes(?mh, ?paramTypes),
@@ -445,7 +445,7 @@ VarPointsTo(?hctx, ?mh, ?ctx, ?var) :-
 
 // Case 2: method handle constant not found, invent a mock object.
 #ifndef DISABLE_POINTS_TO
-VarPointsTo(?hctx, ?dmh, ?ctx, ?var),
+BOUND_VAR_POINTS_TO(?hctx, ?dmh, ?ctx, ?var),
 #endif // DISABLE_POINTS_TO
 MockValueConsMacro(?dmh, "java.lang.invoke.MethodHandle"),
 MethodHandle_Method(?dmh, ?method),
@@ -575,8 +575,8 @@ AssignMethodHandleToVarRequest(?method, ?paramTypesConv, ?retType, ?hctx, ?ctx, 
 // Create a receiver object when calling constructors.
 
 #ifndef DISABLE_POINTS_TO
-VarPointsTo(?hctx, ?value, ?calleeCtx, ?thisVar),
-VarPointsTo(?hctx, ?value, ?callerCtx, ?ret),
+BOUND_VAR_POINTS_TO(?hctx, ?value, ?calleeCtx, ?thisVar),
+BOUND_VAR_POINTS_TO(?hctx, ?value, ?callerCtx, ?ret),
 #endif // DISABLE_POINTS_TO
 MockValueConsMacro(?value, ?type) :-
   MethodHandleCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?method, ?mh, _),
@@ -633,8 +633,8 @@ MethodType_ParamType(?mt, ?index, ?pType) :-
 // Pass arguments to bootstrap methods. First three arguments are
 // filled in by the JVM, so we fill them with mock objects.
 #ifndef DISABLE_POINTS_TO
-VarPointsTo(?immHctx, ?mockMHLookup, ?calleeCtx, ?caller),
-VarPointsTo(?immHctx, ?mt, ?calleeCtx, ?invokedTypeParam),
+BOUND_VAR_POINTS_TO(?immHctx, ?mockMHLookup, ?calleeCtx, ?caller),
+BOUND_VAR_POINTS_TO(?immHctx, ?mt, ?calleeCtx, ?invokedTypeParam),
 #endif // DISABLE_POINTS_TO
 MockValueConsMacro(?mockMHLookup, "java.lang.invoke.MethodHandles$Lookup"),
 MHLookup_Type(?mockMHLookup, ?callerClass) :-
@@ -650,7 +650,7 @@ MHLookup_Type(?mockMHLookup, ?callerClass) :-
 // The second-arg rule should only be enabled when strings are not merged.
 #if defined(DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS) || defined(DISTINGUISH_ALL_STRING_CONSTANTS) || defined(NO_MERGES)
 #ifndef DISABLE_POINTS_TO
-VarPointsTo(?immHctx, ?invokedName, ?calleeCtx, ?invokedNameParam) :-
+BOUND_VAR_POINTS_TO(?immHctx, ?invokedName, ?calleeCtx, ?invokedNameParam) :-
   InvokedynamicBootCallGraphEdge(_, ?invokedynamic, ?calleeCtx, ?bootMethod),
   isStringConstant(?invokedName),
   FormalParam(1, ?bootMethod, ?invokedNameParam),
@@ -675,7 +675,7 @@ MethodVarArgs(?method, ?idx, ?formal, ?type) :-
 #ifndef DISABLE_POINTS_TO
 ArrayIndexPointsTo(?immHctx, ?val, ?immHctx, ?mockArray),
 MockValueConsMacro(?mockArray, ?varArgsType),
-VarPointsTo(?immHctx, ?mockArray, ?calleeCtx, ?formalVarArgs) :-
+BOUND_VAR_POINTS_TO(?immHctx, ?mockArray, ?calleeCtx, ?formalVarArgs) :-
   InvokedynamicBootCallGraphEdge(_, ?invokedynamic, ?calleeCtx, ?bootMethod),
   MethodVarArgs(?bootMethod, ?bootIdx, ?formalVarArgs, ?varArgsType),
   BootstrapParam(?idx, ?invokedynamic, ?actual),
@@ -685,7 +685,7 @@ VarPointsTo(?immHctx, ?mockArray, ?calleeCtx, ?formalVarArgs) :-
   ?mockArray = MOCK_ARRAY(?invokedynamic).
 
 // Normal handling for the last three arguments of the bootstrap method, shifted.
-VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
+BOUND_VAR_POINTS_TO(?hctx, ?val, ?calleeCtx, ?formal) :-
   InvokedynamicBootCallGraphEdge(_, ?invokedynamic, ?calleeCtx, ?bootMethod),
   !Method_Modifier("varargs", ?bootMethod),
   FormalParam(?idx + 3, ?bootMethod, ?formal),
@@ -856,7 +856,7 @@ ReachableContext(?calleeCtx, ?callee) :-
 
 #ifndef DISABLE_POINTS_TO
 // Handle return values for lambda call-graph edges.
-VarPointsTo(?hctx, ?retVal, ?callerCtx, ?ret) :-
+BOUND_VAR_POINTS_TO(?hctx, ?retVal, ?callerCtx, ?ret) :-
   LambdaCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?method, _),
   ReturnVar(?realReturnVar, ?method),
   VarPointsTo(?hctx, ?retVal, ?calleeCtx, ?realReturnVar),
@@ -939,7 +939,7 @@ BoxingFunction(?doubleArgLambdaType, "double", "java.lang.Double") :-
   ?doubleArgLambdaType = "java.util.function.DoubleUnaryOperator";
   ?doubleArgLambdaType = "java.util.function.ObjDoubleConsumer".
 #ifndef DISABLE_POINTS_TO
-VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
+BOUND_VAR_POINTS_TO(?hctx, ?val, ?calleeCtx, ?formal) :-
   LambdaArg(?calleeCtx, ?formal, ?formalType, ?actual, ?invokedynamic),
   ReachableLambdaMetafactoryInvoke(?invokedynamic, _, ?dynRetType, _),
   Var_Type(?actual, ?primType),
@@ -948,7 +948,7 @@ VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
   isImmutableHContext(?hctx).
 
 // Pass captured arguments to the implementing method.
-VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
+BOUND_VAR_POINTS_TO(?hctx, ?val, ?calleeCtx, ?formal) :-
   LambdaCallGraphEdge(_, _, ?calleeCtx, ?implMethod, ?lambda),
   Params_ReceiverShiftRight(?lambda, ?implMethod, ?shiftK, _),
   LambdaObject(?invokedynamic, ?lambda, _, ?K, ?implMethod, _),
@@ -960,7 +960,7 @@ VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
   basic.SubtypeOf(?valType, ?formalType).
 
 // Special handling for captured "this" parameters.
-VarPointsTo(?hctx, ?thisValue, ?calleeCtx, ?this) :-
+BOUND_VAR_POINTS_TO(?hctx, ?thisValue, ?calleeCtx, ?this) :-
   Params_ReceiverShiftRight(?lambda, ?implMethod, 1, 0),
   CalledInstanceImplMethod(?invokedynamic, ?implMethod, ?this, ?thisType, ?calleeCtx, ?lambda),
   LambdaCaptured(?invokedynamic, ?thisValue, 0, ?hctx),
@@ -969,7 +969,7 @@ VarPointsTo(?hctx, ?thisValue, ?calleeCtx, ?this) :-
 
 // Special handling for "this" parameters to method references that do
 // not capture a receiver.
-VarPointsTo(?hctx, ?argValue, ?calleeCtx, ?this) :-
+BOUND_VAR_POINTS_TO(?hctx, ?argValue, ?calleeCtx, ?this) :-
   LambdaCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?implMethod, ?lambda),
   Params_ReceiverShiftRight(?lambda, ?implMethod, 0, 1),
   ActualParam(0, ?i, ?actual),
@@ -982,8 +982,8 @@ VarPointsTo(?hctx, ?argValue, ?calleeCtx, ?this) :-
 // Applications of constructor references construct values. However,
 // these values do not come from a 'new' instruction in the code but
 // are created here as mock values, one per type/invocation.
-VarPointsTo(?hctx, ?mockObj, ?callerCtx, ?var),
-VarPointsTo(?hctx, ?mockObj, ?calleeCtx, ?thisVar),
+BOUND_VAR_POINTS_TO(?hctx, ?mockObj, ?callerCtx, ?var),
+BOUND_VAR_POINTS_TO(?hctx, ?mockObj, ?calleeCtx, ?thisVar),
 MockValueConsMacro(?mockObj, ?type) :-
   LambdaCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?implMethod, _),
   basic.ClassConstructor(?implMethod, ?type),

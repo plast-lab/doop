@@ -10,6 +10,11 @@
  */
 
 .decl ReachableValue(?hctx:configuration.HContext, ?value: Value)
+.decl VarPointsTo_Bounded(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var, ?n:number) choice-domain (?hctx, ?ctx, ?var, ?n)
+.output VarPointsTo_Bounded
+
+VarPointsTo(?hctx, ?value, ?ctx, ?var) :-    
+  VarPointsTo_Bounded(?hctx, ?value, ?ctx, ?var, _).
 
 ReachableValue(?hctx, ?heapValue) :-
   AssignContextInsensitiveHeapAllocation(?heapValue, _, ?inmethod),
@@ -46,11 +51,11 @@ configuration.RecordContextRequest(?ctx, ?heapValue, ?var) :-
 
 #ifndef DISABLE_POINTS_TO
 
-VarPointsTo(?newHCtx, ?heapValue, ?ctx, ?var) :-
+BOUND_VAR_POINTS_TO(?newHCtx, ?heapValue, ?ctx, ?var) :-
   configuration.RecordContextRequest(?ctx, ?heapValue, ?var),
   configuration.RecordContextResponse(?ctx, ?heapValue, ?var, ?newHCtx).
 
-VarPointsTo(?hctx, ?heapValue, ?ctx, ?var) :-
+BOUND_VAR_POINTS_TO(?hctx, ?heapValue, ?ctx, ?var) :-
   Reachable(?inmethod),  // optimization purposes
   AssignContextInsensitiveHeapAllocation(?heapValue, ?var, ?inmethod),
   ReachableContext(?ctx, ?inmethod),
@@ -61,7 +66,7 @@ VarPointsTo(?hctx, ?heapValue, ?ctx, ?var) :-
  * Null assignments
  */
 
-VarPointsTo(?hctx, ?null, ?toCtx, ?to) :-
+BOUND_VAR_POINTS_TO(?hctx, ?null, ?toCtx, ?to) :-
    Reachable(?inmethod),  // optimization purposes
    AssignNull(?to, ?inmethod),
    Value_Null(?null),
@@ -75,7 +80,7 @@ VarPointsTo(?hctx, ?null, ?toCtx, ?to) :-
  * a specific host class (R).
  */
 
-VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
+BOUND_VAR_POINTS_TO(?hctx, ?value, ?toCtx, ?to) :-
    ReachableContext(?toCtx, ?inmethod),
    Instruction_Method(?insn, ?inmethod),
    (AssignNumConstant_Id(?insn, ?const);
@@ -92,7 +97,7 @@ VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
 // No need to check if type compatible: check is done at original
 // inputs to VarPointsTo
 
-VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
+BOUND_VAR_POINTS_TO(?hctx, ?value, ?ctx, ?to) :-
   VarPointsTo(?hctx, ?value, ?ctx, ?from),
   AssignLocal(?from, ?to, _).
 
@@ -100,7 +105,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
  * Cast assignments
  */
 
-VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
+BOUND_VAR_POINTS_TO(?hctx, ?value, ?ctx, ?to) :-
   OptAssignCast(?type, ?to, ?from),
   VarPointsTo(?hctx, ?value, ?ctx, ?from),
   Value_Type(?value, ?valuetype),
@@ -137,13 +142,13 @@ HeapInterproceduralAssign(?ctxTo, ?to, ?ctxFrom, ?from) :-
   !Value_Null(?basevalue).
  .plan 1:(2,1)
 
-VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
+BOUND_VAR_POINTS_TO(?hctx, ?value, ?toCtx, ?to) :-
   HeapInterproceduralAssign(?toCtx, ?to, ?fromCtx, ?from),
   VarPointsTo(?hctx, ?value, ?fromCtx, ?from),
   NotSpecialObject(?value).
  .plan 1:(2,1,3), 2:(3,2,1)
 
-VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
+BOUND_VAR_POINTS_TO(?hctx, ?value, ?ctx, ?to) :-
   LoadHeapInstanceField(?ctx, ?to, ?signature, ?basehctx, ?basevalue),
   InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue).
 
@@ -157,7 +162,7 @@ InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
 #else
 #if defined(FEATHERWEIGHT_ANALYSIS)
 
-VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
+BOUND_VAR_POINTS_TO(?hctx, ?value, ?ctx, ?to) :-
   LoadHeapInstanceField(?ctx, ?to, ?signature, ?basehctx, ?basevalue),
   InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue).
 
@@ -204,7 +209,7 @@ InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
 InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
   HeapDLInstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue).
 
-VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
+BOUND_VAR_POINTS_TO(?hctx, ?value, ?ctx, ?to) :-
   LoadHeapInstanceField(?ctx, ?to, ?signature, ?basehctx, ?basevalue),
   HeapDLInstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue).
 #endif // HEAPDLS, IMPORT_DYNAMIC_FACTS
@@ -223,7 +228,7 @@ InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
  * Load static fields
  */
 
-VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
+BOUND_VAR_POINTS_TO(?hctx, ?value, ?ctx, ?to) :-
   StaticFieldPointsTo(?hctx, ?value, ?sig),
   LoadStaticField(?sig, ?to, ?inmethod),
   ReachableContext(?ctx, ?inmethod).
@@ -269,7 +274,7 @@ StaticFieldPointsTo(?hctx, ?value, ?signature) :-
 /**
  * Array elements initialized by local variables (Dalvik filled-new-array*).
  */
-VarPointsTo(?baseHctx, ?baseHeap, ?ctx, ?to),
+BOUND_VAR_POINTS_TO(?baseHctx, ?baseHeap, ?ctx, ?to),
 ArrayIndexPointsTo(?hctx, ?value, ?baseHctx, ?baseHeap) :-
   VarPointsTo(?hctx, ?value, ?ctx, ?from),
   ArrayInitialValueFromLocal(_, _, ?to, _, ?from, ?baseHeap, _),
@@ -278,7 +283,7 @@ ArrayIndexPointsTo(?hctx, ?value, ?baseHctx, ?baseHeap) :-
 /**
  * Array elements initialized by constants (Dalvik array payloads).
  */
-VarPointsTo(?hctx, ?baseHeap, ?ctx, ?to),
+BOUND_VAR_POINTS_TO(?hctx, ?baseHeap, ?ctx, ?to),
 ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?baseHeap) :-
   ReachableContext(?ctx, ?inMethod),
   Instruction_Method(?i, ?inMethod),
@@ -314,7 +319,7 @@ Temp2(?ctx, ?to, ?basehctx, ?basevalue) :-
   Temp1(?basevalue, ?to),
   LoadHeapArrayIndex(?ctx, ?to, ?basehctx, ?basevalue).
 
-VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
+BOUND_VAR_POINTS_TO(?hctx, ?value, ?ctx, ?to) :-
   Temp2(?ctx, ?to, ?basehctx, ?basevalue),
   ArrayIndexPointsTo(?hctx, ?value, ?basehctx, ?basevalue).
 
@@ -484,7 +489,7 @@ OptArgAssign(?calleeCtx, ?formal, ?callerCtx, ?actual, ?allowedType) :-
 
 #ifdef INFORMATION_FLOW
 
-VarPointsTo(?hctx, ?value, ?callerCtx, ?local) :-
+BOUND_VAR_POINTS_TO(?hctx, ?value, ?callerCtx, ?local) :-
   CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method),
   AssignReturnValue(?invocation, ?local),
   ReturnVar(?return, ?method),
@@ -492,7 +497,7 @@ VarPointsTo(?hctx, ?value, ?callerCtx, ?local) :-
   OptRetVarPointsTo(?hctx, ?value, ?calleeCtx, ?return).
   .plan 1:(4,3,1,2)
 
-VarPointsTo(?hctx, ?value, ?callerCtx, ?local) :-
+BOUND_VAR_POINTS_TO(?hctx, ?value, ?callerCtx, ?local) :-
   CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method),
   AssignReturnValue(?invocation, ?local),
   ReturnVar(?return, ?method),
@@ -507,7 +512,7 @@ OptReturnAssign(?callerCtx, ?local, ?calleeCtx, ?return) :-
   AssignReturnValue(?invocation, ?local),
   ReturnVar(?return, ?method).
 
-VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
+BOUND_VAR_POINTS_TO(?hctx, ?value, ?toCtx, ?to) :-
   OptRetVarPointsTo(?hctx, ?value, ?fromCtx, ?from),
   OptReturnAssign(?toCtx, ?to, ?fromCtx, ?from).
   .plan 1:(2,1)
@@ -524,7 +529,7 @@ OptRetVarPointsTo(?hctx, ?value, ?returnCtx, ?return) :-
 
 #ifdef INFORMATION_FLOW
 
-VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
+BOUND_VAR_POINTS_TO(?hctx, ?value, ?toCtx, ?to) :-
   OptArgVarPointsTo(?hctx, ?value, ?fromCtx, ?from),
   OptArgAssign(?toCtx, ?to, ?fromCtx, ?from, ?allowedType),
   Value_Type(?value, ?type),
@@ -532,7 +537,7 @@ VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
   isHeapAllocation(?value).
   .plan 1:(2,1,3,4,5), 2:(3,1,2,4,5)
 
-VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
+BOUND_VAR_POINTS_TO(?hctx, ?value, ?toCtx, ?to) :-
   OptArgVarPointsTo(?hctx, ?value, ?fromCtx, ?from),
   OptArgAssign(?toCtx, ?to, ?fromCtx, ?from, ?allowedType),
   Value_Type(?value, ?type),
@@ -549,7 +554,7 @@ VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
  *.plan 1:(2,1)
  **/
 
-VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
+BOUND_VAR_POINTS_TO(?hctx, ?value, ?toCtx, ?to) :-
   OptArgVarPointsTo(?hctx, ?value, ?fromCtx, ?from),
   OptArgAssign(?toCtx, ?to, ?fromCtx, ?from, ?allowedType),
   Value_Type(?value, ?type),
@@ -566,7 +571,7 @@ VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
 // No longer using general-purpose inter-procedural assignments for lots
 // of different flows. Souffle cannot optimize well. Best to break up
 // key cases (like arg-return flow, above) into separate, well-optimized rules.
-VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
+BOUND_VAR_POINTS_TO(?hctx, ?value, ?toCtx, ?to) :-
   OptInterproceduralAssign(?toCtx, ?to, ?fromCtx, ?from),
   VarPointsTo(?hctx, ?value, ?fromCtx, ?from).
 //  .plan 1:(2,1)
@@ -602,13 +607,13 @@ configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value, ?tomethod, 
 // context objects.
 #ifdef X_ZIPPER
 
-VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) :-
+BOUND_VAR_POINTS_TO(?hctx, ?value, ?calleeCtx, ?this) :-
   configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value, ?tomethod, _),
   configuration.ContextResponse(?callerCtx, ?hctx, ?invocation, ?value, ?tomethod, ?calleeCtx),
   ThisVar(?tomethod, ?this),
   ZipperPrecisionCriticalMethod(?tomethod).
 
-VarPointsTo(?hctx, ?value, ?immCtx, ?this) :-
+BOUND_VAR_POINTS_TO(?hctx, ?value, ?immCtx, ?this) :-
   configuration.ContextRequest(_, ?hctx, ?invocation, ?value, ?tomethod, _),
   isImmutableContext(?immCtx),
   ThisVar(?tomethod, ?this),
@@ -616,7 +621,7 @@ VarPointsTo(?hctx, ?value, ?immCtx, ?this) :-
 
 #else
 
-VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) :-
+BOUND_VAR_POINTS_TO(?hctx, ?value, ?calleeCtx, ?this) :-
   configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value, ?tomethod, _),
   configuration.ContextResponse(?callerCtx, ?hctx, ?invocation, ?value, ?tomethod, ?calleeCtx),
   ThisVar(?tomethod, ?this),

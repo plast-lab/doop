@@ -22,7 +22,7 @@ RunningThread(?hctx, ?value) :-
  * start0.
  */
 ReachableContext(?calleeCtx, ?run),
-VarPointsTo(?hctx, ?value, ?calleeCtx, ?runThis),
+BOUND_VAR_POINTS_TO(?hctx, ?value, ?calleeCtx, ?runThis),
 RunningThread(?hctx, ?value) 
 :-
 #if defined(JRE13) || defined(JRE14)
@@ -68,7 +68,7 @@ RunningThread(?hctx, ?value) :-
  * TODO It seems more elegant to have a return variable for native methods and
  * assign the running threads to this return variable.
  */
-VarPointsTo(?hctx, ?value, ?callerCtx, ?local) :-
+BOUND_VAR_POINTS_TO(?hctx, ?value, ?callerCtx, ?local) :-
    ReachableCurrentThreadInvocation(?callerCtx, ?local),
    RunningThread(?hctx, ?value).
 #endif // DISABLE_POINTS_TO
@@ -95,7 +95,7 @@ configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?signature, 1) :-
 
 
 #ifndef DISABLE_POINTS_TO
-VarPointsTo(?hctx, ?value, ?calleeCtx, ?this),
+BOUND_VAR_POINTS_TO(?hctx, ?value, ?calleeCtx, ?this),
 #endif // DISABLE_POINTS_TO
 isContext(?calleeCtx),
 ReachableContext(?calleeCtx, ?signature) :-
@@ -124,8 +124,8 @@ configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?signature, 1) :-
     ?signature = "<java.lang.ThreadGroup: void <init>(java.lang.ThreadGroup,java.lang.String)>".
 
 #ifndef DISABLE_POINTS_TO
-VarPointsTo(?hctx, ?value, ?calleeCtx, ?this),
-VarPointsTo(?groupHCtx, ?group, ?calleeCtx, ?groupParam),
+BOUND_VAR_POINTS_TO(?hctx, ?value, ?calleeCtx, ?this),
+BOUND_VAR_POINTS_TO(?groupHCtx, ?group, ?calleeCtx, ?groupParam),
 #endif // DISABLE_POINTS_TO
 isContext(?calleeCtx),
 ReachableContext(?calleeCtx, ?signature) :-
@@ -154,8 +154,8 @@ configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?signature, 1) :-
     ?signature = "<java.lang.Thread: void <init>(java.lang.ThreadGroup,java.lang.String)>".
 
 #ifndef DISABLE_POINTS_TO
-VarPointsTo(?hctx, ?value, ?calleeCtx, ?this),
-VarPointsTo(?groupHCtx, ?group, ?calleeCtx, ?groupParam),
+BOUND_VAR_POINTS_TO(?hctx, ?value, ?calleeCtx, ?this),
+BOUND_VAR_POINTS_TO(?groupHCtx, ?group, ?calleeCtx, ?groupParam),
 #endif // DISABLE_POINTS_TO
 isContext(?calleeCtx),
 ReachableContext(?calleeCtx, ?signature) :-

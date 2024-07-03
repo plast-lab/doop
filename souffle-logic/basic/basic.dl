@@ -17,6 +17,46 @@ AnyMainMethodDeclaration(?method, ?type) :-
    Method_Modifier("public", ?method),
    Method_Modifier("static", ?method).
 
+.decl BlacklistedHeapAllocation(value: Value)
+.output BlacklistedHeapAllocation
+
+BlacklistedHeapAllocation(?value) :-
+  AssignHeapAllocation(?value, _, ?method),
+  Method_DeclaringType(?method, ?class),
+  isClassType(?class),
+  basic.SubtypeOf(?class, ?superclass),
+  (?superclass = "java.util.Map";
+    ?superclass = "java.util.Collection";
+    ?superclass = "java.util.Dictionary").
+
+BlacklistedHeapAllocation(?value) :-
+  AssignHeapAllocation(?value, _, ?method),
+  Method_DeclaringType(?method, ?class),
+  isClassType(?class),
+  match(?class, "java.lang.*").
+  // (match(?class, "java.io.*");
+  //  match(?class, "java.net.*");
+  //  match(?class, "java.xml.*");
+  //  match(?class, "java.lang.*")).
+
+// .decl HeapAllocationInClass(?heap:Value, ?class:ClassType)
+
+// HeapAllocationInClass(?heap, ?class) :-
+//   AssignHeapAllocation(?heap, _, ?method),
+//   Method_DeclaringType(?method, ?class).
+
+// BlacklistedHeapAllocation(?heap) :-
+//   HeapAllocationInClass(?heap, ?class),
+//   HeapAllocationNumberPerClass(?class, ?n),
+//   ?n > 100.
+
+// .decl HeapAllocationNumberPerClass(?class:ClassType, ?number:number)   
+// .output HeapAllocationNumberPerClass
+
+// HeapAllocationNumberPerClass(?class, ?n) :-
+//   isClassType(?class),
+//   ?n = count : {HeapAllocationInClass(_, ?class)}.
+
 .decl MainMethodDeclaration(?method:Method)
 
 MainMethodDeclaration(?method) :-

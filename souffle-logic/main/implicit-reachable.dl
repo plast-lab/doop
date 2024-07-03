@@ -121,7 +121,7 @@ TypeToConcreteImplementation(?type, ?class) :-
 // for each parameter in a forced-reachable method.
 MockValueConsMacro(?mockObj, ?class),
 MockObjFromOpenProgramEntryPointArg(?mockObj),
-VarPointsTo(?hctx, ?mockObj, ?ctx, ?formal) :-
+BOUND_VAR_POINTS_TO(?hctx, ?mockObj, ?ctx, ?formal) :-
   FormalOfForcedReachableContext(?ctx, ?formal, ?formalType),
   TypeToConcreteImplementation(?formalType, ?class),
   isImmutableHContext(?hctx),
@@ -136,7 +136,7 @@ UnmockableFormalOfForcedReachableContext(?formal, ?formalType) :-
  *  Mock receivers for entry points
  **/
 MockValueConsMacro(?value, ?class),
-VarPointsTo(?hctx, ?value, ?ctx, ?receiver),
+BOUND_VAR_POINTS_TO(?hctx, ?value, ?ctx, ?receiver),
 MockObjFromOpenProgramEntryPointReceiver(?value),
 MockObject(?value, ?class) :-
   ( ExercisedEntryPointMethod(?class, ?method)

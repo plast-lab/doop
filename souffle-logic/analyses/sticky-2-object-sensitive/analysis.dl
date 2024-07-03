@@ -51,12 +51,19 @@
   .type Context  = [ value1:Value, value2:Value ]
   .type HContext = [ value:Value ]
 
+  // ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, ?calleeCtx) :-
+  //   ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, _),
+  //   !DataStructureInvo(?invo),
+  //   DataStructureMethod(?tomethod),
+  //   //?hctx = [?hctxValue],
+  //   ?calleeCtx = [?value, ?value].
+
   ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, ?calleeCtx) :-
     ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, _),
     !DataStructureInvo(?invo),
     DataStructureMethod(?tomethod),
     //?hctx = [?hctxValue],
-    ?calleeCtx = [?value, ?value].
+    ?calleeCtx = ?callerCtx.
 
   ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, ?calleeCtx) :-
     ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, _),
@@ -64,24 +71,31 @@
     !DataStructureMethod(?tomethod),
     ?hctx = [?hctxValue],
     ?calleeCtx = [?hctxValue, ?value].
-
+  
   ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, ?calleeCtx) :-
     ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, _),
     Instruction_Method(?invo, ?method),
-    Method_DeclaringType(?method, ?class1),
     !DataStructureMethod(?tomethod),
-    Method_DeclaringType(?tomethod, ?class2),
-    ?class1 != ?class2,
     ?hctx = [?hctxValue],
     ?calleeCtx = [?hctxValue, ?value].
 
-  ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, ?calleeCtx) :-
-    ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, _),
-    Instruction_Method(?invo, ?method),
-    Method_DeclaringType(?method, ?class),
-    !DataStructureMethod(?tomethod),
-    Method_DeclaringType(?tomethod, ?class),
-    ?calleeCtx = [?value, ?value].
+  // ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, ?calleeCtx) :-
+  //   ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, _),
+  //   Instruction_Method(?invo, ?method),
+  //   Method_DeclaringType(?method, ?class1),
+  //   !DataStructureMethod(?tomethod),
+  //   Method_DeclaringType(?tomethod, ?class2),
+  //   ?class1 != ?class2,
+  //   ?hctx = [?hctxValue],
+  //   ?calleeCtx = [?hctxValue, ?value].
+
+  // ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, ?calleeCtx) :-
+  //   ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, _),
+  //   Instruction_Method(?invo, ?method),
+  //   Method_DeclaringType(?method, ?class),
+  //   !DataStructureMethod(?tomethod),
+  //   Method_DeclaringType(?tomethod, ?class),
+  //   ?calleeCtx = [?value, ?value].
 
 
   ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, ?calleeCtx) :-

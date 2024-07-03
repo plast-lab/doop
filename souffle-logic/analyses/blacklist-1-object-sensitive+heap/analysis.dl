@@ -1,0 +1,66 @@
+// Context-sensitive pointer analysis with context of 2 object and a
+// context-sensitive heap abstraction.
+
+#include "../../main/single-phase-analysis.dl"
+#include "../../main/configuration.dl"
+
+// For this analysis the context of a method call corresponds to the
+// identity of the receiver object and the receiver object of the caller.
+// Again, this may trigger creation of a new object.
+
+.comp BlacklistOneObjectSensitivePlusHeapConfiguration : AbstractConfiguration {
+  // In this analysis, both the real context and the real heap context are
+  // Values.
+  .type Context  = [ value:Value ]
+  .type HContext = [ value:Value ]
+
+  ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, ?calleeCtx) :-
+    ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, _),
+    ?calleeCtx = [?value],
+    !basic.BlacklistedHeapAllocation(?value).
+
+
+  ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, ?calleeCtx) :-
+    ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, _),
+    ?calleeCtx = ?callerCtx,
+    basic.BlacklistedHeapAllocation(?value).
+
+  StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
+    StaticContextRequest(?callerCtx, ?invo),
+    ?calleeCtx = ?callerCtx.
+
+  RecordContextResponse(?ctx, ?value, ?var, ?hctx) :-
+    RecordContextRequest(?ctx, ?value, ?var),
+    ?ctx = [?ctxValue], 
+    ?hctx = [?ctxValue].
+
+  InitContextResponse(?value, ?ctx) :-
+    InitContextRequest(?value),
+    ?ctx = [?value].
+
+  InitHContextResponse(?value, ?hctx) :-
+    InitHContextRequest(?value),
+    ?hctx = [?value].
+
+  // Dynamic analysis
+  #ifdef HEAPDLS
+  DynamicContextToContext([ ?value ], ?dynCtx) :-
+    Value_byDynamicHeap(?heap1, ?value),
+    DynamicContextHeap1(?heap1, ?dynCtx).
+
+  DynamicContextToContext(?ctx, ?dynCtx) :-
+    !DynamicContextHeap1(_, ?dynCtx),
+    isImmutableContext(?ctx),
+    isDynamicContext(?dynCtx).
+
+  DynamicContextToHContext([ ?value ], ?dynCtx) :-
+    Value_byDynamicHeap(?heap1, ?value),
+    DynamicContextHeap1(?heap1, ?dynCtx).
+
+  DynamicContextToHContext(?hctx, ?dynCtx) :-
+    isDynamicContext(?dynCtx),
+    !DynamicContextHeap1(_, ?dynCtx),
+    isImmutableHContext(?hctx).
+  #endif // HEAPDLS
+
+}

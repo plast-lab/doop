@@ -1,3 +1,4 @@
+
 // Context-sensitive pointer analysis with context of 2 object and a
 // context-sensitive heap abstraction.
 
@@ -14,28 +15,29 @@
   .type Context  = [ value1:Value, value2:Value ]
   .type HContext = [ value:Value ]
 
-  .decl BlacklistedHeapAllocation(value: Value)
 
-  BlacklistedHeapAllocation("<java.util.HashSet: void <init>()>/new java.util.HashMap/0").
-  BlacklistedHeapAllocation("<java.util.HashSet: void <init>(int)>/new java.util.HashMap/0").
-  BlacklistedHeapAllocation("<java.util.HashSet: void <init>(int,float)>/new java.util.HashMap/0").
-  BlacklistedHeapAllocation("<java.util.HashSet: void <init>(java.util.Collection)>/new java.util.HashMap/0").
-  BlacklistedHeapAllocation("<java.util.HashMap: java.util.HashMap$TreeNode newTreeNode(int,java.lang.Object,java.lang.Object,java.util.HashMap$Node)>/new java.util.HashMap$TreeNode/0").
-  BlacklistedHeapAllocation("<java.util.HashMap: java.util.HashMap$TreeNode replacementTreeNode(java.util.HashMap$Node,java.util.HashMap$Node)>/new java.util.HashMap$TreeNode/0").
+  // BlacklistedHeapAllocation("<java.util.HashSet: void <init>()>/new java.util.HashMap/0").
+  // BlacklistedHeapAllocation("<java.util.HashSet: void <init>(int)>/new java.util.HashMap/0").
+  // BlacklistedHeapAllocation("<java.util.HashSet: void <init>(int,float)>/new java.util.HashMap/0").
+  // BlacklistedHeapAllocation("<java.util.HashSet: void <init>(java.util.Collection)>/new java.util.HashMap/0").
+  // BlacklistedHeapAllocation("<java.util.HashMap: java.util.HashMap$TreeNode newTreeNode(int,java.lang.Object,java.lang.Object,java.util.HashMap$Node)>/new java.util.HashMap$TreeNode/0").
+  // BlacklistedHeapAllocation("<java.util.HashMap: java.util.HashMap$TreeNode replacementTreeNode(java.util.HashMap$Node,java.util.HashMap$Node)>/new java.util.HashMap$TreeNode/0").
+  // BlacklistedHeapAllocation("<java.util.HashMap: java.util.Set keySet()>/new java.util.HashMap$KeySet/0").
+  // BlacklistedHeapAllocation("<java.util.HashMap$KeySet: java.util.Iterator iterator()>/new java.util.HashMap$KeyIterator/0").
 
+
+  
   ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, ?calleeCtx) :-
     ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, _),
-    ?calleeCtx = [?callerHctxValue, ?hctxValue],
-    ?hctx = [?hctxValue],
-    ?callerCtx = [?callerHctxValue, ?callerValue],
-    ?callerValue = ?callerValue,
-    BlacklistedHeapAllocation(?value).
+    ?calleeCtx = ?callerCtx,
+    basic.BlacklistedHeapAllocation(?value).
 
   ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, ?calleeCtx) :-
     ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, _),
     ?hctx = [?hctxValue],
     ?calleeCtx = [?hctxValue, ?value],
-   !BlacklistedHeapAllocation(?value).
+   !basic.BlacklistedHeapAllocation(?value).
+
 
   StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
     StaticContextRequest(?callerCtx, ?invo),

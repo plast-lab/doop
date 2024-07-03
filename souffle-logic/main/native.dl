@@ -1,6 +1,6 @@
 
 #ifndef DISABLE_POINTS_TO
-VarPointsTo(?hctx, ?argArray, ?ctx, ?args),
+BOUND_VAR_POINTS_TO(?hctx, ?argArray, ?ctx, ?args),
 ArrayIndexPointsTo(?hctx, ?argArrayContent, ?hctx, ?argArray) :-
    isImmutableHContext(?hctx),
    basic.MainMethodDeclaration(?mainMethod),
@@ -379,7 +379,7 @@ ReachableNativeMethodInvocation(?ctx, ?invo, ?nativeMethod) :-
 #define NativeReturnValId(t, m) cat("<native ", cat(t, cat(" value allocated in ", cat(m, ">"))))
 
 #ifndef DISABLE_POINTS_TO
-VarPointsTo(?hctx, NativeReturnValId(?t, ?m), ?ctx, ?return),
+BOUND_VAR_POINTS_TO(?hctx, NativeReturnValId(?t, ?m), ?ctx, ?return),
 #endif // DISABLE_POINTS_TO
 NativeMethodReturningValue(?m, ?t, ?return, NativeReturnValId(?t, ?m)),
 MockValueConsMacro(NativeReturnValId(?t, ?m), ?t),

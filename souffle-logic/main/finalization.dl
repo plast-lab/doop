@@ -18,7 +18,7 @@ configuration.ContextRequest(?callerCtx, ?hctx, ?fakeinvo, ?heapValue, ?register
 
 // The allocated object becomes the actual parameter to Finalizer.register.
 ReachableContext(?calleeCtx, ?register),
-VarPointsTo(?hctx, ?heapValue, ?calleeCtx, ?formal) :-
+BOUND_VAR_POINTS_TO(?hctx, ?heapValue, ?calleeCtx, ?formal) :-
   configuration.ContextResponse(?callerCtx, ?hctx, ?fakeinvo, ?heapValue, ?register, ?calleeCtx),
   FinalizeContextRequest(?callerCtx, ?hctx, ?fakeinvo, ?heapValue, ?register, ?formal).
 .plan 1:(2,1)
