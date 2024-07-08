@@ -33,22 +33,58 @@ BlacklistedHeapAllocation(?value) :-
   AssignHeapAllocation(?value, _, ?method),
   Method_DeclaringType(?method, ?class),
   isClassType(?class),
-  match(?class, "java.lang.*").
-  // (match(?class, "java.io.*");
-  //  match(?class, "java.net.*");
-  //  match(?class, "java.xml.*");
-  //  match(?class, "java.lang.*")).
+  (match(?class, ".*$.*");
+   match(?class, "java[.]lang[.]*");
+   match(?class, "java[.]io[.]*");
+   match(?class, "java[.]net[.]*");
+   match(?class, "java[.]xml[.]*");
+   match(?class, "java[.]lang[.]*");
+   match(?class, "javax[.]swing[.]*");
+   match(?class, "javax[.]awt[.]*");
+   match(?class, "com[.]sun[.]*");
+   match(?class, "sun[.]util[.]*");
+   match(?class, "sun[.]net[.]*")).
 
-// .decl HeapAllocationInClass(?heap:Value, ?class:ClassType)
-
-// HeapAllocationInClass(?heap, ?class) :-
-//   AssignHeapAllocation(?heap, _, ?method),
-//   Method_DeclaringType(?method, ?class).
-
-// BlacklistedHeapAllocation(?heap) :-
-//   HeapAllocationInClass(?heap, ?class),
-//   HeapAllocationNumberPerClass(?class, ?n),
+// BlacklistedHeapAllocation(?value) :-
+//   AssignHeapAllocation(?value, _, ?method),
+//   Method_DeclaringType(?method, ?class),
+//   isClassType(?class),
+//   NumberOfHeapAllocationsPerTypeInClass(?class, ?type, ?n),
+//   HeapAllocation_Type(?value, ?type),
 //   ?n > 100.
+
+// BlacklistedHeapAllocation(?value) :-
+//   NumberOfHeapAllocationsOfType(?type, ?n) ,
+//   HeapAllocation_Type(?value, ?type),
+//   ?n < 20.  
+
+.decl HeapAllocationInClass(?value:Value, ?ins:Instruction, ?class:Type)
+.output HeapAllocationInClass
+
+HeapAllocationInClass(?value, ?ins, ?class) :-
+  AssignHeapAllocation(?value, ?ins, ?method),
+  Method_DeclaringType(?method, ?class).
+
+.decl HeapAllocationOfACertainTypeInClass(?class: Type, ?type: Type, ?ins: Instruction)
+.output HeapAllocationOfACertainTypeInClass
+
+HeapAllocationOfACertainTypeInClass(?class, ?type, ?ins) :-
+  HeapAllocationInClass(?value, ?ins, ?class),
+  HeapAllocation_Type(?value, ?type).
+
+.decl NumberOfHeapAllocationsPerTypeInClass(?class:Type, ?type:Type, ?n:number)
+.output NumberOfHeapAllocationsPerTypeInClass
+
+NumberOfHeapAllocationsPerTypeInClass(?class, ?type, ?n) :-
+  HeapAllocationOfACertainTypeInClass(?class, ?type, _),
+  ?n = count : {HeapAllocationOfACertainTypeInClass(?class, ?type, _)}.
+
+.decl NumberOfHeapAllocationsOfType(?type:Type, ?n:number)
+.output NumberOfHeapAllocationsOfType
+
+NumberOfHeapAllocationsOfType(?type, ?n) :-
+  HeapAllocation_Type(_, ?type),
+  ?n = count : {HeapAllocation_Type(_, ?type)}.
 
 // .decl HeapAllocationNumberPerClass(?class:ClassType, ?number:number)   
 // .output HeapAllocationNumberPerClass

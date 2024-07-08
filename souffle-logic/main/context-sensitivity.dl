@@ -13,6 +13,26 @@
 .decl VarPointsTo_Bounded(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var, ?n:number) choice-domain (?hctx, ?ctx, ?var, ?n)
 .output VarPointsTo_Bounded
 
+.decl VarInClass(?var:Var, ?class:Type)
+
+VarInClass(?var, ?class) :-
+  Var_DeclaringMethod(?var, ?method),
+  Method_DeclaringType(?method, ?class).
+
+
+.decl ClassPointsTo(??hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var, ?class:Type)
+
+ClassPointsTo(?hctx, ?value, ?ctx, ?var, ?class) :-
+  VarInClass(?var, ?class),
+  VarPointsTo(?hctx, ?value, ?ctx, ?var).
+
+.decl ClassPointsToSum(?class:Type, ?n:number)
+.output ClassPointsToSum
+
+ClassPointsToSum(?class, ?n) :-
+  ClassPointsTo(_, _, _, _, ?class),
+  ?n = count : {ClassPointsTo(_, _, _, _, ?class)}.
+
 VarPointsTo(?hctx, ?value, ?ctx, ?var) :-    
   VarPointsTo_Bounded(?hctx, ?value, ?ctx, ?var, _).
 
