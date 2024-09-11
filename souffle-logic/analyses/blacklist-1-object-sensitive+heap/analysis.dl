@@ -17,13 +17,12 @@
   ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, ?calleeCtx) :-
     ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, _),
     ?calleeCtx = [?value],
-    !basic.BlacklistedHeapAllocation(?value).
-
+    !basic.BlacklistedHeapAllocation(_, ?value).
 
   ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, ?calleeCtx) :-
     ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, _),
     ?calleeCtx = ?callerCtx,
-    basic.BlacklistedHeapAllocation(?value).
+    basic.BlacklistedHeapAllocation(_, ?value).
 
   StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
     StaticContextRequest(?callerCtx, ?invo),

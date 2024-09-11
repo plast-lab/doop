@@ -4,6 +4,7 @@
  * TODO Test for accessibility.
  */
 .decl MethodLookup(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:ReferenceType, ?method:Method)
+.output MethodLookup
 
 .decl _MethodLookup_WithLen(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:ReferenceType, ?method:Method, ?len:number)
 .decl _MethodLookup_MoreThanOne(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:ReferenceType)

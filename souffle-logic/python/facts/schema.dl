@@ -115,6 +115,7 @@
 .decl isStringRaw(?id:symbol)
 
 .decl HeapAllocation_Type(?heap:HeapAllocation, ?type:Type)
+.output HeapAllocation_Type
 .decl OriginalHeapAllocation_Type(?heap:HeapAllocation, ?type:Type)
 
 //-----------------------------------------------------------------------------

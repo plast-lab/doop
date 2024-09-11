@@ -2,5 +2,7 @@
  * Class initializer ?method of a ?type
  */
 .decl ClassInitializer(?type:Type, ?method:Method)
+.output ClassInitializer
 
 .decl InitializedClass(?classOrInterface:Type)
+.output InitializedClass

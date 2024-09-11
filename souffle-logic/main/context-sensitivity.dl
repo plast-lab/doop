@@ -13,28 +13,48 @@
 .decl VarPointsTo_Bounded(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var, ?n:number) choice-domain (?hctx, ?ctx, ?var, ?n)
 .output VarPointsTo_Bounded
 
-.decl VarInClass(?var:Var, ?class:Type)
-
-VarInClass(?var, ?class) :-
-  Var_DeclaringMethod(?var, ?method),
-  Method_DeclaringType(?method, ?class).
-
-
-.decl ClassPointsTo(??hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var, ?class:Type)
-
-ClassPointsTo(?hctx, ?value, ?ctx, ?var, ?class) :-
-  VarInClass(?var, ?class),
-  VarPointsTo(?hctx, ?value, ?ctx, ?var).
-
-.decl ClassPointsToSum(?class:Type, ?n:number)
-.output ClassPointsToSum
-
-ClassPointsToSum(?class, ?n) :-
-  ClassPointsTo(_, _, _, _, ?class),
-  ?n = count : {ClassPointsTo(_, _, _, _, ?class)}.
-
 VarPointsTo(?hctx, ?value, ?ctx, ?var) :-    
   VarPointsTo_Bounded(?hctx, ?value, ?ctx, ?var, _).
+
+// .decl VarInClass(?var:Var, ?class:Type)
+
+// VarInClass(?var, ?class) :-
+//   Var_DeclaringMethod(?var, ?method),
+//   Method_DeclaringType(?method, ?class).
+
+
+// .decl VarPointsToSum(?var:Var, ?n:number)
+
+// VarPointsToSum(?var, ?n) :-
+//   VarPointsTo(_, _, _, ?var),
+//   ?n = count : {VarPointsTo(_, _, _, ?var)}.
+
+// .decl VarInClassAndSum(?var:Var, ?n:number, ?class:ClassType)
+
+// VarInClassAndSum(?var, ?n, ?class) :-
+//   VarInClass(?var, ?class),
+//   VarPointsToSum(?var, ?n).
+
+// .decl ClassPointsToSum(?class:Type, ?n:number)
+// .output ClassPointsToSum
+
+// ClassPointsToSum(?class, ?n) :-
+//   isClassType(?class),
+//   ?n = sum ?y : {VarInClassAndSum(_, ?y, ?class)}.
+
+
+// .decl ClassPointsTo(??hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var, ?class:Type)
+
+// ClassPointsTo(?hctx, ?value, ?ctx, ?var, ?class) :-
+//   VarInClass(?var, ?class),
+//   VarPointsTo(?hctx, ?value, ?ctx, ?var).
+
+// .decl ClassPointsToSum(?class:Type, ?n:number)
+// .output ClassPointsToSum
+
+// ClassPointsToSum(?class, ?n) :-
+//   ClassPointsTo(_, _, _, _, ?class),
+//   ?n = count : {ClassPointsTo(_, _, _, _, ?class)}.
 
 ReachableValue(?hctx, ?heapValue) :-
   AssignContextInsensitiveHeapAllocation(?heapValue, _, ?inmethod),

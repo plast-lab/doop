@@ -17,33 +17,67 @@ AnyMainMethodDeclaration(?method, ?type) :-
    Method_Modifier("public", ?method),
    Method_Modifier("static", ?method).
 
-.decl BlacklistedHeapAllocation(value: Value)
+.decl BlacklistedHeapAllocation(class: Type, value: Value)
 .output BlacklistedHeapAllocation
 
-BlacklistedHeapAllocation(?value) :-
-  AssignHeapAllocation(?value, _, ?method),
-  Method_DeclaringType(?method, ?class),
-  isClassType(?class),
-  basic.SubtypeOf(?class, ?superclass),
-  (?superclass = "java.util.Map";
-    ?superclass = "java.util.Collection";
-    ?superclass = "java.util.Dictionary").
+// BlacklistedHeapAllocation(?class, ?value) :-
+//   AssignHeapAllocation(?value, _, ?method),
+//   Method_DeclaringType(?method, ?class),
+//   isClassType(?class),
+//   basic.SubtypeOf(?class, ?superclass),
+//   (?superclass = "java.util.Map";
+//     ?superclass = "java.util.Collection";
+//     ?superclass = "java.util.Dictionary").
 
-BlacklistedHeapAllocation(?value) :-
+// BlacklistedHeapAllocation(?class, ?value) :-
+//   AssignHeapAllocation(?value, _, ?method),
+//   Method_DeclaringType(?method, ?class),
+//   isClassType(?class),
+//   (contains(?class, ".$.");
+//    contains(?class, "java.lang.");
+//    contains(?class, "java.io.");
+//    contains(?class, "java.net.");
+//    contains(?class, "java.xml.");
+//    contains(?class, "java.lang.");
+//    contains(?class, "javax.swing.");
+//    contains(?class, "javax.awt.");
+//    contains(?class, "com.sun.");
+//    contains(?class, "sun.util.");
+//    contains(?class, "sun.net.");
+//    contains(?class, "org.apache.batik.dom.svg.");
+//    contains(?class, "org.apache.batik.dom.");
+//    contains(?class, "org.apache.batik.bridge.");
+//    contains(?class, "org.apache.batik.ext.")).
+
+// BlacklistedHeapAllocation(?class, ?value) :-
+//   AssignHeapAllocation(?value, _, ?method),
+//   Method_DeclaringType(?method, ?class),
+//   isClassType(?class),
+//   (?class = "org.apache.batik.dom.AbstractParentNode";
+//    ?class = "org.apache.batik.dom.AbstractNode").
+
+BlacklistedHeapAllocation(?class, ?value) :-
   AssignHeapAllocation(?value, _, ?method),
   Method_DeclaringType(?method, ?class),
   isClassType(?class),
-  (match(?class, ".*$.*");
-   match(?class, "java[.]lang[.]*");
-   match(?class, "java[.]io[.]*");
-   match(?class, "java[.]net[.]*");
-   match(?class, "java[.]xml[.]*");
-   match(?class, "java[.]lang[.]*");
-   match(?class, "javax[.]swing[.]*");
-   match(?class, "javax[.]awt[.]*");
-   match(?class, "com[.]sun[.]*");
-   match(?class, "sun[.]util[.]*");
-   match(?class, "sun[.]net[.]*")).
+  (contains(?class, "$")).
+
+.decl HeapAllocationTypeAppearsInMultipleClasses(?type:Type)
+
+HeapAllocationTypeAppearsInMultipleClasses(?type) :-
+  AssignHeapAllocation(?value1, _, ?method1),
+  Method_DeclaringType(?method1, ?class1),
+  HeapAllocation_Type(?value1, ?type),
+  AssignHeapAllocation(?value2, _, ?method2),
+  Method_DeclaringType(?method2, ?class2),
+  HeapAllocation_Type(?value2, ?type),
+  ?class1 != ?class2.
+
+BlacklistedHeapAllocation(?class, ?value) :-
+  AssignHeapAllocation(?value, _, ?method),
+  Method_DeclaringType(?method, ?class),
+  HeapAllocation_Type(?value, ?type),
+  !HeapAllocationTypeAppearsInMultipleClasses(?type).
 
 // BlacklistedHeapAllocation(?value) :-
 //   AssignHeapAllocation(?value, _, ?method),
@@ -53,9 +87,11 @@ BlacklistedHeapAllocation(?value) :-
 //   HeapAllocation_Type(?value, ?type),
 //   ?n > 100.
 
-// BlacklistedHeapAllocation(?value) :-
-//   NumberOfHeapAllocationsOfType(?type, ?n) ,
+// BlacklistedHeapAllocation(?class, ?value) :-
+//   AssignHeapAllocation(?value, _, ?method),
+//   Method_DeclaringType(?method, ?class),
 //   HeapAllocation_Type(?value, ?type),
+//   NumberOfHeapAllocationsOfType(?type, ?n) ,
 //   ?n < 20.  
 
 .decl HeapAllocationInClass(?value:Value, ?ins:Instruction, ?class:Type)
