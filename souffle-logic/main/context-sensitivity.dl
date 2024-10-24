@@ -10,11 +10,17 @@
  */
 
 .decl ReachableValue(?hctx:configuration.HContext, ?value: Value)
-.decl VarPointsTo_Bounded(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var, ?n:number) choice-domain (?hctx, ?ctx, ?var, ?n)
-.output VarPointsTo_Bounded
+.decl VarPointsTo_Bounded(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var, ?n:number) choice-domain (?ctx, ?var, ?n)
+// .decl VarPointsTo_Bounded(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var, ?n:number) choice-domain (?hctx, ?ctx, ?var, ?n)
+.decl InstanceFieldPointsTo_Bounded(?hctx:configuration.HContext, ?value:Value, ?sig:Field, ?basehctx:configuration.HContext, ?basevalue:Value, ?n:number) choice-domain(?sig, ?basehctx, ?basevalue, ?n)
+
+// .decl VarPointsTo_Bounded(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var, ?n:number) choice-domain (?ctx, ?var, ?n)
 
 VarPointsTo(?hctx, ?value, ?ctx, ?var) :-    
   VarPointsTo_Bounded(?hctx, ?value, ?ctx, ?var, _).
+
+InstanceFieldPointsTo(?hctx, ?value, ?sig, ?basehctx, ?basevalue) :-
+  InstanceFieldPointsTo_Bounded(?hctx, ?value, ?sig, ?basehctx, ?basevalue, _).
 
 // .decl VarInClass(?var:Var, ?class:Type)
 
@@ -173,7 +179,7 @@ StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from) :-
 //// Much slower in Souffle, for large analyses
 // VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
 //   LoadHeapInstanceField(?ctx, ?to, ?signature, ?basehctx, ?basevalue),
-//   InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue).
+//   BOUND_INSTANCE_FIELD_POINTS_TO(?hctx, ?value, ?signature, ?basehctx, ?basevalue).
 //    .plan 1:(2,1)
 
 HeapInterproceduralAssign(?ctxTo, ?to, ?ctxFrom, ?from) :-
@@ -192,7 +198,7 @@ BOUND_VAR_POINTS_TO(?hctx, ?value, ?ctx, ?to) :-
   LoadHeapInstanceField(?ctx, ?to, ?signature, ?basehctx, ?basevalue),
   InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue).
 
-InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
+BOUND_INSTANCE_FIELD_POINTS_TO(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
   StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from),
   VarPointsTo(?hctx, ?value, ?ctx, ?from),
   NotSpecialObject(?value),
@@ -221,7 +227,7 @@ ConstructorVar(?var) :-
   basic.ClassConstructor(?meth, _).
 
 // anantoni: This seems to be the most efficient version of the commented out rule below
-InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
+BOUND_INSTANCE_FIELD_POINTS_TO(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
   StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from),
   VarPointsTo(?hctx, ?value, ?ctx, ?from),
   ConstructorVar(?from),
@@ -231,7 +237,7 @@ InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
   !Value_Null(?basevalue).
 //.plan 1:(2,1,3,4,5,6)
 /**
-  InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
+  BOUND_INSTANCE_FIELD_POINTS_TO(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
   StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from),
   ConstructorVar(?from),
   VarPointsTo(?hctx, ?value, ?ctx, ?from),
@@ -246,7 +252,7 @@ InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
 
 
 #if defined(HEAPDLS) || defined(IMPORT_DYNAMIC_FACTS)
-InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
+BOUND_INSTANCE_FIELD_POINTS_TO(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
   HeapDLInstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue).
 
 BOUND_VAR_POINTS_TO(?hctx, ?value, ?ctx, ?to) :-
@@ -255,7 +261,7 @@ BOUND_VAR_POINTS_TO(?hctx, ?value, ?ctx, ?to) :-
 #endif // HEAPDLS, IMPORT_DYNAMIC_FACTS
 
 #if defined(FEATHERWEIGHT_ANALYSIS) && defined(INFORMATION_FLOW)
-InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
+BOUND_INSTANCE_FIELD_POINTS_TO(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
   StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from),
   TaintedVarPointsTo(?value, ?ctx, ?from),
   isImmutableHContext(?hctx),
@@ -599,7 +605,7 @@ BOUND_VAR_POINTS_TO(?hctx, ?value, ?toCtx, ?to) :-
   OptArgAssign(?toCtx, ?to, ?fromCtx, ?from, ?allowedType),
   Value_Type(?value, ?type),
   basic.SubtypeOf(?type, ?allowedType).
-  .plan 1:(2,1,3,4)
+  .plan 1:(2,1,3,4), 2:(3,1,2,4)
 
 #endif // INFORMATION_FLOW
 
@@ -790,7 +796,7 @@ Value_DeclaringType(?constValue, ?declaringType) :-
 #ifndef DISABLE_POINTS_TO
 // Core mocking rule.
 MockValueConsMacro(?value, ?type),
-VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
+BOUND_VAR_POINTS_TO(?hctx, ?value, ?ctx, ?return) :-
   Instruction_Method(?invocation, ?inmethod),
   ReachableContext(?ctx, ?inmethod),
   MethodInvocation_Method(?invocation, ?method),
