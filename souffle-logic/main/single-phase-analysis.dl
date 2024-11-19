@@ -1,10 +1,14 @@
 /** DEFAULT VPT **/
+#ifndef CHOICE_BOUND
 #define BOUND_VAR_POINTS_TO(hctx, value, ctx, var) VarPointsTo(hctx, value, ctx, var) 
 /** DEFAULT IFPT **/
 #define BOUND_INSTANCE_FIELD_POINTS_TO(hctx, value, sig, basehctx, basevalue) InstanceFieldPointsTo(hctx, value, sig, basehctx, basevalue)
-
-/** Experiment #1 **/
-// #define BOUND_VAR_POINTS_TO(hctx, value, ctx, var) VarPointsTo_Bounded(hctx, value, ctx, var, (ord(value)*ord(hctx)) % 101)
+#else
+/** For 2-obj+heap **/
+#define BOUND_VAR_POINTS_TO(hctx, value, ctx, var) VarPointsTo_Bounded(hctx, value, ctx, var, (ord(value)*ord(hctx)) % 101)
+/** DEFAULT IFPT **/
+#define BOUND_INSTANCE_FIELD_POINTS_TO(hctx, value, sig, basehctx, basevalue) InstanceFieldPointsTo(hctx, value, sig, basehctx, basevalue)
+#endif
 
 #include "main.dl"
 #include "basic-context-sensitivity.dl"

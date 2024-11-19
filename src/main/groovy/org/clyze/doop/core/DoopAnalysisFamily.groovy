@@ -371,6 +371,12 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
+					id: "CHOICE_BOUND",
+					name: "choice-bound",
+					description: "Enable choice-bound analysis pruning (Experimental).",
+					forPreprocessor: true
+			),
+			new BooleanAnalysisOption(
 					id: "DACAPO_BACH",
 					name: "dacapo-bach",
 					description: "Load additional logic for DaCapo (Bach) benchmarks properties.",

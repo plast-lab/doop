@@ -1,11 +1,11 @@
 /***************************************************
  * Variables
  ***************************************************/
-.decl Stats_Simple_JavaUtilInsensVarPointsTo(?value:Value, ?var:Var)
-OUTPUT_STATS_DEFAULT(Stats_Simple_JavaUtilInsensVarPointsTo)
+// .decl Stats_Simple_JavaUtilInsensVarPointsTo(?value:Value, ?var:Var)
+// OUTPUT_STATS_DEFAULT(Stats_Simple_JavaUtilInsensVarPointsTo)
 
-.decl Stats_Simple_JavaUtilVarPointsTo(?hctx:mainAnalysis.configuration.HContext, ?value:Value, ?ctx:mainAnalysis.configuration.Context, ?var:Var)
-OUTPUT_STATS_DEFAULT(Stats_Simple_JavaUtilVarPointsTo)
+// .decl Stats_Simple_JavaUtilVarPointsTo(?hctx:mainAnalysis.configuration.HContext, ?value:Value, ?ctx:mainAnalysis.configuration.Context, ?var:Var)
+// OUTPUT_STATS_DEFAULT(Stats_Simple_JavaUtilVarPointsTo)
 
 .decl Stats_Simple_InsensVarPointsTo(?value:Value, ?var:Var)
 OUTPUT_STATS_DEFAULT(Stats_Simple_InsensVarPointsTo)
@@ -144,6 +144,16 @@ OUTPUT_STATS_DEFAULT(Stats_Simple_Application_ReachableMethod)
 
 .decl Stats_Simple_Application_PotentiallyFailingCast(?type:Type, ?from:Var, ?to:Var)
 OUTPUT_STATS(Stats_Simple_Application_PotentiallyFailingCast)
+
+// Needed for choice domain
+.decl AppMayFailCastInMethod(?type:Type, ?from:Var, ?to:Var, ?inmethod:Method)
+
+AppMayFailCastInMethod(?type, ?from, ?to, ?inmethod) :-
+    Stats_Simple_Application_PotentiallyFailingCast(?type, ?from, ?to),
+    Stats_Simple_Application_Cast(?type, ?from, ?to, ?inmethod),
+    mainAnalysis.Reachable(?inmethod).
+
+.output AppMayFailCastInMethod
 
 /***************************************************
  * Reflection

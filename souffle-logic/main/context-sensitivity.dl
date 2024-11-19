@@ -10,8 +10,9 @@
  */
 
 .decl ReachableValue(?hctx:configuration.HContext, ?value: Value)
+// For 2-obj+heap
+#ifdef CHOICE_BOUND
 .decl VarPointsTo_Bounded(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var, ?n:number) choice-domain (?ctx, ?var, ?n)
-// .decl VarPointsTo_Bounded(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var, ?n:number) choice-domain (?hctx, ?ctx, ?var, ?n)
 .decl InstanceFieldPointsTo_Bounded(?hctx:configuration.HContext, ?value:Value, ?sig:Field, ?basehctx:configuration.HContext, ?basevalue:Value, ?n:number) choice-domain(?sig, ?basehctx, ?basevalue, ?n)
 
 // .decl VarPointsTo_Bounded(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var, ?n:number) choice-domain (?ctx, ?var, ?n)
@@ -21,6 +22,8 @@ VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
 
 InstanceFieldPointsTo(?hctx, ?value, ?sig, ?basehctx, ?basevalue) :-
   InstanceFieldPointsTo_Bounded(?hctx, ?value, ?sig, ?basehctx, ?basevalue, _).
+
+#endif
 
 // .decl VarInClass(?var:Var, ?class:Type)
 
