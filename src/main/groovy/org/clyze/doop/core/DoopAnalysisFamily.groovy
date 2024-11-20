@@ -327,7 +327,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "GENERATE_ARTIFACTS_MAP",
 					name: "generate-artifacts-map",
 					group: GROUP_FACTS,
-					description: "Generate artifacts map.",
+					description: "Generate artifacts map (mapping classes to their containing jars).",
 					value: false,
 					forCacheID: true
 			),
@@ -373,7 +373,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "CHOICE_BOUND",
 					name: "choice-bound",
-					description: "Enable choice-bound analysis pruning (Experimental).",
+					description: "Enable choice-bound analysis pruning (Experimental, currently supported for 2objH).",
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
