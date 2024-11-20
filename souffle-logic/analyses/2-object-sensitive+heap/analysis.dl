@@ -1,8 +1,16 @@
 // Context-sensitive pointer analysis with context of 2 object and a
 // context-sensitive heap abstraction.
 
-#include "../../main/single-phase-analysis.dl"
-#include "../../main/configuration.dl"
+
+
+#ifdef CHOICE_BOUND
+
+#define BOUND_VAR_POINTS_TO(hctx, value, ctx, var) VarPointsTo_Bounded(hctx, value, ctx, var, (ord(value)*ord(hctx)) % 101)
+
+#define CHOICE_CONFIG choice-domain (?ctx, ?var, ?n)
+.decl VarPointsTo_Bounded(?hctx:mainAnalysis.configuration.HContext, ?value:Value, ?ctx:mainAnalysis.configuration.Context, ?var:Var, ?n:number) CHOICE_CONFIG
+
+#endif
 
 // For this analysis the context of a method call corresponds to the
 // identity of the receiver object and the receiver object of the caller.
@@ -67,3 +75,6 @@
 #endif // HEAPDLS
 
 }
+
+#include "../../main/single-phase-analysis.dl"
+#include "../../main/configuration.dl"
