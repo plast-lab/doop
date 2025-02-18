@@ -1,6 +1,7 @@
 package org.clyze.doop.soot;
 
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import org.clyze.doop.common.JavaRepresentation;
 import org.clyze.doop.common.SessionCounter;
@@ -42,7 +43,10 @@ class Representation extends JavaRepresentation {
     }
 
     static String signature(SootMethodRef mRef) {
-        return stripQuotes(mRef.toString());
+        if (mRef != null)
+            return stripQuotes(mRef.toString());
+        else
+            return "Null method " + UUID.randomUUID();
     }
 
     String simpleName(SootMethod m) {

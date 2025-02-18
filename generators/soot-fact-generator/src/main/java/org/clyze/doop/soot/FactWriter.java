@@ -391,11 +391,14 @@ class FactWriter extends JavaFactWriter {
     private void writeAssignMethodHandleConstant(InstrInfo ii, Local l, MethodHandle constant) {
         String handleMethod = Representation.signature(constant.getMethodRef());
         String heap = methodHandleConstant(handleMethod);
-        SigInfo si = new SigInfo(constant.getMethodRef(), false);
 
-        writeMethodHandleConstant(heap, handleMethod, si.retType, si.paramTypes, si.arity);
-        String methodId = ii.methodId;
-        _db.add(ASSIGN_HEAP_ALLOC, ii.insn, str(ii.index), heap, _rep.local(methodId, l), methodId, "0");
+        if (constant.getMethodRef() != null) {
+            SigInfo si = new SigInfo(constant.getMethodRef(), false);
+
+            writeMethodHandleConstant(heap, handleMethod, si.retType, si.paramTypes, si.arity);
+            String methodId = ii.methodId;
+            _db.add(ASSIGN_HEAP_ALLOC, ii.insn, str(ii.index), heap, _rep.local(methodId, l), methodId, "0");
+        }
     }
 
     private void writeAssignMethodTypeConstant(InstrInfo ii, Local l, DoopAddons.MethodType constant) {
@@ -1100,12 +1103,17 @@ class FactWriter extends JavaFactWriter {
         final String retType;
         final String paramTypes;
         SigInfo(SootMethodInterface ref, boolean reverse) {
-            List<Type> paramTypes = ref.getParameterTypes();
+            List<Type> paramTypes = Collections.emptyList();
+            if (ref != null)
+                paramTypes = ref.getParameterTypes();
             if (reverse)
                 paramTypes = Lists.reverse(paramTypes);
 
             this.arity = paramTypes.size();
-            this.retType = ref.getReturnType().toString();
+            if (ref !=null )
+                this.retType = ref.getReturnType().toString();
+            else
+                this.retType = "Null return type "  + UUID.randomUUID();
 
             StringJoiner joiner = new StringJoiner(",");
             paramTypes.forEach(p -> joiner.add(p.toString()));
