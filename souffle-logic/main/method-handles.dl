@@ -1,1051 +1,1051 @@
-/*************************************************************
- * Method Types
- *************************************************************/
-
-/*
- * Method types can either be normal Java values or special method
- * type constants that come from the constant pool.
- */
-.type MethodType = Value
-.type ParamTypes = symbol
-.decl MethodType_ParamType(?mt:MethodType, ?index:number, ?pType:Type)
-.decl MethodType_ParamTypes(?mt:MethodType, ?paramTypes:ParamTypes)
-.decl MethodType_ReturnType(?mt:MethodType, ?retType:Type)
-.decl MethodType_Arity(?mt:MethodType, ?arity:number)
-
-// Relation to mark all method types created initially.
-.decl isInitialMethodType(?mt:MethodType)
-
-// For every method type constant in the constant pool, create a method type.
-MethodType_ParamType(?mt, ?idx, ?type)  :- _MethodTypeConstantParam(?mt, ?idx, ?type).
-MethodType_Arity(?mt, ?arity)           :- MethodTypeConstant_Arity(?mt, ?arity).
-MethodType_ReturnType(?mt, ?retType)    :- MethodTypeConstant_ReturnType(?mt, ?retType).
-MethodType_ParamTypes(?mt, ?paramTypes) :- MethodTypeConstant_ParamTypes(?mt, ?paramTypes).
-
-#define METHOD_TYPE(paramTypes, retType) \
-  cat("<method type (", cat(paramTypes, cat(")", cat(retType, ">"))))
-
-#ifdef REFLECTION_METHOD_HANDLES
-
-.decl Method_MethodType(?method:Method, ?mt:MethodType)
-
-// For every method, create a method type. We treat static and non-static
-// methods similarly here, since the method types without receivers may still be
-// encountered (and be arguments to method finders).
-MockValueConsMacro(?mt, "java.lang.invoke.MethodType"),
-isInitialMethodType(?mt),
-Method_MethodType(?method, ?mt),
-MethodType_ParamTypes(?mt, ?paramTypes),
-MethodType_Arity(?mt, ?arity),
-MethodType_ReturnType(?mt, ?retType) :-
-  Method_ReturnType(?method, ?retType),
-  Method_ParamTypes(?method, ?paramTypes),
-  ?mt = METHOD_TYPE(?paramTypes, ?retType),
-  Method_Arity(?method, ?arity).
-MethodType_ParamType(?mt, ?index, ?pType) :-
-  Method_MethodType(?method, ?mt),
-  FormalParam(?index, ?method, ?var),
-  _Var_Type(?var, ?pType).
-
-// For non-static methods, also create a method type that contains the receiver
-// type as the first argument. Only the initial method types are considered.
-.decl CreatePreMethodTypeForMethod(?method:Method, ?mt:MethodType, ?mtConv:MethodType, ?paramTypes:ParamTypes, ?retType:Type, ?arity:number)
-CreatePreMethodTypeForMethod(?method, ?mt, ?mtConv, ?thisTypeStr, ?retType, 1) :-
-  Method_MethodType(?method, ?mt),
-  !Method_Modifier("static", ?method),
-  isInitialMethodType(?mt),
-  Method_DeclaringType(?method, ?thisType),
-  MethodType_ParamTypes(?mt, ""),
-  MethodType_ReturnType(?mt, ?retType),
-  ?thisTypeStr = cat("", ?thisType),
-  ?mtConv = METHOD_TYPE(?thisType, ?retType).
-CreatePreMethodTypeForMethod(?method, ?mt, ?mtConv, ?paramTypesConv, ?retType, ?arity) :-
-  Method_MethodType(?method, ?mt),
-  !Method_Modifier("static", ?method),
-  isInitialMethodType(?mt),
-  Method_DeclaringType(?method, ?thisType),
-  MethodType_ParamTypes(?mt, ?paramTypes),
-  MethodType_ReturnType(?mt, ?retType),
-  Method_Arity(?method, ?arity),
-  ?arity > 0,
-  ?paramTypesConv = cat(?thisType, cat(",", ?paramTypes)),
-  ?mtConv = METHOD_TYPE(?paramTypesConv, ?retType).
-
-// The construction logic for prepended-receiver method types.
-.decl EquivalentWithPrependedReceiver(?mt:MethodType, ?mtConv:MethodType)
-MockValueConsMacro(?mtConv, "java.lang.invoke.MethodType"),
-EquivalentWithPrependedReceiver(?mt, ?mtConv),
-Method_MethodType(?method, ?mtConv),
-MethodType_ParamTypes(?mtConv, ?paramTypes),
-MethodType_ReturnType(?mtConv, ?retType),
-MethodType_Arity(?mtConv, ?arity) :-
-  CreatePreMethodTypeForMethod(?method, ?mt, ?mtConv, ?paramTypes, ?retType, ?arity).
-
-#if defined(REFLECTION) || defined(LIGHT_REFLECTION_GLUE)
-
-// Model of MethodType.returnType().
-OpaqueCallGraphEdge(?invo, ?sig),
-BOUND_VAR_POINTS_TO(?hctx, ?classValue, ?ctx, ?ret) :-
-  _VirtualMethodInvocation(?invo, _, ?sig, ?base, ?method),
-  ?sig = "<java.lang.invoke.MethodType: java.lang.Class returnType()>",
-  ReachableContext(?ctx, ?method),
-  VarPointsTo(?hctx, ?mt, ?ctx, ?base),
-  MethodType_ReturnType(?mt, ?retType),
-  ReifiedClass(?retType, ?classValue),
-  AssignReturnValue(?invo, ?ret).
-
-// Imprecise model of MethodType.parameterType(), since we do not track
-// primitive values (for its argument).
-OpaqueCallGraphEdge(?invo, ?sig),
-BOUND_VAR_POINTS_TO(?hctx, ?classValue, ?ctx, ?ret) :-
-  _VirtualMethodInvocation(?invo, _, ?sig, ?base, ?method),
-  ?sig = "<java.lang.invoke.MethodType: java.lang.Class parameterType(int)>",
-  ReachableContext(?ctx, ?method),
-  VarPointsTo(?hctx, ?mt, ?ctx, ?base),
-  MethodType_ParamType(?mt, _, ?pType),
-  ReifiedClass(?pType, ?classValue),
-  AssignReturnValue(?invo, ?ret).
-
-#endif // REFLECTION, LIGHT_REFLECTION_GLUE
-
-// MethodType API entry points. The actual logic: every methodType()
-// invocation picks all descriptors that match.
-
-.decl ReachableMethodTypeN(?id:number, ?invo:MethodInvocation, ?ctx:configuration.Context)
-OpaqueCallGraphEdge(?invo, ?mtEntryPoint),
-ReachableMethodTypeN(?id, ?invo, ?ctx) :-
-  MTEntryPoint(?id, ?invo, ?mtEntryPoint),
-  Instruction_Method(?invo, ?method),
-  ReachableContext(?ctx, ?method).
-
-.decl MT_ReturnType(?invo:MethodInvocation, ?hctx:configuration.HContext, ?ctx:configuration.Context, ?type:ReferenceType)
-.decl MT_ParamValue(?invo:MethodInvocation, ?index:number, ?classValue:Value)
-
-#if defined(REFLECTION) || defined(LIGHT_REFLECTION_GLUE)
-// The first argument to methodType() is always the return type.
-MT_ReturnType(?invo, ?hctx, ?ctx, ?type) :-
-  ReachableMethodTypeN(_, ?invo, ?ctx),
-  ActualParam(0, ?invo, ?param),
-  VarPointsTo(?hctx, ?classValue, ?ctx, ?param),
-  ReifiedClass(?type, ?classValue).
-#endif // REFLECTION, LIGHT_REFLECTION_GLUE
-
-// MethodType2, MethodType4: second parameter.
-MT_ParamValue(?invo, 0, ?classValue) :-
-  ReachableMethodTypeN(?id, ?invo, ?ctx),
-  (?id = 2 ; ?id = 4),
-  ActualParam(1, ?invo, ?param),
-  VarPointsTo(_, ?classValue, ?ctx, ?param).
-
-// MethodType1 lacks a parameter, so we use a dummy value instead.
-#define MT_NOARGS_VALUE "<mock dummy methodType() class for first argument>"
-MockValueConsMacro(MT_NOARGS_VALUE, "java.lang.Class"),
-MT_ParamValue(?invo, 0, MT_NOARGS_VALUE) :-
-  MTEntryPoint(1, ?invo, _).
-
-// Helper relation to treat 'void' and 'java.lang.Void' as the same
-// type in descriptors.
-.decl InvoReturnTypeMatch(?invo:MethodInvocation, ?hctx:configuration.HContext, ?ctx:configuration.Context, ?retType:Type)
-
-InvoReturnTypeMatch(?invo, ?hctx, ?ctx, "void") :-
-  MT_ReturnType(?invo, ?hctx, ?ctx, "java.lang.Void").
-InvoReturnTypeMatch(?invo, ?hctx, ?ctx, ?retType) :-
-  MT_ReturnType(?invo, ?hctx, ?ctx, ?retType).
-
-.decl MTCallMatch(?invo:MethodInvocation, ?hctx:configuration.HContext, ?ctx:configuration.Context, ?paramTypes:ParamTypes, ?retType:Type, ?arity:number)
-
-// MethodType1.
-MTCallMatch(?invo, ?hctx, ?ctx, "", ?retType, 0) :-
-  MTEntryPoint(1, ?invo, _),
-  InvoReturnTypeMatch(?invo, ?hctx, ?ctx, ?retType),
-  MT_ParamValue(?invo, 0, MT_NOARGS_VALUE).
-
-#if defined(REFLECTION) || defined(LIGHT_REFLECTION_GLUE)
-// MethodType2.
-MTCallMatch(?invo, ?hctx, ?ctx, ?pType0, ?retType, 1) :-
-  MTEntryPoint(2, ?invo, _),
-  InvoReturnTypeMatch(?invo, ?hctx, ?ctx, ?retType),
-  MT_ParamValue(?invo, 0, ?classValue0),
-  ReifiedClass(?pType0, ?classValue0).
-#endif // REFLECTION, LIGHT_REFLECTION_GLUE
-
-// MethodType5.
-MTCallMatch(?invo, ?hctx, ?ctx, ?argParamTypes, ?retType, ?arity) :-
-  ReachableMethodTypeN(5, ?invo, ?ctx),
-  InvoReturnTypeMatch(?invo, ?hctx, ?ctx, ?retType),
-  ActualParam(1, ?invo, ?param),
-  VarPointsTo(_, ?mtArg, ?ctx, ?param),
-  MethodType_ParamTypes(?mtArg, ?argParamTypes),
-  MethodType_Arity(?mtArg, ?arity).
-
-// MethodType3/MethodType4/MethodType6. Here we do not try to reason about the
-// parameter types but return a wildcard; this will be attached to the mock
-// method type and trigger imprecise matching in the method finder.
-#define WILDCARD_PARAM_TYPES "--all-types--"
-MTCallMatch(?invo, ?hctx, ?ctx, WILDCARD_PARAM_TYPES, ?retType, 0) :-
-  MTEntryPoint(?id, ?invo, _),
-  (?id = 3 ; ?id = 4 ; ?id = 6),
-  InvoReturnTypeMatch(?invo, ?hctx, ?ctx, ?retType).
-
-// Make methodType() invocations return values.
-.decl AssignMethodType(?hctx:configuration.HContext, ?mt:MethodType, ?ctx:configuration.Context, ?ret:Var, ?paramTypes:ParamTypes, ?retType:Type, ?arity:number)
-
-AssignMethodType(?hctx, ?mt, ?ctx, ?ret, ?paramTypes, ?retType, ?arity) :-
-  MTCallMatch(?invo, ?hctx, ?ctx, ?paramTypes, ?retType, ?arity),
-  AssignReturnValue(?invo, ?ret),
-  ?mt = METHOD_TYPE(?paramTypes, ?retType).
-
-#ifndef DISABLE_POINTS_TO
-// If the method type has been created during the preprocessing
-// initial phase, reuse it.
-VarPointsTo(?hctx, ?mt, ?ctx, ?ret) :-
-  AssignMethodType(?hctx, ?mt, ?ctx, ?ret, _, _, _),
-  isInitialMethodType(?mt).
-#endif // DISABLE_POINTS_TO
-
-// Invent new method types if we are not sure they already exist from
-// the preprocessing initial phase.
-#ifndef DISABLE_POINTS_TO
-VarPointsTo(?hctx, ?mt, ?ctx, ?ret),
-#endif // DISABLE_POINTS_TO
-MockValueConsMacro(?mt, "java.lang.invoke.MethodType"),
-MethodType_Arity(?mt, ?arity),
-MethodType_ParamTypes(?mt, ?paramTypes),
-MethodType_ReturnType(?mt, ?retType) :-
-  AssignMethodType(?hctx, ?mt, ?ctx, ?ret, ?paramTypes, ?retType, ?arity),
-  !isInitialMethodType(?mt),
-  Var_DeclaringMethod(?ret, ?method),
-  ApplicationMethod(?method).
-
-#endif // REFLECTION_METHOD_HANDLES
-
-/*************************************************************
- * Method Handles
- *************************************************************/
-
-HeapAllocation_ContextInsensitive(?heap) :-
-  isMethodHandleConstant(?heap).
-
-.type MethodHandle = Value
-.decl MethodHandle_Method(?methodHandle:MethodHandle, ?method:Method)
-// Returns a method type for a method handle. This is not a function: a method
-// handle may, for example, contain both a method type that only mentions the
-// original method arguments and a method type that also includes the receiver.
-.decl MethodHandle_MethodType(?mh:MethodHandle, ?mt:MethodType)
-
-// For every method handle constant, create a method type.
-MockValueConsMacro(?mt, "java.lang.invoke.MethodType"),
-isInitialMethodType(?mt),
-MethodHandle_Method(?methodHandle, ?method),
-MethodHandle_MethodType(?methodHandle, ?mt),
-MethodType_Arity(?mt, ?arity),
-MethodType_ParamTypes(?mt, ?paramTypes),
-MethodType_ReturnType(?mt, ?retType) :-
-  MethodHandleConstant_Method(?methodHandle, ?method),
-  MethodHandleConstant_ParamTypes(?methodHandle, ?paramTypes),
-  MethodHandleConstant_ReturnType(?methodHandle, ?retType),
-  MethodHandleConstant_Arity(?methodHandle, ?arity),
-  ?mt = METHOD_TYPE(?paramTypes, ?retType).
-
-// Invocations of a MethodHandle. These can either be explicit calls to
-// MethodHandle.invoke()/invokeExact() or implicit calls via invokedynamic.
-
-.decl MethodHandleCallGraphEdge_Candidate(?callerCtx:configuration.Context, ?i:MethodInvocation, ?m:Method, ?mh:MethodHandle, ?name:symbol)
-MethodHandleCallGraphEdge_Candidate(?callerCtx, ?invo, ?method, ?mh, ?name) :-
-  // Permit treatment of invoke methods as opaque.
-  ReachableContext(?callerCtx, ?containingMethod),
-  (_VirtualMethodInvocation(?invo, _, _, ?base, ?containingMethod) ;
-   _SpecialMethodInvocation(?invo, _, _, ?base, ?containingMethod)),
-  _PolymorphicInvocation(?invo, ?name),
-  VarPointsTo(_, ?mh, ?callerCtx, ?base),
-  MethodHandle_Method(?mh, ?method).
-.plan 1:(4,5,2,1,3), 2:(5,4,2,1,3)
-
-.decl MethodHandleCallGraphEdge(?callerCtx:configuration.Context, ?i:MethodInvocation, ?calleeCtx:configuration.Context, ?m:Method, ?mh:MethodHandle, ?name:symbol)
-configuration.StaticContextRequest(?callerCtx, ?invo) :-
-  MethodHandleCallGraphEdge_Candidate(?callerCtx, ?invo, ?method, _, _),
-  Method_Modifier("static", ?method).
-// Call-graph edges for static method handle invocations.
-MethodHandleCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?method, ?mh, ?name) :-
-  configuration.StaticContextResponse(?callerCtx, ?invo, ?calleeCtx),
-  MethodHandleCallGraphEdge_Candidate(?callerCtx, ?invo, ?method, ?mh, ?name).
-// Call-graph edges for non-static method handle invocations.
-MethodHandleCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?method, ?mh, ?name) :-
-  MethodHandleCallGraphEdge_Candidate(?callerCtx, ?invo, ?method, ?mh, ?name),
-  !Method_Modifier("static", ?method),
-  // REVIEW: context sensitivity in the callee.
-  isImmutableContext(?calleeCtx).
-
-ReachableContext(?calleeCtx, ?method) :-
-  MethodHandleCallGraphEdge(_, _, ?calleeCtx, ?method, _, _).
-
-// A boxing/unboxing conversion of types including the null type.
-.decl BoxTypeConversion(?original:Type, ?new:Type)
-// Create a new allocation in the case of boxing.
-.decl BoxAllocation(?value:Value, ?type:Type)
-#define BOX_ALLOC(t) cat("<mock box allocation for type ", cat(t, ">"))
-
-BoxTypeConversion(?t1, ?t2),
-MockValueConsMacro(?mockAlloc, ?t2),
-BoxAllocation(?mockAlloc, ?t2) :-
-  PrimitiveType_Boxed(?t1, ?wrapperT),
-  basic.SubtypeOf(?wrapperT, ?t2),
-  ?mockAlloc = BOX_ALLOC(?t2).
-BoxTypeConversion(?t1, ?t2) :- PrimitiveType_Boxed(?t1, _), isNullType(?t2).
-BoxTypeConversion(?t1, ?t2) :- PrimitiveType_Boxed(_, ?t2), isNullType(?t1).
-BoxTypeConversion(?t1, ?t2) :- BoxTypeConversion(?t2, ?t1).
-
-.decl CompatibleTypes(?t:Type, ?tConv:Type)
-CompatibleTypes(?t, ?tConv) :- basic.SubtypeOf(?tConv, ?t).
-CompatibleTypes(?t, ?tConv) :- BoxTypeConversion(?t, ?tConv).
-
-// Record parameter passing, to be used for conversions (e.g., auto-boxing).
-.decl MethodHandleCGE_Arg(?callerCtx:configuration.Context, ?calleeCtx:configuration.Context, ?actual:Var, ?formal:Var, ?actualType:Type, ?formalType:Type, ?name:symbol)
-// Pass arguments to instance methods (first argument becomes the receiver).
-MethodHandleCGE_Arg(?callerCtx, ?calleeCtx, ?actual, ?formal, ?actualType, ?formalType, ?name) :-
-  MethodHandleCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?method, _, ?name),
-  !Method_Modifier("static", ?method),
-  ActualParam(?idx, ?invo, ?actual),
-  ?idx > 0,
-  FormalParam(?idx - 1, ?method, ?formal),
-  Var_Type(?actual, ?actualType),
-  Var_Type(?formal, ?formalType).
-// Pass arguments to static methods.
-MethodHandleCGE_Arg(?callerCtx, ?calleeCtx, ?actual, ?formal, ?actualType, ?formalType, ?name) :-
-  MethodHandleCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?method, _, ?name),
-  Method_Modifier("static", ?method),
-  ActualParam(?idx, ?invo, ?actual),
-  FormalParam(?idx, ?method, ?formal),
-  Var_Type(?actual, ?actualType),
-  Var_Type(?formal, ?formalType).
-
-#ifndef DISABLE_POINTS_TO
-// This rule covers exact matching of argument types.
-BOUND_VAR_POINTS_TO(?hctx, ?val, ?calleeCtx, ?formal) :-
-  MethodHandleCGE_Arg(?callerCtx, ?calleeCtx, ?actual, ?formal, ?actualType, ?formalType, _),
-  VarPointsTo(?hctx, ?val, ?callerCtx, ?actual),
-  basic.SubtypeOf(?actualType, ?formalType).
-
-#ifdef REFLECTION_METHOD_HANDLES
-// This rule covers boxing of arguments for MethodHandle.invoke(). Since the
-// original arguments are primitive values, VarPointsTo may not be available.
-// This is an expensive rule and is thus guarded for the full reflective case.
-BOUND_VAR_POINTS_TO(?immHctx, ?val, ?calleeCtx, ?formal) :-
-  MethodHandleCGE_Arg(_, ?calleeCtx, _, ?formal, ?actualType, ?formalType, "invoke"),
-  BoxTypeConversion(?actualType, ?formalType),
-  BoxAllocation(?val, ?formalType),
-  isImmutableHContext(?immHctx).
-#endif // REFLECTION_METHOD_HANDLES
-
-// Pass receiver to instance methods.
-BOUND_VAR_POINTS_TO(?hctx, ?val, ?calleeCtx, ?this) :-
-  MethodHandleCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?method, _, _),
-  !Method_Modifier("static", ?method),
-  ActualParam(0, ?invo, ?actual),
-  VarPointsTo(?hctx, ?val, ?callerCtx, ?actual),
-  ThisVar(?method, ?this),
-  Var_Type(?actual, ?actualType),
-  Var_Type(?this, ?thisType),
-  basic.SubtypeOf(?actualType, ?thisType).
-
-// Get return value.
-BOUND_VAR_POINTS_TO(?hctx, ?val, ?callerCtx, ?var) :-
-  MethodHandleCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?method, _, _),
-  ReturnVar(?ret, ?method),
-  VarPointsTo(?hctx, ?val, ?calleeCtx, ?ret),
-  AssignReturnValue(?invo, ?var),
-  Var_Type(?ret, ?retType),
-  Var_Type(?var, ?varType),
-  CompatibleTypes(?retType, ?varType).
-#endif // DISABLE_POINTS_TO
-
-// Model MethodHandle.asType().
-OpaqueCallGraphEdge(?invo, ?sig),
-MockValueConsMacro(?adapterMH, "java.lang.invoke.MethodHandle"),
-#ifndef DISABLE_POINTS_TO
-VarPointsTo(?hctx, ?adapterMH, ?ctx, ?ret),
-#endif // DISABLE_POINTS_TO
-MethodHandle_Method(?adapterMH, ?mhMethod),
-MethodHandle_MethodType(?adapterMH, ?mt) :-
-  _VirtualMethodInvocation(?invo, _, ?sig, ?base, ?method),
-  ReachableContext(?ctx, ?method),
-  ?sig = "<java.lang.invoke.MethodHandle: java.lang.invoke.MethodHandle asType(java.lang.invoke.MethodType)>",
-  VarPointsTo(?hctx, ?mh, ?ctx, ?base),
-  ActualParam(0, ?invo, ?arg),
-  VarPointsTo(_, ?mt, ?ctx, ?arg),
-  AssignReturnValue(?invo, ?ret),
-  MethodHandle_Method(?mh, ?mhMethod),
-  Method_ParamTypes(?mhMethod, _),
-  ?adapterMH = cat("<adapter for ", cat(?mh, cat(" as ", ?mt))).
-
-/*************************************************************
- * Method Handles Lookup
- *************************************************************/
-
-.decl MHLookup_Type(?value:Value, ?type:Type)
-#define MOCK_MH_LOOKUP(t) cat("<mock method handles lookup object for type ", cat(t, ">"))
-
-#ifdef REFLECTION_METHOD_HANDLES
-
-.decl CreateMHLookup(?type:Type, ?ctx:configuration.Context, ?ret:Var)
-#ifndef DISABLE_POINTS_TO
-VarPointsTo(?immHctx, ?mockMHLookup, ?ctx, ?ret),
-#endif // DISABLE_POINTS_TO
-MockValueConsMacro(?mockMHLookup, "java.lang.invoke.MethodHandles$Lookup"),
-MHLookup_Type(?mockMHLookup, ?type) :-
-  CreateMHLookup(?type, ?ctx, ?ret),
-  isImmutableHContext(?immHctx),
-  ?mockMHLookup = MOCK_MH_LOOKUP(?type).
-
-// Model of MethodHandles.lookup(). This is a caller sensitive method and thus
-// its result must record the caller class.
-OpaqueCallGraphEdge(?invo, ?sig),
-CreateMHLookup(?type, ?ctx, ?ret) :-
-  _StaticMethodInvocation(?invo, _, ?sig, ?method),
-  ?sig = "<java.lang.invoke.MethodHandles: java.lang.invoke.MethodHandles$Lookup lookup()>",
-  ReachableContext(?ctx, ?method),
-  Method_DeclaringType(?method, ?type),
-  AssignReturnValue(?invo, ?ret).
-
-// Model of MethodHandles.publicLookup(). We assume the caller class is Object.
-OpaqueCallGraphEdge(?invo, ?sig),
-CreateMHLookup("java.lang.Object", ?ctx, ?ret) :-
-  _StaticMethodInvocation(?invo, _, ?sig, ?method),
-  ?sig = "<java.lang.invoke.MethodHandles: java.lang.invoke.MethodHandles$Lookup publicLookup()>",
-  ReachableContext(?ctx, ?method),
-  AssignReturnValue(?invo, ?ret).
-
-#if defined(REFLECTION) || defined(LIGHT_REFLECTION_GLUE)
-// Model of MethodHandles.Lookup.lookupClass().
-#ifndef DISABLE_POINTS_TO
-VarPointsTo(?hctx, ?classValue, ?ctx, ?ret),
-#endif // DISABLE_POINTS_TO
-OpaqueCallGraphEdge(?invo, ?sig) :-
-  _VirtualMethodInvocation(?invo, _, ?sig, ?base, ?method),
-  ?sig = "<java.lang.invoke.MethodHandles$Lookup: java.lang.Class lookupClass()>",
-  ReachableContext(?ctx, ?method),
-  VarPointsTo(?hctx, ?mhLookup, ?ctx, ?base),
-  MHLookup_Type(?mhLookup, ?type),
-  ReifiedClass(?type, ?classValue),
-  AssignReturnValue(?invo, ?ret).
-#endif // REFLECTION, LIGHT_REFLECTION_GLUE
-
-// Helper relation to only create direct method handles when no constant method
-// handles are found. Used when computing the handle to store in a variable.
-.decl AssignMethodHandleToVarRequest(?method:Method, ?paramTypes:ParamTypes, ?retType:Type, ?hctx:configuration.HContext, ?ctx:configuration.Context, ?ret:Var)
-
-#ifndef DISABLE_POINTS_TO
-// Case 1: method handle constant exists.
-BOUND_VAR_POINTS_TO(?hctx, ?mh, ?ctx, ?var) :-
-  AssignMethodHandleToVarRequest(?method, ?paramTypes, ?retType, ?hctx, ?ctx, ?var),
-  MethodHandleConstant_Method(?mh, ?method),
-  MethodHandleConstant_ParamTypes(?mh, ?paramTypes),
-  MethodHandleConstant_ReturnType(?mh, ?retType).
-#endif // DISABLE_POINTS_TO
-
-// Case 2: method handle constant not found, invent a mock object.
-#ifndef DISABLE_POINTS_TO
-BOUND_VAR_POINTS_TO(?hctx, ?dmh, ?ctx, ?var),
-#endif // DISABLE_POINTS_TO
-MockValueConsMacro(?dmh, "java.lang.invoke.MethodHandle"),
-MethodHandle_Method(?dmh, ?method),
-MethodHandle_MethodType(?dmh, ?mt) :-
-  AssignMethodHandleToVarRequest(?method, _, _, ?hctx, ?ctx, ?var),
-  !MethodHandleConstant_Method(_, ?method),
-  Method_MethodType(?method, ?mt),
-  ?dmh = cat("<computed direct method handle for ", cat(?method, ">")).
-
-#ifdef REFLECTION
-// Model conversions from reflection Method to method handle.
-AssignMethodHandleToVarRequest(?method, ?paramTypes, ?retType, ?hctx, ?ctx, ?ret) :-
-  ( MethodInvocation_Method(?invo, "<java.lang.invoke.MethodHandles$Lookup: java.lang.invoke.MethodHandle unreflect(java.lang.reflect.Method)>") ;
-  MethodInvocation_Method(?invo, "<java.lang.invoke.MethodHandles$Lookup: java.lang.invoke.MethodHandle unreflectSpecial(java.lang.reflect.Method,java.lang.Class)>")),
-  Instruction_Method(?invo, ?caller),
-  ReachableContext(?ctx, ?caller),
-  ActualParam(0, ?invo, ?arg),
-  VarPointsTo(?hctx, ?methodValue, ?ctx, ?arg),
-  ReifiedMethod(?method, ?methodValue),
-  Method_ParamTypes(?method, ?paramTypes),
-  Method_ReturnType(?method, ?retType),
-  AssignReturnValue(?invo, ?ret).
-AssignMethodHandleToVarRequest(?method, ?paramTypes, ?retType, ?hctx, ?ctx, ?ret) :-
-  MethodInvocation_Method(?invo, "<java.lang.invoke.MethodHandles$Lookup: java.lang.invoke.MethodHandle unreflectConstructor(java.lang.reflect.Constructor)>"),
-  Instruction_Method(?invo, ?caller),
-  ReachableContext(?ctx, ?caller),
-  ActualParam(0, ?invo, ?arg),
-  VarPointsTo(?hctx, ?constructor, ?ctx, ?arg),
-  ReifiedConstructor(?method, ?constructor),
-  Method_ParamTypes(?method, ?paramTypes),
-  Method_ReturnType(?method, ?retType),
-  AssignReturnValue(?invo, ?ret).
-#endif // REFLECTION
-
-// Method-lookup methods.
-
-#define FIND_METHOD(invo, ret, sig)            \
-  MethodInvocation_Method(invo, sig),          \
-  VirtualMethodInvocation_Base(invo, ?lookup), \
-  VarPointsTo(_, ?baseVal, _, ?lookup),        \
-  !Value_Null(?baseVal),                       \
-  AssignReturnValue(invo, ret)
-
-.decl FindVirtual(?invo:MethodInvocation, ?ret:Var)
-FindVirtual(?invo, ?ret) :-
-  FIND_METHOD(?invo, ?ret, "<java.lang.invoke.MethodHandles$Lookup: java.lang.invoke.MethodHandle findVirtual(java.lang.Class,java.lang.String,java.lang.invoke.MethodType)>").
-
-.decl FindStatic(?invo:MethodInvocation, ?ret:Var)
-FindStatic(?invo, ?ret) :-
-  FIND_METHOD(?invo, ?ret, "<java.lang.invoke.MethodHandles$Lookup: java.lang.invoke.MethodHandle findStatic(java.lang.Class,java.lang.String,java.lang.invoke.MethodType)>").
-
-.decl FindSpecial(?invo:MethodInvocation, ?ret:Var)
-FindSpecial(?invo, ?ret) :-
-  FIND_METHOD(?invo, ?ret, "<java.lang.invoke.MethodHandles$Lookup: java.lang.invoke.MethodHandle findSpecial(java.lang.Class,java.lang.String,java.lang.invoke.MethodType,java.lang.Class)>").
-
-.decl FindConstructor(?invo:MethodInvocation, ?ret:Var)
-FindConstructor(?invo, ?ret) :-
-  FIND_METHOD(?invo, ?ret, "<java.lang.invoke.MethodHandles$Lookup: java.lang.invoke.MethodHandle findConstructor(java.lang.Class,java.lang.invoke.MethodType)>").
-
-// Direct method handle lookup.
-.decl DMHLookup(?type:Type, ?id:symbol, ?mt:Value, ?method:Method, ?retType:Type, ?paramTypes:ParamTypes)
-// Look up method handle with a normal method type.
-DMHLookup(?type, ?id, ?mt, ?method, ?retType, ?paramTypes) :-
-  Method_DeclaringType(?method, ?type),
-  Method_SimpleName(?method, ?id),
-  Method_ReturnType(?method, ?retType),
-  Method_ParamTypes(?method, ?paramTypes),
-  MethodType_ReturnType(?mt, ?retType),
-  MethodType_ParamTypes(?mt, ?paramTypes),
-  ?mt = METHOD_TYPE(?paramTypes, ?retType).
-// Look up method handle with a return-type-only method type.
-DMHLookup(?type, ?id, ?mt, ?method, ?retType, ?paramTypes) :-
-  Method_DeclaringType(?method, ?type),
-  Method_SimpleName(?method, ?id),
-  Method_ReturnType(?method, ?retType),
-  Method_ParamTypes(?method, ?paramTypes),
-  MethodType_ReturnType(?mt, ?retType),
-  MethodType_ParamTypes(?mt, WILDCARD_PARAM_TYPES),
-  ?mt = METHOD_TYPE(WILDCARD_PARAM_TYPES, ?retType).
-
-#if defined(REFLECTION) || defined(LIGHT_REFLECTION_GLUE)
-// Create VarPointsTo for return values of method finders.
-.decl FindMethod(?invo:MethodInvocation, ?type:ReferenceType, ?id:symbol, ?mt:MethodType, ?hctx:configuration.HContext, ?ctx:configuration.Context)
-FindMethod(?invo, ?type, ?id, ?mt, ?hctx, ?ctx) :-
-  (FindStatic(?invo, _) ; FindVirtual(?invo, _) ; FindSpecial(?invo, _)),
-  ActualParam(0, ?invo, ?classParam),
-  VarPointsTo(?hctx, ?classValue, ?ctx, ?classParam),
-  ReifiedClass(?type, ?classValue),
-  ActualParam(1, ?invo, ?stringParam),
-  VarPointsTo(_, ?id, _, ?stringParam),
-  ActualParam(2, ?invo, ?mtParam),
-  VarPointsTo(_, ?mt, _, ?mtParam).
-// Special case: constructor finder.
-FindMethod(?invo, ?type, ?id, ?mt, ?hctx, ?ctx) :-
-  FindConstructor(?invo, _),
-  ActualParam(0, ?invo, ?classParam),
-  VarPointsTo(?hctx, ?classValue, ?ctx, ?classParam),
-  ReifiedClass(?type, ?classValue),
-  ?id = "<init>",
-  ActualParam(1, ?invo, ?mtParam),
-  VarPointsTo(_, ?mt, _, ?mtParam).
-#endif // REFLECTION, LIGHT_REFLECTION_GLUE
-
-// Compute result of findStatic().
-AssignMethodHandleToVarRequest(?method, ?paramTypes, ?retType, ?hctx, ?ctx, ?ret) :-
-  FindMethod(?invo, ?type, ?id, ?mt, ?hctx, ?ctx),
-  FindStatic(?invo, ?ret),
-  DMHLookup(?type, ?id, ?mt, ?method, ?retType, ?paramTypes),
-  Method_Modifier("static", ?method).
-// Compute result of findVirtual()/findSpecial()/findConstructor():
-// transform the method type to an equivalent that also contains the
-// receiver as first argument.
-AssignMethodHandleToVarRequest(?method, ?paramTypesConv, ?retType, ?hctx, ?ctx, ?ret) :-
-  FindMethod(?invo, ?type, ?id, ?mt, ?hctx, ?ctx),
-  ( FindVirtual(?invo, ?ret)
-  ; FindSpecial(?invo, ?ret)
-  ; FindConstructor(?invo, ?ret)),
-  DMHLookup(?type, ?id, ?mt, ?method, ?retType, ?paramTypes),
-  !Method_Modifier("static", ?method),
-  // Reconstruct method type to prepend receiver (since ?mt may contain wildcard
-  // parameter types).
-  EquivalentWithPrependedReceiver(METHOD_TYPE(?paramTypes, ?retType), ?mtConv),
-  MethodType_ParamTypes(?mtConv, ?paramTypesConv).
-
-#endif // REFLECTION_METHOD_HANDLES
-
-// Create a receiver object when calling constructors.
-
-#ifndef DISABLE_POINTS_TO
-BOUND_VAR_POINTS_TO(?hctx, ?value, ?calleeCtx, ?thisVar),
-BOUND_VAR_POINTS_TO(?hctx, ?value, ?callerCtx, ?ret),
-#endif // DISABLE_POINTS_TO
-MockValueConsMacro(?value, ?type) :-
-  MethodHandleCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?method, ?mh, _),
-  basic.ClassConstructor(?method, ?type),
-  ThisVar(?method, ?thisVar),
-  isImmutableHContext(?hctx),
-  ?value = cat(?type, cat(" value constructed by method handle ", ?mh)),
-  AssignReturnValue(?invo, ?ret),
-  Var_Type(?ret, ?retType),
-  basic.SubtypeOf(?type, ?retType).
-
-/*************************************************************
- * Generic invokedynamic
- *************************************************************/
-
-.decl ReachableInvokedynamic(?invokedynamic:DynamicMethodInvocation_Insn, ?dynName:symbol, ?dynRetType:Type, ?ctx:configuration.Context)
-ReachableInvokedynamic(?invokedynamic, ?dynName, ?dynRetType, ?ctx) :-
-  isDynamicMethodInvocation_Insn(?invokedynamic),
-  Instruction_Method(?invokedynamic, ?inMethod),
-  DynamicMethodInvocation_DynName(?invokedynamic, ?dynName),
-  DynamicMethodInvocation_DynReturnType(?invokedynamic, ?dynRetType),
-  ReachableContext(?ctx, ?inMethod).
-
-// Helper relation to make bootstrap method context configurable.
-.decl isBootstrapMethodContext(?ctx:configuration.Context)
-isBootstrapMethodContext(?ctx) :- isImmutableContext(?ctx).
-
-// Call-graph edge: invokedynamic instruction -> boot method.
-.decl InvokedynamicBootCallGraphEdge(?callerCtx:configuration.Context, ?invokedynamic:DynamicMethodInvocation_Insn, ?calleeCtx:configuration.Context, ?bootMethod:Method)
-InvokedynamicBootCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?bootMethod) :-
-  ReachableInvokedynamic(?invokedynamic, _, _, ?callerCtx),
-  DynamicMethodInvocation_Bootstrap(?invokedynamic, ?bootMethod),
-  isBootstrapMethodContext(?calleeCtx).
-
-ReachableContext(?calleeCtx, ?bootMethod) :-
-  InvokedynamicBootCallGraphEdge(_, _, ?calleeCtx, ?bootMethod).
-
-.decl Invokedynamic_MethodType(?invokedynamic:DynamicMethodInvocation_Insn, ?mt:MethodType)
-.decl PopulateMTParamTypes(?mt:Value, ?invokedynamic:DynamicMethodInvocation_Insn)
-
-// For every reachable invokedynamic, create a mock method type.
-MockValueConsMacro(?mt, "java.lang.invoke.MethodType"),
-MethodType_ReturnType(?mt, ?dynRetType),
-PopulateMTParamTypes(?mt, ?invokedynamic),
-Invokedynamic_MethodType(?invokedynamic, ?mt) :-
-  InvokedynamicBootCallGraphEdge(_, ?invokedynamic, _, _),
-  DynamicMethodInvocation_DynReturnType(?invokedynamic, ?dynRetType),
-  DynamicMethodInvocation_DynParamTypes(?invokedynamic, ?dynParamTypes),
-  ?mt = METHOD_TYPE(?dynParamTypes, ?dynRetType).
-MethodType_ParamType(?mt, ?index, ?pType) :-
-  PopulateMTParamTypes(?mt, ?invokedynamic),
-  _DynamicMethodInvocation_DynParamType(?invokedynamic, ?index, ?pType).
-
-// Pass arguments to bootstrap methods. First three arguments are
-// filled in by the JVM, so we fill them with mock objects.
-#ifndef DISABLE_POINTS_TO
-BOUND_VAR_POINTS_TO(?immHctx, ?mockMHLookup, ?calleeCtx, ?caller),
-BOUND_VAR_POINTS_TO(?immHctx, ?mt, ?calleeCtx, ?invokedTypeParam),
-#endif // DISABLE_POINTS_TO
-MockValueConsMacro(?mockMHLookup, "java.lang.invoke.MethodHandles$Lookup"),
-MHLookup_Type(?mockMHLookup, ?callerClass) :-
-  InvokedynamicBootCallGraphEdge(_, ?invokedynamic, ?calleeCtx, ?bootMethod),
-  FormalParam(0, ?bootMethod, ?caller),
-  FormalParam(2, ?bootMethod, ?invokedTypeParam),
-  Invokedynamic_MethodType(?invokedynamic, ?mt),
-  isImmutableHContext(?immHctx),
-  Instruction_Method(?invokedynamic, ?method),
-  Method_DeclaringType(?method, ?callerClass),
-  ?mockMHLookup = MOCK_MH_LOOKUP(?callerClass).
-
-// The second-arg rule should only be enabled when strings are not merged.
-#if defined(DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS) || defined(DISTINGUISH_ALL_STRING_CONSTANTS) || defined(NO_MERGES)
-#ifndef DISABLE_POINTS_TO
-BOUND_VAR_POINTS_TO(?immHctx, ?invokedName, ?calleeCtx, ?invokedNameParam) :-
-  InvokedynamicBootCallGraphEdge(_, ?invokedynamic, ?calleeCtx, ?bootMethod),
-  isStringConstant(?invokedName),
-  FormalParam(1, ?bootMethod, ?invokedNameParam),
-  DynamicMethodInvocation_DynName(?invokedynamic, ?invokedName),
-  isImmutableHContext(?immHctx).
-#endif // DISABLE_POINTS_TO
-#endif // DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS, DISTINGUISH_ALL_STRING_CONSTANTS, NO_MERGES
-
-// Helper method to compute the varargs accumulator formal of a method.
-.decl MethodVarArgs(?method:Method, ?idx:number, ?formal:Var, ?type:ArrayType)
-MethodVarArgs(?method, ?idx, ?formal, ?type) :-
-  Method_Modifier("varargs", ?method),
-  Method_Arity(?method, ?arity),
-  ?idx = ?arity - 1,
-  FormalParam(?idx, ?method, ?formal),
-  Var_Type(?formal, ?type),
-  isArrayType(?type).
-
-// Use a mock array to fix calls to a bootstrap method accepting varargs.
-#define MOCK_ARRAY(invokedynamic) cat("<bootstrap varargs array for ", cat(invokedynamic, ">"))
-
-#ifndef DISABLE_POINTS_TO
-ArrayIndexPointsTo(?immHctx, ?val, ?immHctx, ?mockArray),
-MockValueConsMacro(?mockArray, ?varArgsType),
-BOUND_VAR_POINTS_TO(?immHctx, ?mockArray, ?calleeCtx, ?formalVarArgs) :-
-  InvokedynamicBootCallGraphEdge(_, ?invokedynamic, ?calleeCtx, ?bootMethod),
-  MethodVarArgs(?bootMethod, ?bootIdx, ?formalVarArgs, ?varArgsType),
-  BootstrapParam(?idx, ?invokedynamic, ?actual),
-  ?idx > ?bootIdx - 3,
-  VarPointsTo(_, ?val, _, ?actual),
-  isImmutableHContext(?immHctx),
-  ?mockArray = MOCK_ARRAY(?invokedynamic).
-
-// Normal handling for the last three arguments of the bootstrap method, shifted.
-BOUND_VAR_POINTS_TO(?hctx, ?val, ?calleeCtx, ?formal) :-
-  InvokedynamicBootCallGraphEdge(_, ?invokedynamic, ?calleeCtx, ?bootMethod),
-  !Method_Modifier("varargs", ?bootMethod),
-  FormalParam(?idx + 3, ?bootMethod, ?formal),
-  BootstrapParam(?idx, ?invokedynamic, ?actual),
-  VarPointsTo(?hctx, ?val, _, ?actual).
-#endif // DISABLE_POINTS_TO
-
-.type CallSite = Value
-.decl InvokedynamicCallSite(?callsite:CallSite, ?invokedynamic:DynamicMethodInvocation_Insn, ?dynName:symbol, ?K:number, ?ctx:configuration.Context)
-
-// Record CallSite metadata. This rule handles the return values of bootstrap
-// methods without checking types: according to the JVM spec, the return type of
-// a bootstrap method need not be java.lang.invoke.CallSite.
-InvokedynamicCallSite(?callsite, ?invokedynamic, ?dynName, ?K, ?callerCtx) :-
-  ReachableInvokedynamic(?invokedynamic, ?dynName, _, ?callerCtx),
-  DynamicMethodInvocation_DynArity(?invokedynamic, ?K),
-  DynamicMethodInvocation_Bootstrap(?invokedynamic, ?bootMethod),
-  ReturnVar(?bootRetVar, ?bootMethod),
-  isBootstrapMethodContext(?calleeCtx),
-  VarPointsTo(_, ?callsite, ?calleeCtx, ?bootRetVar).
-
-#ifndef DISABLE_POINTS_TO
-// Interpret CallSite contents.
-.decl CallSiteContents(?invokedynamic:DynamicMethodInvocation_Insn, ?methodHandle:MethodHandle, ?method:Method, ?mt:MethodType, ?ctx:configuration.Context)
-CallSiteContents(?invokedynamic, ?methodHandle, ?method, ?mt, ?ctx) :-
-  InvokedynamicCallSite(?callsite, ?invokedynamic, _, _, ?ctx),
-  Invokedynamic_MethodType(?invokedynamic, ?mt),
-  InstanceFieldPointsTo(_, ?methodHandle, "<java.lang.invoke.CallSite: java.lang.invoke.MethodHandle target>", _, ?callsite),
-  MethodHandle_Method(?methodHandle, ?method).
-
-// Match call sites against invokedynamic method type signatures. If reflective
-// method handles logic is enabled, also match prepended-receiver method types.
-.decl CallSiteMatchesMethodHandleType(?invokedynamic:DynamicMethodInvocation_Insn, ?mh:MethodHandle, ?method:Method, ?ctx:configuration.Context)
-CallSiteMatchesMethodHandleType(?invokedynamic, ?mh, ?method, ?ctx) :-
-  CallSiteContents(?invokedynamic, ?mh, ?method, ?mtDyn, ?ctx),
-#ifdef REFLECTION_METHOD_HANDLES
-  MethodHandle_MethodType(?mh, ?mt),
-  (?mt = ?mtDyn ; EquivalentWithPrependedReceiver(?mt, ?mtDyn)).
-#else
-  MethodHandle_MethodType(?mh, ?mtDyn).
-#endif // REFLECTION_METHOD_HANDLES
-
-// Method handle for C.<init> has dynamic return type C instead of "void".
-CallSiteMatchesMethodHandleType(?invokedynamic, ?mh, ?method, ?ctx) :-
-  CallSiteContents(?invokedynamic, ?mh, ?method, ?mt, ?ctx),
-  MethodType_ReturnType(?mt, ?dynRetType),
-  basic.ClassConstructor(?method, ?dynRetType),
-  MethodHandle_Method(?mh, ?method).
-
-// After a method handle is resolved, invokedynamic calls it, as if
-// "invokeExact" was invoked on it. This is a call-graph edge from an
-// invokedynamic instruction to the method invoked by the call site.
-
-// Rule for static methods resolved by invokedynamic.
-.decl StaticMethodHandleCall(?callerCtx:configuration.Context, ?invo:MethodInvocation, ?method:Method, ?mh:MethodHandle)
-StaticMethodHandleCall(?callerCtx, ?invokedynamic, ?method, ?mh),
-configuration.StaticContextRequest(?callerCtx, ?invokedynamic) :-
-  CallSiteMatchesMethodHandleType(?invokedynamic, ?mh, ?method, ?callerCtx),
-  Method_Modifier("static", ?method).
-MethodHandleCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?method, ?mh, "invokeExact") :-
-  StaticMethodHandleCall(?callerCtx, ?invokedynamic, ?method, ?mh),
-  configuration.StaticContextResponse(?callerCtx, ?invokedynamic, ?calleeCtx).
-
-// General rule for non-static methods resolved by invokedynamic. This rule
-// does not use the Request/Response schema, since we do not have a "value"
-// for the receiver (call site resolution happens at load time).
-MethodHandleCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?method, ?mh, "invokeExact") :-
-  CallSiteMatchesMethodHandleType(?invokedynamic, ?mh, ?method, ?callerCtx),
-  !Method_Modifier("static", ?method),
-  isImmutableContext(?calleeCtx).
-
-ReachableContext(?calleeCtx, ?callee) :-
-  MethodHandleCallGraphEdge(_, _, ?calleeCtx, ?callee, _, _).
-#endif // DISABLE_POINTS_TO
-
-/*************************************************************
- * Lambda-specific invokedynamic
- *************************************************************/
-
-/** Phase 1: Linkage (creating a lambda CallSite) **/
-
-#define LAMBDA_METAFACTORY "<java.lang.invoke.LambdaMetafactory: java.lang.invoke.CallSite metafactory(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType,java.lang.invoke.MethodType,java.lang.invoke.MethodHandle,java.lang.invoke.MethodType)>"
-
-#define LAMBDA_ALTMETAFACTORY "<java.lang.invoke.LambdaMetafactory: java.lang.invoke.CallSite altMetafactory(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType,java.lang.Object[])>"
-
-// Find invocations to the lambda metafactories.
-.decl LambdaMetafactoryInvoke(?invokedynamic:DynamicMethodInvocation_Insn)
-LambdaMetafactoryInvoke(?invokedynamic) :-
-  DynamicMethodInvocation_Bootstrap(?invokedynamic, ?method),
-  (?method = LAMBDA_METAFACTORY ; ?method = LAMBDA_ALTMETAFACTORY).
-
-.decl ReachableLambdaMetafactoryInvoke(?invokedynamic:DynamicMethodInvocation_Insn, ?dynName:symbol, ?dynRetType:Type, ?ctx:configuration.Context)
-ReachableLambdaMetafactoryInvoke(?invokedynamic, ?dynName, ?dynRetType, ?ctx) :-
-  LambdaMetafactoryInvoke(?invokedynamic),
-  ReachableInvokedynamic(?invokedynamic, ?dynName, ?dynRetType, ?ctx).
-
-// Record invokedynamic invocations whose bootstrap methods are not
-// handled at all. Used for statistics.
-.decl UnhandledInvokedynamic(?invokedynamic:DynamicMethodInvocation_Insn, ?bootMethodId:symbol)
-
-UnhandledInvokedynamic(?invokedynamic, ?bootMethodId) :-
-  DynamicMethodInvocation_Bootstrap(?invokedynamic, ?bootMethodId),
-  !LambdaMetafactoryInvoke(?invokedynamic).
-
-#define LAMBDA_ALT_VAL(invo, ret, type, method, real, name) \
-  cat(invo, cat("::: ", cat(ret, cat("::: (Mock)::: ", cat("reference ", cat(type, cat ("::", cat(method, cat(" from ", cat(real, cat(" wrapped as ", cat(ret, cat(".", name)))))))))))))
-
-.type Lambda = Value
-// TODO: Field ?ctx is currently unused, should be used in the
-// LambdaCallGraphEdge rule for context sensitivity.
-.decl LambdaObject(?invokedynamic:DynamicMethodInvocation_Insn, ?lambda:Lambda, ?dynName:symbol, ?K:number, ?implMethod:Method, ?ctx:configuration.Context)
-
-#define LAMBDA(invokedynamic, type) \
-  cat(invokedynamic, cat("::: ", cat(type, cat("::: (Mock)::: ", cat("lambda object of type ", type)))))
-
-// Record more information about the call site to model the metafactory result
-// and return the mock lambda object.
-MockValueConsMacro(?lambda, ?dynRetType),
-#ifndef DISABLE_POINTS_TO
-VarPointsTo(?hctx, ?lambda, ?callerCtx, ?ret),
-#endif // DISABLE_POINTS_TO
-LambdaObject(?invokedynamic, ?lambda, ?dynName, ?K, ?implMethod, ?callerCtx) :-
-  ReachableLambdaMetafactoryInvoke(?invokedynamic, ?dynName, ?dynRetType, ?callerCtx),
-  DynamicMethodInvocation_DynArity(?invokedynamic, ?K),
-  BootstrapParam(1, ?invokedynamic, ?handleVar),
-  VarPointsTo(?hctx, ?handleVal, ?callerCtx, ?handleVar),
-  MethodHandleConstant_Method(?handleVal, ?implMethod),
-  // Used to generate friendly description for the lambda.
-  Method_SimpleName(?implMethod, ?handleMeth),
-  Method_DeclaringType(?implMethod, ?handleType),
-  ?lambda = LAMBDA_ALT_VAL(?invokedynamic, ?dynRetType, ?handleType, ?handleMeth, ?implMethod, ?dynName),
-  // ?lambda = LAMBDA(?invokedynamic, ?dynRetType),
-  AssignReturnValue(?invokedynamic, ?ret).
-
-/** Phase 2: Capture (invoke CallSite, return functional object) **/
-
-// Capture values of the enclosing environment.
-.decl LambdaCaptured(?invokedynamic:DynamicMethodInvocation_Insn, ?val:Value, ?idx:number, ?hctx:configuration.HContext)
-LambdaCaptured(?invokedynamic, ?val, ?idx, ?hctx) :-
-  ReachableLambdaMetafactoryInvoke(?invokedynamic, _, _, ?callerCtx),
-  DynamicMethodInvocation_DynArity(?invokedynamic, ?K),
-  ?K > 0,
-  ActualParam(?idx, ?invokedynamic, ?actual),
-  VarPointsTo(?hctx, ?val, ?callerCtx, ?actual).
-
-/** Phase 3: Invocation (call method on the functional object) **/
-
-// When a method is called on a lambda object constructed by a
-// constant method handle, the real method is called. This can wrap a
-// static method call as an instance method call.
-
-// Call-graph edge: method invocation on lambda object -> implementing method.
-.decl LambdaCallGraphEdge(?callerCtx:configuration.Context, ?i:MethodInvocation, ?calleeCtx:configuration.Context, ?m:Method, ?lambda:Lambda)
-
-// Call-graph edge: method call on lambda object -> implementing
-// method.  For simplicity, the callee context is trivial. For proper
-// context sensitivity, we must model all combinations of calling
-// contexts with implementing-method static-ness.
-LambdaCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?implMethod, ?lambda) :-
-  LambdaObject(_, ?lambda, ?dynName, _, ?implMethod, _),
-  VarPointsTo(_, ?lambda, ?callerCtx, ?var),
-  VirtualMethodInvocation_Base(?i, ?var),
-  VirtualMethodInvocation_SimpleName(?i, ?dynName),
-  isImmutableContext(?calleeCtx).
-
-ReachableContext(?calleeCtx, ?callee) :-
-  LambdaCallGraphEdge(_, _, ?calleeCtx, ?callee, _).
-
-#ifndef DISABLE_POINTS_TO
-// Handle return values for lambda call-graph edges.
-BOUND_VAR_POINTS_TO(?hctx, ?retVal, ?callerCtx, ?ret) :-
-  LambdaCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?method, _),
-  ReturnVar(?realReturnVar, ?method),
-  VarPointsTo(?hctx, ?retVal, ?calleeCtx, ?realReturnVar),
-  AssignReturnValue(?i, ?ret).
-#endif // DISABLE_POINTS_TO
-
-// Helper relation: implementing method is an instance method.
-.decl CalledInstanceImplMethod(?invokedynamic:DynamicMethodInvocation_Insn, ?implMethod:Method, ?this:Var, ?thisType:Type, ?calleeCtx:configuration.Context, ?lambda:Lambda)
-CalledInstanceImplMethod(?invokedynamic, ?implMethod, ?this, ?thisType, ?calleeCtx, ?lambda) :-
-  LambdaCallGraphEdge(_, _, ?calleeCtx, ?implMethod, ?lambda),
-  !Method_Modifier("static", ?implMethod),
-  LambdaObject(?invokedynamic, ?lambda, _, _, ?implMethod, _),
-  ThisVar(?implMethod, ?this),
-  Var_Type(?this, ?thisType).
-
-// Helper relation: instance methods may implicitly consume one of the
-// K or N arguments for the receiver (shifting them by 1), while
-// static methods take all K arguments before N ones.
-.decl Params_ReceiverShiftRight(?lambda:Lambda, ?implMethod:Method, ?shiftK:number, ?shiftN:number)
-Params_ReceiverShiftRight(?lambda, ?implMethod, 0, 0) :-
-  LambdaObject(_, ?lambda, _, _, ?implMethod, _),
-  Method_Modifier("static", ?implMethod).
-// No bootstrap arguments = an actual argument will be used for 'this'.
-Params_ReceiverShiftRight(?lambda, ?implMethod, 0, 1) :-
-  CalledInstanceImplMethod(?invokedynamic, ?implMethod, _, _, _, ?lambda),
-  DynamicMethodInvocation_DynArity(?invokedynamic, 0).
-// First bootstrap argument exists, will be used for 'this'.
-Params_ReceiverShiftRight(?lambda, ?implMethod, 1, 0) :-
-  CalledInstanceImplMethod(?invokedynamic, ?implMethod, _, _, _, ?lambda),
-  LambdaCaptured(?invokedynamic, _, 0, _).
-
-// Invocation argument to be passed to implementing method.
-.decl LambdaArg(?calleeCtx:configuration.Context, ?formal:Var, ?formalType:Type, ?actual:Var, ?invokedynamic:DynamicMethodInvocation_Insn)
-
-// Pass invocation arguments to the implementing method.
-LambdaArg(?calleeCtx, ?formal, ?formalType, ?actual, ?invokedynamic) :-
-  LambdaCallGraphEdge(_, ?i, ?calleeCtx, ?implMethod, ?lambda),
-  Params_ReceiverShiftRight(?lambda, ?implMethod, ?shiftK, ?shiftN),
-  LambdaObject(?invokedynamic, ?lambda, _, ?K, ?implMethod, _),
-  ActualParam(?idx, ?i, ?actual),
-  FormalParam(?K - ?shiftK + ?idx - ?shiftN, ?implMethod, ?formal),
-  Var_Type(?formal, ?formalType).
-
-#ifndef DISABLE_POINTS_TO
-// Argument passing case #1: check type compatibility.
-VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
-  LambdaArg(?calleeCtx, ?formal, ?formalType, ?actual, _),
-  VarPointsTo(?hctx, ?val, _, ?actual),
-  Value_Type(?val, ?valType),
-  basic.SubtypeOf(?valType, ?formalType).
-#endif // DISABLE_POINTS_TO
-
-// Argument passing case #2: autoboxing for some function types.
-.decl BoxingFunction(?functionType:ReferenceType, ?primType:Type, ?refType:ReferenceType)
-BoxingFunction(?intArgLambdaType, "int", "java.lang.Integer") :-
-  ?intArgLambdaType = "java.util.function.IntBinaryOperator";
-  ?intArgLambdaType = "java.util.function.IntConsumer";
-  ?intArgLambdaType = "java.util.function.IntFunction";
-  ?intArgLambdaType = "java.util.function.IntPredicate";
-  ?intArgLambdaType = "java.util.function.IntToDoubleFunction";
-  ?intArgLambdaType = "java.util.function.IntToLongFunction";
-  ?intArgLambdaType = "java.util.function.IntUnaryOperator";
-  ?intArgLambdaType = "java.util.function.ObjIntConsumer".
-BoxingFunction(?longArgLambdaType, "long", "java.lang.Long") :-
-  ?longArgLambdaType = "java.util.function.LongBinaryOperator";
-  ?longArgLambdaType = "java.util.function.LongConsumer";
-  ?longArgLambdaType = "java.util.function.LongFunction";
-  ?longArgLambdaType = "java.util.function.LongPredicate";
-  ?longArgLambdaType = "java.util.function.LongToDoubleFunction";
-  ?longArgLambdaType = "java.util.function.LongToIntFunction";
-  ?longArgLambdaType = "java.util.function.LongUnaryOperator";
-  ?longArgLambdaType = "java.util.function.ObjLongConsumer".
-BoxingFunction(?doubleArgLambdaType, "double", "java.lang.Double") :-
-  ?doubleArgLambdaType = "java.util.function.DoubleBinaryOperator";
-  ?doubleArgLambdaType = "java.util.function.DoubleConsumer";
-  ?doubleArgLambdaType = "java.util.function.DoubleFunction";
-  ?doubleArgLambdaType = "java.util.function.DoublePredicate";
-  ?doubleArgLambdaType = "java.util.function.DoubleToIntFunction";
-  ?doubleArgLambdaType = "java.util.function.DoubleToLongFunction";
-  ?doubleArgLambdaType = "java.util.function.DoubleUnaryOperator";
-  ?doubleArgLambdaType = "java.util.function.ObjDoubleConsumer".
-#ifndef DISABLE_POINTS_TO
-BOUND_VAR_POINTS_TO(?hctx, ?val, ?calleeCtx, ?formal) :-
-  LambdaArg(?calleeCtx, ?formal, ?formalType, ?actual, ?invokedynamic),
-  ReachableLambdaMetafactoryInvoke(?invokedynamic, _, ?dynRetType, _),
-  Var_Type(?actual, ?primType),
-  BoxingFunction(?dynRetType, ?primType, ?formalType),
-  BoxAllocation(?val, ?formalType),
-  isImmutableHContext(?hctx).
-
-// Pass captured arguments to the implementing method.
-BOUND_VAR_POINTS_TO(?hctx, ?val, ?calleeCtx, ?formal) :-
-  LambdaCallGraphEdge(_, _, ?calleeCtx, ?implMethod, ?lambda),
-  Params_ReceiverShiftRight(?lambda, ?implMethod, ?shiftK, _),
-  LambdaObject(?invokedynamic, ?lambda, _, ?K, ?implMethod, _),
-  LambdaCaptured(?invokedynamic, ?val, ?idx, ?hctx),
-  ?idx + ?shiftK <= ?K,
-  FormalParam(?idx - ?shiftK, ?implMethod, ?formal),
-  Value_Type(?val, ?valType),
-  Var_Type(?formal, ?formalType),
-  basic.SubtypeOf(?valType, ?formalType).
-
-// Special handling for captured "this" parameters.
-BOUND_VAR_POINTS_TO(?hctx, ?thisValue, ?calleeCtx, ?this) :-
-  Params_ReceiverShiftRight(?lambda, ?implMethod, 1, 0),
-  CalledInstanceImplMethod(?invokedynamic, ?implMethod, ?this, ?thisType, ?calleeCtx, ?lambda),
-  LambdaCaptured(?invokedynamic, ?thisValue, 0, ?hctx),
-  Value_Type(?thisValue, ?thisValueType),
-  basic.SubtypeOf(?thisValueType, ?thisType).
-
-// Special handling for "this" parameters to method references that do
-// not capture a receiver.
-BOUND_VAR_POINTS_TO(?hctx, ?argValue, ?calleeCtx, ?this) :-
-  LambdaCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?implMethod, ?lambda),
-  Params_ReceiverShiftRight(?lambda, ?implMethod, 0, 1),
-  ActualParam(0, ?i, ?actual),
-  VarPointsTo(?hctx, ?argValue, ?callerCtx, ?actual),
-  Value_Type(?argValue, ?argType),
-  ThisVar(?implMethod, ?this),
-  Var_Type(?this, ?thisType),
-  basic.SubtypeOf(?argType, ?thisType).
-
-// Applications of constructor references construct values. However,
-// these values do not come from a 'new' instruction in the code but
-// are created here as mock values, one per type/invocation.
-BOUND_VAR_POINTS_TO(?hctx, ?mockObj, ?callerCtx, ?var),
-BOUND_VAR_POINTS_TO(?hctx, ?mockObj, ?calleeCtx, ?thisVar),
-MockValueConsMacro(?mockObj, ?type) :-
-  LambdaCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?implMethod, _),
-  basic.ClassConstructor(?implMethod, ?type),
-  AssignReturnValue(?i, ?var),
-  ThisVar(?implMethod, ?thisVar),
-  ?mockObj = cat("<mock object of type ", cat(?type, cat(" constructed by constructor reference at ", cat(?i, ">")))),
-  isImmutableHContext(?hctx).
-#endif // DISABLE_POINTS_TO
-
-#ifdef REFLECTION_METHOD_HANDLES
-#ifdef REFLECTION
-#ifndef DISABLE_POINTS_TO
-
-/**
- * Naive model of Class.getDeclaredConstructors() without backpropagation of
- * special values. Needed since the invokedynamic handling does not propagate
- * these special values up to their uses.
- */
-
-.decl FillConstructorsFromClass(?hctx:configuration.HContext, ?mockConstructors:Value, ?class:Type)
-
-#define GET_DECLARED_METHODS "<java.lang.Class: java.lang.reflect.Method[] getDeclaredMethods()>"
-#define GET_DECLARED_CONSTRUCTORS "<java.lang.Class: java.lang.reflect.Constructor[] getDeclaredConstructors()>"
-.decl Class_getMembers(?sig:Method, ?hctx:configuration.HContext, ?ctx:configuration.Context, ?ret:Var, ?class:Type)
-
-Class_getMembers(?sig, ?hctx, ?ctx, ?ret, ?class) :-
-  _VirtualMethodInvocation(?invo, _, ?sig, ?base, ?method),
-  (?sig = GET_DECLARED_CONSTRUCTORS ; ?sig = GET_DECLARED_METHODS),
-  ReachableContext(?ctx, ?method),
-  VarPointsTo(?hctx, ?classValue, ?ctx, ?base),
-  ReifiedClass(?class, ?classValue),
-  ApplicationClass(?class),
-  AssignReturnValue(?invo, ?ret).
-
-VarPointsTo(?hctx, ?mockConstructors, ?ctx, ?ret),
-MockValueConsMacro(?mockConstructors, "java.lang.reflect.Constructor[]"),
-FillConstructorsFromClass(?hctx, ?mockConstructors, ?class) :-
-  Class_getMembers(GET_DECLARED_CONSTRUCTORS, ?hctx, ?ctx, ?ret, ?class),
-  Var_Type(?ret, ?retType),
-  (isArrayType(?retType) ; ?retType = "java.lang.Object"),
-  ?mockConstructors = cat("<mock constructors array for ", cat(?class, ">")).
-
-ArrayIndexPointsTo(?immHctx, ?constructor, ?hctx, ?mockConstructors) :-
-  FillConstructorsFromClass(?hctx, ?mockConstructors, ?class),
-  basic.ClassConstructor(?method, ?class),
-  ReifiedConstructor(?method, ?constructor),
-  isImmutableHContext(?immHctx).
-
-VarPointsTo(?hctx, ?mockMethods, ?ctx, ?ret),
-MockValueConsMacro(?mockMethods, "java.lang.reflect.Method[]"),
-FillConstructorsFromClass(?hctx, ?mockMethods, ?class) :-
-  Class_getMembers(GET_DECLARED_METHODS, ?hctx, ?ctx, ?ret, ?class),
-  Var_Type(?ret, ?retType),
-  (isArrayType(?retType) ; ?retType = "java.lang.Object"),
-  ?mockMethods = cat("<mock methods array for ", cat(?class, ">")).
-
-ArrayIndexPointsTo(?immHctx, ?methodValue, ?hctx, ?mockMethods) :-
-  FillConstructorsFromClass(?hctx, ?mockMethods, ?class),
-  Method_DeclaringType(?method, ?class),
-  ReifiedMethod(?method, ?methodValue),
-  isImmutableHContext(?immHctx).
-
-#endif // DISABLE_POINTS_TO
-#endif // REFLECTION
-#endif // REFLECTION_METHOD_HANDLES
+// /*************************************************************
+//  * Method Types
+//  *************************************************************/
+
+// /*
+//  * Method types can either be normal Java values or special method
+//  * type constants that come from the constant pool.
+//  */
+// .type MethodType = Value
+// .type ParamTypes = symbol
+// .decl MethodType_ParamType(?mt:MethodType, ?index:number, ?pType:Type)
+// .decl MethodType_ParamTypes(?mt:MethodType, ?paramTypes:ParamTypes)
+// .decl MethodType_ReturnType(?mt:MethodType, ?retType:Type)
+// .decl MethodType_Arity(?mt:MethodType, ?arity:number)
+
+// // Relation to mark all method types created initially.
+// .decl isInitialMethodType(?mt:MethodType)
+
+// // For every method type constant in the constant pool, create a method type.
+// MethodType_ParamType(?mt, ?idx, ?type)  :- _MethodTypeConstantParam(?mt, ?idx, ?type).
+// MethodType_Arity(?mt, ?arity)           :- MethodTypeConstant_Arity(?mt, ?arity).
+// MethodType_ReturnType(?mt, ?retType)    :- MethodTypeConstant_ReturnType(?mt, ?retType).
+// MethodType_ParamTypes(?mt, ?paramTypes) :- MethodTypeConstant_ParamTypes(?mt, ?paramTypes).
+
+// #define METHOD_TYPE(paramTypes, retType) \
+//   cat("<method type (", cat(paramTypes, cat(")", cat(retType, ">"))))
+
+// #ifdef REFLECTION_METHOD_HANDLES
+
+// .decl Method_MethodType(?method:Method, ?mt:MethodType)
+
+// // For every method, create a method type. We treat static and non-static
+// // methods similarly here, since the method types without receivers may still be
+// // encountered (and be arguments to method finders).
+// MockValueConsMacro(?mt, "java.lang.invoke.MethodType"),
+// isInitialMethodType(?mt),
+// Method_MethodType(?method, ?mt),
+// MethodType_ParamTypes(?mt, ?paramTypes),
+// MethodType_Arity(?mt, ?arity),
+// MethodType_ReturnType(?mt, ?retType) :-
+//   Method_ReturnType(?method, ?retType),
+//   Method_ParamTypes(?method, ?paramTypes),
+//   ?mt = METHOD_TYPE(?paramTypes, ?retType),
+//   Method_Arity(?method, ?arity).
+// MethodType_ParamType(?mt, ?index, ?pType) :-
+//   Method_MethodType(?method, ?mt),
+//   FormalParam(?index, ?method, ?var),
+//   _Var_Type(?var, ?pType).
+
+// // For non-static methods, also create a method type that contains the receiver
+// // type as the first argument. Only the initial method types are considered.
+// .decl CreatePreMethodTypeForMethod(?method:Method, ?mt:MethodType, ?mtConv:MethodType, ?paramTypes:ParamTypes, ?retType:Type, ?arity:number)
+// CreatePreMethodTypeForMethod(?method, ?mt, ?mtConv, ?thisTypeStr, ?retType, 1) :-
+//   Method_MethodType(?method, ?mt),
+//   !Method_Modifier("static", ?method),
+//   isInitialMethodType(?mt),
+//   Method_DeclaringType(?method, ?thisType),
+//   MethodType_ParamTypes(?mt, ""),
+//   MethodType_ReturnType(?mt, ?retType),
+//   ?thisTypeStr = cat("", ?thisType),
+//   ?mtConv = METHOD_TYPE(?thisType, ?retType).
+// CreatePreMethodTypeForMethod(?method, ?mt, ?mtConv, ?paramTypesConv, ?retType, ?arity) :-
+//   Method_MethodType(?method, ?mt),
+//   !Method_Modifier("static", ?method),
+//   isInitialMethodType(?mt),
+//   Method_DeclaringType(?method, ?thisType),
+//   MethodType_ParamTypes(?mt, ?paramTypes),
+//   MethodType_ReturnType(?mt, ?retType),
+//   Method_Arity(?method, ?arity),
+//   ?arity > 0,
+//   ?paramTypesConv = cat(?thisType, cat(",", ?paramTypes)),
+//   ?mtConv = METHOD_TYPE(?paramTypesConv, ?retType).
+
+// // The construction logic for prepended-receiver method types.
+// .decl EquivalentWithPrependedReceiver(?mt:MethodType, ?mtConv:MethodType)
+// MockValueConsMacro(?mtConv, "java.lang.invoke.MethodType"),
+// EquivalentWithPrependedReceiver(?mt, ?mtConv),
+// Method_MethodType(?method, ?mtConv),
+// MethodType_ParamTypes(?mtConv, ?paramTypes),
+// MethodType_ReturnType(?mtConv, ?retType),
+// MethodType_Arity(?mtConv, ?arity) :-
+//   CreatePreMethodTypeForMethod(?method, ?mt, ?mtConv, ?paramTypes, ?retType, ?arity).
+
+// #if defined(REFLECTION) || defined(LIGHT_REFLECTION_GLUE)
+
+// // Model of MethodType.returnType().
+// OpaqueCallGraphEdge(?invo, ?sig),
+// BOUND_VAR_POINTS_TO(?hctx, ?classValue, ?ctx, ?ret) :-
+//   _VirtualMethodInvocation(?invo, _, ?sig, ?base, ?method),
+//   ?sig = "<java.lang.invoke.MethodType: java.lang.Class returnType()>",
+//   ReachableContext(?ctx, ?method),
+//   VarPointsTo(?hctx, ?mt, ?ctx, ?base),
+//   MethodType_ReturnType(?mt, ?retType),
+//   ReifiedClass(?retType, ?classValue),
+//   AssignReturnValue(?invo, ?ret).
+
+// // Imprecise model of MethodType.parameterType(), since we do not track
+// // primitive values (for its argument).
+// OpaqueCallGraphEdge(?invo, ?sig),
+// BOUND_VAR_POINTS_TO(?hctx, ?classValue, ?ctx, ?ret) :-
+//   _VirtualMethodInvocation(?invo, _, ?sig, ?base, ?method),
+//   ?sig = "<java.lang.invoke.MethodType: java.lang.Class parameterType(int)>",
+//   ReachableContext(?ctx, ?method),
+//   VarPointsTo(?hctx, ?mt, ?ctx, ?base),
+//   MethodType_ParamType(?mt, _, ?pType),
+//   ReifiedClass(?pType, ?classValue),
+//   AssignReturnValue(?invo, ?ret).
+
+// #endif // REFLECTION, LIGHT_REFLECTION_GLUE
+
+// // MethodType API entry points. The actual logic: every methodType()
+// // invocation picks all descriptors that match.
+
+// .decl ReachableMethodTypeN(?id:number, ?invo:MethodInvocation, ?ctx:configuration.Context)
+// OpaqueCallGraphEdge(?invo, ?mtEntryPoint),
+// ReachableMethodTypeN(?id, ?invo, ?ctx) :-
+//   MTEntryPoint(?id, ?invo, ?mtEntryPoint),
+//   Instruction_Method(?invo, ?method),
+//   ReachableContext(?ctx, ?method).
+
+// .decl MT_ReturnType(?invo:MethodInvocation, ?hctx:configuration.HContext, ?ctx:configuration.Context, ?type:ReferenceType)
+// .decl MT_ParamValue(?invo:MethodInvocation, ?index:number, ?classValue:Value)
+
+// #if defined(REFLECTION) || defined(LIGHT_REFLECTION_GLUE)
+// // The first argument to methodType() is always the return type.
+// MT_ReturnType(?invo, ?hctx, ?ctx, ?type) :-
+//   ReachableMethodTypeN(_, ?invo, ?ctx),
+//   ActualParam(0, ?invo, ?param),
+//   VarPointsTo(?hctx, ?classValue, ?ctx, ?param),
+//   ReifiedClass(?type, ?classValue).
+// #endif // REFLECTION, LIGHT_REFLECTION_GLUE
+
+// // MethodType2, MethodType4: second parameter.
+// MT_ParamValue(?invo, 0, ?classValue) :-
+//   ReachableMethodTypeN(?id, ?invo, ?ctx),
+//   (?id = 2 ; ?id = 4),
+//   ActualParam(1, ?invo, ?param),
+//   VarPointsTo(_, ?classValue, ?ctx, ?param).
+
+// // MethodType1 lacks a parameter, so we use a dummy value instead.
+// #define MT_NOARGS_VALUE "<mock dummy methodType() class for first argument>"
+// MockValueConsMacro(MT_NOARGS_VALUE, "java.lang.Class"),
+// MT_ParamValue(?invo, 0, MT_NOARGS_VALUE) :-
+//   MTEntryPoint(1, ?invo, _).
+
+// // Helper relation to treat 'void' and 'java.lang.Void' as the same
+// // type in descriptors.
+// .decl InvoReturnTypeMatch(?invo:MethodInvocation, ?hctx:configuration.HContext, ?ctx:configuration.Context, ?retType:Type)
+
+// InvoReturnTypeMatch(?invo, ?hctx, ?ctx, "void") :-
+//   MT_ReturnType(?invo, ?hctx, ?ctx, "java.lang.Void").
+// InvoReturnTypeMatch(?invo, ?hctx, ?ctx, ?retType) :-
+//   MT_ReturnType(?invo, ?hctx, ?ctx, ?retType).
+
+// .decl MTCallMatch(?invo:MethodInvocation, ?hctx:configuration.HContext, ?ctx:configuration.Context, ?paramTypes:ParamTypes, ?retType:Type, ?arity:number)
+
+// // MethodType1.
+// MTCallMatch(?invo, ?hctx, ?ctx, "", ?retType, 0) :-
+//   MTEntryPoint(1, ?invo, _),
+//   InvoReturnTypeMatch(?invo, ?hctx, ?ctx, ?retType),
+//   MT_ParamValue(?invo, 0, MT_NOARGS_VALUE).
+
+// #if defined(REFLECTION) || defined(LIGHT_REFLECTION_GLUE)
+// // MethodType2.
+// MTCallMatch(?invo, ?hctx, ?ctx, ?pType0, ?retType, 1) :-
+//   MTEntryPoint(2, ?invo, _),
+//   InvoReturnTypeMatch(?invo, ?hctx, ?ctx, ?retType),
+//   MT_ParamValue(?invo, 0, ?classValue0),
+//   ReifiedClass(?pType0, ?classValue0).
+// #endif // REFLECTION, LIGHT_REFLECTION_GLUE
+
+// // MethodType5.
+// MTCallMatch(?invo, ?hctx, ?ctx, ?argParamTypes, ?retType, ?arity) :-
+//   ReachableMethodTypeN(5, ?invo, ?ctx),
+//   InvoReturnTypeMatch(?invo, ?hctx, ?ctx, ?retType),
+//   ActualParam(1, ?invo, ?param),
+//   VarPointsTo(_, ?mtArg, ?ctx, ?param),
+//   MethodType_ParamTypes(?mtArg, ?argParamTypes),
+//   MethodType_Arity(?mtArg, ?arity).
+
+// // MethodType3/MethodType4/MethodType6. Here we do not try to reason about the
+// // parameter types but return a wildcard; this will be attached to the mock
+// // method type and trigger imprecise matching in the method finder.
+// #define WILDCARD_PARAM_TYPES "--all-types--"
+// MTCallMatch(?invo, ?hctx, ?ctx, WILDCARD_PARAM_TYPES, ?retType, 0) :-
+//   MTEntryPoint(?id, ?invo, _),
+//   (?id = 3 ; ?id = 4 ; ?id = 6),
+//   InvoReturnTypeMatch(?invo, ?hctx, ?ctx, ?retType).
+
+// // Make methodType() invocations return values.
+// .decl AssignMethodType(?hctx:configuration.HContext, ?mt:MethodType, ?ctx:configuration.Context, ?ret:Var, ?paramTypes:ParamTypes, ?retType:Type, ?arity:number)
+
+// AssignMethodType(?hctx, ?mt, ?ctx, ?ret, ?paramTypes, ?retType, ?arity) :-
+//   MTCallMatch(?invo, ?hctx, ?ctx, ?paramTypes, ?retType, ?arity),
+//   AssignReturnValue(?invo, ?ret),
+//   ?mt = METHOD_TYPE(?paramTypes, ?retType).
+
+// #ifndef DISABLE_POINTS_TO
+// // If the method type has been created during the preprocessing
+// // initial phase, reuse it.
+// VarPointsTo(?hctx, ?mt, ?ctx, ?ret) :-
+//   AssignMethodType(?hctx, ?mt, ?ctx, ?ret, _, _, _),
+//   isInitialMethodType(?mt).
+// #endif // DISABLE_POINTS_TO
+
+// // Invent new method types if we are not sure they already exist from
+// // the preprocessing initial phase.
+// #ifndef DISABLE_POINTS_TO
+// VarPointsTo(?hctx, ?mt, ?ctx, ?ret),
+// #endif // DISABLE_POINTS_TO
+// MockValueConsMacro(?mt, "java.lang.invoke.MethodType"),
+// MethodType_Arity(?mt, ?arity),
+// MethodType_ParamTypes(?mt, ?paramTypes),
+// MethodType_ReturnType(?mt, ?retType) :-
+//   AssignMethodType(?hctx, ?mt, ?ctx, ?ret, ?paramTypes, ?retType, ?arity),
+//   !isInitialMethodType(?mt),
+//   Var_DeclaringMethod(?ret, ?method),
+//   ApplicationMethod(?method).
+
+// #endif // REFLECTION_METHOD_HANDLES
+
+// /*************************************************************
+//  * Method Handles
+//  *************************************************************/
+
+// HeapAllocation_ContextInsensitive(?heap) :-
+//   isMethodHandleConstant(?heap).
+
+// .type MethodHandle = Value
+// .decl MethodHandle_Method(?methodHandle:MethodHandle, ?method:Method)
+// // Returns a method type for a method handle. This is not a function: a method
+// // handle may, for example, contain both a method type that only mentions the
+// // original method arguments and a method type that also includes the receiver.
+// .decl MethodHandle_MethodType(?mh:MethodHandle, ?mt:MethodType)
+
+// // For every method handle constant, create a method type.
+// MockValueConsMacro(?mt, "java.lang.invoke.MethodType"),
+// isInitialMethodType(?mt),
+// MethodHandle_Method(?methodHandle, ?method),
+// MethodHandle_MethodType(?methodHandle, ?mt),
+// MethodType_Arity(?mt, ?arity),
+// MethodType_ParamTypes(?mt, ?paramTypes),
+// MethodType_ReturnType(?mt, ?retType) :-
+//   MethodHandleConstant_Method(?methodHandle, ?method),
+//   MethodHandleConstant_ParamTypes(?methodHandle, ?paramTypes),
+//   MethodHandleConstant_ReturnType(?methodHandle, ?retType),
+//   MethodHandleConstant_Arity(?methodHandle, ?arity),
+//   ?mt = METHOD_TYPE(?paramTypes, ?retType).
+
+// // Invocations of a MethodHandle. These can either be explicit calls to
+// // MethodHandle.invoke()/invokeExact() or implicit calls via invokedynamic.
+
+// .decl MethodHandleCallGraphEdge_Candidate(?callerCtx:configuration.Context, ?i:MethodInvocation, ?m:Method, ?mh:MethodHandle, ?name:symbol)
+// MethodHandleCallGraphEdge_Candidate(?callerCtx, ?invo, ?method, ?mh, ?name) :-
+//   // Permit treatment of invoke methods as opaque.
+//   ReachableContext(?callerCtx, ?containingMethod),
+//   (_VirtualMethodInvocation(?invo, _, _, ?base, ?containingMethod) ;
+//    _SpecialMethodInvocation(?invo, _, _, ?base, ?containingMethod)),
+//   _PolymorphicInvocation(?invo, ?name),
+//   VarPointsTo(_, ?mh, ?callerCtx, ?base),
+//   MethodHandle_Method(?mh, ?method).
+// // .plan 1:(4,5,2,1,3), 2:(5,4,2,1,3)
+
+// .decl MethodHandleCallGraphEdge(?callerCtx:configuration.Context, ?i:MethodInvocation, ?calleeCtx:configuration.Context, ?m:Method, ?mh:MethodHandle, ?name:symbol)
+// configuration.StaticContextRequest(?callerCtx, ?invo) :-
+//   MethodHandleCallGraphEdge_Candidate(?callerCtx, ?invo, ?method, _, _),
+//   Method_Modifier("static", ?method).
+// // Call-graph edges for static method handle invocations.
+// MethodHandleCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?method, ?mh, ?name) :-
+//   configuration.StaticContextResponse(?callerCtx, ?invo, ?calleeCtx),
+//   MethodHandleCallGraphEdge_Candidate(?callerCtx, ?invo, ?method, ?mh, ?name).
+// // Call-graph edges for non-static method handle invocations.
+// MethodHandleCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?method, ?mh, ?name) :-
+//   MethodHandleCallGraphEdge_Candidate(?callerCtx, ?invo, ?method, ?mh, ?name),
+//   !Method_Modifier("static", ?method),
+//   // REVIEW: context sensitivity in the callee.
+//   isImmutableContext(?calleeCtx).
+
+// ReachableContext(?calleeCtx, ?method) :-
+//   MethodHandleCallGraphEdge(_, _, ?calleeCtx, ?method, _, _).
+
+// // A boxing/unboxing conversion of types including the null type.
+// .decl BoxTypeConversion(?original:Type, ?new:Type)
+// // Create a new allocation in the case of boxing.
+// .decl BoxAllocation(?value:Value, ?type:Type)
+// #define BOX_ALLOC(t) cat("<mock box allocation for type ", cat(t, ">"))
+
+// BoxTypeConversion(?t1, ?t2),
+// MockValueConsMacro(?mockAlloc, ?t2),
+// BoxAllocation(?mockAlloc, ?t2) :-
+//   PrimitiveType_Boxed(?t1, ?wrapperT),
+//   basic.SubtypeOf(?wrapperT, ?t2),
+//   ?mockAlloc = BOX_ALLOC(?t2).
+// BoxTypeConversion(?t1, ?t2) :- PrimitiveType_Boxed(?t1, _), isNullType(?t2).
+// BoxTypeConversion(?t1, ?t2) :- PrimitiveType_Boxed(_, ?t2), isNullType(?t1).
+// BoxTypeConversion(?t1, ?t2) :- BoxTypeConversion(?t2, ?t1).
+
+// .decl CompatibleTypes(?t:Type, ?tConv:Type)
+// CompatibleTypes(?t, ?tConv) :- basic.SubtypeOf(?tConv, ?t).
+// CompatibleTypes(?t, ?tConv) :- BoxTypeConversion(?t, ?tConv).
+
+// // Record parameter passing, to be used for conversions (e.g., auto-boxing).
+// .decl MethodHandleCGE_Arg(?callerCtx:configuration.Context, ?calleeCtx:configuration.Context, ?actual:Var, ?formal:Var, ?actualType:Type, ?formalType:Type, ?name:symbol)
+// // Pass arguments to instance methods (first argument becomes the receiver).
+// MethodHandleCGE_Arg(?callerCtx, ?calleeCtx, ?actual, ?formal, ?actualType, ?formalType, ?name) :-
+//   MethodHandleCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?method, _, ?name),
+//   !Method_Modifier("static", ?method),
+//   ActualParam(?idx, ?invo, ?actual),
+//   ?idx > 0,
+//   FormalParam(?idx - 1, ?method, ?formal),
+//   Var_Type(?actual, ?actualType),
+//   Var_Type(?formal, ?formalType).
+// // Pass arguments to static methods.
+// MethodHandleCGE_Arg(?callerCtx, ?calleeCtx, ?actual, ?formal, ?actualType, ?formalType, ?name) :-
+//   MethodHandleCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?method, _, ?name),
+//   Method_Modifier("static", ?method),
+//   ActualParam(?idx, ?invo, ?actual),
+//   FormalParam(?idx, ?method, ?formal),
+//   Var_Type(?actual, ?actualType),
+//   Var_Type(?formal, ?formalType).
+
+// #ifndef DISABLE_POINTS_TO
+// // This rule covers exact matching of argument types.
+// BOUND_VAR_POINTS_TO(?hctx, ?val, ?calleeCtx, ?formal) :-
+//   MethodHandleCGE_Arg(?callerCtx, ?calleeCtx, ?actual, ?formal, ?actualType, ?formalType, _),
+//   VarPointsTo(?hctx, ?val, ?callerCtx, ?actual),
+//   basic.SubtypeOf(?actualType, ?formalType).
+
+// #ifdef REFLECTION_METHOD_HANDLES
+// // This rule covers boxing of arguments for MethodHandle.invoke(). Since the
+// // original arguments are primitive values, VarPointsTo may not be available.
+// // This is an expensive rule and is thus guarded for the full reflective case.
+// BOUND_VAR_POINTS_TO(?immHctx, ?val, ?calleeCtx, ?formal) :-
+//   MethodHandleCGE_Arg(_, ?calleeCtx, _, ?formal, ?actualType, ?formalType, "invoke"),
+//   BoxTypeConversion(?actualType, ?formalType),
+//   BoxAllocation(?val, ?formalType),
+//   isImmutableHContext(?immHctx).
+// #endif // REFLECTION_METHOD_HANDLES
+
+// // Pass receiver to instance methods.
+// BOUND_VAR_POINTS_TO(?hctx, ?val, ?calleeCtx, ?this) :-
+//   MethodHandleCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?method, _, _),
+//   !Method_Modifier("static", ?method),
+//   ActualParam(0, ?invo, ?actual),
+//   VarPointsTo(?hctx, ?val, ?callerCtx, ?actual),
+//   ThisVar(?method, ?this),
+//   Var_Type(?actual, ?actualType),
+//   Var_Type(?this, ?thisType),
+//   basic.SubtypeOf(?actualType, ?thisType).
+
+// // Get return value.
+// BOUND_VAR_POINTS_TO(?hctx, ?val, ?callerCtx, ?var) :-
+//   MethodHandleCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?method, _, _),
+//   ReturnVar(?ret, ?method),
+//   VarPointsTo(?hctx, ?val, ?calleeCtx, ?ret),
+//   AssignReturnValue(?invo, ?var),
+//   Var_Type(?ret, ?retType),
+//   Var_Type(?var, ?varType),
+//   CompatibleTypes(?retType, ?varType).
+// #endif // DISABLE_POINTS_TO
+
+// // Model MethodHandle.asType().
+// // OpaqueCallGraphEdge(?invo, ?sig),
+// // MockValueConsMacro(?adapterMH, "java.lang.invoke.MethodHandle"),
+// // #ifndef DISABLE_POINTS_TO
+// // VarPointsTo(?hctx, ?adapterMH, ?ctx, ?ret),
+// // #endif // DISABLE_POINTS_TO
+// // MethodHandle_Method(?adapterMH, ?mhMethod),
+// // MethodHandle_MethodType(?adapterMH, ?mt) :-
+// //   _VirtualMethodInvocation(?invo, _, ?sig, ?base, ?method),
+// //   ReachableContext(?ctx, ?method),
+// //   ?sig = "<java.lang.invoke.MethodHandle: java.lang.invoke.MethodHandle asType(java.lang.invoke.MethodType)>",
+// //   VarPointsTo(?hctx, ?mh, ?ctx, ?base),
+// //   ActualParam(0, ?invo, ?arg),
+// //   VarPointsTo(_, ?mt, ?ctx, ?arg),
+// //   AssignReturnValue(?invo, ?ret),
+// //   MethodHandle_Method(?mh, ?mhMethod),
+// //   Method_ParamTypes(?mhMethod, _),
+// //   ?adapterMH = cat("<adapter for ", cat(?mh, cat(" as ", ?mt))).
+
+// /*************************************************************
+//  * Method Handles Lookup
+//  *************************************************************/
+
+// .decl MHLookup_Type(?value:Value, ?type:Type)
+// #define MOCK_MH_LOOKUP(t) cat("<mock method handles lookup object for type ", cat(t, ">"))
+
+// #ifdef REFLECTION_METHOD_HANDLES
+
+// .decl CreateMHLookup(?type:Type, ?ctx:configuration.Context, ?ret:Var)
+// #ifndef DISABLE_POINTS_TO
+// VarPointsTo(?immHctx, ?mockMHLookup, ?ctx, ?ret),
+// #endif // DISABLE_POINTS_TO
+// MockValueConsMacro(?mockMHLookup, "java.lang.invoke.MethodHandles$Lookup"),
+// MHLookup_Type(?mockMHLookup, ?type) :-
+//   CreateMHLookup(?type, ?ctx, ?ret),
+//   isImmutableHContext(?immHctx),
+//   ?mockMHLookup = MOCK_MH_LOOKUP(?type).
+
+// // Model of MethodHandles.lookup(). This is a caller sensitive method and thus
+// // its result must record the caller class.
+// OpaqueCallGraphEdge(?invo, ?sig),
+// CreateMHLookup(?type, ?ctx, ?ret) :-
+//   _StaticMethodInvocation(?invo, _, ?sig, ?method),
+//   ?sig = "<java.lang.invoke.MethodHandles: java.lang.invoke.MethodHandles$Lookup lookup()>",
+//   ReachableContext(?ctx, ?method),
+//   Method_DeclaringType(?method, ?type),
+//   AssignReturnValue(?invo, ?ret).
+
+// // Model of MethodHandles.publicLookup(). We assume the caller class is Object.
+// OpaqueCallGraphEdge(?invo, ?sig),
+// CreateMHLookup("java.lang.Object", ?ctx, ?ret) :-
+//   _StaticMethodInvocation(?invo, _, ?sig, ?method),
+//   ?sig = "<java.lang.invoke.MethodHandles: java.lang.invoke.MethodHandles$Lookup publicLookup()>",
+//   ReachableContext(?ctx, ?method),
+//   AssignReturnValue(?invo, ?ret).
+
+// #if defined(REFLECTION) || defined(LIGHT_REFLECTION_GLUE)
+// // Model of MethodHandles.Lookup.lookupClass().
+// #ifndef DISABLE_POINTS_TO
+// VarPointsTo(?hctx, ?classValue, ?ctx, ?ret),
+// #endif // DISABLE_POINTS_TO
+// OpaqueCallGraphEdge(?invo, ?sig) :-
+//   _VirtualMethodInvocation(?invo, _, ?sig, ?base, ?method),
+//   ?sig = "<java.lang.invoke.MethodHandles$Lookup: java.lang.Class lookupClass()>",
+//   ReachableContext(?ctx, ?method),
+//   VarPointsTo(?hctx, ?mhLookup, ?ctx, ?base),
+//   MHLookup_Type(?mhLookup, ?type),
+//   ReifiedClass(?type, ?classValue),
+//   AssignReturnValue(?invo, ?ret).
+// #endif // REFLECTION, LIGHT_REFLECTION_GLUE
+
+// // Helper relation to only create direct method handles when no constant method
+// // handles are found. Used when computing the handle to store in a variable.
+// .decl AssignMethodHandleToVarRequest(?method:Method, ?paramTypes:ParamTypes, ?retType:Type, ?hctx:configuration.HContext, ?ctx:configuration.Context, ?ret:Var)
+
+// #ifndef DISABLE_POINTS_TO
+// // Case 1: method handle constant exists.
+// BOUND_VAR_POINTS_TO(?hctx, ?mh, ?ctx, ?var) :-
+//   AssignMethodHandleToVarRequest(?method, ?paramTypes, ?retType, ?hctx, ?ctx, ?var),
+//   MethodHandleConstant_Method(?mh, ?method),
+//   MethodHandleConstant_ParamTypes(?mh, ?paramTypes),
+//   MethodHandleConstant_ReturnType(?mh, ?retType).
+// #endif // DISABLE_POINTS_TO
+
+// // Case 2: method handle constant not found, invent a mock object.
+// #ifndef DISABLE_POINTS_TO
+// BOUND_VAR_POINTS_TO(?hctx, ?dmh, ?ctx, ?var),
+// #endif // DISABLE_POINTS_TO
+// MockValueConsMacro(?dmh, "java.lang.invoke.MethodHandle"),
+// MethodHandle_Method(?dmh, ?method),
+// MethodHandle_MethodType(?dmh, ?mt) :-
+//   AssignMethodHandleToVarRequest(?method, _, _, ?hctx, ?ctx, ?var),
+//   !MethodHandleConstant_Method(_, ?method),
+//   Method_MethodType(?method, ?mt),
+//   ?dmh = cat("<computed direct method handle for ", cat(?method, ">")).
+
+// #ifdef REFLECTION
+// // Model conversions from reflection Method to method handle.
+// AssignMethodHandleToVarRequest(?method, ?paramTypes, ?retType, ?hctx, ?ctx, ?ret) :-
+//   ( MethodInvocation_Method(?invo, "<java.lang.invoke.MethodHandles$Lookup: java.lang.invoke.MethodHandle unreflect(java.lang.reflect.Method)>") ;
+//   MethodInvocation_Method(?invo, "<java.lang.invoke.MethodHandles$Lookup: java.lang.invoke.MethodHandle unreflectSpecial(java.lang.reflect.Method,java.lang.Class)>")),
+//   Instruction_Method(?invo, ?caller),
+//   ReachableContext(?ctx, ?caller),
+//   ActualParam(0, ?invo, ?arg),
+//   VarPointsTo(?hctx, ?methodValue, ?ctx, ?arg),
+//   ReifiedMethod(?method, ?methodValue),
+//   Method_ParamTypes(?method, ?paramTypes),
+//   Method_ReturnType(?method, ?retType),
+//   AssignReturnValue(?invo, ?ret).
+// AssignMethodHandleToVarRequest(?method, ?paramTypes, ?retType, ?hctx, ?ctx, ?ret) :-
+//   MethodInvocation_Method(?invo, "<java.lang.invoke.MethodHandles$Lookup: java.lang.invoke.MethodHandle unreflectConstructor(java.lang.reflect.Constructor)>"),
+//   Instruction_Method(?invo, ?caller),
+//   ReachableContext(?ctx, ?caller),
+//   ActualParam(0, ?invo, ?arg),
+//   VarPointsTo(?hctx, ?constructor, ?ctx, ?arg),
+//   ReifiedConstructor(?method, ?constructor),
+//   Method_ParamTypes(?method, ?paramTypes),
+//   Method_ReturnType(?method, ?retType),
+//   AssignReturnValue(?invo, ?ret).
+// #endif // REFLECTION
+
+// // Method-lookup methods.
+
+// #define FIND_METHOD(invo, ret, sig)            \
+//   MethodInvocation_Method(invo, sig),          \
+//   VirtualMethodInvocation_Base(invo, ?lookup), \
+//   VarPointsTo(_, ?baseVal, _, ?lookup),        \
+//   !Value_Null(?baseVal),                       \
+//   AssignReturnValue(invo, ret)
+
+// .decl FindVirtual(?invo:MethodInvocation, ?ret:Var)
+// FindVirtual(?invo, ?ret) :-
+//   FIND_METHOD(?invo, ?ret, "<java.lang.invoke.MethodHandles$Lookup: java.lang.invoke.MethodHandle findVirtual(java.lang.Class,java.lang.String,java.lang.invoke.MethodType)>").
+
+// .decl FindStatic(?invo:MethodInvocation, ?ret:Var)
+// FindStatic(?invo, ?ret) :-
+//   FIND_METHOD(?invo, ?ret, "<java.lang.invoke.MethodHandles$Lookup: java.lang.invoke.MethodHandle findStatic(java.lang.Class,java.lang.String,java.lang.invoke.MethodType)>").
+
+// .decl FindSpecial(?invo:MethodInvocation, ?ret:Var)
+// FindSpecial(?invo, ?ret) :-
+//   FIND_METHOD(?invo, ?ret, "<java.lang.invoke.MethodHandles$Lookup: java.lang.invoke.MethodHandle findSpecial(java.lang.Class,java.lang.String,java.lang.invoke.MethodType,java.lang.Class)>").
+
+// .decl FindConstructor(?invo:MethodInvocation, ?ret:Var)
+// FindConstructor(?invo, ?ret) :-
+//   FIND_METHOD(?invo, ?ret, "<java.lang.invoke.MethodHandles$Lookup: java.lang.invoke.MethodHandle findConstructor(java.lang.Class,java.lang.invoke.MethodType)>").
+
+// // Direct method handle lookup.
+// .decl DMHLookup(?type:Type, ?id:symbol, ?mt:Value, ?method:Method, ?retType:Type, ?paramTypes:ParamTypes)
+// // Look up method handle with a normal method type.
+// DMHLookup(?type, ?id, ?mt, ?method, ?retType, ?paramTypes) :-
+//   Method_DeclaringType(?method, ?type),
+//   Method_SimpleName(?method, ?id),
+//   Method_ReturnType(?method, ?retType),
+//   Method_ParamTypes(?method, ?paramTypes),
+//   MethodType_ReturnType(?mt, ?retType),
+//   MethodType_ParamTypes(?mt, ?paramTypes),
+//   ?mt = METHOD_TYPE(?paramTypes, ?retType).
+// // Look up method handle with a return-type-only method type.
+// DMHLookup(?type, ?id, ?mt, ?method, ?retType, ?paramTypes) :-
+//   Method_DeclaringType(?method, ?type),
+//   Method_SimpleName(?method, ?id),
+//   Method_ReturnType(?method, ?retType),
+//   Method_ParamTypes(?method, ?paramTypes),
+//   MethodType_ReturnType(?mt, ?retType),
+//   MethodType_ParamTypes(?mt, WILDCARD_PARAM_TYPES),
+//   ?mt = METHOD_TYPE(WILDCARD_PARAM_TYPES, ?retType).
+
+// #if defined(REFLECTION) || defined(LIGHT_REFLECTION_GLUE)
+// // Create VarPointsTo for return values of method finders.
+// .decl FindMethod(?invo:MethodInvocation, ?type:ReferenceType, ?id:symbol, ?mt:MethodType, ?hctx:configuration.HContext, ?ctx:configuration.Context)
+// FindMethod(?invo, ?type, ?id, ?mt, ?hctx, ?ctx) :-
+//   (FindStatic(?invo, _) ; FindVirtual(?invo, _) ; FindSpecial(?invo, _)),
+//   ActualParam(0, ?invo, ?classParam),
+//   VarPointsTo(?hctx, ?classValue, ?ctx, ?classParam),
+//   ReifiedClass(?type, ?classValue),
+//   ActualParam(1, ?invo, ?stringParam),
+//   VarPointsTo(_, ?id, _, ?stringParam),
+//   ActualParam(2, ?invo, ?mtParam),
+//   VarPointsTo(_, ?mt, _, ?mtParam).
+// // Special case: constructor finder.
+// FindMethod(?invo, ?type, ?id, ?mt, ?hctx, ?ctx) :-
+//   FindConstructor(?invo, _),
+//   ActualParam(0, ?invo, ?classParam),
+//   VarPointsTo(?hctx, ?classValue, ?ctx, ?classParam),
+//   ReifiedClass(?type, ?classValue),
+//   ?id = "<init>",
+//   ActualParam(1, ?invo, ?mtParam),
+//   VarPointsTo(_, ?mt, _, ?mtParam).
+// #endif // REFLECTION, LIGHT_REFLECTION_GLUE
+
+// // Compute result of findStatic().
+// AssignMethodHandleToVarRequest(?method, ?paramTypes, ?retType, ?hctx, ?ctx, ?ret) :-
+//   FindMethod(?invo, ?type, ?id, ?mt, ?hctx, ?ctx),
+//   FindStatic(?invo, ?ret),
+//   DMHLookup(?type, ?id, ?mt, ?method, ?retType, ?paramTypes),
+//   Method_Modifier("static", ?method).
+// // Compute result of findVirtual()/findSpecial()/findConstructor():
+// // transform the method type to an equivalent that also contains the
+// // receiver as first argument.
+// AssignMethodHandleToVarRequest(?method, ?paramTypesConv, ?retType, ?hctx, ?ctx, ?ret) :-
+//   FindMethod(?invo, ?type, ?id, ?mt, ?hctx, ?ctx),
+//   ( FindVirtual(?invo, ?ret)
+//   ; FindSpecial(?invo, ?ret)
+//   ; FindConstructor(?invo, ?ret)),
+//   DMHLookup(?type, ?id, ?mt, ?method, ?retType, ?paramTypes),
+//   !Method_Modifier("static", ?method),
+//   // Reconstruct method type to prepend receiver (since ?mt may contain wildcard
+//   // parameter types).
+//   EquivalentWithPrependedReceiver(METHOD_TYPE(?paramTypes, ?retType), ?mtConv),
+//   MethodType_ParamTypes(?mtConv, ?paramTypesConv).
+
+// #endif // REFLECTION_METHOD_HANDLES
+
+// // Create a receiver object when calling constructors.
+
+// #ifndef DISABLE_POINTS_TO
+// BOUND_VAR_POINTS_TO(?hctx, ?value, ?calleeCtx, ?thisVar),
+// BOUND_VAR_POINTS_TO(?hctx, ?value, ?callerCtx, ?ret),
+// #endif // DISABLE_POINTS_TO
+// MockValueConsMacro(?value, ?type) :-
+//   MethodHandleCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?method, ?mh, _),
+//   basic.ClassConstructor(?method, ?type),
+//   ThisVar(?method, ?thisVar),
+//   isImmutableHContext(?hctx),
+//   ?value = cat(?type, cat(" value constructed by method handle ", ?mh)),
+//   AssignReturnValue(?invo, ?ret),
+//   Var_Type(?ret, ?retType),
+//   basic.SubtypeOf(?type, ?retType).
+
+// /*************************************************************
+//  * Generic invokedynamic
+//  *************************************************************/
+
+// .decl ReachableInvokedynamic(?invokedynamic:DynamicMethodInvocation_Insn, ?dynName:symbol, ?dynRetType:Type, ?ctx:configuration.Context)
+// ReachableInvokedynamic(?invokedynamic, ?dynName, ?dynRetType, ?ctx) :-
+//   isDynamicMethodInvocation_Insn(?invokedynamic),
+//   Instruction_Method(?invokedynamic, ?inMethod),
+//   DynamicMethodInvocation_DynName(?invokedynamic, ?dynName),
+//   DynamicMethodInvocation_DynReturnType(?invokedynamic, ?dynRetType),
+//   ReachableContext(?ctx, ?inMethod).
+
+// // Helper relation to make bootstrap method context configurable.
+// .decl isBootstrapMethodContext(?ctx:configuration.Context)
+// isBootstrapMethodContext(?ctx) :- isImmutableContext(?ctx).
+
+// // Call-graph edge: invokedynamic instruction -> boot method.
+// .decl InvokedynamicBootCallGraphEdge(?callerCtx:configuration.Context, ?invokedynamic:DynamicMethodInvocation_Insn, ?calleeCtx:configuration.Context, ?bootMethod:Method)
+// InvokedynamicBootCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?bootMethod) :-
+//   ReachableInvokedynamic(?invokedynamic, _, _, ?callerCtx),
+//   DynamicMethodInvocation_Bootstrap(?invokedynamic, ?bootMethod),
+//   isBootstrapMethodContext(?calleeCtx).
+
+// ReachableContext(?calleeCtx, ?bootMethod) :-
+//   InvokedynamicBootCallGraphEdge(_, _, ?calleeCtx, ?bootMethod).
+
+// .decl Invokedynamic_MethodType(?invokedynamic:DynamicMethodInvocation_Insn, ?mt:MethodType)
+// .decl PopulateMTParamTypes(?mt:Value, ?invokedynamic:DynamicMethodInvocation_Insn)
+
+// // For every reachable invokedynamic, create a mock method type.
+// MockValueConsMacro(?mt, "java.lang.invoke.MethodType"),
+// MethodType_ReturnType(?mt, ?dynRetType),
+// PopulateMTParamTypes(?mt, ?invokedynamic),
+// Invokedynamic_MethodType(?invokedynamic, ?mt) :-
+//   InvokedynamicBootCallGraphEdge(_, ?invokedynamic, _, _),
+//   DynamicMethodInvocation_DynReturnType(?invokedynamic, ?dynRetType),
+//   DynamicMethodInvocation_DynParamTypes(?invokedynamic, ?dynParamTypes),
+//   ?mt = METHOD_TYPE(?dynParamTypes, ?dynRetType).
+// MethodType_ParamType(?mt, ?index, ?pType) :-
+//   PopulateMTParamTypes(?mt, ?invokedynamic),
+//   _DynamicMethodInvocation_DynParamType(?invokedynamic, ?index, ?pType).
+
+// // Pass arguments to bootstrap methods. First three arguments are
+// // filled in by the JVM, so we fill them with mock objects.
+// #ifndef DISABLE_POINTS_TO
+// BOUND_VAR_POINTS_TO(?immHctx, ?mockMHLookup, ?calleeCtx, ?caller),
+// BOUND_VAR_POINTS_TO(?immHctx, ?mt, ?calleeCtx, ?invokedTypeParam),
+// #endif // DISABLE_POINTS_TO
+// MockValueConsMacro(?mockMHLookup, "java.lang.invoke.MethodHandles$Lookup"),
+// MHLookup_Type(?mockMHLookup, ?callerClass) :-
+//   InvokedynamicBootCallGraphEdge(_, ?invokedynamic, ?calleeCtx, ?bootMethod),
+//   FormalParam(0, ?bootMethod, ?caller),
+//   FormalParam(2, ?bootMethod, ?invokedTypeParam),
+//   Invokedynamic_MethodType(?invokedynamic, ?mt),
+//   isImmutableHContext(?immHctx),
+//   Instruction_Method(?invokedynamic, ?method),
+//   Method_DeclaringType(?method, ?callerClass),
+//   ?mockMHLookup = MOCK_MH_LOOKUP(?callerClass).
+
+// // The second-arg rule should only be enabled when strings are not merged.
+// #if defined(DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS) || defined(DISTINGUISH_ALL_STRING_CONSTANTS) || defined(NO_MERGES)
+// #ifndef DISABLE_POINTS_TO
+// BOUND_VAR_POINTS_TO(?immHctx, ?invokedName, ?calleeCtx, ?invokedNameParam) :-
+//   InvokedynamicBootCallGraphEdge(_, ?invokedynamic, ?calleeCtx, ?bootMethod),
+//   isStringConstant(?invokedName),
+//   FormalParam(1, ?bootMethod, ?invokedNameParam),
+//   DynamicMethodInvocation_DynName(?invokedynamic, ?invokedName),
+//   isImmutableHContext(?immHctx).
+// #endif // DISABLE_POINTS_TO
+// #endif // DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS, DISTINGUISH_ALL_STRING_CONSTANTS, NO_MERGES
+
+// // Helper method to compute the varargs accumulator formal of a method.
+// .decl MethodVarArgs(?method:Method, ?idx:number, ?formal:Var, ?type:ArrayType)
+// MethodVarArgs(?method, ?idx, ?formal, ?type) :-
+//   Method_Modifier("varargs", ?method),
+//   Method_Arity(?method, ?arity),
+//   ?idx = ?arity - 1,
+//   FormalParam(?idx, ?method, ?formal),
+//   Var_Type(?formal, ?type),
+//   isArrayType(?type).
+
+// // Use a mock array to fix calls to a bootstrap method accepting varargs.
+// #define MOCK_ARRAY(invokedynamic) cat("<bootstrap varargs array for ", cat(invokedynamic, ">"))
+
+// #ifndef DISABLE_POINTS_TO
+// // ArrayIndexPointsTo(?immHctx, ?val, ?immHctx, ?mockArray),
+// // MockValueConsMacro(?mockArray, ?varArgsType),
+// // BOUND_VAR_POINTS_TO(?immHctx, ?mockArray, ?calleeCtx, ?formalVarArgs) :-
+// //   InvokedynamicBootCallGraphEdge(_, ?invokedynamic, ?calleeCtx, ?bootMethod),
+// //   MethodVarArgs(?bootMethod, ?bootIdx, ?formalVarArgs, ?varArgsType),
+// //   BootstrapParam(?idx, ?invokedynamic, ?actual),
+// //   ?idx > ?bootIdx - 3,
+// //   VarPointsTo(_, ?val, _, ?actual),
+// //   isImmutableHContext(?immHctx),
+// //   ?mockArray = MOCK_ARRAY(?invokedynamic).
+
+// // Normal handling for the last three arguments of the bootstrap method, shifted.
+// BOUND_VAR_POINTS_TO(?hctx, ?val, ?calleeCtx, ?formal) :-
+//   InvokedynamicBootCallGraphEdge(_, ?invokedynamic, ?calleeCtx, ?bootMethod),
+//   !Method_Modifier("varargs", ?bootMethod),
+//   FormalParam(?idx + 3, ?bootMethod, ?formal),
+//   BootstrapParam(?idx, ?invokedynamic, ?actual),
+//   VarPointsTo(?hctx, ?val, _, ?actual).
+// #endif // DISABLE_POINTS_TO
+
+// .type CallSite = Value
+// .decl InvokedynamicCallSite(?callsite:CallSite, ?invokedynamic:DynamicMethodInvocation_Insn, ?dynName:symbol, ?K:number, ?ctx:configuration.Context)
+
+// // Record CallSite metadata. This rule handles the return values of bootstrap
+// // methods without checking types: according to the JVM spec, the return type of
+// // a bootstrap method need not be java.lang.invoke.CallSite.
+// InvokedynamicCallSite(?callsite, ?invokedynamic, ?dynName, ?K, ?callerCtx) :-
+//   ReachableInvokedynamic(?invokedynamic, ?dynName, _, ?callerCtx),
+//   DynamicMethodInvocation_DynArity(?invokedynamic, ?K),
+//   DynamicMethodInvocation_Bootstrap(?invokedynamic, ?bootMethod),
+//   ReturnVar(?bootRetVar, ?bootMethod),
+//   isBootstrapMethodContext(?calleeCtx),
+//   VarPointsTo(_, ?callsite, ?calleeCtx, ?bootRetVar).
+
+// #ifndef DISABLE_POINTS_TO
+// // Interpret CallSite contents.
+// .decl CallSiteContents(?invokedynamic:DynamicMethodInvocation_Insn, ?methodHandle:MethodHandle, ?method:Method, ?mt:MethodType, ?ctx:configuration.Context)
+// CallSiteContents(?invokedynamic, ?methodHandle, ?method, ?mt, ?ctx) :-
+//   InvokedynamicCallSite(?callsite, ?invokedynamic, _, _, ?ctx),
+//   Invokedynamic_MethodType(?invokedynamic, ?mt),
+//   InstanceFieldPointsTo(_, ?methodHandle, "<java.lang.invoke.CallSite: java.lang.invoke.MethodHandle target>", _, ?callsite),
+//   MethodHandle_Method(?methodHandle, ?method).
+
+// // Match call sites against invokedynamic method type signatures. If reflective
+// // method handles logic is enabled, also match prepended-receiver method types.
+// .decl CallSiteMatchesMethodHandleType(?invokedynamic:DynamicMethodInvocation_Insn, ?mh:MethodHandle, ?method:Method, ?ctx:configuration.Context)
+// CallSiteMatchesMethodHandleType(?invokedynamic, ?mh, ?method, ?ctx) :-
+//   CallSiteContents(?invokedynamic, ?mh, ?method, ?mtDyn, ?ctx),
+// #ifdef REFLECTION_METHOD_HANDLES
+//   MethodHandle_MethodType(?mh, ?mt),
+//   (?mt = ?mtDyn ; EquivalentWithPrependedReceiver(?mt, ?mtDyn)).
+// #else
+//   MethodHandle_MethodType(?mh, ?mtDyn).
+// #endif // REFLECTION_METHOD_HANDLES
+
+// // Method handle for C.<init> has dynamic return type C instead of "void".
+// CallSiteMatchesMethodHandleType(?invokedynamic, ?mh, ?method, ?ctx) :-
+//   CallSiteContents(?invokedynamic, ?mh, ?method, ?mt, ?ctx),
+//   MethodType_ReturnType(?mt, ?dynRetType),
+//   basic.ClassConstructor(?method, ?dynRetType),
+//   MethodHandle_Method(?mh, ?method).
+
+// // After a method handle is resolved, invokedynamic calls it, as if
+// // "invokeExact" was invoked on it. This is a call-graph edge from an
+// // invokedynamic instruction to the method invoked by the call site.
+
+// // Rule for static methods resolved by invokedynamic.
+// .decl StaticMethodHandleCall(?callerCtx:configuration.Context, ?invo:MethodInvocation, ?method:Method, ?mh:MethodHandle)
+// StaticMethodHandleCall(?callerCtx, ?invokedynamic, ?method, ?mh),
+// configuration.StaticContextRequest(?callerCtx, ?invokedynamic) :-
+//   CallSiteMatchesMethodHandleType(?invokedynamic, ?mh, ?method, ?callerCtx),
+//   Method_Modifier("static", ?method).
+// MethodHandleCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?method, ?mh, "invokeExact") :-
+//   StaticMethodHandleCall(?callerCtx, ?invokedynamic, ?method, ?mh),
+//   configuration.StaticContextResponse(?callerCtx, ?invokedynamic, ?calleeCtx).
+
+// // General rule for non-static methods resolved by invokedynamic. This rule
+// // does not use the Request/Response schema, since we do not have a "value"
+// // for the receiver (call site resolution happens at load time).
+// MethodHandleCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?method, ?mh, "invokeExact") :-
+//   CallSiteMatchesMethodHandleType(?invokedynamic, ?mh, ?method, ?callerCtx),
+//   !Method_Modifier("static", ?method),
+//   isImmutableContext(?calleeCtx).
+
+// ReachableContext(?calleeCtx, ?callee) :-
+//   MethodHandleCallGraphEdge(_, _, ?calleeCtx, ?callee, _, _).
+// #endif // DISABLE_POINTS_TO
+
+// /*************************************************************
+//  * Lambda-specific invokedynamic
+//  *************************************************************/
+
+// /** Phase 1: Linkage (creating a lambda CallSite) **/
+
+// #define LAMBDA_METAFACTORY "<java.lang.invoke.LambdaMetafactory: java.lang.invoke.CallSite metafactory(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType,java.lang.invoke.MethodType,java.lang.invoke.MethodHandle,java.lang.invoke.MethodType)>"
+
+// #define LAMBDA_ALTMETAFACTORY "<java.lang.invoke.LambdaMetafactory: java.lang.invoke.CallSite altMetafactory(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType,java.lang.Object[])>"
+
+// // Find invocations to the lambda metafactories.
+// .decl LambdaMetafactoryInvoke(?invokedynamic:DynamicMethodInvocation_Insn)
+// LambdaMetafactoryInvoke(?invokedynamic) :-
+//   DynamicMethodInvocation_Bootstrap(?invokedynamic, ?method),
+//   (?method = LAMBDA_METAFACTORY ; ?method = LAMBDA_ALTMETAFACTORY).
+
+// .decl ReachableLambdaMetafactoryInvoke(?invokedynamic:DynamicMethodInvocation_Insn, ?dynName:symbol, ?dynRetType:Type, ?ctx:configuration.Context)
+// ReachableLambdaMetafactoryInvoke(?invokedynamic, ?dynName, ?dynRetType, ?ctx) :-
+//   LambdaMetafactoryInvoke(?invokedynamic),
+//   ReachableInvokedynamic(?invokedynamic, ?dynName, ?dynRetType, ?ctx).
+
+// // Record invokedynamic invocations whose bootstrap methods are not
+// // handled at all. Used for statistics.
+// .decl UnhandledInvokedynamic(?invokedynamic:DynamicMethodInvocation_Insn, ?bootMethodId:symbol)
+
+// UnhandledInvokedynamic(?invokedynamic, ?bootMethodId) :-
+//   DynamicMethodInvocation_Bootstrap(?invokedynamic, ?bootMethodId),
+//   !LambdaMetafactoryInvoke(?invokedynamic).
+
+// #define LAMBDA_ALT_VAL(invo, ret, type, method, real, name) \
+//   cat(invo, cat("::: ", cat(ret, cat("::: (Mock)::: ", cat("reference ", cat(type, cat ("::", cat(method, cat(" from ", cat(real, cat(" wrapped as ", cat(ret, cat(".", name)))))))))))))
+
+// .type Lambda = Value
+// // TODO: Field ?ctx is currently unused, should be used in the
+// // LambdaCallGraphEdge rule for context sensitivity.
+// .decl LambdaObject(?invokedynamic:DynamicMethodInvocation_Insn, ?lambda:Lambda, ?dynName:symbol, ?K:number, ?implMethod:Method, ?ctx:configuration.Context)
+
+// #define LAMBDA(invokedynamic, type) \
+//   cat(invokedynamic, cat("::: ", cat(type, cat("::: (Mock)::: ", cat("lambda object of type ", type)))))
+
+// // Record more information about the call site to model the metafactory result
+// // and return the mock lambda object.
+// MockValueConsMacro(?lambda, ?dynRetType),
+// #ifndef DISABLE_POINTS_TO
+// VarPointsTo(?hctx, ?lambda, ?callerCtx, ?ret),
+// #endif // DISABLE_POINTS_TO
+// LambdaObject(?invokedynamic, ?lambda, ?dynName, ?K, ?implMethod, ?callerCtx) :-
+//   ReachableLambdaMetafactoryInvoke(?invokedynamic, ?dynName, ?dynRetType, ?callerCtx),
+//   DynamicMethodInvocation_DynArity(?invokedynamic, ?K),
+//   BootstrapParam(1, ?invokedynamic, ?handleVar),
+//   VarPointsTo(?hctx, ?handleVal, ?callerCtx, ?handleVar),
+//   MethodHandleConstant_Method(?handleVal, ?implMethod),
+//   // Used to generate friendly description for the lambda.
+//   Method_SimpleName(?implMethod, ?handleMeth),
+//   Method_DeclaringType(?implMethod, ?handleType),
+//   ?lambda = LAMBDA_ALT_VAL(?invokedynamic, ?dynRetType, ?handleType, ?handleMeth, ?implMethod, ?dynName),
+//   // ?lambda = LAMBDA(?invokedynamic, ?dynRetType),
+//   AssignReturnValue(?invokedynamic, ?ret).
+
+// /** Phase 2: Capture (invoke CallSite, return functional object) **/
+
+// // Capture values of the enclosing environment.
+// .decl LambdaCaptured(?invokedynamic:DynamicMethodInvocation_Insn, ?val:Value, ?idx:number, ?hctx:configuration.HContext)
+// LambdaCaptured(?invokedynamic, ?val, ?idx, ?hctx) :-
+//   ReachableLambdaMetafactoryInvoke(?invokedynamic, _, _, ?callerCtx),
+//   DynamicMethodInvocation_DynArity(?invokedynamic, ?K),
+//   ?K > 0,
+//   ActualParam(?idx, ?invokedynamic, ?actual),
+//   VarPointsTo(?hctx, ?val, ?callerCtx, ?actual).
+
+// /** Phase 3: Invocation (call method on the functional object) **/
+
+// // When a method is called on a lambda object constructed by a
+// // constant method handle, the real method is called. This can wrap a
+// // static method call as an instance method call.
+
+// // Call-graph edge: method invocation on lambda object -> implementing method.
+// .decl LambdaCallGraphEdge(?callerCtx:configuration.Context, ?i:MethodInvocation, ?calleeCtx:configuration.Context, ?m:Method, ?lambda:Lambda)
+
+// // Call-graph edge: method call on lambda object -> implementing
+// // method.  For simplicity, the callee context is trivial. For proper
+// // context sensitivity, we must model all combinations of calling
+// // contexts with implementing-method static-ness.
+// LambdaCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?implMethod, ?lambda) :-
+//   LambdaObject(_, ?lambda, ?dynName, _, ?implMethod, _),
+//   VarPointsTo(_, ?lambda, ?callerCtx, ?var),
+//   VirtualMethodInvocation_Base(?i, ?var),
+//   VirtualMethodInvocation_SimpleName(?i, ?dynName),
+//   isImmutableContext(?calleeCtx).
+
+// ReachableContext(?calleeCtx, ?callee) :-
+//   LambdaCallGraphEdge(_, _, ?calleeCtx, ?callee, _).
+
+// #ifndef DISABLE_POINTS_TO
+// // Handle return values for lambda call-graph edges.
+// BOUND_VAR_POINTS_TO(?hctx, ?retVal, ?callerCtx, ?ret) :-
+//   LambdaCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?method, _),
+//   ReturnVar(?realReturnVar, ?method),
+//   VarPointsTo(?hctx, ?retVal, ?calleeCtx, ?realReturnVar),
+//   AssignReturnValue(?i, ?ret).
+// #endif // DISABLE_POINTS_TO
+
+// // Helper relation: implementing method is an instance method.
+// .decl CalledInstanceImplMethod(?invokedynamic:DynamicMethodInvocation_Insn, ?implMethod:Method, ?this:Var, ?thisType:Type, ?calleeCtx:configuration.Context, ?lambda:Lambda)
+// CalledInstanceImplMethod(?invokedynamic, ?implMethod, ?this, ?thisType, ?calleeCtx, ?lambda) :-
+//   LambdaCallGraphEdge(_, _, ?calleeCtx, ?implMethod, ?lambda),
+//   !Method_Modifier("static", ?implMethod),
+//   LambdaObject(?invokedynamic, ?lambda, _, _, ?implMethod, _),
+//   ThisVar(?implMethod, ?this),
+//   Var_Type(?this, ?thisType).
+
+// // Helper relation: instance methods may implicitly consume one of the
+// // K or N arguments for the receiver (shifting them by 1), while
+// // static methods take all K arguments before N ones.
+// .decl Params_ReceiverShiftRight(?lambda:Lambda, ?implMethod:Method, ?shiftK:number, ?shiftN:number)
+// Params_ReceiverShiftRight(?lambda, ?implMethod, 0, 0) :-
+//   LambdaObject(_, ?lambda, _, _, ?implMethod, _),
+//   Method_Modifier("static", ?implMethod).
+// // No bootstrap arguments = an actual argument will be used for 'this'.
+// Params_ReceiverShiftRight(?lambda, ?implMethod, 0, 1) :-
+//   CalledInstanceImplMethod(?invokedynamic, ?implMethod, _, _, _, ?lambda),
+//   DynamicMethodInvocation_DynArity(?invokedynamic, 0).
+// // First bootstrap argument exists, will be used for 'this'.
+// Params_ReceiverShiftRight(?lambda, ?implMethod, 1, 0) :-
+//   CalledInstanceImplMethod(?invokedynamic, ?implMethod, _, _, _, ?lambda),
+//   LambdaCaptured(?invokedynamic, _, 0, _).
+
+// // Invocation argument to be passed to implementing method.
+// .decl LambdaArg(?calleeCtx:configuration.Context, ?formal:Var, ?formalType:Type, ?actual:Var, ?invokedynamic:DynamicMethodInvocation_Insn)
+
+// // Pass invocation arguments to the implementing method.
+// LambdaArg(?calleeCtx, ?formal, ?formalType, ?actual, ?invokedynamic) :-
+//   LambdaCallGraphEdge(_, ?i, ?calleeCtx, ?implMethod, ?lambda),
+//   Params_ReceiverShiftRight(?lambda, ?implMethod, ?shiftK, ?shiftN),
+//   LambdaObject(?invokedynamic, ?lambda, _, ?K, ?implMethod, _),
+//   ActualParam(?idx, ?i, ?actual),
+//   FormalParam(?K - ?shiftK + ?idx - ?shiftN, ?implMethod, ?formal),
+//   Var_Type(?formal, ?formalType).
+
+// #ifndef DISABLE_POINTS_TO
+// // Argument passing case #1: check type compatibility.
+// VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
+//   LambdaArg(?calleeCtx, ?formal, ?formalType, ?actual, _),
+//   VarPointsTo(?hctx, ?val, _, ?actual),
+//   Value_Type(?val, ?valType),
+//   basic.SubtypeOf(?valType, ?formalType).
+// #endif // DISABLE_POINTS_TO
+
+// // Argument passing case #2: autoboxing for some function types.
+// .decl BoxingFunction(?functionType:ReferenceType, ?primType:Type, ?refType:ReferenceType)
+// BoxingFunction(?intArgLambdaType, "int", "java.lang.Integer") :-
+//   ?intArgLambdaType = "java.util.function.IntBinaryOperator";
+//   ?intArgLambdaType = "java.util.function.IntConsumer";
+//   ?intArgLambdaType = "java.util.function.IntFunction";
+//   ?intArgLambdaType = "java.util.function.IntPredicate";
+//   ?intArgLambdaType = "java.util.function.IntToDoubleFunction";
+//   ?intArgLambdaType = "java.util.function.IntToLongFunction";
+//   ?intArgLambdaType = "java.util.function.IntUnaryOperator";
+//   ?intArgLambdaType = "java.util.function.ObjIntConsumer".
+// BoxingFunction(?longArgLambdaType, "long", "java.lang.Long") :-
+//   ?longArgLambdaType = "java.util.function.LongBinaryOperator";
+//   ?longArgLambdaType = "java.util.function.LongConsumer";
+//   ?longArgLambdaType = "java.util.function.LongFunction";
+//   ?longArgLambdaType = "java.util.function.LongPredicate";
+//   ?longArgLambdaType = "java.util.function.LongToDoubleFunction";
+//   ?longArgLambdaType = "java.util.function.LongToIntFunction";
+//   ?longArgLambdaType = "java.util.function.LongUnaryOperator";
+//   ?longArgLambdaType = "java.util.function.ObjLongConsumer".
+// BoxingFunction(?doubleArgLambdaType, "double", "java.lang.Double") :-
+//   ?doubleArgLambdaType = "java.util.function.DoubleBinaryOperator";
+//   ?doubleArgLambdaType = "java.util.function.DoubleConsumer";
+//   ?doubleArgLambdaType = "java.util.function.DoubleFunction";
+//   ?doubleArgLambdaType = "java.util.function.DoublePredicate";
+//   ?doubleArgLambdaType = "java.util.function.DoubleToIntFunction";
+//   ?doubleArgLambdaType = "java.util.function.DoubleToLongFunction";
+//   ?doubleArgLambdaType = "java.util.function.DoubleUnaryOperator";
+//   ?doubleArgLambdaType = "java.util.function.ObjDoubleConsumer".
+// #ifndef DISABLE_POINTS_TO
+// BOUND_VAR_POINTS_TO(?hctx, ?val, ?calleeCtx, ?formal) :-
+//   LambdaArg(?calleeCtx, ?formal, ?formalType, ?actual, ?invokedynamic),
+//   ReachableLambdaMetafactoryInvoke(?invokedynamic, _, ?dynRetType, _),
+//   Var_Type(?actual, ?primType),
+//   BoxingFunction(?dynRetType, ?primType, ?formalType),
+//   BoxAllocation(?val, ?formalType),
+//   isImmutableHContext(?hctx).
+
+// // Pass captured arguments to the implementing method.
+// BOUND_VAR_POINTS_TO(?hctx, ?val, ?calleeCtx, ?formal) :-
+//   LambdaCallGraphEdge(_, _, ?calleeCtx, ?implMethod, ?lambda),
+//   Params_ReceiverShiftRight(?lambda, ?implMethod, ?shiftK, _),
+//   LambdaObject(?invokedynamic, ?lambda, _, ?K, ?implMethod, _),
+//   LambdaCaptured(?invokedynamic, ?val, ?idx, ?hctx),
+//   ?idx + ?shiftK <= ?K,
+//   FormalParam(?idx - ?shiftK, ?implMethod, ?formal),
+//   Value_Type(?val, ?valType),
+//   Var_Type(?formal, ?formalType),
+//   basic.SubtypeOf(?valType, ?formalType).
+
+// // Special handling for captured "this" parameters.
+// BOUND_VAR_POINTS_TO(?hctx, ?thisValue, ?calleeCtx, ?this) :-
+//   Params_ReceiverShiftRight(?lambda, ?implMethod, 1, 0),
+//   CalledInstanceImplMethod(?invokedynamic, ?implMethod, ?this, ?thisType, ?calleeCtx, ?lambda),
+//   LambdaCaptured(?invokedynamic, ?thisValue, 0, ?hctx),
+//   Value_Type(?thisValue, ?thisValueType),
+//   basic.SubtypeOf(?thisValueType, ?thisType).
+
+// // Special handling for "this" parameters to method references that do
+// // not capture a receiver.
+// BOUND_VAR_POINTS_TO(?hctx, ?argValue, ?calleeCtx, ?this) :-
+//   LambdaCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?implMethod, ?lambda),
+//   Params_ReceiverShiftRight(?lambda, ?implMethod, 0, 1),
+//   ActualParam(0, ?i, ?actual),
+//   VarPointsTo(?hctx, ?argValue, ?callerCtx, ?actual),
+//   Value_Type(?argValue, ?argType),
+//   ThisVar(?implMethod, ?this),
+//   Var_Type(?this, ?thisType),
+//   basic.SubtypeOf(?argType, ?thisType).
+
+// // Applications of constructor references construct values. However,
+// // these values do not come from a 'new' instruction in the code but
+// // are created here as mock values, one per type/invocation.
+// BOUND_VAR_POINTS_TO(?hctx, ?mockObj, ?callerCtx, ?var),
+// BOUND_VAR_POINTS_TO(?hctx, ?mockObj, ?calleeCtx, ?thisVar),
+// MockValueConsMacro(?mockObj, ?type) :-
+//   LambdaCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?implMethod, _),
+//   basic.ClassConstructor(?implMethod, ?type),
+//   AssignReturnValue(?i, ?var),
+//   ThisVar(?implMethod, ?thisVar),
+//   ?mockObj = cat("<mock object of type ", cat(?type, cat(" constructed by constructor reference at ", cat(?i, ">")))),
+//   isImmutableHContext(?hctx).
+// #endif // DISABLE_POINTS_TO
+
+// #ifdef REFLECTION_METHOD_HANDLES
+// #ifdef REFLECTION
+// #ifndef DISABLE_POINTS_TO
+
+// /**
+//  * Naive model of Class.getDeclaredConstructors() without backpropagation of
+//  * special values. Needed since the invokedynamic handling does not propagate
+//  * these special values up to their uses.
+//  */
+
+// .decl FillConstructorsFromClass(?hctx:configuration.HContext, ?mockConstructors:Value, ?class:Type)
+
+// #define GET_DECLARED_METHODS "<java.lang.Class: java.lang.reflect.Method[] getDeclaredMethods()>"
+// #define GET_DECLARED_CONSTRUCTORS "<java.lang.Class: java.lang.reflect.Constructor[] getDeclaredConstructors()>"
+// .decl Class_getMembers(?sig:Method, ?hctx:configuration.HContext, ?ctx:configuration.Context, ?ret:Var, ?class:Type)
+
+// Class_getMembers(?sig, ?hctx, ?ctx, ?ret, ?class) :-
+//   _VirtualMethodInvocation(?invo, _, ?sig, ?base, ?method),
+//   (?sig = GET_DECLARED_CONSTRUCTORS ; ?sig = GET_DECLARED_METHODS),
+//   ReachableContext(?ctx, ?method),
+//   VarPointsTo(?hctx, ?classValue, ?ctx, ?base),
+//   ReifiedClass(?class, ?classValue),
+//   ApplicationClass(?class),
+//   AssignReturnValue(?invo, ?ret).
+
+// VarPointsTo(?hctx, ?mockConstructors, ?ctx, ?ret),
+// MockValueConsMacro(?mockConstructors, "java.lang.reflect.Constructor[]"),
+// FillConstructorsFromClass(?hctx, ?mockConstructors, ?class) :-
+//   Class_getMembers(GET_DECLARED_CONSTRUCTORS, ?hctx, ?ctx, ?ret, ?class),
+//   Var_Type(?ret, ?retType),
+//   (isArrayType(?retType) ; ?retType = "java.lang.Object"),
+//   ?mockConstructors = cat("<mock constructors array for ", cat(?class, ">")).
+
+// ArrayIndexPointsTo(?immHctx, ?constructor, ?hctx, ?mockConstructors) :-
+//   FillConstructorsFromClass(?hctx, ?mockConstructors, ?class),
+//   basic.ClassConstructor(?method, ?class),
+//   ReifiedConstructor(?method, ?constructor),
+//   isImmutableHContext(?immHctx).
+
+// VarPointsTo(?hctx, ?mockMethods, ?ctx, ?ret),
+// MockValueConsMacro(?mockMethods, "java.lang.reflect.Method[]"),
+// FillConstructorsFromClass(?hctx, ?mockMethods, ?class) :-
+//   Class_getMembers(GET_DECLARED_METHODS, ?hctx, ?ctx, ?ret, ?class),
+//   Var_Type(?ret, ?retType),
+//   (isArrayType(?retType) ; ?retType = "java.lang.Object"),
+//   ?mockMethods = cat("<mock methods array for ", cat(?class, ">")).
+
+// ArrayIndexPointsTo(?immHctx, ?methodValue, ?hctx, ?mockMethods) :-
+//   FillConstructorsFromClass(?hctx, ?mockMethods, ?class),
+//   Method_DeclaringType(?method, ?class),
+//   ReifiedMethod(?method, ?methodValue),
+//   isImmutableHContext(?immHctx).
+
+// #endif // DISABLE_POINTS_TO
+// #endif // REFLECTION
+// #endif // REFLECTION_METHOD_HANDLES

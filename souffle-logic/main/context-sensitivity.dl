@@ -14,7 +14,37 @@
 VarPointsTo(?hctx, ?value, ?ctx, ?var) :-    
   VarPointsTo_Bounded(?hctx, ?value, ?ctx, ?var, _).
 
-#endif
+#endif   
+
+/*** ORACULAR BEGIN ***/
+// .decl Method_NumberOfContexts(?method:Method, ?n:number)
+
+// Method_NumberOfContexts(?method, ?n) :-
+//       mainAnalysis.Reachable(?method),
+//       ?n =  count : {ReachableContext(_, ?method)}.
+
+// .output Method_NumberOfContexts
+
+// .decl VPTCountPerMethodVariable(?method:Method, ?var:Var, ?n:number)
+
+// VPTCountPerMethodVariable(?method, ?var, Y) :-
+//     Var_DeclaringMethod(?var, ?method),
+//     Y =  count : {mainAnalysis.VarPointsTo(_, _, _, ?var)}.
+
+// .decl MethodTotalCost(?method:Method, Y:number)
+
+// MethodTotalCost(?method, Y) :-
+//     mainAnalysis.Reachable(?method),
+//     Y = sum ?n : {VPTCountPerMethodVariable(?method, _, ?n)}.
+
+// MethodTotalCost(?method, 0) :-
+//     mainAnalysis.Reachable(?method),
+//     !Var_DeclaringMethod(_, ?method).
+
+// .output MethodTotalCost
+/*** ORACULAR END ***/
+
+
 
 ReachableValue(?hctx, ?heapValue) :-
   AssignContextInsensitiveHeapAllocation(?heapValue, _, ?inmethod),

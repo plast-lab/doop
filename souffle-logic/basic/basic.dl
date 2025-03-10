@@ -17,118 +17,23 @@ AnyMainMethodDeclaration(?method, ?type) :-
    Method_Modifier("public", ?method),
    Method_Modifier("static", ?method).
 
-// .decl BlacklistedHeapAllocation(class: Type, value: Value)
-
-// BlacklistedHeapAllocation(?class, ?value) :-
-//   AssignHeapAllocation(?value, _, ?method),
-//   Method_DeclaringType(?method, ?class),
-//   isClassType(?class),
-//   basic.SubtypeOf(?class, ?superclass),
-//   (?superclass = "java.util.Map";
-//     ?superclass = "java.util.Collection";
-//     ?superclass = "java.util.Dictionary").
-
-// BlacklistedHeapAllocation(?class, ?value) :-
-//   AssignHeapAllocation(?value, _, ?method),
-//   Method_DeclaringType(?method, ?class),
-//   isClassType(?class),
-//   (contains(?class, ".$.");
-//    contains(?class, "java.lang.");
-//    contains(?class, "java.io.");
-//    contains(?class, "java.net.");
-//    contains(?class, "java.xml.");
-//    contains(?class, "java.lang.");
-//    contains(?class, "javax.swing.");
-//    contains(?class, "javax.awt.");
-//    contains(?class, "com.sun.");
-//    contains(?class, "sun.util.");
-//    contains(?class, "sun.net.");
-//    contains(?class, "org.apache.batik.dom.svg.");
-//    contains(?class, "org.apache.batik.dom.");
-//    contains(?class, "org.apache.batik.bridge.");
-//    contains(?class, "org.apache.batik.ext.")).
-
-// BlacklistedHeapAllocation(?class, ?value) :-
-//   AssignHeapAllocation(?value, _, ?method),
-//   Method_DeclaringType(?method, ?class),
-//   isClassType(?class),
-//   (?class = "org.apache.batik.dom.AbstractParentNode";
-//    ?class = "org.apache.batik.dom.AbstractNode").
-
-// BlacklistedHeapAllocation(?class, ?value) :-
-//   AssignHeapAllocation(?value, _, ?method),
-//   Method_DeclaringType(?method, ?class),
-//   isClassType(?class),
-//   (contains(?class, "$")).
-
-// .decl HeapAllocationTypeAppearsInMultipleClasses(?type:Type)
-
-// HeapAllocationTypeAppearsInMultipleClasses(?type) :-
-//   AssignHeapAllocation(?value1, _, ?method1),
-//   Method_DeclaringType(?method1, ?class1),
-//   HeapAllocation_Type(?value1, ?type),
-//   AssignHeapAllocation(?value2, _, ?method2),
-//   Method_DeclaringType(?method2, ?class2),
-//   HeapAllocation_Type(?value2, ?type),
-//   ?class1 != ?class2.
-
-// BlacklistedHeapAllocation(?class, ?value) :-
-//   AssignHeapAllocation(?value, _, ?method),
-//   Method_DeclaringType(?method, ?class),
-//   HeapAllocation_Type(?value, ?type),
-//   !HeapAllocationTypeAppearsInMultipleClasses(?type).
-
-// BlacklistedHeapAllocation(?value) :-
-//   AssignHeapAllocation(?value, _, ?method),
-//   Method_DeclaringType(?method, ?class),
-//   isClassType(?class),
-//   NumberOfHeapAllocationsPerTypeInClass(?class, ?type, ?n),
-//   HeapAllocation_Type(?value, ?type),
-//   ?n > 100.
-
-// BlacklistedHeapAllocation(?class, ?value) :-
-//   AssignHeapAllocation(?value, _, ?method),
-//   Method_DeclaringType(?method, ?class),
-//   HeapAllocation_Type(?value, ?type),
-//   NumberOfHeapAllocationsOfType(?type, ?n) ,
-//   ?n < 20.  
-
-// .decl HeapAllocationInClass(?value:Value, ?ins:Instruction, ?class:Type)
-// .output HeapAllocationInClass
-
-// HeapAllocationInClass(?value, ?ins, ?class) :-
-//   AssignHeapAllocation(?value, ?ins, ?method),
-//   Method_DeclaringType(?method, ?class).
-
-// .decl HeapAllocationOfACertainTypeInClass(?class: Type, ?type: Type, ?ins: Instruction)
-// .output HeapAllocationOfACertainTypeInClass
-
-// HeapAllocationOfACertainTypeInClass(?class, ?type, ?ins) :-
-//   HeapAllocationInClass(?value, ?ins, ?class),
-//   HeapAllocation_Type(?value, ?type).
-
-// .decl NumberOfHeapAllocationsPerTypeInClass(?class:Type, ?type:Type, ?n:number)
-// .output NumberOfHeapAllocationsPerTypeInClass
-
-// NumberOfHeapAllocationsPerTypeInClass(?class, ?type, ?n) :-
-//   HeapAllocationOfACertainTypeInClass(?class, ?type, _),
-//   ?n = count : {HeapAllocationOfACertainTypeInClass(?class, ?type, _)}.
-
-// .decl NumberOfHeapAllocationsOfType(?type:Type, ?n:number)
-// .output NumberOfHeapAllocationsOfType
-
-// NumberOfHeapAllocationsOfType(?type, ?n) :-
-//   HeapAllocation_Type(_, ?type),
-//   ?n = count : {HeapAllocation_Type(_, ?type)}.
-
-// .decl HeapAllocationNumberPerClass(?class:ClassType, ?number:number)   
-// .output HeapAllocationNumberPerClass
-
-// HeapAllocationNumberPerClass(?class, ?n) :-
-//   isClassType(?class),
-//   ?n = count : {HeapAllocationInClass(_, ?class)}.
-
 .decl MainMethodDeclaration(?method:Method)
+
+.decl DataStructureClass(?class:Type)
+DataStructureClass(?class) :-
+  isClassType(?class),
+  SubtypeOf(?class, ?superclass),
+  (?superclass = "java.util.Map";
+   ?superclass = "java.util.AbstractMap";
+   ?superclass = "java.util.Collection";
+   ?superclass = "java.util.Dictionary").
+
+.decl PrecisionCriticalHeapAllocation(?value:Value)
+
+PrecisionCriticalHeapAllocation(?value) :-
+  AssignHeapAllocation(?value, _, ?inmethod),
+  Method_DeclaringType(?inmethod, ?type),
+  DataStructureClass(?type).
 
 MainMethodDeclaration(?method) :-
 #ifdef DISCOVER_MAIN_METHODS

@@ -32,7 +32,6 @@ CallGraphEdge(?callerCtx, ?invocation, ?immCtx, ?tomethod) :-
 #endif // X_CONTEXT_REMOVER
 
 // static invocation
-
 isContext(?calleeCtx),
 CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod) :-
   configuration.StaticContextResponse(?callerCtx, ?invocation, ?calleeCtx),

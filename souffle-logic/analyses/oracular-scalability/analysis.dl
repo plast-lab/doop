@@ -5,16 +5,18 @@
 #include "../../main/single-phase-analysis.dl"
 #include "../../main/configuration.dl"
 
+
+.type ContextComponent = Type | Value
+
 // For this analysis the context of a method call corresponds to the
 // identity of the receiver object and the receiver object of the caller.
 // Again, this may trigger creation of a new object.
-.comp BlacklistTwoObjectSensitivePlusHeapConfiguration : AbstractConfiguration {
+.comp OracularScalabilityConfiguration : AbstractConfiguration {
 
   // In this analysis, the real context is a pair of Values and the real
   // heap context a single Value.
-  .type Context  = [ value1:Value, value2:Value ]
-  .type HContext = [ value:Value ]
-
+  .type Context  = [ value1:ContextComponent, value2:ContextComponent ]
+  .type HContext = [ value:ContextComponent ]
 
   // BlacklistedHeapAllocation("<java.util.HashSet: void <init>()>/new java.util.HashMap/0").
   // BlacklistedHeapAllocation("<java.util.HashSet: void <init>(int)>/new java.util.HashMap/0").
@@ -25,19 +27,98 @@
   // BlacklistedHeapAllocation("<java.util.HashMap: java.util.Set keySet()>/new java.util.HashMap$KeySet/0").
   // BlacklistedHeapAllocation("<java.util.HashMap$KeySet: java.util.Iterator iterator()>/new java.util.HashMap$KeyIterator/0").
 
+  .decl ContextInsensitiveMethod(?method:Method)
+  .output ContextInsensitiveMethod
+  .printsize ContextInsensitiveMethod
 
+  .decl TwoObjectMethod(?method:Method)
+  .output TwoObjectMethod
+  .printsize TwoObjectMethod
+
+  .decl TwoTypeMethod(?method:Method)
+  .output TwoTypeMethod
+  .printsize TwoTypeMethod
+
+  .decl Occurrences(?var:Var, ?n:number)
+  .input Occurrences(IO="file", filename="Occurrences.csv")
   
+  .decl UnscalableMethod(?method:Method)
+  .printsize UnscalableMethod
+  .output UnscalableMethod
+
+  .decl Occurrences_DeclaringMethod(?method:Method, ?n:number)
+
+  Occurrences_DeclaringMethod(?method, ?n) :-
+    Occurrences(?var, ?n),
+    Var_DeclaringMethod(?var, ?method).
+
+  UnscalableMethod(?method) :-
+    Occurrences_DeclaringMethod(?method, ?n),
+    ?n >= 111.
+
+  .decl ScalableMethod(?method:Method)
+  .printsize ScalableMethod
+  .output ScalableMethod
+
+  ScalableMethod(?method) :-
+    Occurrences_DeclaringMethod(?method, ?n),
+    ?n < 111.
+
+  .decl UnknownMethod(?method:Method)
+  .printsize UnknownMethod
+  .output UnknownMethod
+
+  UnknownMethod(?method) :-
+    isMethod(?method),
+    !Occurrences_DeclaringMethod(?method, _).
+  
+  ContextInsensitiveMethod(?tomethod),
   ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, ?calleeCtx) :-
     ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, _),
-    ?calleeCtx = ?callerCtx,
-    basic.BlacklistedHeapAllocation(_, ?value).
+    ?hctx = ?hctx,
+    isImmutableContext(?calleeCtx),
+    UnknownMethod(?tomethod).
 
+  // 2-object
+  TwoObjectMethod(?tomethod),
   ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, ?calleeCtx) :-
     ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, _),
     ?hctx = [?hctxValue],
     ?calleeCtx = [?hctxValue, ?value],
-   !basic.BlacklistedHeapAllocation(_, ?value).
+    ScalableMethod(?tomethod).
 
+  // ToTypeString maps a (value or type) string to a string representation of a type.
+  // It is useful for generating 2-type-sensitive contexts.
+  .decl ToTypeString(valueOrType:symbol, type:symbol)
+
+  // If the given string already represents a type, then return it directly.
+  ToTypeString(?elem, ?type) :-
+    HContextElement(?elem),
+    isType(?elem),
+    ?type = ?elem.
+
+  // If the given string represents a heap object, then return the string
+  // of the type which declares the allocation site of the heap object.
+  ToTypeString(?elem, ?type) :-
+    HContextElement(?elem),
+    !isType(?elem),
+    Value_DeclaringType(?elem, ?type).
+
+  .decl HContextElement(elem:symbol)
+  HContextElement(?elem) :-
+    ContextRequest(_, ?hctx, _, _, _, _),
+    ?hctx = [?elem].
+
+  // 2-type
+  TwoTypeMethod(?tomethod),
+  ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, ?calleeCtx) :-
+    ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, _),
+    ?hctx = [?hctxValue],
+    ToTypeString(?hctxValue, ?type1),
+    ToTypeString(?value, ?type2),
+    ?calleeCtx = [?type1, ?type2],
+    (UnscalableMethod(?tomethod);
+     UnknownMethod(?tomethod)).
 
   StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
     StaticContextRequest(?callerCtx, ?invo),

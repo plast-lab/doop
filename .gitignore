@@ -43,3 +43,6 @@ doop-nexgen.iml
 
 #souffle profiler html output dir
 profiler_html
+
+
+*.class

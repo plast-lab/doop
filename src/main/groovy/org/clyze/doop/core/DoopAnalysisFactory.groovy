@@ -48,9 +48,12 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			"2-object-sensitive+heap"            : "TwoObjectSensitivePlusHeapConfiguration",
 			"blacklist-1-object-sensitive+heap"	 : "BlacklistOneObjectSensitivePlusHeapConfiguration",
 			"blacklist-2-object-sensitive+heap"	 : "BlacklistTwoObjectSensitivePlusHeapConfiguration",
+			"oracular-scalability"				 : "OracularScalabilityConfiguration",
+			"oracular-precision"				 : "OracularPrecisionConfiguration",
 			"fully-guided-context-sensitive"     : "FullyGuidedContextSensitiveConfiguration",
 			"special-2-type-sensitive+heap"      : "SpecialTwoTypeSensitivePlusHeapConfiguration",
 			"2-object-sensitive+2-heap"          : "TwoObjectSensitivePlusTwoHeapConfiguration",
+			"3-object-sensitive+2-heap"          : "ThreeObjectSensitivePlusTwoHeapConfiguration",
 			"3-object-sensitive+3-heap"          : "ThreeObjectSensitivePlusThreeHeapConfiguration",
 			"4-object-sensitive+4-heap"			 : "FourObjectSensitivePlusFourHeapConfiguration",
 			"2-type-object-sensitive+heap"       : "TwoTypeObjectSensitivePlusHeapConfiguration",
@@ -159,11 +162,11 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 				return new SoufflePartitionedAnalysis(options, context, commandsEnv)
 			} else if (options.ANALYSIS.value == "fully-guided-context-sensitive") {
 				return new SouffleScalerMultiPhaseAnalysis(options, context, commandsEnv)
-			}
-//			else if (options.ANALYSIS.value == "adaptive-2-object-sensitive+heap") {
-//				return new SouffleGenericsMultiPhaseAnalysis(options, context, commandsEnv)
-//			}
-			else {
+			} else if (options.ANALYSIS.value == "oracular-scalability") {
+				return new SouffleOracularScalabilityMultiPhaseAnalysis(options, context, commandsEnv)
+			} else if (options.ANALYSIS.value == "oracular-precision") {
+				return new SouffleOracularPrecisionMultiPhaseAnalysis(options, context, commandsEnv)
+			} else {
 				return new SouffleAnalysis(options, context, commandsEnv)
 			}
 		}

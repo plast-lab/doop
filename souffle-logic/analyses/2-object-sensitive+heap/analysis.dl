@@ -1,8 +1,5 @@
 // Context-sensitive pointer analysis with context of 2 object and a
 // context-sensitive heap abstraction.
-
-
-
 #ifdef CHOICE_BOUND
 
 #define BOUND_VAR_POINTS_TO(hctx, value, ctx, var) VarPointsTo_Bounded(hctx, value, ctx, var, (ord(value)*ord(hctx)) % 101)

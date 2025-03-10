@@ -50,6 +50,7 @@
     SpecialContextElement("<<immutable-context>>").
     SpecialContextElement("<<immutable-hcontext>>").
 
+
     // 2-object
     TwoObjectMethod(?tomethod),
     ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, ?calleeCtx) :-
@@ -58,7 +59,7 @@
       ?hctx = [?hctxValue],
       ?calleeCtx = [?hctxValue, ?value].
 
-    // // 2-type
+    // 2-type
     TwoTypeMethod(?tomethod),
     ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, ?calleeCtx) :-
       ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, _),
@@ -68,7 +69,7 @@
       Value_DeclaringType(?value, ?type2),
       ?calleeCtx = [?type1, ?type2].
 
-    // // 1-type
+    // 1-type
     OneTypeMethod(?tomethod),
     ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, ?calleeCtx) :-
       ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, _),

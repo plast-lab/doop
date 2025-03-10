@@ -1,0 +1,80 @@
+
+// Context-sensitive pointer analysis with context of 2 object and a
+// context-sensitive heap abstraction.
+
+#include "../../main/single-phase-analysis.dl"
+#include "../../main/configuration.dl"
+
+
+.type ContextComponent = Value
+
+// For this analysis the context of a method call corresponds to the
+// identity of the receiver object and the receiver object of the caller.
+// Again, this may trigger creation of a new object.
+.comp OracularPrecisionConfiguration : AbstractConfiguration {
+
+  // In this analysis, the real context is a pair of Values and the real
+  // heap context a single Value.
+  .type Context  = [ value1:ContextComponent, value2:ContextComponent, value3:ContextComponent ]
+  .type HContext = [ value1:ContextComponent, value2:ContextComponent ]
+
+
+  .decl StickyMethod(?method:Method)
+  .output StickyMethod
+  .printsize StickyMethod
+
+  .decl TwoObjectMethod(?method:Method)
+  .output TwoObjectMethod
+  .printsize TwoObjectMethod
+
+  .decl ThreeObjectMethod(?method:Method)
+  .output ThreeObjectMethod
+  .printsize ThreeObjectMethod
+
+  .decl Occurrences(?var:Var, ?n:number)
+  .input Occurrences(IO="file", filename="Occurrences.csv")
+  
+  .decl BlacklistedMethod(?method:Method)
+  .printsize BlacklistedMethod
+  .output BlacklistedMethod
+
+  BlacklistedMethod(?method) :-
+    Occurrences(?var, ?n),
+    ?n >= 101,
+    Var_DeclaringMethod(?var, ?method).
+  
+  // 2-object
+  TwoObjectMethod(?tomethod),
+  ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, ?calleeCtx) :-
+    ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, _),
+    ?hctx = [?hctxValue1, ?hctxValue2],
+    ?calleeCtx = [?hctxValue2, ?hctxValue2, ?value],
+    BlacklistedMethod(?tomethod),
+    ?hctxValue1 = ?hctxValue1.
+
+  // 3-object
+  ThreeObjectMethod(?tomethod),
+  ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, ?calleeCtx) :-
+    ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, _),
+    ?hctx = [?hctxValue1, ?hctxValue2],
+    ?calleeCtx = [?hctxValue1, ?hctxValue2, ?value],
+    !BlacklistedMethod(?tomethod).
+
+  StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
+    StaticContextRequest(?callerCtx, ?invo),
+    ?calleeCtx = ?callerCtx.
+
+  RecordContextResponse(?ctx, ?value, ?var, ?hctx) :-
+    RecordContextRequest(?ctx, ?value, ?var),      
+    ?ctx = [?ctxValue1, ?ctxValue2, ?ctxValue3],
+    ?hctx = [?ctxValue2, ?ctxValue3],
+    ?ctxValue1 = ?ctxValue1.
+
+  InitContextResponse(?value, ?ctx) :-
+    InitContextRequest(?value),
+    ?ctx = [?value, ?value, ?value].
+
+  InitHContextResponse(?value, ?hctx) :-
+    InitHContextRequest(?value),
+    ?hctx = [?value, ?value].
+}

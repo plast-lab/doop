@@ -3,9 +3,9 @@
 .decl AnyCallGraphEdge(?instr:Instruction, ?method:Method)
 
 AnyCallGraphEdge(?i, ?m) :- CallGraphEdge(_, ?i, _, ?m).
-AnyCallGraphEdge(?i, ?m) :- InvokedynamicBootCallGraphEdge(_, ?i, _, ?m).
-AnyCallGraphEdge(?i, ?m) :- LambdaCallGraphEdge(_, ?i, _, ?m, _).
-AnyCallGraphEdge(?i, ?m) :- MethodHandleCallGraphEdge(_, ?i, _, ?m, _, _).
+// AnyCallGraphEdge(?i, ?m) :- InvokedynamicBootCallGraphEdge(_, ?i, _, ?m).
+// AnyCallGraphEdge(?i, ?m) :- LambdaCallGraphEdge(_, ?i, _, ?m, _).
+// AnyCallGraphEdge(?i, ?m) :- MethodHandleCallGraphEdge(_, ?i, _, ?m, _, _).
 
 #ifdef REFLECTION
 AnyCallGraphEdge(?from, ?to) :- ReflectiveCallGraphEdge(_, ?from, _, ?to).
