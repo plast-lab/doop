@@ -84,7 +84,7 @@ dependencies {
 
 ## Benchmarks & Platform Lib
 
-For a variety of benchmarks, you could clone (or download) the [doop-benchmarks](https://bitbucket.org/yanniss/doop-benchmarks) repository.
+For a variety of benchmarks, you could clone (or download) the [doop-benchmarks](https://github.com/plast-lab/doop-benchmarks) repository.
 
 One important directory in that repository is `JREs`. It can be used for the `DOOP_PLATFORMS_LIB` environment variable. It contains certain java library files for different JRE versions, necessary for analysis purposes. If you would like to provide a custom DOOP_PLATFORMS_LIB directory (e.g., to run analyses using different minor versions), you should follow the same file structure. For example, in order to analyze with JRE version 1.6, you need a `jre1.6` directory containing at least `jce.jar`, `jsse.jar` and `rt.jar`. In order to run an an analysis on an android apk ideally you could create a link to your android sdk installation. The currently supported structure is Android/Sdk/.
 
@@ -427,7 +427,7 @@ environment variable in bin/doop (if using a Doop distribution).
 failures when resolving the analysis platform.
 
 Solution: Clone doop-benchmarks
-(https://gfour@bitbucket.org/yanniss/doop-benchmarks.git) and set
+(https://github.com/plast-lab/doop-benchmarks) and set
 environment variable DOOP_PLATFORMS_LIB to point to the full path of
 the clone repository. For some Android applications, also set
 environment variable ANDROID_SDK to point to the local Android SDK
