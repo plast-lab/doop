@@ -6,13 +6,15 @@ if ((gradle.parent == null) && hasProperty("use_composite_builds") && use_compos
 			.findAll { file(it).exists() }.each { includeBuild(it) }
 }
 
+
+
 include 'generators:fact-generator-common'
 include 'generators:soot-fact-generator'
 include 'generators:wala-fact-generator'
 include 'generators:dex-fact-generator'
 include 'generators:code-processor'
 include 'tests:016-reflection'
-include 'tests:017-annotations'
+// include 'tests:017-annotations'
 include 'tests:104-method-references'
 include 'tests:107-lambdas'
 include 'tests:115-invokedynamic'

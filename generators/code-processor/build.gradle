@@ -15,7 +15,7 @@ configurations {
 repositories {
     mavenLocal()
     mavenCentral()
-    maven { url 'https://jitpack.io' }
+    maven { url='https://jitpack.io' }
 }
 
 dependencies {
@@ -28,15 +28,18 @@ dependencies {
     forStandalone "org.codehaus.groovy:groovy-all:${groovyVersion}"  // Groovy (for standalone)
 }
 
-mainClassName = 'org.clyze.doop.jimple.Main'
+application {
+    mainClass = 'org.clyze.doop.jimple.Main'
 
-// This task is for standalone execution, for integrations or debugging.
-// Doop uses this subproject as a compile-time depdency/library instead.
-task fatJar(type: Jar) {
-    manifest {
-        attributes 'Main-Class': mainClassName
+    // This task is for standalone execution, for integrations or debugging.
+    // Doop uses this subproject as a compile-time depdency/library instead.
+    task fatJar(type: Jar) {
+        manifest {
+            attributes 'Main-Class': mainClass
+        }
+        from { (configurations.compileClasspath + configurations.forStandalone).collect { it.directory ? it : zipTree(it) } }
+        with jar
+        archiveClassifier.set('all')
     }
-    from { (configurations.compileClasspath + configurations.forStandalone).collect { it.directory ? it : zipTree(it) } }
-    with jar
-    archiveClassifier.set('all')
 }
+

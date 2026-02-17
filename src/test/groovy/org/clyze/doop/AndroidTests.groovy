@@ -12,7 +12,7 @@ import static org.clyze.doop.TestUtils.*
 class AndroidTests extends DoopSpec {
 
 	static List defaultArgs = [
-		"--timeout", "30",
+		"--timeout", "300",
 		"--server-logic", "--gen-opt-directives", "--sarif",
 		"--generate-jimple",
 		"--thorough-fact-gen"

@@ -10,8 +10,6 @@ buildscript {
     repositories {
         mavenLocal()
         mavenCentral()
-        maven { url "http://centauri.di.uoa.gr:8081/artifactory/plast-deps" }
-        maven { url "http://centauri.di.uoa.gr:8081/artifactory/plast-public" }
     }
 }
 
@@ -23,19 +21,21 @@ group = 'org.clyze'
 description = """org.clyze:016-reflection-test"""
 version = null
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
+
+
 tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
 }
 
-mainClassName = "Main"
+application {
+    mainClass = "Main"
 
-jar {
-    manifest {
-        attributes 'Main-Class': mainClassName
+    jar {
+        manifest {
+            attributes 'Main-Class': mainClass
+        }
+        archiveVersion.set(null)
     }
-    archiveVersion.set(null)
 }
 
 // Uncomment to see the "unchecked" warning for Class.forName().

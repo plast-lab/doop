@@ -34,13 +34,57 @@ def defaultFactGenJvmArgs = ["-DmaxHeapSize=${factGenXmx}", "-DstackSize=${factG
 // or incompatible) libraries due to the different front ends.
 boolean linkFactGenerators = project.hasProperty('linkFactGenerators') ? project.property('linkFactGenerators') : false
 
-sourceCompatibility = "1.8"
-targetCompatibility = "1.8"
+// sourceCompatibility = "1.8"
+// targetCompatibility = "1.8"
+
+
+
+// Doop entry point.
+// mainClass = "org.clyze.doop.Main"
+
+// Set variables for subprojects.
+gradle.rootProject.ext.resourcesDir='src/main/resources'
+gradle.rootProject.ext.testResourcesDir='src/test/resources'
+
+application {
+    mainClass = "org.clyze.doop.Main"
+    applicationDistribution.from(file("$projectDir/logic")) {
+        into 'logic'
+    }
+
+    applicationDistribution.from(file("$projectDir/souffle-logic")) {
+        into 'souffle-logic'
+    }
+
+    applicationDistribution.from(file("$projectDir/bin")) {
+        into 'bin'
+    }
+
+    applicationDistribution.from(file("${projectDir}/${resourcesDir}")) {
+        into resourcesDir
+    }
+
+    applicationDistribution.from(projectDir) {
+        include 'docs', 'COLLABORATORS', 'LICENSE', 'README.md'
+    }
+
+    def testSubprojects = [ '016-reflection', '104-method-references', '107-lambdas', '115-invokedynamic' ]
+
+    testSubprojects.each {
+        def path = "tests/${it}/build/libs"
+        applicationDistribution.from(file("$projectDir/${path}")) { into path }
+    }
+
+    tasks.register('buildTests') { description='Build test subprojects.' }
+    testSubprojects.each { buildTests.dependsOn("tests:${it}:jar") }
+    test.dependsOn buildTests
+
+    tasks.register('testAll', Test) {}
+    testAll.dependsOn test
+}
 
 group = "org.clyze"
 
-// Doop entry point.
-mainClassName = "org.clyze.doop.Main"
 
 // Windows support flag.
 def onWindows = System.properties['os.name'].toLowerCase().contains('windows')
@@ -49,7 +93,7 @@ if (project.hasProperty('heapDLVersion'))
     heapDLVersion = project.property('heapDLVersion')
 
 wrapper {
-    gradleVersion = "8.7"
+    gradleVersion = "9.3.1"
 }
 
 def allGeneratorProjects = subprojects.findAll { it.name.contains('fact-generator') }
@@ -60,24 +104,13 @@ def codeProcessorProject = project(':generators:code-processor')
         apply(plugin: 'java')
 
         group = gradle.rootProject.group
-        sourceCompatibility = gradle.rootProject.sourceCompatibility
-        targetCompatibility = gradle.rootProject.targetCompatibility
 
         repositories {
             mavenLocal()
             mavenCentral()
-            // maven { url 'https://clyze.jfrog.io/artifactory/default-maven-local' }
-            // maven {
-            //     url "http://centauri.di.uoa.gr:8081/artifactory/plast-public"
-            //     allowInsecureProtocol true    // for Gradle 7 compatibility
-            // }
         }
     }
 }
-
-// Set variables for subprojects.
-gradle.rootProject.ext.resourcesDir='src/main/resources'
-gradle.rootProject.ext.testResourcesDir='src/test/resources'
 
 def frontendGeneratorProjects = allGeneratorProjects.findAll { it.name.contains('-fact-generator') }
 //all frontends have a fatJar task, which we explicitly (re)define it here, so we can reference it without issues in
@@ -110,16 +143,7 @@ frontendGeneratorProjects.each { Project p ->
 repositories {
     mavenLocal()
     mavenCentral()
-    maven { url 'https://jitpack.io' }
-    // maven { url "http://centauri.di.uoa.gr:8081/artifactory/plast-deps"
-    //     allowInsecureProtocol true
-    // }
-    // maven {
-    //     url "http://centauri.di.uoa.gr:8081/artifactory/plast-public"
-    //     allowInsecureProtocol true // for Gradle 7 compatibility
-    // }
-    // maven { url 'https://clyze.jfrog.io/artifactory/default-maven-local' }
-    
+    maven { url='https://jitpack.io' }
 }
 
 configurations {
@@ -143,7 +167,7 @@ compileGroovy {
 gradle.rootProject.ext.antlrVersion='4.9.1'
 gradle.rootProject.ext.commonsCliVersion='1.2'
 gradle.rootProject.ext.metadataVersion='2.2.3'
-gradle.rootProject.ext.groovyVersion='4.0.21'
+gradle.rootProject.ext.groovyVersion='4.0.29'
 gradle.rootProject.ext.clueCommonVersion='3.25.7'
 gradle.rootProject.ext.log4jVersion='1.2.17'
 gradle.rootProject.ext.spockVersion='2.4-M4-groovy-4.0'
@@ -164,11 +188,13 @@ dependencies {
             "log4j:log4j:${log4jVersion}",                      // Logging implementation
             "commons-cli:commons-cli:${commonsCliVersion}",     // Command line processor
             'commons-io:commons-io:2.11.0',                     // File Utils
-            "com.github.plast-lab:clue-common:${clueCommonVersion}",
-            "com.google.guava:guava:33.1.0-jre"                 // for Scaler
+            "com.github.plast-lab:clue-common:${clueCommonVersion}"
+    implementation("com.google.guava:guava:33.5.0-jre")
 
     runtimeOnly "org.clyze:jphantom:1.3"                        // JPhantom is a runtime dependency
     testImplementation "org.spockframework:spock-core:${spockVersion}"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher:6.0.3"
+
 }
 
 // If fact generators are linked, mark them as dependencies and set up
@@ -194,52 +220,35 @@ else {
     }
 }
 
-applicationDistribution.from(file("$projectDir/logic")) {
-    into 'logic'
-}
-
-applicationDistribution.from(file("$projectDir/souffle-logic")) {
-    into 'souffle-logic'
-}
-
-applicationDistribution.from(file("$projectDir/bin")) {
-    into 'bin'
-}
-
-applicationDistribution.from(file("${projectDir}/${resourcesDir}")) {
-    into resourcesDir
-}
-
-applicationDistribution.from(projectDir) {
-    include 'docs', 'COLLABORATORS', 'LICENSE', 'README.md'
-}
-
-def testSubprojects = [ '016-reflection', '104-method-references', '107-lambdas', '115-invokedynamic' ]
-
-testSubprojects.each {
-    def path = "tests/${it}/build/libs"
-    applicationDistribution.from(file("$projectDir/${path}")) { into path }
-}
-
 String doopCP() {
     return String.join(":", sourceSets.main.runtimeClasspath.collect { it.toString() })
 }
 
+def gitHashFile = layout.projectDirectory.file("${resourcesDir}/git-hash.txt")
+
 tasks.register('writeGitCommitHash') {
-    String hash
-    if (file('.git').exists()) {
-        def stdout = new ByteArrayOutputStream()
-        exec {
+    outputs.file(gitHashFile)
+
+    doLast {
+        def outFile = gitHashFile.asFile
+
+        if (!file('.git').exists()) {
+            outFile.text = ""
+            return
+        }
+
+        def execOutput = providers.exec {
             commandLine 'git', 'rev-parse', 'HEAD'
-            standardOutput = stdout
             ignoreExitValue = true
         }
-        hash = stdout.toString().trim()
-    } else
-        hash = ''
-    new File(projectDir, "${resourcesDir}/git-hash.txt").withWriter { w -> w.writeLine(hash) }
+
+        def hash = execOutput.standardOutput.asText.get().trim()
+        outFile.text = hash + System.lineSeparator()
+    }
 }
-[jar, run].each { it.dependsOn writeGitCommitHash }
+tasks.named('jar').configure { dependsOn(tasks.named('writeGitCommitHash')) }
+tasks.named('run').configure { dependsOn(tasks.named('writeGitCommitHash')) }
+tasks.named('processResources').configure { dependsOn(tasks.named('writeGitCommitHash')) }
 
 jar {
     manifest {
@@ -299,13 +308,17 @@ tasks.register('souffleScript', JavaExec) {
 
 tasks.register('xtractor', JavaExec) {
     // We set the DOOP_HOME environment variable (see org.clyze.doop.Main)
-    environment.DOOP_HOME = projectDir
-    description 'Run xTractor logic'
+    environment 'DOOP_HOME', projectDir.toString()
+
+    description = 'Run xTractor logic'
     group = 'Doop'
-    main = 'org.clyze.doop.utils.XTractor'
+
+    mainClass.set('org.clyze.doop.utils.XTractor')
     classpath = sourceSets.main.runtimeClasspath
-    if (project.hasProperty("args"))
-        args project.property("args").split()
+
+    if (project.hasProperty('args')) {
+        args project.property('args').toString().split()
+    }
 }
 
 def testNames = new File(this.projectDir, "src/inputTests").list()
@@ -376,14 +389,6 @@ tasks.register('copyResourcesForTest') {
         }
     }
 }
-tasks.register('buildTests') {
-    description 'Build test subprojects.'
-}
-testSubprojects.each { buildTests.dependsOn("tests:${it}:jar") }
-test.dependsOn buildTests
-
-tasks.register('testAll', Test) {}
-testAll.dependsOn test
 
 // Task that configures installing/cleaning resources.
 tasks.register('resourceInstaller') {}
@@ -415,7 +420,7 @@ clean.dependsOn cleanTestResources
 def getTmpDir() { return System.getenv('DOOP_TMP')   ?: "$projectDir/tmp" }
 
 tasks.register('fullClean') {
-    description 'Clean everything, including caches and analysis results.'
+    description='Clean everything, including caches and analysis results.'
     doLast {
         def out = System.getenv('DOOP_OUT') ?: "$projectDir/out"
         def cache = System.getenv('DOOP_CACHE') ?: "$projectDir/cache"
@@ -450,9 +455,8 @@ tasks.register('javadocJar', Jar) {
     from javadoc.destinationDir
 }
 
-artifacts {
-    archives sourcesJar
-    archives javadocJar
+tasks.named("assemble") {
+    dependsOn(sourcesJar, javadocJar)
 }
 
 publishing {

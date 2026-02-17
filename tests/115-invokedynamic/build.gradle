@@ -10,8 +10,6 @@ buildscript {
     repositories {
         mavenLocal()
         mavenCentral()
-        maven { url "http://centauri.di.uoa.gr:8081/artifactory/plast-deps" }
-        maven { url "http://centauri.di.uoa.gr:8081/artifactory/plast-public" }
     }
 }
 
@@ -24,27 +22,28 @@ description = """org.clyze:115-invokedynamic-test"""
 version = null
 
 repositories {
-    // mavenCentral()
-    jcenter()
-}
-dependencies {
-    implementation 'org.ow2.asm:asm:7.0', 'org.ow2.asm:asm-commons:7.0'
+    mavenCentral()
 }
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
+dependencies {
+    implementation("org.ow2.asm:asm:9.9.1")
+    implementation("org.ow2.asm:asm-commons:9.9.1")
+}
+
 tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
 }
 
-mainClassName = "Main"
+application {
+    mainClass = "Main"
 
-jar {
-    manifest {
-        attributes 'Main-Class': mainClassName
+    jar {
+        manifest {
+            attributes 'Main-Class': mainClass
+        }
+        archiveVersion.set(null)
     }
-    archiveVersion.set(null)
+    // To generate the JAR, we must first run the program to generate the
+    // missing class.
+    jar.dependsOn run
 }
-// To generate the JAR, we must first run the program to generate the
-// missing class.
-jar.dependsOn run

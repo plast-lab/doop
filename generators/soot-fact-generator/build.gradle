@@ -4,7 +4,6 @@ plugins {
     id 'java-library'
 }
 
-mainClassName = 'org.clyze.doop.soot.Main'
 
 repositories {
     mavenCentral()
@@ -12,24 +11,28 @@ repositories {
 
 dependencies {
     api project(path: ':generators:fact-generator-common', configuration: 'shadow')
-
-    implementation "org.soot-oss:soot:4.5.0"
+    implementation("org.soot-oss:soot:4.6.0") 
     testImplementation "org.apache.groovy:groovy-all:${groovyVersion}"  // Groovy
     testImplementation "org.spockframework:spock-core:${spockVersion}"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher:6.0.3"
 }
 
-//fatJar already exists
-fatJar {
-    manifest {
-        attributes 'Main-Class': mainClassName
+application {
+    mainClass = 'org.clyze.doop.soot.Main'
+
+    //fatJar already exists
+    fatJar {
+        manifest {
+            attributes 'Main-Class': mainClass
+        }
+        from { configurations.compileClasspath.collect { it.directory ? it : zipTree(it) } }
+        with jar
+        duplicatesStrategy = DuplicatesStrategy.INCLUDE
     }
-    from { configurations.compileClasspath.collect { it.directory ? it : zipTree(it) } }
-    with jar
-    duplicatesStrategy = DuplicatesStrategy.INCLUDE
-}
 
-test {
-    useJUnitPlatform()
-}
+    test {
+        useJUnitPlatform()
+    }
 
-startScripts.dependsOn fatJar
+    startScripts.dependsOn fatJar
+}
