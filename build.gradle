@@ -3,6 +3,8 @@ import org.apache.tools.ant.types.Commandline
 
 import java.nio.file.Files
 import static java.nio.file.attribute.PosixFilePermissions.*
+import org.gradle.api.tasks.testing.Test
+
 
 buildscript {
     repositories {
@@ -22,6 +24,15 @@ plugins {
     id 'maven-publish'
     //see https://github.com/researchgate/gradle-release
     id 'net.researchgate.release' version '2.8.1'
+}
+
+def requested = gradle.startParameter.taskNames
+def runTests =
+        project.hasProperty('runTests') ||
+        requested.any { it == 'test' || it.endsWith(':test') || it == 'check' || it.endsWith(':check') }
+
+tasks.withType(Test).configureEach {
+    onlyIf { runTests }
 }
 
 // Warning: -Xss is restricted in recent Java versions.

@@ -8,16 +8,16 @@ public class Main {
     public static void main(String[] args) {
         // Direct uses of method references.
         Consumer<Integer> c1 = A::meth1234;
-        c1.accept(new Integer(10));
+        c1.accept(Integer.valueOf(10));
         Function<Integer, Integer> c2 = A::meth5678;
-        Integer i = c2.apply(new Integer(20));
+        Integer i = c2.apply(Integer.valueOf(20));
         System.out.println("i = " + i);
 
         // Common case: pass method references to streams.
         Integer[] ints = new Integer[3];
-        ints[0] = new Integer(10);
-        ints[1] = new Integer(20);
-        ints[2] = new Integer(30);
+        ints[0] = Integer.valueOf(10);
+        ints[1] = Integer.valueOf(20);
+        ints[2] = Integer.valueOf(30);
         Stream<Integer> is = Arrays.stream(ints);
         System.out.println("== original stream ==");
         is.forEach(A::meth1234);
@@ -45,7 +45,7 @@ public class Main {
         // Instance method references.
         A a = new A();
         Function<Integer, Integer> c3 = a::meth99;
-        Integer i3 = c3.apply(new Integer(20));
+        Integer i3 = c3.apply(Integer.valueOf(20));
         System.out.println("i3 = " + i3);
 
         // Method references that return allocations.
@@ -67,7 +67,7 @@ class A {
 
     public A() {
         System.out.println("new A: this.x := 7");
-        this.x = new Integer(7);
+        this.x = Integer.valueOf(7);
     }
 
     public static void meth1234(Integer x) {
@@ -82,7 +82,7 @@ class A {
 
     public static Integer createSomeInt() {
         System.out.println("Creating some integer...");
-        return new Integer(12);
+        return Integer.valueOf(12);
     }
 
     public Integer meth99(Integer x) {

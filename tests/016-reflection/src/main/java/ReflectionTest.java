@@ -40,7 +40,7 @@ public class ReflectionTest {
             String cA_2_name = cA_2.getName();
             System.out.println("Class name: " + cA_2_name);
             Constructor<A> constr2 = cA_2.getConstructor(Integer.class, B.class);
-            A a5 = constr2.newInstance(new Integer(4), new B());
+            A a5 = constr2.newInstance(Integer.valueOf(4), new B());
             a5.print();
 
             Field iField = cA.getDeclaredField("i");
@@ -126,7 +126,7 @@ class A {
     Integer i;
     B b_very_long_identifier_does_it_work;
     public A() {
-        this.i = new Integer(0);
+        this.i =Integer.valueOf(10);
         this.b_very_long_identifier_does_it_work = new B();
     }
     public A(Integer i, B b) {
@@ -204,7 +204,7 @@ class MySecureClassLoader extends SecureClassLoader {
 
 interface G {
     // Test for static/final interface field.
-    // static final Integer i = new Integer(10);
+    // static final Integer i = Integer.valueOf(10);
     // Test for Java 8 static method.
     // static int staticMeth() { return 42; }
     void report(String c);
@@ -218,10 +218,10 @@ class D implements G {
         System.out.println(c);
     }
     public int count() {
-	return 42;
+	    return 42;
     }
     public Integer countInteger() {
-	return new Integer(43);
+	    return Integer.valueOf(43);
     }
     public float mult(float x, float y) {
 	return x * y;

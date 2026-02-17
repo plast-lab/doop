@@ -56,7 +56,7 @@ public class Main {
         MethodType mType = MethodType.methodType(void.class, Integer.class);
         MethodHandle methI_mh = lookup.findVirtual(A.class, "methI", mType);
         info(methI_mh, mType);
-        methI_mh.invokeExact(new A(), new Integer(42));
+        methI_mh.invokeExact(new A(), Integer.valueOf(42));
     }
 
     // Test for method handles with non-void types and <methodType(Class, Class)>.
@@ -66,7 +66,7 @@ public class Main {
         MethodType mType = MethodType.methodType(Double.class, Double.class);
         MethodHandle methDD_mh4 = lookup.findVirtual(A.class, "doubleIdentity", mType);
         info(methDD_mh4, mType);
-        Double d4_1 = (Double)methDD_mh4.invokeExact(new A(), new Double(42.0));
+        Double d4_1 = (Double)methDD_mh4.invokeExact(new A(), Double.valueOf(42.0));
         System.out.println("test4() | Result#1: " + d4_1);
         double d4_2 = (Double)methDD_mh4.invoke(new A(), 42.0);
         System.out.println("test4() | Result#2: " + d4_2);
@@ -80,7 +80,7 @@ public class Main {
         MethodType mType = MethodType.methodType(Double.class, pTypes);
         MethodHandle methDD_mh5 = lookup.findVirtual(A.class, "doubleIdentity", mType);
         info(methDD_mh5, mType);
-        Double d5 = (Double)methDD_mh5.invokeExact(new A(), new Double(12.0));
+        Double d5 = (Double)methDD_mh5.invokeExact(new A(), Double.valueOf(12.0));
         System.out.println("test5() | Result: " + d5);
     }
 
@@ -102,7 +102,7 @@ public class Main {
         MethodHandles.Lookup lookup = MethodHandles.publicLookup();
         MethodHandle add3_mh6 = lookup.findVirtual(A.class, "add3", mType);
         info(add3_mh6, mType);
-        Double d6 = (Double)add3_mh6.invokeExact(new A(), new Integer(11), new Float(112.0), new Short("1"));
+        Double d6 = (Double)add3_mh6.invokeExact(new A(),Integer.valueOf(11), Float.valueOf(112.0f), Short.valueOf((short)1));
         System.out.println("test6() | Result: d6 = " + d6);
     }
 
@@ -114,7 +114,7 @@ public class Main {
         MethodType mType2 = MethodType.methodType(Double.class, mType1);
         MethodHandle methDD_mh6 = lookup.findVirtual(A.class, "doubleIdentity", mType2);
         info(methDD_mh6, mType2);
-        Double d8 = (Double)methDD_mh6.invokeExact(new A(), new Double(41.0));
+        Double d8 = (Double)methDD_mh6.invokeExact(new A(), Double.valueOf(41.0));
         System.out.println("test7() | Result: " + d8);
     }
 

@@ -5,7 +5,7 @@ import java.lang.invoke.*;
 public class A {
     public static Integer staticMeth() {
         System.out.println("staticMeth() called.");
-        return new Integer(10);
+        return Integer.valueOf(10);
     }
 
     public void methI(Integer i) {
@@ -69,7 +69,7 @@ public class A {
         MethodHandles.Lookup lookup = MethodHandles.lookup();
         MethodHandle add3_mh = lookup.findSpecial(A.class, "add3", mType, A.class);
         Main.info(add3_mh, mType);
-        Double d = (Double)add3_mh.invokeExact(this, new Integer(11), new Float(112.0), new Short("1"));
+        Double d = (Double)add3_mh.invokeExact(this,Integer.valueOf(11), Float.valueOf(112.0f), Short.valueOf((short)1));
         System.out.println("add3_dynamic() | Result: d = " + d);
     }
 
