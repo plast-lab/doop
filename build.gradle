@@ -5,14 +5,13 @@ import java.nio.file.Files
 import static java.nio.file.attribute.PosixFilePermissions.*
 import org.gradle.api.tasks.testing.Test
 
-
 buildscript {
     repositories {
         mavenCentral()
     }
 
     dependencies {
-        classpath 'commons-io:commons-io:2.21.0'
+        classpath "commons-io:commons-io:2.21.0"
         classpath 'org.apache.ant:ant:1.10.15'
     }
 }
@@ -176,10 +175,11 @@ compileGroovy {
 
 // Set dependency version so that they are available to subprojects.
 gradle.rootProject.ext.antlrVersion='4.13.2'
+gradle.rootProject.ext.commonsVersion='2.21.0'
 gradle.rootProject.ext.commonsCliVersion='1.11.0'
 gradle.rootProject.ext.metadataVersion='2.2.3'
 gradle.rootProject.ext.groovyVersion='5.0.4'
-gradle.rootProject.ext.clueCommonVersion='3.25.7'
+gradle.rootProject.ext.clueCommonVersion='3.26.1'
 gradle.rootProject.ext.log4jVersion='2.25.3'
 gradle.rootProject.ext.spockVersion='2.4-groovy-5.0'
 def heapDLVersion = "1.1.18"
@@ -197,7 +197,7 @@ dependencies {
     implementation "org.apache.logging.log4j:log4j-core:${log4jVersion}"    // Logging implementation, Apache 2.0
     implementation "org.apache.logging.log4j:log4j-api:${log4jVersion}"
     implementation "commons-cli:commons-cli:${commonsCliVersion}"           // Command line processor
-    implementation 'commons-io:commons-io:2.21.0'                           // File Utils
+    implementation "commons-io:commons-io:${commonsVersion}"                           // File Utils
     implementation "com.github.plast-lab:clue-common:${clueCommonVersion}"
     implementation "com.google.guava:guava:33.5.0-jre"
 

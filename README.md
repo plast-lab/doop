@@ -18,7 +18,7 @@ At its core, Doop is a collection of various analyses expressed in the form of D
    [repo](https://github.com/souffle-lang/souffle) and follow the
    instructions found on [this
    page](https://souffle-lang.github.io/build). Doop is currently
-   tested with Souffle versions 2.4.1 and 2.5.
+   tested with Souffle version 2.1.
 
 2. The legacy (unmaintained) version uses **LogiQL**, a Datalog
    dialect developed by [LogicBlox](http://www.logicblox.com/). For a
