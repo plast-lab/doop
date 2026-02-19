@@ -36,7 +36,7 @@ class CrudeSouffleTest extends Specification {
 		where:
 		scenario                                  | vpt      | fpt     | cge    | pCalls | fCasts | aRCasts | rVarsINS | rVarsSENS | rMethodsINS | rMethodsSENS | aVCS    | aRVCS | nRACM
 		"antlr-insensitive-tamiflex.properties"   | 2595458  | 243136  | 57869  | 1957   | 1123   | 322     | 89730    | 89730     | 8405        | 8405         | 19625   | 16855 | 964
-		"antlr-1call-tamiflex.properties"         | 10458878 | 192361  | 55859  | 1887   | 954    | 322     | 89115    | 373940    | 8316        | 56017        | 19625   | 16855 | 964
+		"antlr-1call-tamiflex.properties"         | 9292112  | 192361  | 55859  | 1887   | 954    | 322     | 89115    | 373940    | 8316        | 56017        | 19625   | 16855 | 964
 		"antlr-1objH-tamiflex.properties"         | 5252781  | 82954   | 54545  | 1811   | 926    | 322     | 88348    | 371868    | 8224        | 56017        | 19625   | 16855 | 965
 		"antlr-insensitive-reflection.properties" | 8376198  | 1111250 | 56606  | 1814   | 1456   | 15      | 97936    | 97936     | 10724       | 10724        | 19625   | 480   | 2328
 	}

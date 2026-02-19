@@ -2,7 +2,6 @@ package org.clyze.doop.command
 
 import groovy.cli.commons.CliBuilder
 import groovy.cli.commons.OptionAccessor
-import groovy.transform.CompileStatic
 import groovy.util.logging.Log4j
 import org.apache.commons.cli.GnuParser
 import org.apache.commons.cli.Option
@@ -20,7 +19,6 @@ import org.clyze.utils.OS
 /**
  * A factory for creating Analysis objects from the command line.
  */
-@CompileStatic
 @Log4j
 class CommandLineAnalysisFactory extends DoopAnalysisFactory {
 

@@ -1,6 +1,5 @@
 package org.clyze.doop
 
-import groovy.transform.CompileStatic
 import groovy.util.logging.Log4j
 import org.clyze.doop.command.Help
 
@@ -21,7 +20,6 @@ import org.codehaus.groovy.runtime.StackTraceUtils
 /**
  * The entry point for the standalone doop app.
  */
-@CompileStatic
 @Log4j
 class Main {
 

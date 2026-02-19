@@ -1,6 +1,5 @@
 package org.clyze.doop.core
 
-import groovy.transform.CompileStatic
 import groovy.util.logging.Log4j
 import heapdl.core.MemoryAnalyser
 import org.apache.commons.io.FilenameUtils
@@ -27,7 +26,6 @@ import static org.apache.commons.io.FileUtils.*
 /**
  * A DOOP analysis that holds all the relevant options (vars, paths, etc) and implements all the relevant steps.
  */
-@CompileStatic
 @Log4j
 abstract class DoopAnalysis extends Analysis implements Runnable {
 

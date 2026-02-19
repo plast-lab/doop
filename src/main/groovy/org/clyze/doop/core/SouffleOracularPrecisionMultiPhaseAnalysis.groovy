@@ -18,10 +18,8 @@ import static org.apache.commons.io.FileUtils.deleteQuietly
 import static org.apache.commons.io.FileUtils.sizeOfDirectory
 import static org.apache.commons.io.FilenameUtils.getBaseName
 
-@CompileStatic
 @InheritConstructors
 @Log4j
-@TypeChecked
 class SouffleOracularPrecisionMultiPhaseAnalysis extends SouffleAnalysis {
 
 	@Override

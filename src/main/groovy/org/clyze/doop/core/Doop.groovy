@@ -1,7 +1,6 @@
 package org.clyze.doop.core
 
 import groovy.cli.commons.OptionAccessor
-import groovy.transform.CompileStatic
 import groovy.util.logging.Log4j
 import java.util.function.Predicate
 import org.clyze.analysis.AnalysisOption
@@ -15,7 +14,6 @@ import org.clyze.utils.JHelper
  * Doop initialization and supported options.
  */
 @Log4j
-@CompileStatic
 class Doop {
 
 	static final String LOG_NAME = 'doop.log'
