@@ -53,21 +53,6 @@ class QueryResultItr implements Iterator<List<String>> {
         }
     }
 
-    @Override
-    protected void finalize() throws Throwable {
-        try {
-            if(reader != null) {
-                try {
-                    reader.close();
-                } catch (Exception ignored) {
-                }
-            }
-            reader = null;
-        } finally {
-            super.finalize();
-        }
-    }
-
     private List<String> line2list(String line) {
         return Arrays.asList(line.trim().split(SEP));
     }

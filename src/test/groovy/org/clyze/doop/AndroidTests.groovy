@@ -54,6 +54,7 @@ class AndroidTests extends DoopSpec {
 					 "--scan-native-code", "--simulate-native-returns",
 					 "--no-standard-exports",
 					 "--Xlow-mem", "-Ldebug"] + defaultArgs
+
 		Main.main((String[])args)
 		Analysis analysis = Main.analysis
 
