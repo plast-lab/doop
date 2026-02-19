@@ -59,7 +59,7 @@ dependencyResolutionManagement {
 ### Add the dependency in build.gradle
 ```
 dependencies {
-    implementation 'com.github.plast-lab:Doop:4:24:13'
+    implementation 'com.github.plast-lab:Doop:4.25.0'
 }
 ```
 
@@ -78,7 +78,7 @@ dependencies {
 <dependency>
     <groupId>com.github.plast-lab</groupId>
     <artifactId>Doop</artifactId>
-    <version>4.24.13</version>
+    <version>4.25.0</version>
 </dependency>
 ```
 
