@@ -7,7 +7,9 @@ import com.ibm.wala.ipa.callgraph.AnalysisScope;
 import com.ibm.wala.types.ClassLoaderReference;
 //import com.ibm.wala.util.config.FileOfClasses;
 import com.ibm.wala.util.io.FileProvider;
-import java.io.*;
+
+import java.io.File;
+import java.io.IOException;
 import java.util.jar.JarFile;
 import org.apache.log4j.Logger;
 import org.clyze.doop.util.Resource;

@@ -44,20 +44,14 @@ def defaultFactGenJvmArgs = ["-DmaxHeapSize=${factGenXmx}", "-DstackSize=${factG
 // or incompatible) libraries due to the different front ends.
 boolean linkFactGenerators = project.hasProperty('linkFactGenerators') ? project.property('linkFactGenerators') : false
 
-// sourceCompatibility = "1.8"
-// targetCompatibility = "1.8"
-
-
-
-// Doop entry point.
-// mainClass = "org.clyze.doop.Main"
-
 // Set variables for subprojects.
 gradle.rootProject.ext.resourcesDir='src/main/resources'
 gradle.rootProject.ext.testResourcesDir='src/test/resources'
 
 application {
+    // Doop entry point.
     mainClass = "org.clyze.doop.Main"
+
     applicationDistribution.from(file("$projectDir/logic")) {
         into 'logic'
     }
@@ -179,7 +173,8 @@ gradle.rootProject.ext.commonsVersion='2.21.0'
 gradle.rootProject.ext.commonsCliVersion='1.11.0'
 gradle.rootProject.ext.metadataVersion='2.2.3'
 gradle.rootProject.ext.groovyVersion='5.0.4'
-gradle.rootProject.ext.clueCommonVersion='3.26.1'
+gradle.rootProject.ext.commonsLoggingVersion='1.3.5'
+gradle.rootProject.ext.clueCommonVersion='3.26.2'
 gradle.rootProject.ext.log4jVersion='2.25.3'
 gradle.rootProject.ext.spockVersion='2.4-groovy-5.0'
 def heapDLVersion = "1.1.18"
@@ -190,14 +185,14 @@ dependencies {
     api codeProcessorProject
     api "com.github.plast-lab:HeapDL:$heapDLVersion"
 
-    implementation "org.apache.groovy:groovy:${groovyVersion}"      // Groovy
+    implementation "org.apache.groovy:groovy:${groovyVersion}"                  // Groovy
     implementation "org.apache.groovy:groovy-ant:${groovyVersion}"
-    implementation "org.apache.groovy:groovy-cli-commons:${groovyVersion}"  // Command line processor (Groovy wrapper)
-    implementation "commons-logging:commons-logging:1.1"                    // Logging wrapper
-    implementation "org.apache.logging.log4j:log4j-core:${log4jVersion}"    // Logging implementation, Apache 2.0
+    implementation "org.apache.groovy:groovy-cli-commons:${groovyVersion}"      // Command line processor (Groovy wrapper)
+    implementation "commons-logging:commons-logging:${commonsLoggingVersion}"   // Logging wrapper
+    implementation "org.apache.logging.log4j:log4j-core:${log4jVersion}"        // Logging implementation, Apache 2.0
     implementation "org.apache.logging.log4j:log4j-api:${log4jVersion}"
-    implementation "commons-cli:commons-cli:${commonsCliVersion}"           // Command line processor
-    implementation "commons-io:commons-io:${commonsVersion}"                           // File Utils
+    implementation "commons-cli:commons-cli:${commonsCliVersion}"               // Command line processor
+    implementation "commons-io:commons-io:${commonsVersion}"                    // File Utils
     implementation "com.github.plast-lab:clue-common:${clueCommonVersion}"
     implementation "com.google.guava:guava:33.5.0-jre"
 

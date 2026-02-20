@@ -1,6 +1,10 @@
 package org.clyze.doop.common;
 
-import java.io.*;
+import java.io.Closeable;
+import java.io.File;
+import java.io.Flushable;
+import java.io.IOException;
+import java.io.Writer;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.Map;

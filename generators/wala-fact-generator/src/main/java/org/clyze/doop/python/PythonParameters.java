@@ -2,7 +2,6 @@ package org.clyze.doop.python;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import org.clyze.doop.common.DoopErrorCodeException;
 import org.clyze.doop.common.Parameters;
 

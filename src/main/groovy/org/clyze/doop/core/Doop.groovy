@@ -1,6 +1,7 @@
 package org.clyze.doop.core
 
 import groovy.cli.commons.OptionAccessor
+import groovy.transform.CompileStatic
 import groovy.util.logging.Log4j
 import java.util.function.Predicate
 import org.clyze.analysis.AnalysisOption
@@ -14,6 +15,7 @@ import org.clyze.utils.JHelper
  * Doop initialization and supported options.
  */
 @Log4j
+@CompileStatic
 class Doop {
 
 	static final String LOG_NAME = 'doop.log'
@@ -157,7 +159,7 @@ class Doop {
 			properties.each { k, v ->
 				String key = k as String
 				String value = v as String
-				AnalysisOption option = options.get(key.toUpperCase())
+				AnalysisOption<String> option = options.get(key.toUpperCase()) as AnalysisOption<String>
 				if (option && value && value.trim().length() > 0) {
 					boolean filtered = filter ? filter.call(option) : true
 					if (filtered) {
@@ -183,7 +185,7 @@ class Doop {
 	 */
 	static void overrideOptionsWithCLI(Map<String, AnalysisOption<?>> options, OptionAccessor cli,
 									   Predicate<AnalysisOption> filter) {
-		options.values().each { AnalysisOption option ->
+		options.values().each { AnalysisOption<?> option ->
 			def name = option.name
 			if (name) {
 				log.debug "Processing $name"
@@ -200,12 +202,13 @@ class Doop {
 							else if (option instanceof IntegerAnalysisOption)
 								option.value = (optionValue as String).toInteger()
 							else
-								option.value = optionValue
+								log.debug "Invalid option $name"
 						}
 						// If the cl option has no argument and it's a boolean flag which
 						// is now set to true (all boolean options are false by default)
 						else {
-							option.value = true
+							if (option instanceof BooleanAnalysisOption)
+								option.value = true
 						}
 					}
 				}

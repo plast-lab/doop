@@ -5,7 +5,6 @@ import java.util.LinkedList;
 import java.util.List;
 import org.clyze.doop.common.DoopErrorCodeException;
 import org.clyze.doop.python.PythonInvoker;
-import org.clyze.doop.wala.WalaInvoker;
 
 // Driver class to choose between Java and Python modes for WALA.
 public class Main {

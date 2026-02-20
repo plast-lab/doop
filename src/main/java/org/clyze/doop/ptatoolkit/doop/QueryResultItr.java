@@ -21,6 +21,11 @@ class QueryResultItr implements Iterator<List<String>> {
     private BufferedReader reader;
     private String nextLine;
     
+    /**
+     * Constructor for QueryResultItr that initializes the query and sets up the reader to read from the result file. It also reads the first line of the result file to prepare for iteration.
+     * @param query the query for which the results are being iterated over
+     * @param resultFile the file containing the results of the query
+     */
     QueryResultItr(Query query, File resultFile) {
         this.query = query;
         try {

@@ -76,7 +76,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 		}
 	}
 
-	AnalysisOption getOptionByName(String n) {
+    static AnalysisOption getOptionByName(String n) {
 		SUPPORTED_OPTIONS.find { it.name == n }
 	}
 

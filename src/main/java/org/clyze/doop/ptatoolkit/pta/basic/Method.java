@@ -12,6 +12,13 @@ public abstract class Method extends AttributeElement {
 	private final boolean isPrivate;
 	private final boolean isImplicitReachable;
 
+	/**
+	 * Constructor for Method that initializes the parameters, return variables, and method attributes.
+	 * @param params the parameters of the method
+	 * @param retVars the return variables of the method
+	 * @param isPrivate indicates whether the method is private
+	 * @param isImplicitReachable indicates whether the method is implicitly reachable
+	 */
 	protected Method(Collection<Variable> params,
 					 Collection<Variable> retVars,
 					 boolean isPrivate,

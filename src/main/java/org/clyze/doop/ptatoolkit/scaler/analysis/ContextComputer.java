@@ -1,15 +1,11 @@
 package org.clyze.doop.ptatoolkit.scaler.analysis;
 
 import org.clyze.doop.ptatoolkit.pta.basic.Method;
-import org.clyze.doop.ptatoolkit.pta.basic.Obj;
 import org.clyze.doop.ptatoolkit.scaler.doop.DoopPointsToAnalysis;
 
-import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public abstract class ContextComputer {
 

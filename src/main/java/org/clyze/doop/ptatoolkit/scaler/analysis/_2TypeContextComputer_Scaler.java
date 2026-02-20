@@ -11,6 +11,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * This class implements a 2-object-sensitive context computation strategy. The context of a method is represented as a set of pairs of objects, where each pair consists of the receiver object and one of its predecessor objects in the object allocation graph. If a method has no receiver objects, it is given a default context. If a receiver object has no predecessors, the context includes the receiver object paired with itself. The number of contexts for a method is determined by the number of unique pairs of objects in its context set.
+ */
 public class _2TypeContextComputer_Scaler extends ContextComputer {
 
     public _2TypeContextComputer_Scaler(DoopPointsToAnalysis pta, ObjectAllocationGraph oag) {

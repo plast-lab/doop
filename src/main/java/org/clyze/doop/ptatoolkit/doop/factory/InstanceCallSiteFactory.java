@@ -18,6 +18,11 @@ public class InstanceCallSiteFactory extends ElementFactory<InstanceCallSite> {
     private final Map<String, Variable> call2recv = new HashMap<>();
     private final Map<String, Set<Variable>> call2args = new HashMap<>();
 
+    /**
+     * Constructor for InstanceCallSiteFactory that initializes the call site to receiver variable and call site to argument variables mappings from the database.
+     * @param db the database containing the call site information  
+     * @param varFactory the variable factory used to retrieve variable instances based on their identifiers
+     */
     public InstanceCallSiteFactory(DataBase db, VariableFactory varFactory) {
         db.query(Query.INST_CALL_RECV).forEachRemaining(list -> {
             String call = list.get(0);
@@ -36,6 +41,7 @@ public class InstanceCallSiteFactory extends ElementFactory<InstanceCallSite> {
     }
 
     @Override
+    /* Creates a new DoopInstanceCallSite with the given call site string, receiver variable, argument variables, and a unique identifier. */
     protected InstanceCallSite createElement(String callSite) {
         Variable recv = call2recv.get(callSite);
         Set<Variable> args = call2args.get(callSite);
@@ -44,5 +50,4 @@ public class InstanceCallSiteFactory extends ElementFactory<InstanceCallSite> {
         }
         return new DoopInstanceCallSite(callSite, recv, args, ++count);
     }
-
 }

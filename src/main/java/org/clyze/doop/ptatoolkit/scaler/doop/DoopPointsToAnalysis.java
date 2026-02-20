@@ -8,13 +8,21 @@ import org.clyze.doop.ptatoolkit.doop.DataBase;
 import org.clyze.doop.ptatoolkit.doop.Query;
 import org.clyze.doop.ptatoolkit.doop.factory.TypeFactory;
 import org.clyze.doop.ptatoolkit.doop.factory.VariableFactory;
-import org.clyze.doop.ptatoolkit.pta.basic.*;
+import org.clyze.doop.ptatoolkit.pta.basic.InstanceMethod;
+import org.clyze.doop.ptatoolkit.pta.basic.Method;
+import org.clyze.doop.ptatoolkit.pta.basic.Obj;
+import org.clyze.doop.ptatoolkit.pta.basic.Type;
+import org.clyze.doop.ptatoolkit.pta.basic.Variable;
 import org.clyze.doop.ptatoolkit.scaler.pta.PointsToAnalysis;
 import org.clyze.doop.ptatoolkit.util.MutableLong;
 import org.clyze.doop.ptatoolkit.util.Timer;
 
 import java.io.File;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -29,10 +37,10 @@ public class DoopPointsToAnalysis implements PointsToAnalysis {
     private Map<Method, Integer> methodTotalVPTMap;
     private BiMap<Method, Integer> methodIdMap;
     // The following factories may be used by iterators
-    private VariableFactory varFactory;
-    public ObjFactory objFactory;
-    public TypeFactory typeFactory;
-    private Set<String> specialObjects;
+    private VariableFactory varFactory; // Variable Factory
+    public ObjFactory objFactory;       // Object Factory
+    public TypeFactory typeFactory;     // Type Factory
+    private Set<String> specialObjects; // Special Object Factory
 
     public DoopPointsToAnalysis(File database, String option) {
         Timer ptaTimer = new Timer("Points-to Analysis Timer");
@@ -42,9 +50,6 @@ public class DoopPointsToAnalysis implements PointsToAnalysis {
         if (option.equals("scaler")) {
             initScalerPostProcessing();
         }
-//        else {
-//            initScalerRankPostProcessing();
-//        }
         ptaTimer.stop();
     }
 

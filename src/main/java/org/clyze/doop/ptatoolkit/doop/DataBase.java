@@ -8,14 +8,18 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * A class that represents the database of Doop.
- *
+ * The DataBase class provides an interface to query the results of a Doop analysis. It uses a logger for logging purposes and manages the directory where the query results are stored. The query method allows users to retrieve the results of a given query as an iterator over lists of strings, which represent the rows of the result set. The getResultFile method constructs the file path for the result file based on the query name, and the getResultFilePath method formats the file path using the database directory and the query name.
+ * 
  */
 public class DataBase {
 
 	protected Log logger;
 	private final File dbDir;
 
+	/**
+	 * Constructor for DataBase that initializes the logger and the database directory.
+	 * @param dbDir the directory where the query results are stored
+	 */
 	public DataBase(File dbDir) {
 		this.logger = LogFactory.getLog(getClass());
 		this.dbDir = dbDir;

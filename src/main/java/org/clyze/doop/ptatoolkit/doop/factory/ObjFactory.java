@@ -16,6 +16,11 @@ public class ObjFactory extends ElementFactory<Obj> {
 	private final Map<String, Type> typeMap = new HashMap<>();;
 	private final TypeFactory typeFactory;
 	
+	/**
+	 * Constructor for ObjFactory that initializes the type mapping from the database and the type factory.
+	 * @param db the database containing the object type information
+	 * @param typeFactory the type factory used to retrieve type instances based on their identifiers
+	 */
 	public ObjFactory(DataBase db, TypeFactory typeFactory) {
 		this.typeFactory = typeFactory;
 		db.query(Query.OBJ_TYPE).forEachRemaining(list -> {
@@ -36,5 +41,4 @@ public class ObjFactory extends ElementFactory<Obj> {
 		}
 		return new DoopObj(name, type, ++count);
 	}
-
 }

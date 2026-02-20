@@ -151,5 +151,4 @@ class WalaExceptionHelper {
         }
         return targetsArray;
     }
-
 }

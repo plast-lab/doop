@@ -2,10 +2,7 @@ package org.clyze.doop.ptatoolkit.scaler.analysis;
 
 import org.clyze.doop.ptatoolkit.pta.basic.Method;
 import org.clyze.doop.ptatoolkit.pta.basic.Obj;
-import org.clyze.doop.ptatoolkit.pta.basic.Type;
 import org.clyze.doop.ptatoolkit.scaler.doop.DoopPointsToAnalysis;
-import org.clyze.doop.ptatoolkit.scaler.pta.PointsToAnalysis;
-
 import java.io.*;
 import java.util.*;
 

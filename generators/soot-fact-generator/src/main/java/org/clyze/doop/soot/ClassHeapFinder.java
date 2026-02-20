@@ -4,8 +4,26 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.concurrent.ConcurrentHashMap;
 import org.clyze.utils.TypeUtils;
-import soot.*;
-import soot.jimple.*;
+import soot.ArrayType;
+import soot.BooleanType;
+import soot.ByteType;
+import soot.CharType;
+import soot.DoubleType;
+import soot.FloatType;
+import soot.IntType;
+import soot.LongType;
+import soot.RefType;
+import soot.ShortType;
+import soot.SootClass;
+import soot.SootMethod;
+import soot.Type;
+import soot.Unit;
+import soot.Value;
+import soot.VoidType;
+import soot.jimple.AssignStmt;
+import soot.jimple.ClassConstant;
+import soot.jimple.InvokeExpr;
+import soot.jimple.InvokeStmt;
 
 class ClassHeapFinder {
     private final Collection<String> recordedTypes = new LinkedList<>();

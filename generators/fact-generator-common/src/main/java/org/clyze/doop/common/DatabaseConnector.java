@@ -1,6 +1,8 @@
 package org.clyze.doop.common;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.clyze.scanner.NativeDatabaseConsumer;
 
 public class DatabaseConnector implements NativeDatabaseConsumer {

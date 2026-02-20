@@ -3,7 +3,11 @@ package org.clyze.doop.soot;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
-import soot.*;
+import soot.Body;
+import soot.Local;
+import soot.Unit;
+import soot.Value;
+import soot.ValueBox;
 import soot.jimple.DefinitionStmt;
 import soot.shimple.Shimple;
 

@@ -1,7 +1,9 @@
 package org.clyze.doop.common;
 
 import java.io.File;
-import java.util.*;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -11,6 +13,7 @@ import org.clyze.doop.common.scanner.antlr.GenericTypeLexer;
 import org.clyze.doop.common.scanner.antlr.GenericTypeParser;
 import org.clyze.doop.common.scanner.antlr.PrintVisitor;
 
+import static org.clyze.doop.common.FactEncoders.encodeStringConstant;
 import static org.clyze.doop.common.PredicateFile.*;
 
 /**
@@ -44,7 +47,7 @@ public abstract class JavaFactWriter {
     }
 
     protected String writeStringConstant(String constant) {
-        String raw = FactEncoders.encodeStringConstant(constant);
+        String raw = encodeStringConstant(constant);
 
         String result;
         if(raw.length() <= 256)

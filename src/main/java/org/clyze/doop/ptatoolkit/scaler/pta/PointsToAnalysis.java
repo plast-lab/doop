@@ -20,7 +20,7 @@ public interface PointsToAnalysis {
 
     /**
      *
-     * @param var
+     * @param var a variable
      * @return the objects pointed by variable var,
      * i.e., the points-to set of var
      */
@@ -28,7 +28,7 @@ public interface PointsToAnalysis {
 
     /**
      *
-     * @param var
+     * @param var a variable
      * @return the size of (i.e., number of objects in)
      * points-to set of var
      */
@@ -36,7 +36,7 @@ public interface PointsToAnalysis {
 
     /**
      *
-     * @param method
+     * @param method a method
      * @return the variables declared in method
      */
     Set<Variable> variablesDeclaredIn(Method method);
@@ -44,7 +44,7 @@ public interface PointsToAnalysis {
     // For object allocation relations.
     /**
      *
-     * @param method
+     * @param method a method
      * @return the objects allocated in method
      */
     Set<Obj> objectsAllocatedIn(Method method);
@@ -53,14 +53,14 @@ public interface PointsToAnalysis {
     // For method calls.
     /**
      *
-     * @param method
+     * @param method a method
      * @return the callee methods of method
      */
     Set<Method> calleesOf(Method method);
 
     /**
      *
-     * @param method
+     * @param method a method
      * @return the caller methods of method
      */
     Set<Method> callersOf(Method method);
@@ -74,14 +74,14 @@ public interface PointsToAnalysis {
 
     /**
      *
-     * @param obj
+     * @param obj an object
      * @return the methods whose this variable points-to obj
      */
     Set<Method> methodsInvokedOn(Obj obj);
 
     /**
      *
-     * @param method
+     * @param method a method
      * @return the receiver objects of method
      */
     Set<Obj> receiverObjectsOf(Method method);
@@ -89,14 +89,14 @@ public interface PointsToAnalysis {
     // For types.
     /**
      *
-     * @param obj
+     * @param obj an object
      * @return the type which contains the allocation site of obj
      */
     Type declaringAllocationTypeOf(Obj obj);
 
     /**
      *
-     * @param method
+     * @param method a method
      * @return the type that declares method
      */
     Type declaringTypeOf(Method method);

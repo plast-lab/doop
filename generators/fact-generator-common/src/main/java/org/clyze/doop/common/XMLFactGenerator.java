@@ -1,14 +1,28 @@
 package org.clyze.doop.common;
 
-import java.util.*;
-import java.io.*;
-import javax.xml.parsers.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.Stack;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParserFactory;
 
-import org.xml.sax.*;
-import org.xml.sax.helpers.*;
+import org.xml.sax.Attributes;
+import org.xml.sax.ErrorHandler;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
+import org.xml.sax.XMLReader;
+
 import static org.clyze.doop.common.JavaFactWriter.str;
-import static org.clyze.doop.common.PredicateFile.*;
+import static org.clyze.doop.common.PredicateFile.ANDROID_ID;
+import static org.clyze.doop.common.PredicateFile.ANDROID_INCLUDE_XML;
+import static org.clyze.doop.common.PredicateFile.XMLNode;
+import static org.clyze.doop.common.PredicateFile.XMLNodeAttribute;
+import static org.clyze.doop.common.PredicateFile.XMLNodeData;
+
 import org.clyze.utils.JHelper;
+import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * Convert XML data to facts. Converts some extra logic for

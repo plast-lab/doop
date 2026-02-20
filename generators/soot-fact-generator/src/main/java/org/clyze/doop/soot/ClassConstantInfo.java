@@ -1,7 +1,7 @@
 package org.clyze.doop.soot;
 
 import org.clyze.utils.TypeUtils;
-import soot.*;
+import soot.Type;
 import soot.jimple.ClassConstant;
 
 import static org.clyze.doop.common.JavaRepresentation.classConstant;

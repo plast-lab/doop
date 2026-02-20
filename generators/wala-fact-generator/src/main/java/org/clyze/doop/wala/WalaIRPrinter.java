@@ -1,10 +1,18 @@
 package org.clyze.doop.wala;
 
 import com.ibm.wala.analysis.typeInference.TypeInference;
-import com.ibm.wala.classLoader.*;
+import com.ibm.wala.classLoader.BytecodeClass;
+import com.ibm.wala.classLoader.IClass;
+import com.ibm.wala.classLoader.IField;
+import com.ibm.wala.classLoader.IMethod;
 import com.ibm.wala.ipa.callgraph.IAnalysisCacheView;
 import com.ibm.wala.ipa.callgraph.impl.Everywhere;
-import com.ibm.wala.ssa.*;
+import com.ibm.wala.ssa.IR;
+import com.ibm.wala.ssa.SSACFG;
+import com.ibm.wala.ssa.SSAInstruction;
+import com.ibm.wala.ssa.SSAPhiInstruction;
+import com.ibm.wala.ssa.SSAPiInstruction;
+import com.ibm.wala.ssa.SymbolTable;
 import com.ibm.wala.types.TypeReference;
 
 import java.io.File;

@@ -16,12 +16,20 @@ import java.io.PrintWriter;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * The Driver class serves as the entry point for running the Scaler analysis. It provides methods to execute the Scaler analysis using a specified facts directory and database, and to output the results of the analysis. The runScaler method initializes the DoopPointsToAnalysis with the given database, starts a timer for the analysis, creates a Scaler instance, and selects context sensitivities for each method. It also outputs method context sensitivities and type context sensitivities if debugging is enabled, and writes the Scaler results to a specified output file.
+ */
 public class Driver {
 
     private static final char SEP = '\t';
     private static final char EOL = '\n';
 
-
+    /**
+     * Runs the Scaler analysis using the provided facts directory and database. It initializes the DoopPointsToAnalysis with the given database, starts a timer for the analysis, and creates a Scaler instance with the points-to analysis and the output file for the results. The method then selects the context sensitivities for each method using the Scaler and outputs the results, including method context sensitivities and type context sensitivities. Finally, it writes the Scaler results to the specified output file.
+     * @param factsDir the directory where the Scaler results will be written
+     * @param database the database containing the points-to analysis results for the Scaler analysis
+     * @throws FileNotFoundException
+     */    
     public static void runScaler(File factsDir, File database) throws FileNotFoundException {
         DoopPointsToAnalysis pta = new DoopPointsToAnalysis(database, "scaler");
         if (Global.isDebug()) {
@@ -87,6 +95,12 @@ public class Driver {
 //        writeScalerResults(scalerResults, scalerOutput);
 //    }
 
+    /**
+     * Outputs the method context information for each reachable method in the points-to analysis. The method sorts the reachable methods based on the number of contexts computed by the provided ContextComputer and prints the method name, number of contexts, and the product of the number of contexts and the accumulative points-to set size for each method. If the global setting is to list contexts, it also prints the number of contexts for each method.
+     * @param pta the points-to analysis containing the reachable methods and their context information
+     * @param cc the ContextComputer used to compute the number of contexts for each method
+     * @param scaler the Scaler instance used to compute the accumulative points-to set size for each method
+     */
     private static void outputMethodContext(PointsToAnalysis pta, ContextComputer cc, Scaler scaler) {
         System.out.println("Method context, analysis: " + cc.getAnalysisName());
         pta.reachableMethods().stream()
@@ -103,6 +117,11 @@ public class Driver {
                 });
     }
 
+    /**
+     * Outputs the type context information for each reachable method in the points-to analysis. The method groups the reachable methods by their declaring types and calculates the total number of contexts for each type using the provided ContextComputer. The results are printed in descending order of the number of contexts, showing the type and its corresponding context count.
+     * @param pta the points-to analysis containing the reachable methods and their declaring types
+     * @param cc the ContextComputer used to compute the number of contexts for each method
+     */
     private static void outputContextByType(PointsToAnalysis pta, ContextComputer cc) {
         System.out.println("Type context, analysis: " + cc.getAnalysisName());
         Map<Type, List<Method>> group = pta.reachableMethods().stream()
@@ -121,6 +140,12 @@ public class Driver {
                         e.getKey(), e.getValue()));
     }
 
+    /**
+     * Writes the Scaler results to the specified output file. The results are organized by context sensitivity type, and each method is listed with its corresponding context sensitivity. The method groups the methods by their assigned context sensitivity and writes them to the output file in a sorted order based on their string representation.
+     * @param results a map containing methods and their corresponding context sensitivity types
+     * @param outputFile the file where the Scaler results will be written
+     * @throws FileNotFoundException
+     */
     private static void writeScalerResults(Map<Method, String> results, File outputFile) throws FileNotFoundException {
         PrintWriter writer = new PrintWriter(outputFile);
         String[] CS = { "context-insensitive", "1-type", "2-type", "2-object" };

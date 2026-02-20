@@ -121,8 +121,7 @@ class Representation extends JavaRepresentation {
     }
 
     public static String getKind(Unit unit) {
-        if (unit instanceof AssignStmt) {
-            AssignStmt assignStmt = (AssignStmt) unit;
+        if (unit instanceof AssignStmt assignStmt) {
             Value rightOp = assignStmt.getRightOp();
             Value leftOp = assignStmt.getLeftOp();
             if (rightOp instanceof CastExpr)

@@ -14,6 +14,16 @@ public class DoopInstanceMethod extends InstanceMethod {
     private final int id;
     private final List<Variable> allParams;
 
+    /**
+     * Constructor for DoopInstanceMethod that initializes the method signature, parameters, return variables, and method attributes.
+     * @param sig the signature of the instance method
+     * @param thisVar the variable representing the 'this' reference in the instance method
+     * @param params the parameters of the instance method
+     * @param retVars the return variables of the instance method
+     * @param isPrivate indicates whether the instance method is private
+     * @param isImplicitReachable indicates whether the instance method is implicitly reachable
+     * @param id the unique identifier of the instance method
+     */
     public DoopInstanceMethod(
             String sig, Variable thisVar, Collection<Variable> params,
             Collection<Variable> retVars, boolean isPrivate, boolean isImplicitReachable,
@@ -30,19 +40,21 @@ public class DoopInstanceMethod extends InstanceMethod {
         }
     }
 
+    /* Returns the unique identifier of the instance method. */
     @Override
     public int getID() {
         return id;
     }
 
+    /* Returns the string representation of the instance method. */
     @Override
     public String toString() {
         return sig;
     }
 
+    /* Returns all parameters of the instance method including 'this'. */
     @Override
     public Collection<Variable> getAllParameters() {
         return allParams;
     }
-
 }

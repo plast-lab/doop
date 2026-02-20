@@ -289,7 +289,7 @@ public class Main {
 
             logDebug(logger, "Checking class heaps for missing types...");
             Collection<String> unrecorded = new ClassHeapFinder().getUnrecordedTypes(classes);
-            if (unrecorded.size() > 0) {
+            if (!unrecorded.isEmpty()) {
                 // If option is set, fail and notify caller that fact generation
                 // must run again with these classes added.
                 String outFile = sootParameters._missingClassesOut;
@@ -385,7 +385,7 @@ public class Main {
 
     /**
      * Generate Jimple/Shimple for the classes loaded into Soot.
-     *  @param java             the Java platform support object
+     * @param java             the Java platform support object
      * @param scene            the Soot scene
      * @param classes          the loaded classes
      * @param driver           the driver to use for parallelism

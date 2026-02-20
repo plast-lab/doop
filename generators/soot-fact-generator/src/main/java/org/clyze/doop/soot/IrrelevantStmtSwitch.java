@@ -1,7 +1,27 @@
 package org.clyze.doop.soot;
 
-import soot.*;
-import soot.jimple.*;
+import soot.SootClass;
+import soot.SootMethod;
+import soot.SootMethodRef;
+import soot.Value;
+import soot.jimple.AssignStmt;
+import soot.jimple.BreakpointStmt;
+import soot.jimple.DynamicInvokeExpr;
+import soot.jimple.EnterMonitorStmt;
+import soot.jimple.ExitMonitorStmt;
+import soot.jimple.GotoStmt;
+import soot.jimple.IdentityStmt;
+import soot.jimple.IfStmt;
+import soot.jimple.InvokeExpr;
+import soot.jimple.InvokeStmt;
+import soot.jimple.LookupSwitchStmt;
+import soot.jimple.NopStmt;
+import soot.jimple.RetStmt;
+import soot.jimple.ReturnStmt;
+import soot.jimple.ReturnVoidStmt;
+import soot.jimple.StmtSwitch;
+import soot.jimple.TableSwitchStmt;
+import soot.jimple.ThrowStmt;
 import soot.options.Options;
 
 class IrrelevantStmtSwitch implements StmtSwitch

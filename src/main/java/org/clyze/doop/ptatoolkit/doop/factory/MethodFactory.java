@@ -17,6 +17,11 @@ public class MethodFactory extends ElementFactory<Method> {
     private final Set<String> privateMethods = new HashSet<>();
     private final Set<String> implicitReachableMethods = new HashSet<>();
 
+    /**
+     * Constructor for MethodFactory that initializes the method signature to this variable, method signature to parameters, method signature to return variables, private methods, and implicitly reachable methods mappings from the database.
+     * @param db
+     * @param varFactory
+     */
     public MethodFactory(DataBase db, VariableFactory varFactory) {
         db.query(Query.THIS_VAR).forEachRemaining(list -> {
             String sig = list.get(0);

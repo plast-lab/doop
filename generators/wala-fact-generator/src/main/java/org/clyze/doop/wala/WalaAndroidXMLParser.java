@@ -1,6 +1,8 @@
 package org.clyze.doop.wala;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.log4j.Logger;
 import org.clyze.doop.common.BasicJavaSupport;
 import org.clyze.doop.common.Parameters;

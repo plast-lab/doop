@@ -8,7 +8,13 @@ import com.ibm.wala.ipa.cha.IClassHierarchy;
 import com.ibm.wala.ssa.IR;
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+
 import org.clyze.doop.common.DoopErrorCodeException;
 import org.clyze.doop.python.utils.PythonDatabase;
 import org.clyze.doop.python.utils.PythonPredicateFile;

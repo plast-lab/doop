@@ -18,7 +18,7 @@ At its core, Doop is a collection of various analyses expressed in the form of D
    [repo](https://github.com/souffle-lang/souffle) and follow the
    instructions found on [this
    page](https://souffle-lang.github.io/build). Doop is currently
-   tested with Souffle version 2.1.
+   tested with **Soufflé version 2.1**.
 
 2. The legacy (unmaintained) version uses **LogiQL**, a Datalog
    dialect developed by [LogicBlox](http://www.logicblox.com/). For a
@@ -134,16 +134,16 @@ $ ./doop -i ./lib/asm-debug-all-4.1.jar      [local file]
 ```
 
 #### PLATFORM (--platform)
-Optional --- default: java_23. The platform to use for the analysis. The possible Java options are java_N where N is the java version (8, 9, 11, .. 23, 25 etc.). The android options are android_N_V where N is the Android version (20, 21, 22, 23, 24, 25 etc.) and V is the variant ("stubs" for the Android SDK libraries or "fulljars" for custom built platforms).
+Optional --- default: java_25. The platform to use for the analysis. The possible Java options are java_N where N is the java version (8, 9, 11, .. 23, 25 etc.). The android options are android_N_V where N is the Android version (20, 21, 22, 23, 24, 25 etc.) and V is the variant ("stubs" for the Android SDK libraries or "fulljars" for custom built platforms).
 
 Example:
 
-    $ ./doop -a context-insensitive -i com.example.some.jar --platform java_23
+    $ ./doop -a context-insensitive -i com.example.some.jar --platform java_25
     $ ./doop -a context-insensitive -i some-app.apk --platform android_25_fulljars
 
 To use a custom Java platform, you can use option `--use-local-java-platform`, for example:
 
-    $ ./doop -a context-insensitive -i com.example.some.jar --platform java_23 --use-local-java-platform /path/to/java/23/installation
+    $ ./doop -a context-insensitive -i com.example.some.jar --platform java_25 --use-local-java-platform /path/to/java/23/installation
 
 
 #### Main class (--main)
@@ -187,7 +187,7 @@ to process this file, as follows:
 
 You can also override the options from a properties file with options from the command line. For example:
 
-    $ ./doop -p /path/to/file.properties -a context-insensitive --platform java_23
+    $ ./doop -p /path/to/file.properties -a context-insensitive --platform java_25
 
 #### Native code scanner (--scan-native-code)
 This option makes Doop scan the native dynamic libraries bundled in
@@ -202,7 +202,7 @@ Soufflé supports multithreading, so you can select the number of threads the an
 
 ### Soufflé profile
 
-You can then inspect the analysis results by using `souffle-profile` and providing the profile.txt file produced by Souffle under the output directory of the analysis database. In order to inspect the profile.txt of the above doop invocation with --souffle you would use the following command:
+You can then inspect the analysis results by using `souffle-profile` and providing the profile.txt file produced by Soufflé under the output directory of the analysis database. In order to inspect the profile.txt of the above doop invocation with --souffle you would use the following command:
 
     $ souffle-profile out/antlr-ci/profile.txt
 
@@ -211,7 +211,7 @@ You can then inspect the analysis results by using `souffle-profile` and providi
 In order to use LogicBlox instead of the Soufflé engine you can provide the --Xlb argument. Be warned that this will use older analysis logic and thus some Java features (such as lambdas, dynamic proxies, or Android-specific behavior) may not be handled successfully.
 
     $ ./doop -i ../doop-benchmarks/dacapo-2006/antlr.jar -a context-insensitive --dacapo --id lb-antlr --Xlb
-##### Warning: For the latest features we recommend using Souffle    
+##### Warning: For the latest features we recommend using Soufflé    
 
 ### Android Analysis
 
@@ -223,7 +223,7 @@ provided needs to be one of the valid `android_XZ_stubs/fulljars/robolectric/apk
       
 ### Java Enterprise Application Analysis using JackEE 
 
-You can select to run an JavaEE-specific analysis on an Java Enterprise application by providing the `--open-programs jackee` option.
+You can select to run an JavaEE-specific analysis on a Java Enterprise application by providing the `--open-programs jackee` option.
 An JavaEE analysis selects entry-points to the application based on the JavaEE specification and the web application framework
 used by the application. JackEE discovers entry points in a semi-automatic manner using a JavaEE-specific generalized vocabulary.
 JackEE's rules can easily be extended by using this vocabulary. JackEE is only available for Soufflé.
@@ -290,7 +290,7 @@ and use one of the following commands to run a Doop analysis depending
 on the GraalVM version installed (e.g. Java 23):
 
 ```
-./doop --platform java_23 --use-local-java-platform ${GRAALVM_HOME} --gen-opt-directives ...
+./doop --platform java_25 --use-local-java-platform ${GRAALVM_HOME} --gen-opt-directives ...
 ```
 
 After the analysis finishes, the resulting configurations can be found

@@ -3,7 +3,11 @@ package org.clyze.doop.wala;
 import com.ibm.wala.analysis.typeInference.JavaPrimitiveType;
 import com.ibm.wala.analysis.typeInference.TypeAbstraction;
 import com.ibm.wala.analysis.typeInference.TypeInference;
-import com.ibm.wala.ssa.*;
+import com.ibm.wala.ssa.IR;
+import com.ibm.wala.ssa.ISSABasicBlock;
+import com.ibm.wala.ssa.SSACFG;
+import com.ibm.wala.ssa.SSAInstruction;
+import com.ibm.wala.ssa.SSAPhiInstruction;
 import com.ibm.wala.types.TypeReference;
 
 import java.util.Iterator;
