@@ -7,7 +7,7 @@ This document contains instructions for invoking the main driver of Doop.
 * For the architecture of Doop, see [docs/documentation.md](docs/documentation.md).
 
 ## Getting Started
-Doop requires Java 17 or later to build and run.
+Doop requires **Java 17** or later to build and run.
 
 At its core, Doop is a collection of various analyses expressed in the form of Datalog rules.
 
