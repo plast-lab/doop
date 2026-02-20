@@ -6,12 +6,14 @@ plugins {
 
 
 repositories {
+    mavenLocal()
     mavenCentral()
+    maven { url='https://jitpack.io' }
 }
 
 dependencies {
     api project(path: ':generators:fact-generator-common', configuration: 'shadow')
-    implementation("org.soot-oss:soot:4.6.0") 
+    implementation "org.soot-oss:soot:4.6.0" 
     testImplementation "org.apache.groovy:groovy-all:${groovyVersion}"  // Groovy
     testImplementation "org.spockframework:spock-core:${spockVersion}"
     testRuntimeOnly "org.junit.platform:junit-platform-launcher:6.0.3"

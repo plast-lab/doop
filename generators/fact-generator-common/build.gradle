@@ -9,7 +9,7 @@ repositories {
     maven { url='https://jitpack.io' }
 }
 
-String asmVersion = '9.7'
+String asmVersion = '9.9.1'
 
 // WARNING: dependencies below should be minimal, since every
 // dependency will be included as-is *in each* fact generator "fat" JAR.
@@ -23,12 +23,12 @@ dependencies {
         "com.github.plast-lab:native-scanner:0.6.5"
     implementation "org.apache.logging.log4j:log4j-core:${log4jVersion}"    // Logging implementation, Apache 2.0
     implementation "org.apache.logging.log4j:log4j-api:${log4jVersion}"
-    implementation "org.ow2.asm:asm-tree:${asmVersion}",    // Java bytecode library
-                    "org.ow2.asm:asm-util:${asmVersion}",
-                    "org.smali:dexlib2:2.5.2",                // Dexlib2: library for reading/modifying/writing Android dex files
-                    "net.dongliu:apk-parser:2.6.10",          // needed for reading binary XML entries from APK inputs
-                    "org.antlr:antlr4-runtime:${antlrVersion}",
-                    "org.apache.commons:commons-collections4:4.3"
+    implementation "org.ow2.asm:asm-tree:${asmVersion}"                     // Java bytecode library
+    implementation "org.ow2.asm:asm-util:${asmVersion}"
+    implementation "org.smali:dexlib2:2.5.2"                                // Dexlib2: library for reading/modifying/writing Android dex files
+    implementation "net.dongliu:apk-parser:2.6.10"                          // needed for reading binary XML entries from APK inputs
+    implementation "org.antlr:antlr4-runtime:${antlrVersion}"
+    implementation "org.apache.commons:commons-collections4:4.5.0"    
 }
 
 compileJava {
