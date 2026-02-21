@@ -11,7 +11,7 @@ repositories {
 
 dependencies {
     api project(path: ':generators:fact-generator-common', configuration: 'shadow')
-    implementation "org.python:jython:2.7.1b3"
+    implementation "org.python:jython:2.7.4"
     /// https://mvnrepository.com/artifact/com.ibm.wala/com.ibm.wala.util
     // implementation "com.ibm.wala:com.ibm.wala.util:1.4.3"
     // implementation "ext:com.ibm.wala.util:1.5.1-SNAPSHOT"
