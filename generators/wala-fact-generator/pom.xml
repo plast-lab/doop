@@ -73,8 +73,8 @@
       <version>2.7.1b3</version>
     </dependency>
     <dependency>
-      <groupId>org.smali</groupId>
-      <artifactId>dexlib2</artifactId>
+      <groupId>com.android.tools.smali</groupId>
+      <artifactId>smali-dexlib2</artifactId>
       <version>${dexlib.version}</version>
     </dependency>
 

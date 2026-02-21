@@ -44,7 +44,7 @@
     <heapdl.version>1.1.20</heapdl.version>
     <guava.version>33.5.0-jre</guava.version>
     <asm.version>9.9.1</asm.version>
-    <dexlib.version>2.5.2</dexlib.version>
+    <dexlib.version>3.0.9</dexlib.version>
     <apk.parser.version>2.6.10</apk.parser.version>
     <mini.sarif.version>0.1.2</mini.sarif.version>
     <native.scanner.version>0.6.5</native.scanner.version>
@@ -63,6 +63,10 @@
     <repository>
       <id>jitpack.io</id>
       <url>https://jitpack.io</url>
+    </repository>
+    <repository>
+      <id>google-maven</id>
+      <url>https://maven.google.com/</url>
     </repository>
   </repositories>
   <build>
