@@ -2,10 +2,10 @@ package org.clyze.doop.dex;
 
 import org.clyze.doop.common.*;
 import org.clyze.utils.TypeUtils;
-import org.jf.dexlib2.dexbacked.*;
-import org.jf.dexlib2.dexbacked.reference.DexBackedFieldReference;
-import org.jf.dexlib2.dexbacked.reference.DexBackedMethodReference;
-import org.jf.dexlib2.dexbacked.reference.DexBackedTypeReference;
+import com.android.tools.smali.dexlib2.dexbacked.*;
+import com.android.tools.smali.dexlib2.dexbacked.reference.DexBackedFieldReference;
+import com.android.tools.smali.dexlib2.dexbacked.reference.DexBackedMethodReference;
+import com.android.tools.smali.dexlib2.dexbacked.reference.DexBackedTypeReference;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;

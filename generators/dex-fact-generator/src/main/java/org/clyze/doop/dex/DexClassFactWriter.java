@@ -7,12 +7,12 @@ import org.clyze.doop.common.FieldInfo;
 import org.clyze.doop.common.FieldOp;
 import org.clyze.doop.common.JavaFactWriter;
 import org.clyze.utils.TypeUtils;
-import org.jf.dexlib2.AccessFlags;
-import org.jf.dexlib2.dexbacked.*;
-import org.jf.dexlib2.iface.Annotation;
-import org.jf.dexlib2.iface.ClassDef;
-import org.jf.dexlib2.iface.Field;
-import org.jf.dexlib2.iface.value.*;
+import com.android.tools.smali.dexlib2.AccessFlags;
+import com.android.tools.smali.dexlib2.dexbacked.*;
+import com.android.tools.smali.dexlib2.iface.Annotation;
+import com.android.tools.smali.dexlib2.iface.ClassDef;
+import com.android.tools.smali.dexlib2.iface.Field;
+import com.android.tools.smali.dexlib2.iface.value.*;
 
 import java.util.Collection;
 import java.util.LinkedList;

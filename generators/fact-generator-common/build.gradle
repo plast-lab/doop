@@ -7,6 +7,7 @@ repositories {
     mavenLocal()
     mavenCentral()
     maven { url='https://jitpack.io' }
+    maven { url='https://maven.google.com/' }
 }
 
 String asmVersion = '9.9.1'
@@ -19,13 +20,13 @@ dependencies {
         exclude group: 'org.apache.ivy', module: 'ivy'
         exclude group: 'org.apache.groovy', module: 'groovy-all'
     }
-    api "com.github.clyze:metadata-model:${metadataVersion}",
-        "com.github.plast-lab:native-scanner:0.6.5"
+    api "com.github.clyze:metadata-model:${metadataVersion}"
+    api    "com.github.plast-lab:native-scanner:0.6.5"
     implementation "org.apache.logging.log4j:log4j-core:${log4jVersion}"    // Logging implementation, Apache 2.0
     implementation "org.apache.logging.log4j:log4j-api:${log4jVersion}"
     implementation "org.ow2.asm:asm-tree:${asmVersion}"                     // Java bytecode library
     implementation "org.ow2.asm:asm-util:${asmVersion}"
-    implementation "org.smali:dexlib2:2.5.2"                                // Dexlib2: library for reading/modifying/writing Android dex files
+    implementation 'com.android.tools.smali:smali-dexlib2:3.0.9'            // Dexlib2: library for reading/modifying/writing Android dex files
     implementation "net.dongliu:apk-parser:2.6.10"                          // needed for reading binary XML entries from APK inputs
     implementation "org.antlr:antlr4-runtime:${antlrVersion}"
     implementation "org.apache.commons:commons-collections4:4.5.0"    

@@ -1,7 +1,18 @@
 package org.clyze.doop.dex;
 
-import org.checkerframework.checker.nullness.qual.*;
-import org.jf.dexlib2.iface.value.*;
+import com.android.tools.smali.dexlib2.iface.value.ArrayEncodedValue;
+import com.android.tools.smali.dexlib2.iface.value.BooleanEncodedValue;
+import com.android.tools.smali.dexlib2.iface.value.ByteEncodedValue;
+import com.android.tools.smali.dexlib2.iface.value.CharEncodedValue;
+import com.android.tools.smali.dexlib2.iface.value.DoubleEncodedValue;
+import com.android.tools.smali.dexlib2.iface.value.EncodedValue;
+import com.android.tools.smali.dexlib2.iface.value.FloatEncodedValue;
+import com.android.tools.smali.dexlib2.iface.value.IntEncodedValue;
+import com.android.tools.smali.dexlib2.iface.value.LongEncodedValue;
+import com.android.tools.smali.dexlib2.iface.value.NullEncodedValue;
+import com.android.tools.smali.dexlib2.iface.value.ShortEncodedValue;
+import com.android.tools.smali.dexlib2.iface.value.StringEncodedValue;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 import static org.clyze.doop.common.JavaFactWriter.str;
 

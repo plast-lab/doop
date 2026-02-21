@@ -12,12 +12,11 @@ import org.apache.commons.io.FilenameUtils;
 import org.clyze.doop.common.BytecodeUtil;
 import org.clyze.utils.ContainerUtils;
 import org.clyze.utils.JHelper;
-import org.jf.dexlib2.dexbacked.DexBackedClassDef;
-import org.jf.dexlib2.dexbacked.DexBackedDexFile;
-import org.jf.dexlib2.iface.MultiDexContainer;
+import com.android.tools.smali.dexlib2.dexbacked.DexBackedClassDef;
+import com.android.tools.smali.dexlib2.dexbacked.DexBackedDexFile;
+import com.android.tools.smali.dexlib2.iface.MultiDexContainer;
 
-import static org.jf.dexlib2.DexFileFactory.loadDexContainer;
-
+import static com.android.tools.smali.dexlib2.DexFileFactory.loadDexContainer;
 /** Computes the app-regex for JAR/APK/AAR inputs. */
 public class PackageUtil {
 

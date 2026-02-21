@@ -9,11 +9,15 @@ repositories {
     mavenLocal()
     mavenCentral()
     maven { url='https://jitpack.io' }
+    maven { url='https://maven.google.com/' }
 }
 
 dependencies {
     api project(path: ':generators:fact-generator-common', configuration: 'shadow')
-    implementation "org.soot-oss:soot:4.6.0" 
+    implementation("org.soot-oss:soot:4.7.0") {
+        exclude group: "com.google.guava", module: "guava"
+    }
+    implementation "com.google.guava:guava:33.5.0-jre"
     testImplementation "org.apache.groovy:groovy-all:${groovyVersion}"  // Groovy
     testImplementation "org.spockframework:spock-core:${spockVersion}"
     testRuntimeOnly "org.junit.platform:junit-platform-launcher:6.0.3"

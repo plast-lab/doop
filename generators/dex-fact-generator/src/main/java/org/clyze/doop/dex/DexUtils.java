@@ -1,16 +1,16 @@
 package org.clyze.doop.dex;
 
-import org.jf.dexlib2.dexbacked.value.DexBackedArrayEncodedValue;
-import org.jf.dexlib2.iface.AnnotationElement;
-import org.jf.dexlib2.iface.BasicAnnotation;
-import org.jf.dexlib2.iface.instruction.FiveRegisterInstruction;
-import org.jf.dexlib2.iface.instruction.Instruction;
-import org.jf.dexlib2.iface.instruction.ReferenceInstruction;
-import org.jf.dexlib2.iface.instruction.RegisterRangeInstruction;
-import org.jf.dexlib2.iface.reference.TypeReference;
-import org.jf.dexlib2.iface.value.ArrayEncodedValue;
-import org.jf.dexlib2.iface.value.EncodedValue;
-import org.jf.dexlib2.util.TypeUtils;
+import com.android.tools.smali.dexlib2.dexbacked.value.DexBackedArrayEncodedValue;
+import com.android.tools.smali.dexlib2.iface.AnnotationElement;
+import com.android.tools.smali.dexlib2.iface.BasicAnnotation;
+import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction;
+import com.android.tools.smali.dexlib2.iface.instruction.Instruction;
+import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction;
+import com.android.tools.smali.dexlib2.iface.instruction.RegisterRangeInstruction;
+import com.android.tools.smali.dexlib2.iface.reference.TypeReference;
+import com.android.tools.smali.dexlib2.iface.value.ArrayEncodedValue;
+import com.android.tools.smali.dexlib2.iface.value.EncodedValue;
+import com.android.tools.smali.dexlib2.util.TypeUtils;
 
 import java.util.ArrayList;
 import java.util.List;

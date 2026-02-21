@@ -9,17 +9,17 @@ import org.clyze.doop.common.DoopErrorCodeException;
 import org.clyze.doop.common.Driver;
 import org.clyze.doop.common.android.AndroidSupport;
 import org.clyze.utils.JHelper;
-import org.jf.dexlib2.Opcodes;
-import org.jf.dexlib2.dexbacked.DexBackedDexFile;
-import org.jf.dexlib2.iface.MultiDexContainer;
-import org.jf.dexlib2.iface.MultiDexContainer.DexEntry;
+import com.android.tools.smali.dexlib2.Opcodes;
+import com.android.tools.smali.dexlib2.dexbacked.DexBackedDexFile;
+import com.android.tools.smali.dexlib2.iface.MultiDexContainer;
+import com.android.tools.smali.dexlib2.iface.MultiDexContainer.DexEntry;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
-import static org.jf.dexlib2.DexFileFactory.loadDexContainer;
+import static com.android.tools.smali.dexlib2.DexFileFactory.loadDexContainer;
 
 public class DexInvoker {
 

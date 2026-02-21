@@ -36,12 +36,14 @@
       <plugin>
         <groupId>org.codehaus.gmavenplus</groupId>
         <artifactId>gmavenplus-plugin</artifactId>
-        <version>3.0.2</version>
+        <version>${gmavenplus.plugin.version}</version>
         <executions>
           <execution>
             <goals>
               <goal>addSources</goal>
+              <goal>addTestSources</goal>
               <goal>compile</goal>
+              <goal>compileTests</goal>
             </goals>
           </execution>
         </executions>
@@ -55,6 +57,14 @@
               </includes>
             </source>
           </sources>
+          <testSources>
+            <testSource>
+              <directory>${project.basedir}/src/test/groovy</directory>
+              <includes>
+                <include>**/*.groovy</include>
+              </includes>
+            </testSource>
+          </testSources>
         </configuration>
         <dependencies>
           <dependency>

@@ -6,11 +6,12 @@
 repositories {
     mavenLocal()
     mavenCentral()
+    maven { url='https://maven.google.com/' }
 }
 
 dependencies {
     api project(path: ':generators:fact-generator-common', configuration: 'shadow')
-    implementation("org.smali:dexlib2:2.5.2")
+    implementation 'com.android.tools.smali:smali-dexlib2:3.0.9'            // Dexlib2: library for reading/modifying/writing Android dex files
     implementation 'org.checkerframework:checker-qual:2.11.0'   // needed when the Checker plugin is disabled
 }
 

@@ -1,7 +1,7 @@
 package org.clyze.doop.dex;
 
 import org.checkerframework.checker.nullness.qual.*;
-import org.jf.dexlib2.Opcode;
+import com.android.tools.smali.dexlib2.Opcode;
 
 import java.util.Arrays;
 

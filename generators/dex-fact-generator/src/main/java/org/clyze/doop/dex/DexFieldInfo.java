@@ -2,7 +2,7 @@ package org.clyze.doop.dex;
 
 import org.clyze.doop.common.FieldInfo;
 import org.clyze.utils.TypeUtils;
-import org.jf.dexlib2.iface.reference.FieldReference;
+import com.android.tools.smali.dexlib2.iface.reference.FieldReference;
 
 class DexFieldInfo extends FieldInfo {    
     /**

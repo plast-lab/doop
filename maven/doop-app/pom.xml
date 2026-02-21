@@ -11,6 +11,19 @@
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.apache.groovy</groupId>
+        <artifactId>groovy-bom</artifactId>
+        <version>${groovy.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+
   <artifactId>doop</artifactId>
   <packaging>jar</packaging>
   <name>Doop</name>
@@ -34,7 +47,7 @@
       <plugin>
         <groupId>org.codehaus.gmavenplus</groupId>
         <artifactId>gmavenplus-plugin</artifactId>
-        <version>3.0.2</version>
+        <version>${gmavenplus.plugin.version}</version>
         <executions>
           <execution>
             <goals>
@@ -49,7 +62,7 @@
           <targetBytecode>${maven.compiler.release}</targetBytecode>
           <sources>
             <source>
-              <directory>${project.basedir}/src/main/groovy</directory>
+              <directory>${project.basedir}/../../src/main/groovy</directory>
               <includes>
                 <include>**/*.groovy</include>
               </includes>
@@ -57,7 +70,7 @@
           </sources>
           <testSources>
             <testSource>
-              <directory>${project.basedir}/src/test/groovy</directory>
+              <directory>${project.basedir}/../../src/test/groovy</directory>
               <includes>
                 <include>**/*.groovy</include>
               </includes>

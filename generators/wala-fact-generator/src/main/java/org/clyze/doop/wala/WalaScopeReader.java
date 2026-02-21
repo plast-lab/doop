@@ -13,10 +13,10 @@ import java.io.IOException;
 import java.util.jar.JarFile;
 import org.apache.log4j.Logger;
 import org.clyze.doop.util.Resource;
-import org.jf.dexlib2.DexFileFactory;
-import org.jf.dexlib2.Opcodes;
-import org.jf.dexlib2.dexbacked.DexBackedDexFile;
-import org.jf.dexlib2.iface.MultiDexContainer;
+import com.android.tools.smali.dexlib2.DexFileFactory;
+import com.android.tools.smali.dexlib2.Opcodes;
+import com.android.tools.smali.dexlib2.dexbacked.DexBackedDexFile;
+import com.android.tools.smali.dexlib2.iface.MultiDexContainer;
 
 /*
  * This class is our alternative to WALA's com.ibm.wala.util.config.AnalysisScopeReader

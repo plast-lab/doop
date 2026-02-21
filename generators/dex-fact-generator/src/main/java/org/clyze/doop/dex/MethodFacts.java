@@ -5,7 +5,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 // import org.checkerframework.checker.nullness.qual.*;
 import org.clyze.utils.TypeUtils;
-import org.jf.dexlib2.iface.reference.MethodReference;
+import com.android.tools.smali.dexlib2.iface.reference.MethodReference;
 
 class MethodFacts {
 
