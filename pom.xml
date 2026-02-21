@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>org.clyze</groupId>
+  <artifactId>doop-parent</artifactId>
+  <version>4.25.0</version>
+  <packaging>pom</packaging>
+
+  <distributionManagement>
+    <repository>
+      <id>github</id>
+      <name>GitHub plast-lab Apache Maven Packages</name>
+      <url>https://maven.pkg.github.com/plast-lab/doop</url>
+    </repository>
+  </distributionManagement>
+
+  <name>Doop (Maven Parent)</name>
+
+  <modules>
+    <module>maven/doop-app</module>
+    <module>generators/fact-generator-common</module>
+    <module>generators/code-processor</module>
+    <module>generators/soot-fact-generator</module>
+    <module>generators/dex-fact-generator</module>
+    <module>generators/wala-fact-generator</module>
+  </modules>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.release>17</maven.compiler.release>
+
+    <antlr.version>4.13.2</antlr.version>
+    <commons.version>2.21.0</commons.version>
+    <commons.cli.version>1.11.0</commons.cli.version>
+    <commons.logging.version>1.3.5</commons.logging.version>
+    <metadata.version>2.2.3</metadata.version>
+    <groovy.version>5.0.4</groovy.version>
+    <clue.common.version>3.26.2</clue.common.version>
+    <log4j.version>2.25.3</log4j.version>
+    <spock.version>2.4-groovy-5.0</spock.version>
+    <heapdl.version>1.1.20</heapdl.version>
+    <guava.version>33.5.0-jre</guava.version>
+    <asm.version>9.9.1</asm.version>
+    <dexlib.version>2.5.2</dexlib.version>
+    <apk.parser.version>2.6.10</apk.parser.version>
+    <mini.sarif.version>0.1.2</mini.sarif.version>
+    <native.scanner.version>0.6.5</native.scanner.version>
+    <checker.qual.version>2.11.0</checker.qual.version>
+    <soot.version>4.6.0</soot.version>
+    <jphantom.version>1.3</jphantom.version>
+    <junit.platform.launcher.version>6.1.0-M1</junit.platform.launcher.version>
+
+    <!-- <gmavenplus.plugin.version>3.0.2</gmavenplus.plugin.version> -->
+    <maven.surefire.plugin.version>3.2.5</maven.surefire.plugin.version>
+    <maven.jar.plugin.version>3.3.0</maven.jar.plugin.version>
+    <antlr4.maven.plugin.version>4.13.2</antlr4.maven.plugin.version>
+  </properties>
+
+  <repositories>
+    <repository>
+      <id>jitpack.io</id>
+      <url>https://jitpack.io</url>
+    </repository>
+  </repositories>
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <version>3.13.0</version>
+          <configuration>
+            <release>${maven.compiler.release}</release>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.codehaus.gmavenplus</groupId>
+          <artifactId>gmavenplus-plugin</artifactId>
+          <version>${gmavenplus.plugin.version}</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>${maven.surefire.plugin.version}</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-jar-plugin</artifactId>
+          <version>${maven.jar.plugin.version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.antlr</groupId>
+          <artifactId>antlr4-maven-plugin</artifactId>
+          <version>${antlr4.maven.plugin.version}</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
+</project>

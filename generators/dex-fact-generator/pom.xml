@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.clyze</groupId>
+    <artifactId>doop-parent</artifactId>
+    <version>4.25.0</version>
+    <relativePath>../../pom.xml</relativePath>
+  </parent>
+
+  <artifactId>dex-fact-generator</artifactId>
+  <packaging>jar</packaging>
+  <name>Doop Dex Fact Generator</name>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.clyze</groupId>
+      <artifactId>fact-generator-common</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.smali</groupId>
+      <artifactId>dexlib2</artifactId>
+      <version>${dexlib.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.checkerframework</groupId>
+      <artifactId>checker-qual</artifactId>
+      <version>${checker.qual.version}</version>
+    </dependency>
+  </dependencies>
+</project>

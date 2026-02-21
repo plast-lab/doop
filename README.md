@@ -330,6 +330,21 @@ $ ./gradlew installDist
 $ export DOOP_HOME=$(path/to/build/install/doop)
 ```
 
+### Building with Maven (experimental)
+
+A Maven multi-module build is available under the root `pom.xml` (it
+keeps the existing Gradle layout intact). To build everything with
+Maven:
+
+```
+#!bash
+$ mvn -DskipTests package
+```
+
+The main application JAR will be under `maven/doop-app/target/`.
+Note that the Maven build does not replicate all Gradle packaging tasks
+(e.g., `distZip`/`installDist`) and relies on the checked-in resources.
+
 ### Using Doop as a library
 
 Directory docs/doop-as-lib contains a test program that links against
