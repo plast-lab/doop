@@ -227,7 +227,7 @@ provided needs to be one of the valid `android_XZ_stubs/fulljars/robolectric/apk
 ### Java Enterprise Application Analysis using JackEE 
 
 You can select to run an JavaEE-specific analysis on a Java Enterprise application by providing the `--open-programs jackee` option.
-An JavaEE analysis selects entry-points to the application based on the JavaEE specification and the web application framework
+A JavaEE analysis selects entry-points to the application based on the JavaEE specification and the web application framework
 used by the application. JackEE discovers entry points in a semi-automatic manner using a JavaEE-specific generalized vocabulary.
 JackEE's rules can easily be extended by using this vocabulary. JackEE is only available for Soufflé.
 
