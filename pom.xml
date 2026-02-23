@@ -49,7 +49,7 @@
     <mini.sarif.version>0.1.2</mini.sarif.version>
     <native.scanner.version>0.6.5</native.scanner.version>
     <checker.qual.version>2.11.0</checker.qual.version>
-    <soot.version>4.6.0</soot.version>
+    <soot.version>4.7.1</soot.version>
     <jphantom.version>1.3</jphantom.version>
     <junit.platform.launcher.version>6.1.0-M1</junit.platform.launcher.version>
 
