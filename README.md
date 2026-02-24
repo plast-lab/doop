@@ -1,3 +1,4 @@
+[![Java CI with Gradle](https://github.com/plast-lab/doop/actions/workflows/gradle.yml/badge.svg?branch=master)](https://github.com/plast-lab/doop/actions/workflows/gradle.yml)
 # Doop - Framework for Java Pointer and Taint Analysis (using P/Taint)
 
 This document contains instructions for invoking the main driver of Doop. 
