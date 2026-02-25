@@ -76,6 +76,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 	DoopAnalysis newAnalysis(AnalysisFamily family, Map<String, AnalysisOption<?>> options) {
 		def context
 		def platformName = options.PLATFORM.value as String
+
 		List<String> inputs = options.INPUTS.value as List<String>
 		if (platformName.contains("python")) {
 			context = new DefaultInputResolutionContext(DefaultInputResolutionContext.pythonResolver(new File(Doop.doopTmp)))

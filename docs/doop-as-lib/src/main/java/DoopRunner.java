@@ -7,10 +7,10 @@ class DoopRunner {
 
         // Run an analysis.
         String[] doopArgs = new String[] {
-            "-i", "http://centauri.di.uoa.gr:8081/artifactory/Demo-benchmarks/test-resources/006-hello-world-1.2.jar",
+            "-i", "https://github.com/plast-lab/doop-benchmarks/raw/refs/heads/main/doop-tests/006-hello-world/build/libs/006-hello-world.jar",
             "-a", "context-insensitive",
             "--id", "hello-world",
-            "--platform", "java_8"
+            "--platform", "java_25"
         };
         Main.main(doopArgs);
 

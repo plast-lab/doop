@@ -169,7 +169,8 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					value: DEFAULT_JAVA_PLATFORM,
 					validValues: DoopAnalysisFactory.availablePlatforms,
 					forCacheID: true,
-					forPreprocessor: true
+					forPreprocessor: true,
+					cli: true
 			),
 			new AnalysisOption<String>(
 					id: "PLATFORMS_LIB",
