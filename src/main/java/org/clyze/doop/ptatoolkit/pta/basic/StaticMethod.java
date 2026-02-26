@@ -20,5 +20,4 @@ public abstract class StaticMethod extends Method {
     public boolean isInstance() {
         return false;
     }
-
 }

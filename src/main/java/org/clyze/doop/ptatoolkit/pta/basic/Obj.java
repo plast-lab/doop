@@ -17,5 +17,4 @@ public abstract class Obj extends AttributeElement {
 	public Type getType() {
 		return type;
 	}
-
 }
