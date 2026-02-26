@@ -133,11 +133,11 @@ dependencies {
 
 For a variety of benchmarks, you could clone (or download) the [doop-benchmarks](https://github.com/plast-lab/doop-benchmarks) repository.
 
-One important directory in that repository is `JREs`. It can be used for the `DOOP_PLATFORMS_LIB` environment variable. It contains certain java library files for different JRE versions, necessary for analysis purposes. If you would like to provide a custom DOOP_PLATFORMS_LIB directory (e.g., to run analyses using different minor versions), you should follow the same file structure. For example, in order to analyze with JRE version 1.6, you need a `jre1.6` directory containing at least `jce.jar`, `jsse.jar` and `rt.jar`. In order to run an an analysis on an android apk ideally you could create a link to your android sdk installation. The currently supported structure is Android/Sdk/.
+One important directory in that repository is `JREs`. It can be used for the `DOOP_PLATFORMS_LIB` environment variable. It contains certain Java library files for different JRE versions, necessary for analysis purposes. If you would like to provide a custom DOOP_PLATFORMS_LIB directory (e.g., to run analyses using different minor versions), you should follow the same file structure. For example, in order to analyze with JRE version 1.6, you need a `jre1.6` directory containing at least `jce.jar`, `jsse.jar`, and `rt.jar`. To run an analysis on an Android APK, ideally, you could provide a link to your Android SDK installation. The currently supported structure is Android/Sdk/.
 
 ## Running Doop
 
-Doop only supports invocations from its home directory. The main options when running Doop are the analysis and the jar(s) options. For example, for a context-insensitive analysis on a jar file we issue:
+Doop only supports invocations from its home directory. The main options when running Doop are analysis and jar(s). For example, for a context-insensitive analysis on a jar file, we issue:
 
 ```bash
 ./doop -a context-insensitive -i com.example.some.jar
@@ -151,7 +151,7 @@ To see the list of available options (and valid argument values in certain cases
 ./doop -h
 ```
 
-The options will be also shown if you run Doop without any arguments.
+The options will also be shown if you run Doop without any arguments.
 
 The major command line options are the following:
 
@@ -171,29 +171,29 @@ Mandatory. The input file(s) to analyse.
 
 The inputs option accepts multiple values and/or can be repeated multiple times.
 
-The value of the input file can be specified in the following manners:
+The value of the input file can be specified in the following ways:
 
-* provide the relative or absolute path to a local input file.
-* provide the URL of a remote input file.
-* provide the relative or absolute path to a local directory and all its \*.jar files will be included.
-* provide a maven-style expression to indicate a Jar file from the Maven central repository.
+* Provide the relative or absolute path to a local input file.
+* Provide the URL of a remote input file.
+* Provide the relative or absolute path to a local directory, and all its \*.jar files will be included.
+* Provide a Maven-style expression to indicate a Jar file from the Maven central repository.
 
 Example:
 
 ```bash
 #!bash
-$ ./doop -i ./lib/asm-debug-all-4.1.jar                                  [local file]
-      -i org.apache.ivy:ivy:2.5.1                                        [maven descriptor]
-      -i ./lib                                                           [local directory]
-      -i http://www.example.com/some.jar                                 [remote file]
-      -i https://github.com/<owner>/<repo>/raw/refs/heads/main/{...}.jar [GitHub repo RAW file]
-      -i one.jar other.jar                                               [multiple files separated with a space]
+$ ./doop -i ./lib/asm-debug-all-4.1.jar                                        [local file]
+      -i org.apache.ivy:ivy:2.5.1                                              [maven descriptor]
+      -i ./lib                                                                 [local directory]
+      -i http://www.example.com/some.jar                                       [remote file]
+      -i https://github.com/<owner>/<repo>/raw/refs/heads/<branch>/{...}.jar   [GitHub repo RAW file]
+      -i one.jar other.jar                                                     [multiple files separated with a space]
 ```
 
 #### PLATFORM (--platform)
 
 Optional --- default: java_25.
-The platform to use for the analysis. The possible Java options are java_N where N is the java version (8, 9, 11, .. 23, 25 etc.). The android options are android_N_V where N is the Android version (20, 21, 22, 23, 24, 25 etc.) and V is the variant ("stubs" for the Android SDK libraries or "fulljars" for custom built platforms).
+The platform to use for the analysis. The possible Java options are java_N, where N is the Java version (8, 9, 11,... 23, 25, etc.). The Android options are android_N_V, where N is the Android version (20, 21, 22, 23, 24, 25, etc.) and V is the variant ("stubs" for the Android SDK libraries or "fulljars" for custom-built platforms).
 
 Example:
 
@@ -202,7 +202,7 @@ Example:
 ./doop -a context-insensitive -i some-app.apk --platform android_25_fulljars
 ```
 
-To use a custom Java platform, you can use option `--use-local-java-platform`, for example:
+To use a custom Java platform, you can use the option `--use-local-java-platform`, for example:
 
 ```bash
 ./doop -a context-insensitive -i com.example.some.jar --platform java_25 --use-local-java-platform /path/to/java/23/installation
@@ -210,7 +210,7 @@ To use a custom Java platform, you can use option `--use-local-java-platform`, f
 
 #### Main class (--main)
 
-The main class to use as the entry point. This class must declare a method with signature `public static void main(String [])`. If not specified, Doop will try to infer this information from the manifest file of the provided jar file(s).
+The main class to use as the entry point. This class must declare a method with the signature `public static void main(String [])`. If not specified, Doop will try to infer this information from the manifest file of the provided jar file(s).
 
 Example:
 
@@ -228,7 +228,7 @@ Example:
 ./doop -a context-insensitive -i com.example.some.jar -t 120
 ```
 
-The above analysis will run for a maximum of 2 hours (120 minutes).
+The above analysis will run for up to 2 hours (120 minutes).
 
 #### Analysis id (-id, --identifier)
 
@@ -245,7 +245,7 @@ Example:
 
 #### Packages (--regex)
 
-The Java packages to treat as application code (not library code), to be exhaustively analyzed.
+The Java packages to treat as application code (not library code) and analyze exhaustively.
 
 Example:
 
@@ -284,7 +284,7 @@ Soufflé supports multithreading, so you can select the number of threads the an
 
 ### Soufflé profile
 
-You can then inspect the analysis results by using `souffle-profile` and providing the profile.txt file produced by Soufflé under the output directory of the analysis database. In order to inspect the profile.txt of the above doop invocation with --souffle you would use the following command:
+You can then inspect the analysis results by using `souffle-profile` and providing the profile.txt file produced by Soufflé under the output directory of the analysis database. In order to inspect the profile.txt of the above doop invocation with --souffle, you would use the following command:
 
 ```bash
 souffle-profile out/antlr-ci/profile.txt
@@ -292,13 +292,13 @@ souffle-profile out/antlr-ci/profile.txt
 
 ### Using LogicBlox as the Datalog engine of choice
 
-In order to use LogicBlox instead of the Soufflé engine you can provide the --Xlb argument. Be warned that this will use older analysis logic and thus some Java features (such as lambdas, dynamic proxies, or Android-specific behavior) may not be handled successfully.
+In order to use LogicBlox instead of the Soufflé engine, you can provide the --Xlb argument. Be warned that this will use older analysis logic and thus some Java features (such as lambdas, dynamic proxies, or Android-specific behavior) may not be handled successfully.
 
 ```bash
 ./doop -i ../doop-benchmarks/dacapo-2006/antlr.jar -a context-insensitive --dacapo --id lb-antlr --Xlb
 ```
 
-#### Warning: For the latest features we recommend using Soufflé
+#### Warning: For the latest features, we recommend using Soufflé
 
 ### Android Analysis
 
@@ -312,12 +312,12 @@ provided needs to be one of the valid `android_XZ_stubs/fulljars/robolectric/apk
 
 ### Java Enterprise Application Analysis using JackEE
 
-You can select to run an JavaEE-specific analysis on a Java Enterprise application by providing the `--open-programs jackee` option.
+You can select to run a JavaEE-specific analysis on a Java Enterprise application by providing the `--open-programs jackee` option.
 A JavaEE analysis selects entry-points to the application based on the JavaEE specification and the web application framework
 used by the application. JackEE discovers entry points in a semi-automatic manner using a JavaEE-specific generalized vocabulary.
 JackEE's rules can easily be extended by using this vocabulary. JackEE is only available for Soufflé.
 
-Currently supported web frameworks: Spring, Struts2, JAX-RS REST API, JavaEE Servlets and Enterprise Java Beans.
+Currently supported web frameworks: Spring, Struts2, JAX-RS REST API, JavaEE Servlets, and Enterprise Java Beans.
 
 ```bash
 ./doop -i ../doop-benchmarks/javaee-benchmarks/WebGoat.war -a context-insensitive --open-programs jackee 
@@ -359,8 +359,8 @@ Sometimes, it might be desirable to invoke doop in offline mode. There is an alt
 The Differential Datalog (DDlog) engine is currently supported for the
 "micro" analysis.
 
-Setup: clone DDlog in a directory, check out commit
-with tag `v1.2.3`, then set environment
+Setup: clone DDlog in a directory, check out the commit
+with tag `v1.2.3`, then set the environment
 variable `DDLOG_DIR` to point to that directory. Run `stack build` and
 `stack install` to build and install a local binary of DDlog.
 
@@ -373,7 +373,7 @@ Running an analysis (non-incrementally) with id "ID":
 For more applications of the analysis, such as incremental
 computations, the DDlog program can be found in
 `out/<ID>/converted_logic_ddlog/target/release/converted_logic_cli`,
-the script (including the facts) is in
+The script (including the facts) is in
 `out/<ID>/converted_logic.dat`, and the output is saved in
 `out/<ID>/database/dump`.
 
@@ -381,8 +381,8 @@ the script (including the facts) is in
 
 To generate configurations for the native image builder, set
 environment variable GRAALVM_HOME to point to the GraalVM installation
-and use one of the following commands to run a Doop analysis depending
-on the GraalVM version installed (e.g. Java 23):
+and use one of the following commands to run a Doop analysis, depending
+on the GraalVM version installed (e.g., Java 23):
 
 ```bash
 ./doop --platform java_25 --use-local-java-platform ${GRAALVM_HOME} --gen-opt-directives ...
@@ -409,7 +409,7 @@ run. This can help with dependency resolution issues due to network
 connectivity or to avoid Gradle overhead when running Doop in batch
 mode.
 
-Note that you have to set up environment variable `DOOP_HOME` to point
+Note that you have to set up the environment variable `DOOP_HOME` to point
 to the installation directory.
 
 Alternatively, you can build the Doop distribution and install it in
@@ -423,11 +423,11 @@ $ export DOOP_HOME=$(path/to/build/install/doop)
 
 ### Using Doop as a library
 
-Directory docs/doop-as-lib contains a test program that links against
-Doop and runs an analysis on a simple hello-world program.
+The directory docs/doop-as-lib contains a test program that links against
+Doop runs an analysis on a simple hello-world program.
 
 Please consult its Gradle build script (build.gradle) for details on
-how to set up and call Doop from another program.
+How to set up and call Doop from another program.
 
 ### Using Doop via Docker
 
@@ -443,7 +443,7 @@ output for specific relations and can be integrated with Visual Studio
 Code (with the Sarif Viewer extension installed).
 
 For example, to analyze `app.jar` and visualize information for optimizers, first
-analyze the program as follows:
+Analyze the program as follows:
 
 ```bash
 ./doop -i app.jar -a context-insensitive --id app --gen-opt-directives --sarif
@@ -486,7 +486,7 @@ The `doop` command is a script for Gradle build tasks. If you want to see all av
 ## Troubleshooting
 
 *Problem:* Analyzing a program as a "super-JAR" (all classes given as
-a JAR after `-i`) shows less methods reachable compared to analyzing
+a JAR after `-i`) shows fewer methods reachable compared to analyzing
 the same program split into "app" JAR inputs (with `-i`) and library
 JAR inputs (after `-l`).
 
