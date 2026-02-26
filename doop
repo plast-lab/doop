@@ -17,6 +17,6 @@ done
 # Export number of terminal columns for help display.
 if command -v 'tput' &> /dev/null
 then
-    export COLUMNS=`tput cols`
+    export COLUMNS =`tput cols`
 fi
 eval "./gradlew :run -Pargs=\"$ARGS\""

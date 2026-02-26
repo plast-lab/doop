@@ -22,7 +22,13 @@ plugins {
     id 'java-library'
     id 'maven-publish'
     //see https://github.com/researchgate/gradle-release
-    id 'net.researchgate.release' version '3.1.0'
+//    id 'net.researchgate.release' version '3.1.0'
+}
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+    maven { url='https://jitpack.io' }
 }
 
 def requested = gradle.startParameter.taskNames
@@ -89,7 +95,6 @@ application {
 
 group = "org.clyze"
 
-
 // Windows support flag.
 def onWindows = System.properties['os.name'].toLowerCase().contains('windows')
 
@@ -117,7 +122,7 @@ def codeProcessorProject = project(':generators:code-processor')
 }
 
 def frontendGeneratorProjects = allGeneratorProjects.findAll { it.name.contains('-fact-generator') }
-//all frontends have a fatJar task, which we explicitly (re)define it here, so we can reference it without issues in
+//all frontends have a fatJar task, which we explicitly (re)define here, so we can reference it without issues in
 //the publishing spec
 frontendGeneratorProjects.each { Project p ->
     p.with {
@@ -142,12 +147,6 @@ frontendGeneratorProjects.each { Project p ->
             if (jar && jar.name) { delete p.file("../../${resourcesDir}/${jar.name}") }
 	    }
     }
-}
-
-repositories {
-    mavenLocal()
-    mavenCentral()
-    maven { url='https://jitpack.io' }
 }
 
 configurations {

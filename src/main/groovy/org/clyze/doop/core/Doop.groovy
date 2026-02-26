@@ -1,7 +1,6 @@
 package org.clyze.doop.core
 
 import groovy.cli.commons.OptionAccessor
-import groovy.transform.CompileStatic
 import groovy.util.logging.Log4j
 import java.util.function.Predicate
 import org.clyze.analysis.AnalysisOption
@@ -80,7 +79,7 @@ class Doop {
 	 * Initializes Doop using the default environment variables.
 	 */
 	static void initDoopFromEnv() {
-		Doop.initDoop(System.getenv("DOOP_HOME"), System.getenv("DOOP_OUT"), System.getenv("DOOP_CACHE"), System.getenv("DOOP_LOG"), System.getenv("DOOP_TMP"))
+		initDoop(System.getenv("DOOP_HOME"), System.getenv("DOOP_OUT"), System.getenv("DOOP_CACHE"), System.getenv("DOOP_LOG"), System.getenv("DOOP_TMP"))
 	}
 
 	/**
