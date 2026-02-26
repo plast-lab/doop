@@ -10,7 +10,7 @@ class DoopRunner {
             "-i", "https://github.com/plast-lab/doop-benchmarks/raw/refs/heads/main/doop-tests/006-hello-world/build/libs/006-hello-world.jar",
             "-a", "context-insensitive",
             "--id", "hello-world",
-            "--platform", "java_25"
+            "--platform", "java_8"
         };
         Main.main(doopArgs);
 
