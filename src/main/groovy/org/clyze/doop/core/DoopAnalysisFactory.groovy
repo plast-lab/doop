@@ -13,6 +13,7 @@ import org.clyze.input.InputResolutionContext
 import org.clyze.input.PlatformManager
 import org.clyze.utils.CheckSum
 import org.clyze.utils.FileOps
+import java.util.zip.ZipException
 
 /**
  * A Factory for creating Analysis objects.
@@ -78,6 +79,11 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		def platformName = options.PLATFORM.value as String
 
 		List<String> inputs = options.INPUTS.value as List<String>
+	
+		inputs.findAll { s -> (s.contains("github.com") && s.contains("/blob/")) || s.contains("raw.githubusercontent.com") }.each { url ->
+        	log.warn "WARNING: Input ${url} is a GitHub URL. Make sure you provided the RAW file URL, not the GitHub page."
+		}
+
 		if (platformName.contains("python")) {
 			context = new DefaultInputResolutionContext(DefaultInputResolutionContext.pythonResolver(new File(Doop.doopTmp)))
 		} else {
@@ -584,16 +590,21 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 				options.INPUTS.value
 					.findAll { it.name.toLowerCase().endsWith(".jar") }
 					.each { File jarPath ->
-					JarFile jarFile = new JarFile(jarPath)
-					//Try to read the main class from the manifest contained in the jar
-					String main = jarFile.manifest?.mainAttributes?.getValue(Attributes.Name.MAIN_CLASS) as String
-					if (main)
-						recordAutoMainClass(options, main)
-					else {
-						//Check whether the jar contains a class with the same name
-						def jarName = FilenameUtils.getBaseName(jarFile.name)
-						if (jarFile.getJarEntry("${jarName}.class"))
-							recordAutoMainClass(options, jarName)
+							try { 
+								JarFile jarFile = new JarFile(jarPath)
+							}
+							catch (ZipException ex) {
+								throw DoopErrorCodeException.error30("Could not read jar file ${jarPath}: ${ex.message}")
+							}
+							//Try to read the main class from the manifest contained in the jar
+							String main = jarFile.manifest?.mainAttributes?.getValue(Attributes.Name.MAIN_CLASS) as String
+							if (main)
+								recordAutoMainClass(options, main)
+							else {
+								//Check whether the jar contains a class with the same name
+								def jarName = FilenameUtils.getBaseName(jarFile.name)
+								if (jarFile.getJarEntry("${jarName}.class"))
+									recordAutoMainClass(options, jarName)
 					}
 				}
 			}
@@ -743,7 +754,13 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			// Default is 'all'.
 			if ((mode == null) || (mode == 'all')) {
 				packages = [] as Set
-				options.INPUTS.value.each { packages.addAll(PackageUtil.getPackages(it)) }
+				options.INPUTS.value.each { 
+					try {
+						packages.addAll(PackageUtil.getPackages(it))
+					} catch (Exception ex) {
+						throw DoopErrorCodeException.error31("Could not process input ${it}: ${ex.message}")
+					}
+				}
 			} else if (mode == 'first') {
 				packages = PackageUtil.getPackages(options.INPUTS.value.first())
 			} else {
