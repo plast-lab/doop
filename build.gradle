@@ -228,6 +228,11 @@ String doopCP() {
     return String.join(":", sourceSets.main.runtimeClasspath.collect { it.toString() })
 }
 
+tasks.withType(JavaCompile).configureEach {
+    // enable all lint checks
+    options.compilerArgs += ['-Xlint:all']
+}
+
 def gitHashFile = layout.projectDirectory.file("${resourcesDir}/git-hash.txt")
 
 tasks.register('writeGitCommitHash') {
