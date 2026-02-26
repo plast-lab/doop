@@ -2,8 +2,8 @@ package org.clyze.doop.common;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.InputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.Map;
 import java.util.Set;
@@ -17,17 +17,19 @@ import java.util.zip.ZipInputStream;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.clyze.scanner.BinaryAnalysis;
+import static org.clyze.scanner.BinaryAnalysis.AnalysisType.BINUTILS;
+import static org.clyze.scanner.BinaryAnalysis.AnalysisType.BUILTIN;
+import static org.clyze.scanner.BinaryAnalysis.AnalysisType.RADARE;
 import org.clyze.scanner.NativeDatabaseConsumer;
 import org.clyze.scanner.NativeScanner;
 import org.clyze.utils.TypeUtils;
-import com.android.tools.smali.dexlib2.Opcodes;
-import com.android.tools.smali.dexlib2.dexbacked.DexBackedDexFile;
-import com.android.tools.smali.dexlib2.iface.MultiDexContainer;
-import com.android.tools.smali.dexlib2.dexbacked.DexBackedClassDef;
 import org.objectweb.asm.ClassReader;
 
-import static org.clyze.scanner.BinaryAnalysis.AnalysisType.*;
 import static com.android.tools.smali.dexlib2.DexFileFactory.loadDexContainer;
+import com.android.tools.smali.dexlib2.Opcodes;
+import com.android.tools.smali.dexlib2.dexbacked.DexBackedClassDef;
+import com.android.tools.smali.dexlib2.dexbacked.DexBackedDexFile;
+import com.android.tools.smali.dexlib2.iface.MultiDexContainer;
 
 /**
  * This class scans input artifacts (.jar, .aar, or .apk files) and
@@ -130,6 +132,9 @@ public class ArtifactScanner {
                 } else if (generalProc != null)
                     generalProc.accept(zipFile, entry, entryName);
             }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            System.err.println("Error while processing archive " + input + ": " + ex.getMessage());
         }
     }
 

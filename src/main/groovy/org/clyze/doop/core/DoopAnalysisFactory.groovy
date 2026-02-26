@@ -97,6 +97,11 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			context = newJavaDefaultInputResolutionContext()
 		}
 		context.add(inputs, InputType.INPUT)
+
+		options.LIBRARIES.value.findAll { s -> (s.contains("github.com") && s.contains("/blob/")) || s.contains("raw.githubusercontent.com") }.each { url ->
+        	log.warn "WARNING: Library ${url} is a GitHub URL. Make sure you provided the RAW file URL, not the GitHub page."
+		}
+
 		context.add(options.LIBRARIES.value as List<String>, InputType.LIBRARY)
 
 		// Detect the platform files (using a combination of DOOP_PLATFORMS_LIB/ANDROID_SDK
@@ -590,14 +595,15 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 				options.INPUTS.value
 					.findAll { it.name.toLowerCase().endsWith(".jar") }
 					.each { File jarPath ->
+							String main = null
 							try { 
 								JarFile jarFile = new JarFile(jarPath)
+								//Try to read the main class from the manifest contained in the jar
+								main = jarFile.manifest?.mainAttributes?.getValue(Attributes.Name.MAIN_CLASS) as String
 							}
 							catch (ZipException ex) {
 								throw DoopErrorCodeException.error30("Could not read jar file ${jarPath}: ${ex.message}")
 							}
-							//Try to read the main class from the manifest contained in the jar
-							String main = jarFile.manifest?.mainAttributes?.getValue(Attributes.Name.MAIN_CLASS) as String
 							if (main)
 								recordAutoMainClass(options, main)
 							else {

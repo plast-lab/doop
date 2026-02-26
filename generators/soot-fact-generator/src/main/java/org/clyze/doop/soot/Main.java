@@ -15,7 +15,6 @@ import org.clyze.doop.common.Database;
 import org.clyze.doop.common.DoopErrorCodeException;
 import org.clyze.doop.common.Phantoms;
 import org.clyze.doop.soot.android.AndroidSupport_Soot;
-import org.clyze.utils.ContainerUtils;
 import org.clyze.utils.JHelper;
 import soot.Scene;
 import soot.SootClass;
