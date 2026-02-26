@@ -332,7 +332,8 @@ sourceSets {
 }
 
 testNames.each {name ->
-    task "${name}JAR"(type:Jar, dependsOn: "${name}Classes") {
+    tasks.register("${name}JAR", Jar) {
+        it.dependsOn "${name}Classes"
         group = 'other'
         from sourceSets.getByName(name).output.classesDirs
         archiveFileName.set("${name}.jar")
@@ -346,8 +347,7 @@ tasks.register('createEmptyProperties') {
     doLast {
         def urls = sourceSets.main.runtimeClasspath.files.collect { it.toURI().toURL() } as URL[]
         def classloader = new URLClassLoader(urls, null as ClassLoader)
-        Class
-                .forName("org.clyze.doop.CommandLineAnalysisFactory", true, classloader)
+        Class.forName("org.clyze.doop.CommandLineAnalysisFactory", true, classloader)
                 .createEmptyProperties(new File("empty.properties"))
     }
 }
@@ -421,7 +421,7 @@ tasks.register('cleanTestResources') {
 }
 clean.dependsOn cleanTestResources
 
-def getTmpDir() { return System.getenv('DOOP_TMP')   ?: "$projectDir/tmp" }
+def getTmpDir() { return System.getenv('DOOP_TMP') ?: "$projectDir/tmp" }
 
 tasks.register('fullClean') {
     description='Clean everything, including caches and analysis results.'
@@ -476,11 +476,20 @@ Closure shadowDep = { Task it ->
     it.dependsOn(':generators:fact-generator-common:shadowJar')
     it.dependsOn(':generators:code-processor:jar')
 }
-tasks.withType(PublishToMavenRepository).configureEach { shadowDep(it) }
-tasks.withType(PublishToMavenLocal).configureEach { shadowDep(it) }
 
 tasks.register('logicFilesJar', Jar) {
     into('souffle-logic') { from "souffle-logic" }
+}
+
+tasks.named("generateMetadataFileForMavenJavaPublication") {
+    dependsOn(tasks.named("logicFilesJar"))
+}
+
+tasks.withType(PublishToMavenRepository).configureEach {
+    shadowDep(it)
+}
+tasks.withType(PublishToMavenLocal).configureEach {
+    shadowDep(it)
 }
 
  publishing {
@@ -504,8 +513,8 @@ tasks.register('logicFilesJar', Jar) {
                          // The artifact generator can be a file or a Gradle task
                          def artifactGenerator = p.file('build/libs/' + l[1])
                          artifact(artifactGenerator) {
-                             groupId 'org.clyze'
-                             artifactId p.name
+                             groupId='org.clyze'
+                             artifactId=p.name
                          }
                      }
                  }

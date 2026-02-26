@@ -130,11 +130,12 @@ Example:
 
 ```
 #!bash
-$ ./doop -i ./lib/asm-debug-all-4.1.jar      [local file]
-		 -i org.apache.ivy:ivy:2.5.1         [maven descriptor]
-		 -i ./lib                            [local directory]
-		 -i http://www.example.com/some.jar  [remote file]
-		 -i one.jar other.jar                [multiple files separated with a space]
+$ ./doop -i ./lib/asm-debug-all-4.1.jar                                     [local file]
+	 -i org.apache.ivy:ivy:2.5.1                                        [maven descriptor]
+	 -i ./lib                                                           [local directory]
+	 -i http://www.example.com/some.jar                                 [remote file]
+	 -i https://github.com/<owner>/<repo>/raw/refs/heads/main/{...}.jar [GitHub repo RAW file]
+	 -i one.jar other.jar                                               [multiple files separated with a space]
 ```
 
 #### PLATFORM (--platform)
