@@ -13,7 +13,7 @@ This document contains instructions for invoking the main driver of Doop.
 
 Doop requires **Java 17** or later to build and run.
 
-Installing Java 17 with SDKMAN (recommended)
+### Installing Java 17 with SDKMAN (recommended)
 
 SDKMAN provides reproducible and side-by-side JDK installations, which is particularly useful when running analyses across multiple Java platform versions.
 
