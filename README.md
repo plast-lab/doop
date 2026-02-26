@@ -13,6 +13,43 @@ This document contains instructions for invoking the main driver of Doop.
 
 Doop requires **Java 17** or later to build and run.
 
+Installing Java 17 with SDKMAN (recommended)
+
+SDKMAN provides reproducible and side-by-side JDK installations, which is particularly useful when running analyses across multiple Java platform versions.
+
+### Install SDKMAN
+
+```bash
+curl -s "https://get.sdkman.io" | bash
+source "$HOME/.sdkman/bin/sdkman-init.sh"
+```
+
+### Install Java 17 (Temurin recommended)
+
+```bash
+sdk install java 17.0.10-tem
+```
+
+### Use Java 17 in current shell
+
+```bash
+sdk use java 17.0.10-tem
+```
+
+# Or make it default
+
+```bash
+sdk default java 17.0.10-tem
+```
+
+Verify:
+
+```bash
+java -version
+```
+
+## About Doop
+
 At its core, Doop is a collection of various analyses expressed in the form of Datalog rules.
 
 The framework has two versions of its rules:
@@ -111,7 +148,7 @@ Doop only supports invocations from its home directory. The main options when ru
 To see the list of available options (and valid argument values in certain cases), issue:
 
 ```bash
-    ./doop -h
+./doop -h
 ```
 
 The options will be also shown if you run Doop without any arguments.
@@ -159,6 +196,7 @@ Optional --- default: java_25.
 The platform to use for the analysis. The possible Java options are java_N where N is the java version (8, 9, 11, .. 23, 25 etc.). The android options are android_N_V where N is the Android version (20, 21, 22, 23, 24, 25 etc.) and V is the variant ("stubs" for the Android SDK libraries or "fulljars" for custom built platforms).
 
 Example:
+
 ```bash
 ./doop -a context-insensitive -i com.example.some.jar --platform java_25
 ./doop -a context-insensitive -i some-app.apk --platform android_25_fulljars
