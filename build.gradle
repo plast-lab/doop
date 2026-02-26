@@ -479,11 +479,69 @@ Closure shadowDep = { Task it ->
 tasks.withType(PublishToMavenRepository).configureEach { shadowDep(it) }
 tasks.withType(PublishToMavenLocal).configureEach { shadowDep(it) }
 
+tasks.register('logicFilesJar', Jar) {
+    into('souffle-logic') { from "souffle-logic" }
+}
+
+ publishing {
+     publications {
+         mavenJava(MavenPublication) {
+             //from components.java
+             artifact(tasks.named("sourcesJar"))
+             artifact(tasks.named("javadocJar"))
+
+             artifact(tasks.named("logicFilesJar")) {
+                 classifier = "logic-files"
+             }
+         }
+
+         // Publish fact-generator-common and code-processor.
+         [[project(':generators:fact-generator-common'), "fact-generator-common-${version}-all.jar"],
+          [codeProcessorProject, "code-processor-${version}.jar"]]
+                 .forEach { List l ->
+                     Project p = l[0]
+                     create(p.name, MavenPublication) {
+                         // The artifact generator can be a file or a Gradle task
+                         def artifactGenerator = p.file('build/libs/' + l[1])
+                         artifact(artifactGenerator) {
+                             groupId 'org.clyze'
+                             artifactId p.name
+                         }
+                     }
+                 }
+         }
+         repositories {
+             maven {
+                 name = "GitHubPackages"
+                 url = "https://maven.pkg.github.com/plast-lab/doop"
+                 credentials {
+                     username = System.getenv("GITHUB_ACTOR")
+                     password = System.getenv("GITHUB_TOKEN")
+                 }
+             }
+         }
+ }
+
+
 // if (project.hasProperty('artifactory_user')) {
 
 //     // Generate a jar with all the logic files
 //     tasks.register('logicFilesJar', Jar) {
 //         into('souffle-logic') { from "souffle-logic" }
+//     }
+
+
+
+//         repositories {
+//             maven {
+//                 credentials {
+//                     username artifactory_user
+//                     password artifactory_password
+//                 }
+//                 url "$artifactory_contextUrl/libs-public-release-local"
+//                 allowInsecureProtocol true
+//             }
+//         }
 //     }
 
 //     publishing {
