@@ -113,7 +113,7 @@ public class RLinker {
             String rText = getZipEntry(new ZipFile(ar), "R.txt");
             if (rText != null) {
                 for (String line : rText.split("\n|\r"))
-                    if (line.length() != 0)
+                    if (!line.isEmpty())
                         processRLine(ar, line, pkg);
             }
         } catch (IOException ex) {
@@ -183,11 +183,16 @@ public class RLinker {
 
     private static void runProcess(String cmd) {
         try {
-            Process p = Runtime.getRuntime().exec(cmd);
-            p.waitFor();
+            ProcessBuilder pb = new ProcessBuilder(cmd.split(" "));
+            Process p = pb.start();
+            try (var in = p.getInputStream(); var err = p.getErrorStream()) {
+                in.transferTo(System.out);
+                err.transferTo(System.err);
+            }
             int exitVal = p.exitValue();
             if (exitVal != 0) {
-                System.out.println(cmd + " exit value = " + exitVal);
+                System.err.println("Error invoking: " + cmd);
+                System.err.println("Exit code: " + exitVal);
             }
         } catch (Exception ex) {
             System.err.println("Error invoking: " + cmd);
@@ -195,8 +200,7 @@ public class RLinker {
         }
     }
 
-    private static String genR(String tmpDir, String pkg,
-                               Map<String, Set<String>> rData) {
+    private static String genR(String tmpDir, String pkg, Map<String, Set<String>> rData) {
         String subdir = tmpDir + File.separator + pkg.replaceAll("\\.", File.separator);
         if (new File(subdir).mkdirs())
             System.out.println("Created directory: " + subdir);
@@ -219,8 +223,7 @@ public class RLinker {
         return rFile;
     }
 
-    private static void genNestedR(String nestedName, Collection<String> data,
-                                   Collection<String> lines) {
+    private static void genNestedR(String nestedName, Collection<String> data, Collection<String> lines) {
         lines.add("    public static final class " + nestedName + " {\n");
         lines.addAll(data);
         lines.add("    }\n");
@@ -242,5 +245,4 @@ public class RLinker {
         }
         return null;
     }
-
 }
