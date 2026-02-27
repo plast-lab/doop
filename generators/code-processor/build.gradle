@@ -22,7 +22,7 @@ dependencies {
     antlr "org.antlr:antlr4:${antlrVersion}"
     implementation "org.antlr:antlr4-runtime:${antlrVersion}"
     api "com.github.clyze:metadata-model:${metadataVersion}"          // The source metadata model
-    api 'com.github.plast-lab:mini-sarif:0.1.2'                       // The SARIF model/generator
+    api 'com.github.plast-lab:mini-sarif:0.2.2'                       // The SARIF model/generator
     api "org.apache.groovy:groovy-cli-commons:${groovyVersion}"       // Command line processor (Groovy wrapper)
     api "commons-cli:commons-cli:${commonsCliVersion}"                // Command line processor
     forStandalone "org.apache.groovy:groovy:${groovyVersion}"         // Groovy (for standalone)

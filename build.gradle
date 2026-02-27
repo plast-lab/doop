@@ -21,8 +21,6 @@ plugins {
     id 'groovy'
     id 'java-library'
     id 'maven-publish'
-    //see https://github.com/researchgate/gradle-release
-//    id 'net.researchgate.release' version '3.1.0'
 }
 
 repositories {
@@ -41,8 +39,8 @@ tasks.withType(Test).configureEach {
 }
 
 // Warning: -Xss is restricted in recent Java versions.
-def factGenXmx='12000m'
-def factGenStack='1000m'
+def factGenXmx = '12000m'
+def factGenStack = '1000m'
 def defaultFactGenJvmArgs = ["-DmaxHeapSize=${factGenXmx}", "-DstackSize=${factGenStack}"]
 
 // Should the fact generators be linked as normal Java libraries? By
