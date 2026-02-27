@@ -494,7 +494,6 @@ tasks.withType(PublishToMavenLocal).configureEach {
  publishing {
      publications {
          mavenJava(MavenPublication) {
-             //from components.java
              artifact(tasks.named("sourcesJar"))
              artifact(tasks.named("javadocJar"))
 
