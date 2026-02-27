@@ -1,4 +1,3 @@
 package org.clyze.doop.ptatoolkit.pta.basic;
 
-public abstract class Type extends BasicElement {
-}
+public abstract class Type extends BasicElement {}

@@ -23,6 +23,10 @@ public abstract class InstanceMethod extends Method {
         this.thisVar = thisVar;
     }
 
+    /**
+     * Returns the variable representing the 'this' reference in the instance method.
+     * @return the variable representing the 'this' reference in the instance method
+     */
     public Variable getThis() {
         return thisVar;
     }

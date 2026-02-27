@@ -227,6 +227,10 @@ String doopCP() {
     return String.join(":", sourceSets.main.runtimeClasspath.collect { it.toString() })
 }
 
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs += ['-Xlint:all']
+}
+
 def gitHashFile = layout.projectDirectory.file("${resourcesDir}/git-hash.txt")
 
 tasks.register('writeGitCommitHash') {
@@ -360,11 +364,7 @@ tasks.register('resolveApktool') {
     }
 }
 
-compileJava {
-    options.compilerArgs << '-Xlint:unchecked'
-}
-
- test {
+test {
     useJUnitPlatform()
     // failFast = true
     maxParallelForks = 1
@@ -494,7 +494,6 @@ tasks.withType(PublishToMavenLocal).configureEach {
  publishing {
      publications {
          mavenJava(MavenPublication) {
-             //from components.java
              artifact(tasks.named("sourcesJar"))
              artifact(tasks.named("javadocJar"))
 
