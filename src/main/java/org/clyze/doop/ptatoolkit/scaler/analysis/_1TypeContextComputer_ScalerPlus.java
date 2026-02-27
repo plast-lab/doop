@@ -7,18 +7,39 @@ import org.clyze.doop.ptatoolkit.scaler.doop.DoopPointsToAnalysis;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * Scaler+ variant of 1-type context counting with call-chain fallback for static methods.
+ */
 public class _1TypeContextComputer_ScalerPlus extends ContextComputer {
     private Set<Method> visited = new HashSet<>();
 
+    /**
+     * Creates a Scaler+ 1-type context computer.
+     *
+     * @param pta the points-to analysis
+     * @param oag the object allocation graph
+     * @param worstCaseContextComputer fallback computer for static methods
+     */
     _1TypeContextComputer_ScalerPlus(DoopPointsToAnalysis pta, ObjectAllocationGraph oag, ContextComputer worstCaseContextComputer) {
 	    super(pta, oag, worstCaseContextComputer);
     }
 
+    /**
+     * Returns the strategy name.
+     *
+     * @return {@code "1-type"}
+     */
     @Override
     public String getAnalysisName() {
         return "1-type";
     }
 
+    /**
+     * Computes the context count for a method.
+     *
+     * @param method the method
+     * @return the context count
+     */
     @Override
     protected long computeContextNumberOf(Method method) {
         visited = new HashSet<>();
@@ -40,6 +61,12 @@ public class _1TypeContextComputer_ScalerPlus extends ContextComputer {
         return contextNumber > 0? contextNumber: 1;
     }
 
+    /**
+     * Collects receiver objects from the method or its caller chain.
+     *
+     * @param method the method
+     * @return receiver objects contributing to contexts
+     */
     private Set<Obj> getReceiverObjects(Method method) {
         Set<Obj> totalReceiverObjects = new HashSet<>();
         if (method.isInstance()) {

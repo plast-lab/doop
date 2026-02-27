@@ -16,6 +16,10 @@ public abstract class InstanceCallSite extends CallSite {
         this.receiver = receiver;
     }
 
+    /**
+     * Returns the receiver variable of the instance method call. The receiver variable represents the object on which the instance method is called. If the call site is a static call, this method will return null.
+     * @return the receiver variable of the instance method call, or null if the call site is a static call
+     */
     public Variable getReceiver() {
         return receiver;
     }

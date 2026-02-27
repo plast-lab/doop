@@ -1,5 +1,8 @@
 package org.clyze.doop.ptatoolkit.util;
 
+/**
+ * ANSI terminal color and style escape sequences.
+ */
 public class ANSIColor {
 	public static final String RESET = "\u001B[0m";
 	public static final String BOLD = "\u001B[1m";
@@ -13,6 +16,13 @@ public class ANSIColor {
 	public static final String WHITE = "\u001B[37m";
 	public static final String BG_BLACK = "\u001B[40m";
 
+	/**
+	 * Wraps text with an ANSI style/color and reset suffix.
+	 *
+	 * @param color the ANSI prefix to apply
+	 * @param s the text to colorize
+	 * @return the colorized text
+	 */
 	public static String color(String color, String s) {
 		return color + s + RESET;
 	}

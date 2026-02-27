@@ -6,11 +6,20 @@ import org.clyze.doop.ptatoolkit.scaler.doop.DoopPointsToAnalysis;
 import java.io.*;
 import java.util.*;
 
+/**
+ * Scaler+ variant of 2-object context counting with cached context sets.
+ */
 public class _2ObjectContextComputer_ScalerPlus extends ContextComputer {
     private Set<Method> visited = null;
     private Map<Method, Set<List<Obj>>> methodToContextMap = new HashMap<>();
 
 
+    /**
+     * Creates a Scaler+ 2-object context computer.
+     *
+     * @param pta the points-to analysis
+     * @param oag the object allocation graph
+     */
     _2ObjectContextComputer_ScalerPlus(DoopPointsToAnalysis pta, ObjectAllocationGraph oag) {
         super(pta, oag);
         try {
@@ -20,11 +29,22 @@ public class _2ObjectContextComputer_ScalerPlus extends ContextComputer {
         }
     }
 
+    /**
+     * Returns the strategy name.
+     *
+     * @return {@code "2-object"}
+     */
     @Override
     public String getAnalysisName() {
         return "2-object";
     }
 
+    /**
+     * Computes the context count for the method.
+     *
+     * @param method the method
+     * @return the context count
+     */
     @Override
     protected long computeContextNumberOf(Method method) {
         visited = new HashSet<>();
@@ -50,6 +70,12 @@ public class _2ObjectContextComputer_ScalerPlus extends ContextComputer {
         return  contextNumber > 0? contextNumber: 1;
     }
 
+    /**
+     * Computes or retrieves concrete 2-object contexts for a method.
+     *
+     * @param method the method
+     * @return the set of object-context pairs
+     */
     private Set<List<Obj>> getContexts(Method method) {
         if (methodToContextMap.containsKey(method)) {
             return methodToContextMap.get(method);

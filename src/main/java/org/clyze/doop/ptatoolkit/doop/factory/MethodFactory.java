@@ -9,6 +9,9 @@ import org.clyze.doop.ptatoolkit.pta.basic.Variable;
 
 import java.util.*;
 
+/**
+ * Factory class for creating Method instances based on the information stored in the database. This factory retrieves method information such as parameters, return variables, and method attributes (e.g., whether the method is private or implicitly reachable) from the database and constructs Method objects accordingly.
+ */
 public class MethodFactory extends ElementFactory<Method> {
 
     private final Map<String, Variable> sig2this = new HashMap<>();
@@ -19,8 +22,8 @@ public class MethodFactory extends ElementFactory<Method> {
 
     /**
      * Constructor for MethodFactory that initializes the method signature to this variable, method signature to parameters, method signature to return variables, private methods, and implicitly reachable methods mappings from the database.
-     * @param db
-     * @param varFactory
+     * @param db the database containing the method information
+     * @param varFactory the variable factory used to create variable instances from the database entries
      */
     public MethodFactory(DataBase db, VariableFactory varFactory) {
         db.query(Query.THIS_VAR).forEachRemaining(list -> {
@@ -61,6 +64,11 @@ public class MethodFactory extends ElementFactory<Method> {
         });
     }
 
+    /** 
+     * Creates a Method instance for the given method signature.
+     * @param sig the method signature
+     * @return a Method instance for the given method signature
+     */
     @Override
     protected Method createElement(String sig) {
         Variable thisVar = sig2this.get(sig);

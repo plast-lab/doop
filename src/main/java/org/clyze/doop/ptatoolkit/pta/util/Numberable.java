@@ -2,10 +2,15 @@ package org.clyze.doop.ptatoolkit.pta.util;
 
 
 /**
- * Every instance of this class has an unique ID number.
+ * Base type for entities identified by a unique numeric ID.
  */
 public abstract class Numberable {
 
+	/**
+	 * Returns the unique identifier of this object.
+	 *
+	 * @return the unique numeric identifier
+	 */
 	public abstract int getID();
 
 	@Override

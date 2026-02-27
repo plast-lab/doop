@@ -3,6 +3,7 @@ package org.clyze.doop.ptatoolkit.doop;
 /**
  * Queries for accessing Doop database
  */
+@SuppressWarnings("JavadocLink")
 public enum Query {
 
     // points-to set

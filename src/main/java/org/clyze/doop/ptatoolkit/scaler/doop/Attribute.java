@@ -1,5 +1,8 @@
 package org.clyze.doop.ptatoolkit.scaler.doop;
 
+/**
+ * Attribute keys used to attach analysis metadata to model elements.
+ */
 public final class Attribute {
 
     static final String PTS = "Points-to set";

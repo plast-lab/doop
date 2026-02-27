@@ -7,19 +7,40 @@ import org.clyze.doop.ptatoolkit.scaler.doop.DoopPointsToAnalysis;
 
 import java.util.*;
 
+/**
+ * Scaler+ variant of 2-type context counting with cached context sets.
+ */
 public class _2TypeContextComputer_ScalerPlus extends ContextComputer {
     private Set<Method> visited = null;
     private Map<Method, Set<List<Type>>> methodToContextMap = new HashMap<>();
 
+    /**
+     * Creates a Scaler+ 2-type context computer.
+     *
+     * @param pta the points-to analysis
+     * @param oag the object allocation graph
+     * @param worstCaseContextComputer fallback computer for static methods
+     */
     _2TypeContextComputer_ScalerPlus(DoopPointsToAnalysis pta, ObjectAllocationGraph oag, ContextComputer worstCaseContextComputer) {
         super(pta, oag, worstCaseContextComputer);
     }
 
+    /**
+     * Returns the strategy name.
+     *
+     * @return {@code "2-type"}
+     */
     @Override
     public String getAnalysisName() {
         return "2-type";
     }
 
+    /**
+     * Computes the context count for the method.
+     *
+     * @param method the method
+     * @return the context count
+     */
     @Override
     protected long computeContextNumberOf(Method method) {
         visited = new HashSet<>();
@@ -41,6 +62,12 @@ public class _2TypeContextComputer_ScalerPlus extends ContextComputer {
         return  totalContexts.size() > 0? totalContexts.size() : 1;
     }
 
+    /**
+     * Computes or retrieves concrete 2-type contexts for a method.
+     *
+     * @param method the method
+     * @return the set of type-context pairs
+     */
     private Set<List<Type>> getContexts(Method method) {
         Set<List<Type>> contexts = new HashSet<>();
 
