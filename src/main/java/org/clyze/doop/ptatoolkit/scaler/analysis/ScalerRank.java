@@ -214,8 +214,7 @@ public class ScalerRank {
 	}
 
 	private long getFactor(Method method, ContextComputer cc) {
-		return ((long) cc.contextNumberOf(method))
-				* ((long) getAccumulativePTSSizeOf(method));
+		return cc.contextNumberOf(method) * getAccumulativePTSSizeOf(method);
 	}
 
 	private long getTotalAccumulativePTS(Set<Method> methods,

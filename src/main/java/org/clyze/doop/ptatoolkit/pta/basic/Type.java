@@ -1,4 +1,6 @@
 package org.clyze.doop.ptatoolkit.pta.basic;
 
-public abstract class Type extends BasicElement {
-}
+/**
+ * Base class for type entities in the points-to model.
+ */
+public abstract class Type extends BasicElement {}

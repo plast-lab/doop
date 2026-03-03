@@ -11,29 +11,32 @@ public class DoopType extends Type {
 	private final int id;
 	
 	/**
-	 * Constructor for DoopType that initializes the type name and its unique identifier.	
-	 * @param typeName
-	 * @param id
+	 * Creates a Doop type descriptor.
+	 *
+	 * @param typeName the type name
+	 * @param id the unique type identifier
 	 */
 	public DoopType(String typeName, int id) {
 		this.typeName = typeName;
 		this.id = id;
 	}
 	
-	@Override
 	/**
-	 * Returns the name of the type.
-	 * @return the name of the type
+	 * Returns the unique type identifier.
+	 *
+	 * @return the unique identifier
 	 */
+	@Override
 	public int getID() {
 		return id;
 	}
 
-	@Override
 	/**
 	 * Returns the name of the type.
+	 *
 	 * @return the name of the type
 	 */
+	@Override
 	public String toString() {
 		return typeName;
 	}

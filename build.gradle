@@ -21,8 +21,12 @@ plugins {
     id 'groovy'
     id 'java-library'
     id 'maven-publish'
-    //see https://github.com/researchgate/gradle-release
-    id 'net.researchgate.release' version '3.1.0'
+}
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+    maven { url='https://jitpack.io' }
 }
 
 def requested = gradle.startParameter.taskNames
@@ -35,8 +39,8 @@ tasks.withType(Test).configureEach {
 }
 
 // Warning: -Xss is restricted in recent Java versions.
-def factGenXmx='12000m'
-def factGenStack='1000m'
+def factGenXmx = '12000m'
+def factGenStack = '1000m'
 def defaultFactGenJvmArgs = ["-DmaxHeapSize=${factGenXmx}", "-DstackSize=${factGenStack}"]
 
 // Should the fact generators be linked as normal Java libraries? By
@@ -89,7 +93,6 @@ application {
 
 group = "org.clyze"
 
-
 // Windows support flag.
 def onWindows = System.properties['os.name'].toLowerCase().contains('windows')
 
@@ -117,7 +120,7 @@ def codeProcessorProject = project(':generators:code-processor')
 }
 
 def frontendGeneratorProjects = allGeneratorProjects.findAll { it.name.contains('-fact-generator') }
-//all frontends have a fatJar task, which we explicitly (re)define it here, so we can reference it without issues in
+//all frontends have a fatJar task, which we explicitly (re)define here, so we can reference it without issues in
 //the publishing spec
 frontendGeneratorProjects.each { Project p ->
     p.with {
@@ -144,12 +147,6 @@ frontendGeneratorProjects.each { Project p ->
     }
 }
 
-repositories {
-    mavenLocal()
-    mavenCentral()
-    maven { url='https://jitpack.io' }
-}
-
 configurations {
     apktool {
         transitive = false
@@ -166,18 +163,6 @@ configurations.configureEach {
 compileGroovy {
     groovyOptions.optimizationOptions.indy = true
 }
-
-// Set dependency version so that they are available to subprojects.
-gradle.rootProject.ext.antlrVersion='4.13.2'
-gradle.rootProject.ext.commonsVersion='2.21.0'
-gradle.rootProject.ext.commonsCliVersion='1.11.0'
-gradle.rootProject.ext.metadataVersion='2.2.3'
-gradle.rootProject.ext.groovyVersion='5.0.4'
-gradle.rootProject.ext.commonsLoggingVersion='1.3.5'
-gradle.rootProject.ext.clueCommonVersion='3.26.3'
-gradle.rootProject.ext.log4jVersion='2.25.3'
-gradle.rootProject.ext.spockVersion='2.4-groovy-5.0'
-def heapDLVersion = "1.1.21"
 
 dependencies {
     apktool files('local-dependencies/apktool-cli-2.4.2.jar')   // needed for decoding APK inputs
@@ -226,6 +211,10 @@ else {
 
 String doopCP() {
     return String.join(":", sourceSets.main.runtimeClasspath.collect { it.toString() })
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs += ['-Xlint:all']
 }
 
 def gitHashFile = layout.projectDirectory.file("${resourcesDir}/git-hash.txt")
@@ -361,11 +350,7 @@ tasks.register('resolveApktool') {
     }
 }
 
-compileJava {
-    options.compilerArgs << '-Xlint:unchecked'
-}
-
- test {
+test {
     useJUnitPlatform()
     // failFast = true
     maxParallelForks = 1
@@ -495,7 +480,6 @@ tasks.withType(PublishToMavenLocal).configureEach {
  publishing {
      publications {
          mavenJava(MavenPublication) {
-             //from components.java
              artifact(tasks.named("sourcesJar"))
              artifact(tasks.named("javadocJar"))
 
@@ -530,85 +514,6 @@ tasks.withType(PublishToMavenLocal).configureEach {
              }
          }
  }
-
-
-// if (project.hasProperty('artifactory_user')) {
-
-//     // Generate a jar with all the logic files
-//     tasks.register('logicFilesJar', Jar) {
-//         into('souffle-logic') { from "souffle-logic" }
-//     }
-
-
-
-//         repositories {
-//             maven {
-//                 credentials {
-//                     username artifactory_user
-//                     password artifactory_password
-//                 }
-//                 url "$artifactory_contextUrl/libs-public-release-local"
-//                 allowInsecureProtocol true
-//             }
-//         }
-//     }
-
-//     publishing {
-//         publications {
-//             mavenJava(MavenPublication) {
-//                 from components.java
-//                 artifact tasks.sourcesJar
-//                 artifact tasks.javadocJar
-
-//                 artifact logicFilesJar {
-//                     archiveClassifier.set( "logic-files")
-//                 }
-//             }
-
-//             // Publish fact-generator-common and code-processor.
-//             [[project(':generators:fact-generator-common'), "fact-generator-common-${version}-all.jar"],
-// 	         [codeProcessorProject, "code-processor-${version}.jar"]]
-//             .forEach { List l ->
-//                 Project p = l[0]
-//                 create(p.name, MavenPublication) {
-//                     // The artifact generator can be a file or a Gradle task
-//                     def artifactGenerator = p.file('build/libs/' + l[1])
-//                     artifact(artifactGenerator) {
-//                         groupId 'org.clyze'
-//                         artifactId p.name
-//                     }
-//                 }
-//             }
-//         }
-
-//         repositories {
-//             maven {
-//                 credentials {
-//                     username artifactory_user
-//                     password artifactory_password
-//                 }
-//                 url "$artifactory_contextUrl/libs-public-release-local"
-//                 allowInsecureProtocol true
-//             }
-//         }
-//     }
-
-//     release {
-//         failOnSnapshotDependencies = false
-
-//         git {
-//            commitVersionFileOnly = true
-//         }
-//     }
-
-//     afterReleaseBuild.dependsOn publish
-
-//     tasks.release.doLast {
-//         println "WARNING: Tag may not be pushed upstream, please use:"
-//         println "WARNING:   git remote add upstream <UPSTREAM_REPO>"
-//         println "WARNING:   git push upstream <TAG>"
-//     }
-// }
 
 /* Handy for debugging task dependencies
 gradle.taskGraph.whenReady {taskGraph ->

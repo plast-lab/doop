@@ -61,41 +61,6 @@ class SoufflePythonAnalysis extends SouffleAnalysis {
     @Override
     void mainAnalysis(File analysis) {
         cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/python/analyses/${name}/analysis.dl")
-//        def commonMacros = "${Doop.souffleLogicPath}/commonMacros.dl"
-//        def mainPath = "${Doop.souffleLogicPath}/main"
-//        def analysisPath = "${Doop.souffleAnalysesPath}/${name}"
-//
-//        cpp.includeAtEndIfExists("$analysis", "${analysisPath}/declarations.dl")
-//        cpp.includeAtEndIfExists("$analysis", "${analysisPath}/delta.dl", commonMacros)
-//        cpp.includeAtEnd("$analysis", "${analysisPath}/analysis.dl", commonMacros)
-//
-//
-//        if (options.INFORMATION_FLOW.value) {
-//            def infoFlowPath = "${Doop.souffleAddonsPath}/information-flow"
-//            cpp.includeAtEnd("$analysis", "${infoFlowPath}/declarations.dl")
-//            cpp.includeAtEnd("$analysis", "${infoFlowPath}/delta.dl")
-//            cpp.includeAtEnd("$analysis", "${infoFlowPath}/rules.dl")
-//            cpp.includeAtEnd("$analysis", "${infoFlowPath}/${options.INFORMATION_FLOW.value}${INFORMATION_FLOW_SUFFIX}.dl")
-//        }
-//
-//
-//        if (options.SANITY.value)
-//            cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/sanity.dl")
-//
-//        if (!options.FACTS_ONLY.value && options.X_SERVER_LOGIC.value) {
-//            cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/server-logic/queries.dl")
-//        }
-//
-//        if (options.EXTRA_LOGIC.value) {
-//            File extraLogic = new File(options.EXTRA_LOGIC.value as String)
-//            if (extraLogic.exists()) {
-//                String extraLogicPath = extraLogic.canonicalPath
-//                log.info "Adding extra logic file ${extraLogicPath}"
-//                cpp.includeAtEnd("${analysis}", extraLogicPath)
-//            } else {
-//                log.warn "Extra logic file does not exist: ${extraLogic}"
-//            }
-//        }
     }
 
     @Override
@@ -105,9 +70,6 @@ class SoufflePythonAnalysis extends SouffleAnalysis {
         if (options.X_STATS_NONE.value) return
 
         cpp.includeAtEnd("$analysis", "${statsPath}/statistics-simple.dl")
-//        if (options.X_STATS_FULL.value || options.X_STATS_DEFAULT.value) {
-//            cpp.includeAtEnd("$analysis", "${statsPath}/statistics.dl")
-//        }
     }
 
     @Override

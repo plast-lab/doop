@@ -6,8 +6,6 @@ if ((gradle.parent == null) && hasProperty("use_composite_builds") && use_compos
 			.findAll { file(it).exists() }.each { includeBuild(it) }
 }
 
-
-
 include 'generators:fact-generator-common'
 include 'generators:soot-fact-generator'
 include 'generators:wala-fact-generator'

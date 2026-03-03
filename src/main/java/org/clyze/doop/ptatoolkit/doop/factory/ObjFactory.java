@@ -9,6 +9,9 @@ import org.clyze.doop.ptatoolkit.pta.basic.Type;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Factory class for creating Obj instances based on the information stored in the database. This factory retrieves object information such as type from the database and constructs Obj objects accordingly.
+ */
 public class ObjFactory extends ElementFactory<Obj> {
 
 	private static final String CLASS_TYPE = "java.lang.Class";

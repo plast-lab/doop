@@ -6,6 +6,9 @@ import org.clyze.doop.ptatoolkit.pta.basic.Method;
 import org.clyze.doop.ptatoolkit.pta.basic.Obj;
 import java.util.*;
 
+/**
+ * A class representing the object allocation graph, which is a directed graph where nodes represent abstract objects and edges represent the allocation relationships between objects. In this graph, there is an edge from object A to object B if object A can allocate object B during the execution of the program. The object allocation graph is used in points-to analysis to understand how objects are allocated and how they relate to each other in terms of memory usage and method invocations.
+ */
 public class ObjectAllocationGraph implements DirectedGraph<Obj> {
 
     private static final String PREDS = "Predecessors";

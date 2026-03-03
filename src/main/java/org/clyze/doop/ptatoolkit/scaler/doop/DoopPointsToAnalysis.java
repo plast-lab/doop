@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 
 import static org.clyze.doop.ptatoolkit.scaler.doop.Attribute.*;
 
-public class DoopPointsToAnalysis implements PointsToAnalysis {
+public final class DoopPointsToAnalysis implements PointsToAnalysis {
 
     private final DataBase db;
     private Set<Obj> allObjs;
@@ -243,19 +243,20 @@ public class DoopPointsToAnalysis implements PointsToAnalysis {
      * Map each object to the methods invoked on it.
      */
     private void buildMethodsInvokedOnObjects(MethodFactory mtdFactory) {
-        mtdFactory.getAllElements()
-                .stream()
-                .filter(Method::isInstance)
-                .map(m -> (InstanceMethod) m)
-                .forEach(instMtd -> {
-                    Variable thisVar = instMtd.getThis();
-                    if (pointsToSetOf(thisVar).isEmpty()) {
-                        System.out.println("ERROR_- EMPTY RECEIVER this: " + thisVar);
-                    }
-                    pointsToSetOf(thisVar).forEach(obj -> {
-                        obj.addToAttributeSet(MTD_ON, instMtd);
-                    });
-                });
+        for (Method method : mtdFactory.getAllElements()) {
+            if (!method.isInstance()) {
+                continue;
+            }
+            InstanceMethod instMtd = (InstanceMethod) method;
+            Variable thisVar = instMtd.getThis();
+            Set<Obj> pointsToSet = pointsToSetOf(thisVar);
+            if (pointsToSet.isEmpty()) {
+                System.out.println("ERROR_- EMPTY RECEIVER this: " + thisVar);
+            }
+            for (Obj obj : pointsToSet) {
+                obj.addToAttributeSet(MTD_ON, instMtd);
+            }
+        }
     }
 
     /**

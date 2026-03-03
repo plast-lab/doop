@@ -91,13 +91,7 @@ public class Scaler {
         reachableMethods = pta.reachableMethods();
         System.out.println("Total Reachable Methods: " + reachableMethods.size());
         // From the most precise analysis to the least precise analysis
-
-//        ContextComputer _2ObjectContextComputer = new _2ObjectContextComputer_ScalerPlus(pta, oag);
-//        ctxComputers = new ContextComputer[] {
-//                _2ObjectContextComputer,
-//                new _2TypeContextComputer_ScalerPlus(pta, oag, _2ObjectContextComputer),
-//                new _1TypeContextComputer_ScalerPlus(pta, oag, _2ObjectContextComputer),
-//        };
+        
         ContextComputer _2ObjectContextComputer = new _2ObjectContextComputer_Scaler(pta, oag);
         ctxComputers = new ContextComputer[] {
                 _2ObjectContextComputer,

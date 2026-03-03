@@ -215,7 +215,7 @@ class FactGenerator0 {
      * Initialize all output fact files.
      */
     void touch() {
-        PredicateFile0.values().each {
+        values().each {
             FileUtils.touch(factsFile(it.name))
         }
     }
