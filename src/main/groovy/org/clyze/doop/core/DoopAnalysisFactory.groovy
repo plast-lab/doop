@@ -79,6 +79,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		def platformName = options.PLATFORM.value as String
 
 		List<String> inputs = options.INPUTS.value as List<String>
+		List<String> libraries = options.LIBRARIES.value as List<String>
 	
 		inputs.findAll { s -> (s.contains("github.com") && s.contains("/blob/")) || s.contains("raw.githubusercontent.com") }.each { url ->
         	log.warn "WARNING: Input ${url} is a GitHub URL. Make sure you provided the RAW file URL, not the GitHub page."
@@ -91,18 +92,17 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			String ANDROID_PLATFORM_PREFIX = "android_"
 			if (inputs.any {it.endsWith(".apk")} && !platformName.startsWith(ANDROID_PLATFORM_PREFIX)) {
 				Collection<String> androidPlatforms = options.PLATFORM.validValues.findAll { it.startsWith(ANDROID_PLATFORM_PREFIX) }
-				String errorMsg = "Platform '${platformName}' may not be suitable for analysis inputs: ${inputs}. Available Android platforms: ${androidPlatforms}"
+				String errorMsg = "ERROR: Platform '${platformName}' is not suitable for analysis inputs: ${inputs}. Available Android platforms: ${androidPlatforms}"
 				throw DoopErrorCodeException.error14(errorMsg)
 			}
 			context = newJavaDefaultInputResolutionContext()
 		}
 		context.add(inputs, InputType.INPUT)
 
-		options.LIBRARIES.value.findAll { s -> (s.contains("github.com") && s.contains("/blob/")) || s.contains("raw.githubusercontent.com") }.each { url ->
+		libraries.findAll { s -> (s.contains("github.com") && s.contains("/blob/")) || s.contains("raw.githubusercontent.com") }.each { url ->
         	log.warn "WARNING: Library ${url} is a GitHub URL. Make sure you provided the RAW file URL, not the GitHub page."
 		}
-
-		context.add(options.LIBRARIES.value as List<String>, InputType.LIBRARY)
+		context.add(libraries, InputType.LIBRARY)
 
 		// Detect the platform files (using a combination of DOOP_PLATFORMS_LIB/ANDROID_SDK
 		// environment variables and the artifactory).
@@ -596,8 +596,8 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 					.findAll { it.name.toLowerCase().endsWith(".jar") }
 					.each { File jarPath ->
 							String main = null
+							JarFile jarFile = new JarFile(jarPath)
 							try { 
-								JarFile jarFile = new JarFile(jarPath)
 								//Try to read the main class from the manifest contained in the jar
 								main = jarFile.manifest?.mainAttributes?.getValue(Attributes.Name.MAIN_CLASS) as String
 							}
