@@ -402,8 +402,9 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		} catch (Exception ex) {
 			throw DoopErrorCodeException.error29("Could not process platform ${platformName}, valid platforms are: ${availablePlatforms}")
 		}
-
+		
 		if (options.DACAPO.value || options.DACAPO_BACH.value) {
+			log.info "${options.DACAPO.value ? "dacapo" : "dacapo-bach"} option enabled, setting up the analysis for running a dacapo benchmark."
 			if (!options.INPUT_ID.value) {
 				def libraryPaths = context.libraries()
 				def inputJarName = context.inputs().first()

@@ -183,7 +183,7 @@ class Doop {
 	 */
 	static void overrideOptionsWithCLI(Map<String, AnalysisOption<?>> options, OptionAccessor cli,
 									   Predicate<AnalysisOption> filter) {
-		options.values().each { AnalysisOption<?> option ->
+		options.values().each { AnalysisOption option ->
 			def name = option.name
 			if (name) {
 				log.debug "Processing $name"
@@ -205,8 +205,7 @@ class Doop {
 						// If the cl option has no argument and it's a boolean flag which
 						// is now set to true (all boolean options are false by default)
 						else {
-							if (option instanceof BooleanAnalysisOption)
-								option.value = true
+							option.value = true
 						}
 					}
 				}
