@@ -285,7 +285,8 @@ mainAnalysis.VarPointsTo(?hctx, ?mockBeanObject, ?ctx, ?param) :-
 .decl BeanMethod(?method:Method)
 
 BeanMethod(?method) :-
-  Method_Annotation(?method, "org.springframework.context.annotation.Bean").
+  (Method_Annotation(?method, "org.springframework.context.annotation.Bean");
+   Method_Annotation(?method, "javax.enterprise.inject.Produces")).
 
 .decl BeanMethod_Id(?method:Method, ?beanId:symbol)
 
@@ -362,12 +363,16 @@ EntryPointClass(?type) :-
    Type_Annotation(?type, "org.springframework.web.bind.annotation.RestController");
    Type_Annotation(?type, "org.springframework.web.bind.annotation.ControllerAdvice");
    Type_Annotation(?type, "org.springframework.web.bind.annotation.RestControllerAdvice");
-   Type_Annotation(?type, "org.aspectj.lang.annotation");
+   Type_Annotation(?type, "org.aspectj.lang.annotation.Aspect");
    Type_Annotation(?type, "org.springframework.boot.autoconfigure.SpringBootApplication");
    Type_Annotation(?type, "org.springframework.boot.autoconfigure.EnableAutoConfiguration");
    Type_Annotation(?type, "org.springframework.context.annotation.Configuration");
    Type_Annotation(?type, "javax.persistence.Entity");
    Type_Annotation(?type, "javax.ws.rs.Path");
+   Type_Annotation(?type, "javax.servlet.annotation.WebServlet");
+   Type_Annotation(?type, "javax.servlet.annotation.WebFilter");
+   Type_Annotation(?type, "javax.servlet.annotation.WebListener");
+   Type_Annotation(?type, "javax.ejb.MessageDriven");
    AuthenticationProviderBean(?type);
    AuthenticationFilterBean(?type);
    AuthenticationEntryPoint(?type);
@@ -395,8 +400,13 @@ MockObject(?mockObj, ?type) :-
    Type_Annotation(?type, "org.springframework.boot.autoconfigure.EnableAutoConfiguration");
    Type_Annotation(?type, "org.springframework.context.annotation.ComponentScan");
    Type_Annotation(?type, "org.springframework.context.annotation.Configuration");
+   Type_Annotation(?type, "org.aspectj.lang.annotation.Aspect");
    Type_Annotation(?type, "javax.persistence.Entity");
-   Type_Annotation(?type, "javax.ws.rs.Path")),
+   Type_Annotation(?type, "javax.ws.rs.Path");
+   Type_Annotation(?type, "javax.servlet.annotation.WebServlet");
+   Type_Annotation(?type, "javax.servlet.annotation.WebFilter");
+   Type_Annotation(?type, "javax.servlet.annotation.WebListener");
+   Type_Annotation(?type, "javax.ejb.MessageDriven")),
   ?mockObj = MOCK_OBJECT_OF_TYPE(?type).
 
 // Predicate-driven MockObjects: each disjunct's defining rules already constrain
@@ -509,6 +519,13 @@ ExercisedEntryPointMethod(?class, ?method) :-
   ApplicationClass(?class),
   Method_DeclaringType(?method, ?class),
   (Method_Annotation(?method, "org.springframework.context.annotation.Bean");
+   Method_Annotation(?method, "javax.enterprise.inject.Produces");
+   Method_Annotation(?method, "org.aspectj.lang.annotation.Before");
+   Method_Annotation(?method, "org.aspectj.lang.annotation.After");
+   Method_Annotation(?method, "org.aspectj.lang.annotation.Around");
+   Method_Annotation(?method, "org.aspectj.lang.annotation.AfterReturning");
+   Method_Annotation(?method, "org.aspectj.lang.annotation.AfterThrowing");
+   Method_Annotation(?method, "org.aspectj.lang.annotation.Pointcut");
    Method_Annotation(?method, "org.springframework.web.bind.annotation.RequestMapping");
    Method_Annotation(?method, "org.springframework.web.bind.annotation.GetMapping");
    Method_Annotation(?method, "org.springframework.web.bind.annotation.PostMapping");
@@ -532,6 +549,13 @@ ExercisedEntryPointMethod(?class, ?method) :-
    Method_Annotation(?method, "javax.ws.rs.DELETE");
    Method_Annotation(?method, "javax.ws.rs.PATH")).
 
+// CDI event listeners: a method is invoked when any of its parameters carries
+// @Observes and an event of matching type is published.
+ExercisedEntryPointMethod(?class, ?method) :-
+  ApplicationClass(?class),
+  Method_DeclaringType(?method, ?class),
+  Param_Annotation(?method, _, "javax.enterprise.event.Observes").
+
 ExercisedEntryPointMethod(?class, ?method) :-
   (XMLNodeAttribute(?XMLFile, ?nodeId, _, "init-method", "init-method", ?simpleName);
    XMLNodeAttribute(?XMLFile, ?nodeId, _, "destroy-method", "destroy-method", ?simpleName)),
@@ -547,6 +571,27 @@ ExercisedEntryPointMethod(?class, ?method) :-
 ExercisedEntryPointMethod(?class, ?method) :-
   Method_DeclaringType(?method, ?class),
   ?class = "com.icegreen.greenmail.util.GreenMail".
+
+// Java serialization callbacks: reflectively invoked by the JVM's serialization
+// machinery on classes implementing Serializable / Externalizable. Restricted
+// to ApplicationClass because essentially every JDK and framework value type
+// extends Serializable, and we don't want their callbacks as entry points.
+ExercisedEntryPointMethod(?class, ?method) :-
+  ApplicationClass(?class),
+  basic.SubtypeOf(?class, "java.io.Serializable"),
+  Method_DeclaringType(?method, ?class),
+  (Method_SimpleName(?method, "readObject");
+   Method_SimpleName(?method, "writeObject");
+   Method_SimpleName(?method, "readObjectNoData");
+   Method_SimpleName(?method, "readResolve");
+   Method_SimpleName(?method, "writeReplace")).
+
+ExercisedEntryPointMethod(?class, ?method) :-
+  ApplicationClass(?class),
+  basic.SubtypeOf(?class, "java.io.Externalizable"),
+  Method_DeclaringType(?method, ?class),
+  (Method_SimpleName(?method, "readExternal");
+   Method_SimpleName(?method, "writeExternal")).
 
 mainAnalysis.VarPointsTo(?immHctx, ?beanMockObject, ?ctx, ?return) :-
   DependencyInjectedMethod(?method),
