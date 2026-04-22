@@ -44,7 +44,6 @@
     Var_DeclaringMethod(?var, ?method).
   
   // 2-object
-  TwoObjectMethod(?tomethod),
   ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, ?calleeCtx) :-
     ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, _),
     ?hctx = [?hctxValue1, ?hctxValue2],
@@ -53,7 +52,6 @@
     ?hctxValue1 = ?hctxValue1.
 
   // 3-object
-  ThreeObjectMethod(?tomethod),
   ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, ?calleeCtx) :-
     ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?tomethod, _),
     ?hctx = [?hctxValue1, ?hctxValue2],

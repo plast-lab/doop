@@ -96,7 +96,7 @@ InjectionAnnotatedField(?injectedField) :-
    Field_Annotation(?injectedField, "javax.inject.EJB")).
 
 // Mock dependency injection through autowired fields for all objects with fields annotated with
-// @Autowired or @Inject, using the filed name (Precise version)
+// @Autowired or @Inject, using the field name (Precise version)
 mainAnalysis.InstanceFieldPointsTo(?hctx, ?mockBeanObject, ?injectedField, ?basehctx, ?basevalue) :-
   mainAnalysis.Value_Type(?basevalue, ?decltype),
   Field_DeclaringType(?injectedField, ?decltype),
@@ -166,6 +166,191 @@ mainAnalysis.InstanceFieldPointsTo(?hctx, ?mockBeanObject, ?injectedField, ?base
   mainAnalysis.isImmutableHContext(?basehctx),
   mainAnalysis.isImmutableHContext(?hctx).
 
+/**
+ * Method-level dependency injection: constructor and setter injection via
+ * @Autowired / @Inject / @Resource. Unlike field injection, the mock bean
+ * must flow into VarPointsTo for the formal parameter, not InstanceFieldPointsTo.
+ *
+ * Each pattern has a precise rule (bean id matches the parameter's simple name)
+ * and a subtype fallback, mirroring the field-level rules above.
+ **/
+
+.decl InjectionAnnotatedMethod(?method:Method)
+
+InjectionAnnotatedMethod(?method) :-
+  (Method_Annotation(?method, "org.springframework.beans.factory.annotation.Autowired");
+   Method_Annotation(?method, "javax.inject.Inject");
+   Method_Annotation(?method, "javax.inject.EJB")).
+
+.decl ResourceAnnotatedMethod(?method:Method)
+
+ResourceAnnotatedMethod(?method) :-
+  Method_Annotation(?method, "javax.annotation.Resource").
+
+// Setter-style DI methods become entry points so their formal params flow.
+// Constructors of Spring-managed classes are already entry points via the
+// MockObject -> <init> rule below.
+ExercisedEntryPointMethod(?class, ?method) :-
+  (InjectionAnnotatedMethod(?method);
+   ResourceAnnotatedMethod(?method)),
+  Method_DeclaringType(?method, ?class),
+  ApplicationClass(?class).
+
+// A DI-receiving constructor is either explicitly @Autowired/@Inject, or is
+// the ctor of a Spring-managed class (has a MockObject) -- covering the
+// idiomatic Spring 4.3+ implicit-injection pattern.
+.decl DIConstructor(?method:Method)
+
+DIConstructor(?method) :-
+  Method_SimpleName(?method, "<init>"),
+  Method_DeclaringType(?method, ?class),
+  MockObject(_, ?class).
+
+DIConstructor(?method) :-
+  InjectionAnnotatedMethod(?method),
+  Method_SimpleName(?method, "<init>").
+
+.decl DIMethod(?method:Method)
+
+DIMethod(?method) :-
+  (DIConstructor(?method);
+   InjectionAnnotatedMethod(?method)),
+  !ResourceAnnotatedMethod(?method).
+
+// Precise: bind the bean whose id matches the parameter's simple name,
+// provided the bean type is assignable to the parameter type.
+mainAnalysis.VarPointsTo(?hctx, ?mockBeanObject, ?ctx, ?param) :-
+  DIMethod(?method),
+  FormalParam(_, ?method, ?param),
+  Var_SimpleName(?param, ?paramName),
+  Var_Type(?param, ?paramType),
+  ConcreteBean_Id(?beanType, ?paramName),
+  (basic.SubtypeOf(?beanType, ?paramType);
+   ?beanType = ?paramType),
+  MockObject(?mockBeanObject, ?beanType),
+  mainAnalysis.isImmutableHContext(?hctx),
+  mainAnalysis.isImmutableContext(?ctx).
+
+// Fallback: when no bean matches the parameter name, bind any mock bean
+// whose type is a subtype of the parameter type.
+mainAnalysis.VarPointsTo(?hctx, ?mockBeanObject, ?ctx, ?param) :-
+  DIMethod(?method),
+  FormalParam(_, ?method, ?param),
+  Var_SimpleName(?param, ?paramName),
+  !ConcreteBean_Id(_, ?paramName),
+  Var_Type(?param, ?paramType),
+  (basic.SubtypeOf(?beanType, ?paramType);
+   ?beanType = ?paramType),
+  MockObject(?mockBeanObject, ?beanType),
+  mainAnalysis.isImmutableHContext(?hctx),
+  mainAnalysis.isImmutableContext(?ctx).
+
+// Precise @Resource on ctor/setter: match the parameter's simple name to a
+// BeanResource entry (also supports Collection-typed injection).
+mainAnalysis.VarPointsTo(?hctx, ?mockResourceValue, ?ctx, ?param) :-
+  ResourceAnnotatedMethod(?method),
+  FormalParam(_, ?method, ?param),
+  Var_SimpleName(?param, ?paramName),
+  Var_Type(?param, ?paramType),
+  BeanResource(?paramName, ?resourceClass, ?mockResourceValue),
+  basic.SubtypeOf(?resourceClass, ?paramType),
+  mainAnalysis.isImmutableHContext(?hctx),
+  mainAnalysis.isImmutableContext(?ctx).
+
+// Fallback @Resource on ctor/setter: subtype match when no BeanResource is
+// registered for the parameter's simple name.
+mainAnalysis.VarPointsTo(?hctx, ?mockBeanObject, ?ctx, ?param) :-
+  ResourceAnnotatedMethod(?method),
+  FormalParam(_, ?method, ?param),
+  Var_SimpleName(?param, ?paramName),
+  !BeanResource(?paramName, _, _),
+  Var_Type(?param, ?paramType),
+  basic.SubtypeOf(?resourceClass, ?paramType),
+  MockObject(?mockBeanObject, ?resourceClass),
+  mainAnalysis.isImmutableHContext(?hctx),
+  mainAnalysis.isImmutableContext(?ctx).
+
+/**
+ * Java-based bean configuration: @Bean methods in @Configuration (or @Component)
+ * classes. Each @Bean method is invoked by Spring; its return value is registered
+ * as a bean and becomes discoverable via @Autowired resolution. The bean id is
+ * the method's simple name, or the @Bean(name=...) / @Bean(value=...) override.
+ *
+ * The method's formal parameters are DI targets (extending step's DIMethod).
+ * For return-value modelling, we mock the concrete type(s) assignable to the
+ * declared return type, register each under the bean id, and bind the mock to
+ * the method's return variable.
+ **/
+
+.decl BeanMethod(?method:Method)
+
+BeanMethod(?method) :-
+  Method_Annotation(?method, "org.springframework.context.annotation.Bean").
+
+.decl BeanMethod_Id(?method:Method, ?beanId:symbol)
+
+// @Bean(name="...") or @Bean(value="...") explicit override.
+BeanMethod_Id(?method, ?beanId) :-
+  BeanMethod(?method),
+  (AnnotationElement("method", ?method, "0", "0.0", "name",  ?beanId, _);
+   AnnotationElement("method", ?method, "0", "0.0", "value", ?beanId, _)).
+
+// Default: the method's simple name, when no override is present.
+BeanMethod_Id(?method, ?methodName) :-
+  BeanMethod(?method),
+  Method_SimpleName(?method, ?methodName),
+  !AnnotationElement("method", ?method, "0", "0.0", "name",  _, _),
+  !AnnotationElement("method", ?method, "0", "0.0", "value", _, _).
+
+// Concrete class return: mock the declared type directly.
+mainAnalysis_MockValueConsMacro(?mockObj, ?returnType),
+MockObject(?mockObj, ?returnType),
+ConcreteBean_Id(?returnType, ?beanId) :-
+  BeanMethod_Id(?method, ?beanId),
+  Method_ReturnType(?method, ?returnType),
+  isClassType(?returnType),
+  !ClassModifier("abstract", ?returnType),
+  ?mockObj = MOCK_OBJECT_OF_TYPE(?returnType).
+
+// Abstract class / interface return: mock each application concrete impl.
+mainAnalysis_MockValueConsMacro(?mockObj, ?concreteType),
+MockObject(?mockObj, ?concreteType),
+ConcreteBean_Id(?concreteType, ?beanId) :-
+  BeanMethod_Id(?method, ?beanId),
+  Method_ReturnType(?method, ?returnType),
+  (isInterfaceType(?returnType);
+   (isClassType(?returnType), ClassModifier("abstract", ?returnType))),
+  mainAnalysis.AllApplicationConcreteImplementations(?concreteType, ?returnType),
+  ?mockObj = MOCK_OBJECT_OF_TYPE(?concreteType).
+
+// Fallback: no application concrete impl exists (pure framework interface),
+// use a representative non-application concrete impl.
+mainAnalysis_MockValueConsMacro(?mockObj, ?concreteType),
+MockObject(?mockObj, ?concreteType),
+ConcreteBean_Id(?concreteType, ?beanId) :-
+  BeanMethod_Id(?method, ?beanId),
+  Method_ReturnType(?method, ?returnType),
+  AbstractOrInterfaceTypeHasNoApplicationConcreteImplementations(?returnType),
+  NonApplicationConcreteImplementationRepresentative(?concreteType, ?returnType),
+  ?mockObj = MOCK_OBJECT_OF_TYPE(?concreteType).
+
+// Flow the bean mock into the @Bean method's return variable. Keyed on
+// BeanMethod_Id so @Bean(name=...) overrides are honoured (the existing
+// DependencyInjectedMethod return-value rule further below would only cover
+// the default-id case, since it keys on Method_SimpleName).
+mainAnalysis.VarPointsTo(?immHctx, ?beanMockObject, ?ctx, ?return) :-
+  BeanMethod_Id(?method, ?beanId),
+  mainAnalysis.ReachableContext(?ctx, ?method),
+  ReturnVar(?return, ?method),
+  ConcreteBean_Id(?beanClass, ?beanId),
+  MockObject(?beanMockObject, ?beanClass),
+  mainAnalysis.isImmutableHContext(?immHctx).
+
+// @Bean method parameters are DI-injected by Spring, same as ctor/setter.
+DIMethod(?method) :-
+  BeanMethod(?method),
+  !ResourceAnnotatedMethod(?method).
+
 /** This is our core rule for mock object creation and handling of entry points **/
 
 .decl EntryPointClass(?type: Type)
@@ -176,8 +361,9 @@ EntryPointClass(?type) :-
    Type_Annotation(?type, "org.springframework.web.bind.annotation.RequestMapping");
    Type_Annotation(?type, "org.springframework.web.bind.annotation.RestController");
    Type_Annotation(?type, "org.springframework.web.bind.annotation.ControllerAdvice");
+   Type_Annotation(?type, "org.springframework.web.bind.annotation.RestControllerAdvice");
    Type_Annotation(?type, "org.aspectj.lang.annotation");
-   Type_Annotation(?type, "org.springframework.stereotype.Controller");
+   Type_Annotation(?type, "org.springframework.boot.autoconfigure.SpringBootApplication");
    Type_Annotation(?type, "org.springframework.boot.autoconfigure.EnableAutoConfiguration");
    Type_Annotation(?type, "org.springframework.context.annotation.Configuration");
    Type_Annotation(?type, "javax.persistence.Entity");
@@ -191,23 +377,34 @@ EntryPointClass(?type) :-
    match(".*_jsp", ?type);
    PossibleEntryPointClass(?type)).
 
+// Annotation-driven MockObjects: require the type to be an application concrete type
+// so that framework library classes merely carrying these annotations are not mocked.
 mainAnalysis_MockValueConsMacro(?mockObj, ?type),
 MockObject(?mockObj, ?type) :-
   isClassType(?type),
-  ((mainAnalysis.ApplicationConcreteType(?type),
-   Type_Annotation(?type, "org.springframework.web.bind.annotation.RequestMapping");
+  mainAnalysis.ApplicationConcreteType(?type),
+  (Type_Annotation(?type, "org.springframework.web.bind.annotation.RequestMapping");
    Type_Annotation(?type, "org.springframework.web.bind.annotation.RestController");
    Type_Annotation(?type, "org.springframework.web.bind.annotation.ControllerAdvice");
+   Type_Annotation(?type, "org.springframework.web.bind.annotation.RestControllerAdvice");
    Type_Annotation(?type, "org.springframework.stereotype.Component");
    Type_Annotation(?type, "org.springframework.stereotype.Service");
    Type_Annotation(?type, "org.springframework.stereotype.Repository");
    Type_Annotation(?type, "org.springframework.stereotype.Controller");
+   Type_Annotation(?type, "org.springframework.boot.autoconfigure.SpringBootApplication");
    Type_Annotation(?type, "org.springframework.boot.autoconfigure.EnableAutoConfiguration");
    Type_Annotation(?type, "org.springframework.context.annotation.ComponentScan");
    Type_Annotation(?type, "org.springframework.context.annotation.Configuration");
    Type_Annotation(?type, "javax.persistence.Entity");
-   Type_Annotation(?type, "javax.ws.rs.Path"));
-   isConcreteBean(?type);
+   Type_Annotation(?type, "javax.ws.rs.Path")),
+  ?mockObj = MOCK_OBJECT_OF_TYPE(?type).
+
+// Predicate-driven MockObjects: each disjunct's defining rules already constrain
+// the type appropriately (e.g., AuthenticationEntryPoint requires ApplicationConcreteType).
+mainAnalysis_MockValueConsMacro(?mockObj, ?type),
+MockObject(?mockObj, ?type) :-
+  isClassType(?type),
+  (isConcreteBean(?type);
    AuthenticationProviderBean(?type);
    AuthenticationFilterBean(?type);
    AuthenticationEntryPoint(?type);
@@ -215,7 +412,7 @@ MockObject(?mockObj, ?type) :-
    MVCInterceptorBean(?type);
    Validator(?type);
    PossibleEntryPointClass(?type)),
-   ?mockObj = MOCK_OBJECT_OF_TYPE(?type).
+  ?mockObj = MOCK_OBJECT_OF_TYPE(?type).
 
 .decl isSpringApplication(?value:number)
 
@@ -294,10 +491,10 @@ SerializableEntryPointMethod(?method) :-
 
 DependencyInjectedMethod(?method) :-
   Method_Annotation(?method, ?annotation),
-  (match("org.aspectj.lang.annotation.*", ?annotation);
-   match("javax.persistence.*", ?annotation);
-   match("javax.annotation.*", ?annotation);
-   match("javax.inject.*", ?annotation)).
+  (match("org[.]aspectj[.]lang[.]annotation[.].*", ?annotation);
+   match("javax[.]persistence[.].*", ?annotation);
+   match("javax[.]annotation[.].*", ?annotation);
+   match("javax[.]inject[.].*", ?annotation)).
 
 DependencyInjectedMethod(?method),
 ExercisedEntryPointMethod(?class, ?method) :-
@@ -305,11 +502,29 @@ ExercisedEntryPointMethod(?class, ?method) :-
    Method_DeclaringType(?method, ?class),
    DependencyInjectedMethod(?method).
 
-//JAX-RS API implementations
+// Framework-invoked methods: JAX-RS, Spring MVC mappings, lifecycle/event/async
+// callbacks, exception handlers, and message-driven listeners. PostConstruct/PreDestroy
+// are already caught via the javax.annotation.* match in DependencyInjectedMethod above.
 ExercisedEntryPointMethod(?class, ?method) :-
   ApplicationClass(?class),
   Method_DeclaringType(?method, ?class),
-  (Method_Annotation(?method, "org.springframework.web.bind.annotation.RequestMapping");
+  (Method_Annotation(?method, "org.springframework.context.annotation.Bean");
+   Method_Annotation(?method, "org.springframework.web.bind.annotation.RequestMapping");
+   Method_Annotation(?method, "org.springframework.web.bind.annotation.GetMapping");
+   Method_Annotation(?method, "org.springframework.web.bind.annotation.PostMapping");
+   Method_Annotation(?method, "org.springframework.web.bind.annotation.PutMapping");
+   Method_Annotation(?method, "org.springframework.web.bind.annotation.DeleteMapping");
+   Method_Annotation(?method, "org.springframework.web.bind.annotation.PatchMapping");
+   Method_Annotation(?method, "org.springframework.web.bind.annotation.ExceptionHandler");
+   Method_Annotation(?method, "org.springframework.context.event.EventListener");
+   Method_Annotation(?method, "org.springframework.scheduling.annotation.Scheduled");
+   Method_Annotation(?method, "org.springframework.scheduling.annotation.Async");
+   Method_Annotation(?method, "org.springframework.kafka.annotation.KafkaListener");
+   Method_Annotation(?method, "org.springframework.amqp.rabbit.annotation.RabbitListener");
+   Method_Annotation(?method, "org.springframework.jms.annotation.JmsListener");
+   Method_Annotation(?method, "org.springframework.cloud.stream.annotation.StreamListener");
+   Method_Annotation(?method, "org.springframework.messaging.handler.annotation.MessageMapping");
+   Method_Annotation(?method, "org.springframework.messaging.simp.annotation.SubscribeMapping");
    Method_Annotation(?method, "javax.ws.rs.POST");
    Method_Annotation(?method, "javax.ws.rs.PUT");
    Method_Annotation(?method, "javax.ws.rs.GET");
@@ -542,27 +757,6 @@ mainAnalysis_MockValueConsMacro(?nodeMockObject, ?nodeType) :-
   mainAnalysis.isImmutableHContext(?hctx),
   mainAnalysis.isImmutableHContext(?basehctx).
 
-
-BeanFieldInjection(?beanClass, ?injectedField, ?value),
-BeanResource(?id, ?mapClass, ?value),
-mainAnalysis_MockValueConsMacro(?value, ?mapClass),
-BeanMapEntry(?id, ?entryBeanKey, ?entryBeanMockObject),
-BeanMap(?id, ?mapClass, ?value) :-
-  XMLNode(?XMLFile, ?beanNodeId, _, _, "bean", "bean"),
-  XMLNodeAttribute(?XMLFile, ?beanNodeId, _, "class", "class", ?beanClass),
-  XMLNode(?XMLFile, ?beanPropertyNodeId, ?beanNodeId, _, "property", "property"),
-  XMLNodeAttribute(?XMLFile, ?beanPropertyNodeId, _, "name", "name", ?injectedField),
-  XMLNode(?XMLFile, ?mapNodeId, ?beanPropertyNodeId, _, "map", "map"),
-  XMLNode(?XMLFile, ?entryNodeId, ?mapNodeId, _, "entry", "entry"),
-  XMLNodeAttribute(?XMLFile, ?entryNodeId, _, "key", "key", ?entryBeanKey),
-  XMLNode(?XMLFile, ?valueNodeId, ?entryNodeId, _, "bean", "bean"),
-  XMLNodeAttribute(?XMLFile, ?valueNodeId, _, "class", "class", ?entryBeanId),
-  ConcreteBean_Id(?entryBeanClass, ?entryBeanId),
-  MockObject(?entryBeanMockObject, ?entryBeanClass),
-  ?mapClass = "java.util.HashMap",
-  ?id = cat(cat(?beanClass, " "), ?injectedField),
-  ?value = cat("Mock map: ", cat(?id, ?mapClass)).
-
 mainAnalysis.InstanceFieldPointsTo(?hctx, ?entryBeanMockObject, ?valueField, ?basehctx, ?nodeMockObject),
 mainAnalysis.InstanceFieldPointsTo(?hctx, ?entryBeanId, ?keyField, ?basehctx, ?nodeMockObject),
 mainAnalysis.InstanceFieldPointsTo(?hctx, ?nodeMockObject, ?contentsField, ?basehctx, ?mapMockObject),
@@ -670,15 +864,6 @@ ExercisedEntryPointMethod(?class, ?method) :-
 .decl IncompletelyMockedMethod(?method:Method)
 
 IncompletelyMockedMethod(?method) :-
-    ExercisedEntryPointMethod(?entryPointDeclaringType, ?method),
-    !BridgeMethod(?method, ?entryPointDeclaringType),
-    FormalParam(_, ?method, ?param),
-    Var_Type(?param, ?type),
-    AbstractOrInterfaceTypeHasNoApplicationConcreteImplementations(?type).
-
-.decl TypeCannotBeMocked(?type:Type)
-
-TypeCannotBeMocked(?type) :-
     ExercisedEntryPointMethod(?entryPointDeclaringType, ?method),
     !BridgeMethod(?method, ?entryPointDeclaringType),
     FormalParam(_, ?method, ?param),
