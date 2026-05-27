@@ -44,7 +44,8 @@ public class Parameters {
     public boolean _ignoreFactGenErrors = false;
     private boolean _decodeApk = false;
     public boolean _extractMoreStrings = false;
-    public boolean _writeArtifactsMap = false;
+    // Enable this by default
+    public boolean _writeArtifactsMap = true;
     public boolean _reportPhantoms = false;
     public boolean _dex = false;
     public boolean _legacyAndroidProcessing = false;
@@ -231,9 +232,10 @@ public class Parameters {
         case "--extract-more-strings":
             _extractMoreStrings = true;
             break;
-        case "--write-artifacts-map":
-            _writeArtifactsMap = true;
-            break;
+// Enable this by default
+//        case "--write-artifacts-map":
+//            _writeArtifactsMap = true;
+//            break;
         case OPT_REPORT_PHANTOMS:
             this._reportPhantoms = true;
             break;

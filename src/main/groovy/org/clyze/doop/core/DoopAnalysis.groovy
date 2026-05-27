@@ -414,9 +414,10 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             params += ["--only-precise-native-strings"]
         }
 
-        if (options.GENERATE_ARTIFACTS_MAP.value) {
-            params += ["--write-artifacts-map"]
-        }
+// Enable this by default
+//        if (options.GENERATE_ARTIFACTS_MAP.value) {
+//            params += ["--write-artifacts-map"]
+//        }
 
         if (options.X_LEGACY_ANDROID_PROCESSING.value) {
             params += ["--legacy-android-processing"]
