@@ -167,8 +167,9 @@ mainAnalysis.configuration.ContextRequest(?callerCtx, ?immutablehctx, ?invo, ?va
 
 MockInvocationForEntryPoint(?value, ?method, cat(cat(cat("<mock-invo ", ?value), ?method), ">")),
 PlusMethodInvocation(cat(cat(cat("<mock-invo ", ?value), ?method), ">")) :-
+  MockObjectForType(?value, ?class),
   Method_DeclaringType(?method, ?class),
-  MockObjectForType(?value, ?class).
+  !Method_Modifier("abstract", ?method).
 
 
 // TODO: feel free to simplify options here
