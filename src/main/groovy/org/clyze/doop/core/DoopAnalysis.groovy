@@ -185,8 +185,13 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             for (String extraFactsPath : options.X_EXTRA_FACTS.value as Collection<String>) {
                 File extraFacts = new File(extraFactsPath)
                 if (extraFacts.exists()) {
-                    log.info "Augmenting facts with file: ${extraFactsPath}"
-                    Files.copy(extraFacts.toPath(), new File(database, extraFacts.name).toPath())
+                    log.info "Augmenting ${extraFacts.name} with file: ${extraFactsPath}"
+                    File target = new File(database, extraFacts.name)
+                    extraFacts.withReader("UTF-8") { extraIn ->
+                        target.withWriterAppend("UTF-8") { targetOut ->
+                            targetOut << extraIn
+                        }
+                    }
                 } else
                     log.warn "WARNING: Facts file does not exist: ${extraFactsPath}"
             }
@@ -409,9 +414,10 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             params += ["--only-precise-native-strings"]
         }
 
-        if (options.GENERATE_ARTIFACTS_MAP.value) {
-            params += ["--write-artifacts-map"]
-        }
+// Enable this by default
+//        if (options.GENERATE_ARTIFACTS_MAP.value) {
+//            params += ["--write-artifacts-map"]
+//        }
 
         if (options.X_LEGACY_ANDROID_PROCESSING.value) {
             params += ["--legacy-android-processing"]

@@ -140,8 +140,9 @@ mainAnalysis.InstanceFieldPointsTo(?hctx, ?mockObject, ?injectedField, ?basehctx
  *  Annotation driven dependency injection for fields annotated with @Resource
  **/
 
-// This rule handles special cases of injection where the injected object is a java.util.Collection of beans
-// using the filed name (Precise Version)
+// Precise version: when a BeanResource entry exists for this @Resource field
+// (e.g. populated by XML map/collection bean definitions), inject that exact
+// mock value, provided its class is subtype-compatible with the field type.
 mainAnalysis.InstanceFieldPointsTo(?hctx, ?mockResourceValue, ?injectedField, ?basehctx, ?basevalue) :-
   mainAnalysis.Value_Type(?basevalue, ?decltype),
   Field_DeclaringType(?injectedField, ?decltype),

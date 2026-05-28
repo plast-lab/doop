@@ -279,6 +279,9 @@ AssignReturnValue(?invocation, ?to) :-
 .decl _ClassArtifact(?artifact:symbol, ?className:ReferenceType, ?subArtifact:symbol, ?size:number)
 .input _ClassArtifact(filename="Class-Artifact.facts")
 
+// PackageArtifact
+.decl _PackageArtifact(?artifact:symbol, ?packageName:symbol)
+
 // NormalHeap
 
 .decl _NormalHeap(?id:NormalHeap, ?type:ReferenceType)
