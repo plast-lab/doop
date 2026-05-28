@@ -324,14 +324,15 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					group: GROUP_FACTS,
 					description: "Generate Three Address Code experimental representation, along with .facts files.",
 			),
-			new BooleanAnalysisOption(
-					id: "GENERATE_ARTIFACTS_MAP",
-					name: "generate-artifacts-map",
-					group: GROUP_FACTS,
-					description: "Generate artifacts map (mapping classes to their containing jars).",
-					value: false,
-					forCacheID: true
-			),
+// Enable this by default
+//			new BooleanAnalysisOption(
+//					id: "GENERATE_ARTIFACTS_MAP",
+//					name: "generate-artifacts-map",
+//					group: GROUP_FACTS,
+//					description: "Generate artifacts map (mapping classes to their containing jars).",
+//					value: false,
+//					forCacheID: true
+//			),
 			new BooleanAnalysisOption(
 					id: "SIMULATE_NATIVE_RETURNS",
 					name: "simulate-native-returns",

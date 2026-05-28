@@ -1,10 +1,10 @@
 package org.clyze.doop.common;
 
 import java.io.File;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiConsumer;
+
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -71,6 +71,22 @@ public abstract class JavaFactWriter {
 
     private void writeClassArtifact(String artifact, String className, String subArtifact, int size) {
         _db.add(CLASS_ARTIFACT, artifact, className, subArtifact, str(size));
+    }
+
+    private void writePackageArtifact(String artifact, Set<String> packageNames) {
+        for (String packageName : packageNames) {
+            _db.add(PACKAGE_ARTIFACT, artifact, packageName);
+        }
+    }
+
+    private static String extractPackageName(String className) {
+        int lastDotIndex = className.lastIndexOf('.');
+        if (lastDotIndex == -1) {
+            return null;
+        }
+        else {
+            return className.substring(0, lastDotIndex);
+        }
     }
 
     private void writeProperty(String path, String key, String value) {
@@ -182,10 +198,23 @@ public abstract class JavaFactWriter {
         Map<String, Set<ArtifactEntry>> artifactToClassMap = artScanner.getArtifactToClassMap();
         Set<GenericFieldInfo> genericFields = artScanner.getGenericFields();
         if (_writeArtifactsMap) {
-            System.out.println("Generated artifact-to-class map for " + artifactToClassMap.size() + " artifacts.");
-            for (String artifact : artifactToClassMap.keySet())
-                for (ArtifactEntry ae : artifactToClassMap.get(artifact))
+            Map<String, Set<String>> packagesByArtifact = new LinkedHashMap<>();
+            System.out.println("Generating artifact-to-class and artifact-to-package maps for " + artifactToClassMap.size() + " artifacts.");
+            for (String artifact : artifactToClassMap.keySet()) {
+                for (ArtifactEntry ae : artifactToClassMap.get(artifact)) {
+                    String packageName = extractPackageName(ae.className);
+                    if (packageName != null) {
+                        Set<String> packageNames = packagesByArtifact.computeIfAbsent(artifact, k -> new LinkedHashSet<>());
+                        packageNames.add(packageName);
+                    }
                     writeClassArtifact(artifact, ae.className, ae.subArtifact, ae.size);
+                }
+            }
+
+            for (String artifact: packagesByArtifact.keySet()) {
+                Set<String> packageNames = packagesByArtifact.get(artifact);
+                writePackageArtifact(artifact, packageNames);
+            }
         }
 
         writeGenericFields(genericFields);

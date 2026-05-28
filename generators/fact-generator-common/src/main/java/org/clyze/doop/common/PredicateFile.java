@@ -98,6 +98,7 @@ public enum PredicateFile
     NORMAL_HEAP("NormalHeap"),
     NUM_CONSTANT_RAW("NumConstantRaw"),
     OPERATOR_AT("OperatorAt"),
+    PACKAGE_ARTIFACT("Package-Artifact"),
     PARAM_ANNOTATION("Param-Annotation"),
     PHANTOM_BASED_METHOD("PhantomBasedMethod"),
     PHANTOM_METHOD("PhantomMethod"),
