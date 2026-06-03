@@ -10,6 +10,12 @@
 
 ServletEntryMethodName("doGet").
 ServletEntryMethodName("doPost").
+ServletEntryMethodName("doPut").
+ServletEntryMethodName("doDelete").
+ServletEntryMethodName("doHead").
+ServletEntryMethodName("doOptions").
+ServletEntryMethodName("doTrace").
+ServletEntryMethodName("service").
 
 .decl AllConcreteImplementations(?type1:Type, ?type2:Type)
 
@@ -22,23 +28,38 @@ AllConcreteImplementations(?class, ?class) :-
   isClassType(?class),
   !ClassModifier("abstract", ?class).
 
-.decl ConcreteImplementationsOrd(?staticType:Type, ?classOrd:number)
-.decl ConcreteImplementations(?staticType:Type, ?class:Type)
-
-ConcreteImplementationsOrd(?staticType, ?classOrd) :-
-  AllConcreteImplementations(_, ?staticType),
-  ?classOrd = min ord(?allClasses): AllConcreteImplementations(?allClasses, ?staticType).
-
-ConcreteImplementations(?staticType, ?class) :-
-  ConcreteImplementationsOrd(?staticType, ?classOrd),
-  isClassType(?class),
-  ord(?class) = ?classOrd.
+// TODO(saiko): Are ConcreteImplementationsOrd & ConcreteImplementations used somewhere?
+//.decl ConcreteImplementationsOrd(?staticType:Type, ?classOrd:number)
+//.decl ConcreteImplementations(?staticType:Type, ?class:Type)
+//
+//ConcreteImplementationsOrd(?staticType, ?classOrd) :-
+//  AllConcreteImplementations(_, ?staticType),
+//  ?classOrd = min ord(?allClasses): AllConcreteImplementations(?allClasses, ?staticType).
+//
+//ConcreteImplementations(?staticType, ?class) :-
+//  ConcreteImplementationsOrd(?staticType, ?classOrd),
+//  isClassType(?class),
+//  ord(?class) = ?classOrd.
 
 .decl ServletClass(?class:Type)
 
 ServletClass(?class) :-
   isClassType(?class),
   AllConcreteImplementations(?class, "javax.servlet.http.HttpServlet").
+
+ServletClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "jakarta.servlet.http.HttpServlet").
+
+.decl GenericServletClass(?class:Type)
+
+GenericServletClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "jakarta.servlet.GenericServlet").
+
+GenericServletClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "javax.servlet.GenericServlet").
 
 .decl OpenProgramEntryPoint(?method:Method)
 .decl MockOpenProgramEntryPoint(?class:Type, ?method:Method)
@@ -53,7 +74,16 @@ mainAnalysis.ApplicationEntryPoint(?meth) :-
   ApplicationMethod(?meth).
 
 PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void <init>()>")),
-PossibleOpenProgramEntryPoint(?class, cat(cat(cat(cat("<", ?class), ": void "), ?serviceMethodName), "(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>")) :-
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void init()>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void init(javax.servlet.ServletConfig)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void init(jakarta.servlet.ServletConfig)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void destroy()>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void service(javax.servlet.ServletRequest,javax.servlet.ServletResponse)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void service(jakarta.servlet.ServletRequest,jakarta.servlet.ServletResponse)>")) :-
+  GenericServletClass(?class).
+
+PossibleOpenProgramEntryPoint(?class, cat(cat(cat(cat("<", ?class), ": void "), ?serviceMethodName), "(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat(cat(cat("<", ?class), ": void "), ?serviceMethodName), "(jakarta.servlet.http.HttpServletRequest,jakarta.servlet.http.HttpServletResponse)>")) :-
   ServletClass(?class),
   ServletEntryMethodName(?serviceMethodName).
 
