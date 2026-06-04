@@ -112,6 +112,25 @@ PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void doFilter(jak
 PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void doFilter(javax.servlet.ServletRequest,javax.servlet.ServletResponse,javax.servlet.FilterChain)>")) :-
   ServletFilterClass(?class).
 
+// Servlet Context Listener
+.decl ServletContextListenerClass(?class:Type)
+
+ServletContextListenerClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "jakarta.servlet.ServletContextListener").
+
+// For older servlet frameworks
+ServletContextListenerClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "javax.servlet.ServletContextListener").
+
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void <init>()>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void contextInitialized(jakarta.servlet.ServletContextEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void contextInitialized(javax.servlet.ServletContextEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void contextDestroyed(jakarta.servlet.ServletContextEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void contextDestroyed(javax.servlet.ServletContextEvent)>")) :-
+  ServletContextListenerClass(?class).
+
 // Servlet service methods
 MockOpenProgramEntryPoint(?class, ?entry) :-
   PossibleOpenProgramEntryPoint(?class, ?entry),
