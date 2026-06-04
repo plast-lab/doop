@@ -54,15 +54,15 @@ GenericServletClass(?class) :-
   isClassType(?class),
   AllConcreteImplementations(?class, "javax.servlet.GenericServlet").
 
+// HttpServlet
+.decl HttpServletClass(?class:Type)
 
-.decl ServletClass(?class:Type)
-
-ServletClass(?class) :-
+HttpServletClass(?class) :-
   isClassType(?class),
   AllConcreteImplementations(?class, "jakarta.servlet.http.HttpServlet").
 
 // For older Servlet frameworks.
-ServletClass(?class) :-
+HttpServletClass(?class) :-
   isClassType(?class),
   AllConcreteImplementations(?class, "javax.servlet.http.HttpServlet").
 
@@ -89,7 +89,7 @@ PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void service(java
 
 PossibleOpenProgramEntryPoint(?class, cat(cat(cat(cat("<", ?class), ": void "), ?serviceMethodName), "(jakarta.servlet.http.HttpServletRequest,jakarta.servlet.http.HttpServletResponse)>")),
 PossibleOpenProgramEntryPoint(?class, cat(cat(cat(cat("<", ?class), ": void "), ?serviceMethodName), "(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>")) :-
-  ServletClass(?class),
+  HttpServletClass(?class),
   ServletEntryMethodName(?serviceMethodName).
 
 // Servlet service methods
