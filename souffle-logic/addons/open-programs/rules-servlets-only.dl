@@ -6,17 +6,6 @@
 .decl MockObjFromField(?type:ReferenceType)
 .decl MockObjFromFormal(?type:ReferenceType)
 
-.decl ServletEntryMethodName(?method:Method)
-
-ServletEntryMethodName("doGet").
-ServletEntryMethodName("doPost").
-ServletEntryMethodName("doPut").
-ServletEntryMethodName("doDelete").
-ServletEntryMethodName("doHead").
-ServletEntryMethodName("doOptions").
-ServletEntryMethodName("doTrace").
-ServletEntryMethodName("service").
-
 .decl AllConcreteImplementations(?type1:Type, ?type2:Type)
 
 AllConcreteImplementations(?class, ?staticType) :-
@@ -27,6 +16,18 @@ AllConcreteImplementations(?class, ?staticType) :-
 AllConcreteImplementations(?class, ?class) :-
   isClassType(?class),
   !ClassModifier("abstract", ?class).
+
+.decl OpenProgramEntryPoint(?method:Method)
+.decl MockOpenProgramEntryPoint(?class:Type, ?method:Method)
+.decl PossibleOpenProgramEntryPoint(?class:Type, ?method:Method)
+
+OpenProgramEntryPoint(?method) :-
+  MockOpenProgramEntryPoint(_, ?method).
+
+// Contribute to the global summary relation
+mainAnalysis.ApplicationEntryPoint(?meth) :-
+  OpenProgramEntryPoint(?meth),
+  ApplicationMethod(?meth).
 
 // TODO(saiko): Are ConcreteImplementationsOrd & ConcreteImplementations used somewhere?
 //.decl ConcreteImplementationsOrd(?staticType:Type, ?classOrd:number)
@@ -54,6 +55,15 @@ GenericServletClass(?class) :-
   isClassType(?class),
   AllConcreteImplementations(?class, "javax.servlet.GenericServlet").
 
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void <init>()>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void init()>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void init(jakarta.servlet.ServletConfig)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void init(javax.servlet.ServletConfig)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void destroy()>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void service(jakarta.servlet.ServletRequest,jakarta.servlet.ServletResponse)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void service(javax.servlet.ServletRequest,javax.servlet.ServletResponse)>")) :-
+  GenericServletClass(?class).
+
 // HttpServlet
 .decl HttpServletClass(?class:Type)
 
@@ -66,31 +76,41 @@ HttpServletClass(?class) :-
   isClassType(?class),
   AllConcreteImplementations(?class, "javax.servlet.http.HttpServlet").
 
-.decl OpenProgramEntryPoint(?method:Method)
-.decl MockOpenProgramEntryPoint(?class:Type, ?method:Method)
-.decl PossibleOpenProgramEntryPoint(?class:Type, ?method:Method)
+.decl HttpServletEntryMethodName(?method:Method)
 
-OpenProgramEntryPoint(?method) :-
-  MockOpenProgramEntryPoint(_, ?method).
-
-// Contribute to the global summary relation
-mainAnalysis.ApplicationEntryPoint(?meth) :-
-  OpenProgramEntryPoint(?meth),
-  ApplicationMethod(?meth).
-
-PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void <init>()>")),
-PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void init()>")),
-PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void init(jakarta.servlet.ServletConfig)>")),
-PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void init(javax.servlet.ServletConfig)>")),
-PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void destroy()>")),
-PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void service(jakarta.servlet.ServletRequest,jakarta.servlet.ServletResponse)>")),
-PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void service(javax.servlet.ServletRequest,javax.servlet.ServletResponse)>")) :-
-  GenericServletClass(?class).
+HttpServletEntryMethodName("doGet").
+HttpServletEntryMethodName("doPost").
+HttpServletEntryMethodName("doPut").
+HttpServletEntryMethodName("doDelete").
+HttpServletEntryMethodName("doHead").
+HttpServletEntryMethodName("doOptions").
+HttpServletEntryMethodName("doTrace").
+HttpServletEntryMethodName("service").
 
 PossibleOpenProgramEntryPoint(?class, cat(cat(cat(cat("<", ?class), ": void "), ?serviceMethodName), "(jakarta.servlet.http.HttpServletRequest,jakarta.servlet.http.HttpServletResponse)>")),
 PossibleOpenProgramEntryPoint(?class, cat(cat(cat(cat("<", ?class), ": void "), ?serviceMethodName), "(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>")) :-
   HttpServletClass(?class),
-  ServletEntryMethodName(?serviceMethodName).
+  HttpServletEntryMethodName(?serviceMethodName).
+
+// Servlet Filters
+.decl ServletFilterClass(?class:Type)
+
+ServletFilterClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "jakarta.servlet.Filter").
+
+// For older servlet frameworks
+ServletFilterClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "javax.servlet.Filter").
+
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void <init>()>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void init(jakarta.servlet.FilterConfig)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void init(javax.servlet.FilterConfig)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void destroy()>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void doFilter(jakarta.servlet.ServletRequest,jakarta.servlet.ServletResponse,jakarta.servlet.FilterChain)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void doFilter(javax.servlet.ServletRequest,javax.servlet.ServletResponse,javax.servlet.FilterChain)>")) :-
+  ServletFilterClass(?class).
 
 // Servlet service methods
 MockOpenProgramEntryPoint(?class, ?entry) :-
