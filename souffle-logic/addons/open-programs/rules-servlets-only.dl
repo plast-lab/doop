@@ -41,25 +41,30 @@ AllConcreteImplementations(?class, ?class) :-
 //  isClassType(?class),
 //  ord(?class) = ?classOrd.
 
-.decl ServletClass(?class:Type)
-
-ServletClass(?class) :-
-  isClassType(?class),
-  AllConcreteImplementations(?class, "javax.servlet.http.HttpServlet").
-
-ServletClass(?class) :-
-  isClassType(?class),
-  AllConcreteImplementations(?class, "jakarta.servlet.http.HttpServlet").
-
+// GenericServlet is an abstract class that implements Servlet & ServletConfig.
+// HttpServlet extends it.
 .decl GenericServletClass(?class:Type)
 
 GenericServletClass(?class) :-
   isClassType(?class),
   AllConcreteImplementations(?class, "jakarta.servlet.GenericServlet").
 
+// For older Servlet frameworks.
 GenericServletClass(?class) :-
   isClassType(?class),
   AllConcreteImplementations(?class, "javax.servlet.GenericServlet").
+
+
+.decl ServletClass(?class:Type)
+
+ServletClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "jakarta.servlet.http.HttpServlet").
+
+// For older Servlet frameworks.
+ServletClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "javax.servlet.http.HttpServlet").
 
 .decl OpenProgramEntryPoint(?method:Method)
 .decl MockOpenProgramEntryPoint(?class:Type, ?method:Method)
@@ -75,15 +80,15 @@ mainAnalysis.ApplicationEntryPoint(?meth) :-
 
 PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void <init>()>")),
 PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void init()>")),
-PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void init(javax.servlet.ServletConfig)>")),
 PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void init(jakarta.servlet.ServletConfig)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void init(javax.servlet.ServletConfig)>")),
 PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void destroy()>")),
-PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void service(javax.servlet.ServletRequest,javax.servlet.ServletResponse)>")),
-PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void service(jakarta.servlet.ServletRequest,jakarta.servlet.ServletResponse)>")) :-
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void service(jakarta.servlet.ServletRequest,jakarta.servlet.ServletResponse)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void service(javax.servlet.ServletRequest,javax.servlet.ServletResponse)>")) :-
   GenericServletClass(?class).
 
-PossibleOpenProgramEntryPoint(?class, cat(cat(cat(cat("<", ?class), ": void "), ?serviceMethodName), "(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>")),
-PossibleOpenProgramEntryPoint(?class, cat(cat(cat(cat("<", ?class), ": void "), ?serviceMethodName), "(jakarta.servlet.http.HttpServletRequest,jakarta.servlet.http.HttpServletResponse)>")) :-
+PossibleOpenProgramEntryPoint(?class, cat(cat(cat(cat("<", ?class), ": void "), ?serviceMethodName), "(jakarta.servlet.http.HttpServletRequest,jakarta.servlet.http.HttpServletResponse)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat(cat(cat("<", ?class), ": void "), ?serviceMethodName), "(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>")) :-
   ServletClass(?class),
   ServletEntryMethodName(?serviceMethodName).
 
