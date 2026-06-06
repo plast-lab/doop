@@ -816,6 +816,16 @@ MapFormalToActualReturn(?formalVar, ?actualVar, ?invocation, ?toMethod) :-
   ReturnVar(?toMethod, ?formalVar),
   AssignReturnValue(?invocation, ?actualVar).
 
+.decl MapAliasToActualArg(?aliasVar:Var, ?actualArg:Var, ?invocation: MethodInvocation, ?toMethod:Method)
+MapAliasToActualArg(?aliasVar, ?actualArg, ?invocation, ?toMethod) :-
+  MapFormalToActualArg(?formalArg, ?actualArg, ?invocation, ?toMethod),
+  basic.MustAliasFormalArg(?aliasVar, ?formalArg).
+
+.decl MapAliasToActualReturn(?aliasVar:Var, ?actualRet:Var, ?invocation: MethodInvocation, ?toMethod:Method)
+MapAliasToActualReturn(?aliasVar, ?actualRet, ?invocation, ?toMethod) :-
+  MapFormalToActualReturn(?formalRet, ?actualRet, ?invocation, ?toMethod),
+  basic.MustAliasFormalArg(?aliasVar, ?formalRet).
+
 
 .decl PotentialAnalysisSite_LoadInstanceField(?base:Var, ?sig:Field, ?to:Var, ?inMethod:Method)
 .decl PotentialAnalysisSite_StoreInstanceField(?from:Var, ?base:Var, ?signature:Field, ?inMethod:Method)
@@ -846,14 +856,11 @@ PotentialAnalysisSite_LoadInstanceField(?base, ?sig, ?to, ?inMethod) :-
   
 PotentialAnalysisSite_LoadInstanceField(?callerBase, ?sig, ?callerTo, ?callerMethod) :-
   PotentialAnalysisSite_LoadInstanceField(?base, ?sig, ?to, ?inMethod),
-  basic.MustAliasFormalArg(?base, ?formalBase),
-  basic.MustAliasFormalReturn(?to, ?formalTo),
-  CallGraphEdge(_, ?invocation, _, ?inMethod),
-  MapFormalToActualArg(?formalBase, ?callerBase, ?invocation, ?inMethod),
-  MapFormalToActualReturn(?formalTo, ?callerTo, ?invocation, ?inMethod),
+  MapAliasToActualArg(?base, ?callerBase, ?invocation, ?inMethod),
+  MapAliasToActualReturn(?to, ?callerTo, ?invocation, ?inMethod),
   Instruction_Method(?invocation, ?callerMethod),
   !IsEntryPoint(?inMethod).
-.plan 1:(4,1,2,3,5,6,7)
+.plan 1:(2,1,3,4), 2:(3,1,2,4)
 
 FinalAnalysisSite_LoadInstanceField(?base, ?sig, ?to, ?inMethod) :-
   PotentialAnalysisSite_LoadInstanceField(?base, ?sig, ?to, ?inMethod),
@@ -866,14 +873,11 @@ PotentialAnalysisSite_StoreInstanceField(?from, ?base, ?signature, ?inMethod) :-
 
 PotentialAnalysisSite_StoreInstanceField(?callerFrom, ?callerBase, ?signature, ?callerMethod) :-
   PotentialAnalysisSite_StoreInstanceField(?from, ?base, ?signature, ?inMethod),
-  basic.MustAliasFormalArg(?base, ?formalBase),
-  basic.MustAliasFormalArg(?from, ?formalFrom),
-  CallGraphEdge(_, ?invocation, _, ?inMethod),
-  MapFormalToActualArg(?formalBase, ?callerBase, ?invocation, ?inMethod),
-  MapFormalToActualArg(?formalFrom, ?callerFrom, ?invocation, ?inMethod),
+  MapAliasToActualArg(?base, ?callerBase, ?invocation, ?inMethod),
+  MapAliasToActualArg(?from, ?callerFrom, ?invocation, ?inMethod),
   Instruction_Method(?invocation, ?callerMethod),
   !IsEntryPoint(?inMethod).
-.plan 1:(4,1,2,3,5,6,7)
+.plan 1:(2,1,3,4), 2:(3,1,2,4)
 
 FinalAnalysisSite_StoreInstanceField(?from, ?base, ?sig, ?inMethod) :-
   PotentialAnalysisSite_StoreInstanceField(?from, ?base, ?sig, ?inMethod),
@@ -898,3 +902,5 @@ FinalAnalysisSite_StoreInstanceField(?from, ?base, ?sig, ?inMethod) :-
 .output StoreInstanceField
 .output MapFormalToActualArg
 .output basic.MustAliasFormalArg
+.output MapAliasToActualArg
+.output MapAliasToActualReturn
