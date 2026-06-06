@@ -1,0 +1,122 @@
+// Pre-analysis that establishes virtual inlinability
+
+// A simple pre-analysis to infer variables that get values entirely from a formal argument of
+// the enclosing function, i.e., must alias it. Note that the variable may have a *subset*
+// of the values of the formal, because others are filtered via cast.
+// SSA is assumed, i.e., a local assignment is evidence of aliasing.
+.decl MustAliasFormalArg(?var:Var, ?formal:Var)
+
+MustAliasFormalArg(?formal, ?formal) :-
+  FormalParam(_, _, ?formal).
+
+MustAliasFormalArg(?this, ?this) :-
+  ThisVar(_, ?this).
+
+MustAliasFormalArg(?var, ?formal) :-
+  MustAliasFormalArg(?other, ?formal),
+  ((AssignLocal_From(?insn, ?other), !PhiNodeHead(?insn, _))
+   ;
+   AssignCast_From(?insn, ?other)),
+  AssignInstruction_To(?insn, ?var).
+
+.decl MustAliasFormalReturn(?var:Var, ?ret:Var)
+
+MustAliasFormalReturn(?ret, ?ret) :-
+  ReturnVar(?ret, _).
+
+MustAliasFormalReturn(?var, ?ret) :-
+  MustAliasFormalReturn(?other, ?ret),
+  AssignInstruction_To(?insn, ?other),
+  ((AssignLocal_From(?insn, ?var), !PhiNodeHead(?insn, _))
+   ;
+   AssignCast_From(?insn, ?var)).
+
+
+
+/*
+///////////////////////////////
+
+// Virtually-inlinable (VI) instructions. Replicating the usual schema (the parts used by the main
+// context-sensitivity logic). All local variables (?to, ?from, ?base, etc.) become the corresponding
+// formal arguments of the function that propagate to the inlinable operation.
+.decl VInlinableLoadInstanceField(?base:Var, ?sig:Field, ?to:Var, ?inMethod:Method)
+.decl VInlinableStoreInstanceField(?from:Var, ?base:Var, ?signature:Field, ?inMethod:Method)
+.decl VInlinableLoadStaticField(?sig:Field, ?to:Var, ?inMethod:Method)
+.decl VInlinableStoreStaticField(?from:Var, ?signature:Field, ?inMethod:Method)
+.decl VInlinableLoadArrayIndex(?base:Var, ?to:Var, ?inMethod:Method)
+.decl VInlinableStoreArrayIndex(?from:Var, ?base:Var, ?inMethod:Method)
+.decl VInlinableVirtualMethodInvocation_Base(?invocation:VirtualMethodInvocation_Insn, ?base:Var)
+.decl VInlinableSuperMethodInvocation_Base(?invocation:SuperMethodInvocation_Insn, ?base:Var)
+.decl VInlinableSpecialMethodInvocation_Base(?invocation:SpecialMethodInvocation_Insn, ?base:Var)
+.decl VInlinableStaticMethodInvocation(?invocation:MethodInvocation, ?signature:Method, ?inMethod:Method)
+.decl VInlinableActualParam(?index:number, ?invocation:MethodInvocation, ?var:Var)
+
+VInlinableLoadInstanceField(?realBase, ?sig, ?realTo, ?inMethod) :-
+  LoadInstanceField(?base, ?sig, ?to, ?inMethod),
+  MustAliasFormalArg(?base, ?realBase),
+  MustAliasFormalArg(?to, ?realTo).
+
+VInlinableStoreInstanceField(?realFrom, ?realBase, ?signature, ?inMethod) :-
+  StoreInstanceField(?from, ?base, ?signature, ?inMethod),
+  MustAliasFormalArg(?base, ?realBase),
+  MustAliasFormalArg(?from, ?realFrom).
+
+VInlinableLoadStaticField(?sig, ?realTo, ?inMethod) :-
+  LoadStaticField(?sig, ?to, ?inMethod),
+  MustAliasFormalArg(?to, ?realTo).
+
+VInlinableStoreStaticField(?realFrom, ?signature, ?inMethod) :-
+  StoreStaticField(?from, ?signature, ?inMethod),
+  MustAliasFormalArg(?from, ?realFrom).
+
+VInlinableLoadArrayIndex(?base, ?realTo, ?inMethod) :-
+  LoadArrayIndex(?base, ?to, ?inMethod),
+  MustAliasFormalArg(?to, ?realTo).
+
+VInlinableStoreArrayIndex(?realFrom, ?realBase, ?inMethod) :-
+  StoreArrayIndex(?from, ?base, ?inMethod),
+  MustAliasFormalArg(?base, ?realBase),
+  MustAliasFormalArg(?from, ?realFrom).
+
+VInlinableVirtualMethodInvocation_Base(?invocation, ?realBase) :-
+  VirtualMethodInvocation_Base(?invocation, ?base),
+  !NotVirtuallyInlinableInvocation(?invocation),
+  MustAliasFormalArg(?base, ?realBase).
+
+VInlinableSuperMethodInvocation_Base(?invocation, ?realBase) :-
+  SuperMethodInvocation_Base(?invocation, ?base),
+  !NotVirtuallyInlinableInvocation(?invocation),
+  MustAliasFormalArg(?base, ?realBase).
+
+VInlinableSpecialMethodInvocation_Base(?invocation, ?realBase) :-
+  SpecialMethodInvocation_Base(?invocation, ?base),
+  !NotVirtuallyInlinableInvocation(?invocation),
+  MustAliasFormalArg(?base, ?realBase).
+
+VInlinableStaticMethodInvocation(?invocation, ?signature, ?inMethod) :-
+  StaticMethodInvocation(?invocation, ?signature, ?inMethod)
+  !NotVirtuallyInlinableInvocation(?invocation).
+
+VInlinableActualParam(?index, ?invocation, ?realParam) :-
+  ActualParam(?index, ?invocation, ?param),
+  MustAliasFormalArg(?param, ?realParam),
+  !NotVirtuallyInlinableInvocation(?invocation).
+////////////////////////////////////////
+*/
+
+
+// Exhaustively find all the reasons why an invocation may not be virtually-inlinable, so that
+// taking the negation of the NotVirtuallyInlinableInvocation predicate will give exactly those
+// that *are* inlinable.
+.decl NotVirtuallyInlinableInvocation(?invocation:MethodInvocation)
+NotVirtuallyInlinableInvocation(?invocation) :-
+  (VirtualMethodInvocation_Base(?invocation, ?base);
+   SpecialMethodInvocation_Base(?invocation, ?base);
+   SuperMethodInvocation_Base(?invocation, ?base)),
+  !MustAliasFormalArg(?base, _).
+
+NotVirtuallyInlinableInvocation(?invocation) :-
+  ActualParam(_, ?invocation, ?param),
+  !MustAliasFormalArg(?param, _).
+
+  

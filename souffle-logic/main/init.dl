@@ -139,6 +139,15 @@ ReachableContext(?clinitContext, ?clinit) :-
   InitializedClass(?class),
   ClassInitializer(?class, ?clinit).
 
+// An attempt to collect all entry points. REVIEW: belongs here?
+.decl IsEntryPoint(?meth:Method)
+
+IsEntryPoint(?meth) :-
+  ApplicationEntryPoint(?meth);
+  ImplicitReachable(?meth);
+  ClassInitializer(_, ?meth).
+
+
 configuration.InitHContextRequest("<<immutable-hcontext>>").
 //configuration.InitHContextRequest("<<jvm-startup-hcontext>>").
 

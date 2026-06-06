@@ -1,5 +1,9 @@
 #include "../commonMacros.dl"
 
+// #ifdef CFG_ANALYSIS
+#include "../addons/cfg-analysis/analysis.dl"
+// #endif
+
 .comp Basic {
 
 #include "exceptions.dl"
@@ -8,6 +12,7 @@
 #include "method-resolution.dl"
 #include "type-hierarchy.dl"
 #include "native-strings.dl"
+#include "virtual-inline-pre.dl"
 
 .decl AnyMainMethodDeclaration(?method:Method, ?type:ClassType)
 AnyMainMethodDeclaration(?method, ?type) :-
@@ -59,6 +64,3 @@ MainMethodDeclaration(?method) :-
 
 .init basic = Basic
 
-#ifdef CFG_ANALYSIS
-#include "../addons/cfg-analysis/analysis.dl"
-#endif

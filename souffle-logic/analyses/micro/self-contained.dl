@@ -405,6 +405,8 @@ MainMethodDeclaration(?method) :-
 }
 .init basic = Basic
 
+.output basic.MainMethodDeclaration
+
 // class initialization
 .decl ClassInitializer(?type:Type, ?method:Method)
 .decl InitializedClass(?classOrInterface:Type)

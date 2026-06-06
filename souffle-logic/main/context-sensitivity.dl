@@ -124,6 +124,10 @@ BOUND_VAR_POINTS_TO(?hctx, ?value, ?toCtx, ?to) :-
 
 #endif // DISABLE_POINTS_TO
 
+/**
+ * Local assignments
+ */
+
 // No need to check if type compatible: check is done at original
 // inputs to VarPointsTo
 
@@ -152,11 +156,11 @@ OptAssignCast(?type, ?to, ?from) :-
  */
 
 LoadHeapInstanceField(?ctx, ?to, ?sig, ?basehctx, ?basevalue) :-
-  LoadInstanceField(?base, ?sig, ?to, _),
+  FinalAnalysisSite_LoadInstanceField(?base, ?sig, ?to, _),
   VarPointsTo(?basehctx, ?basevalue, ?ctx, ?base).
 
 StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from) :-
-  StoreInstanceField(?from, ?base, ?signature, _),
+  FinalAnalysisSite_StoreInstanceField(?from, ?base, ?signature, _),
   VarPointsTo(?basehctx, ?basevalue, ?ctx, ?base).
 
 #if !defined(FEATHERWEIGHT_ANALYSIS) && !defined(DISABLE_POINTS_TO)
@@ -785,3 +789,112 @@ BOUND_VAR_POINTS_TO(?hctx, ?value, ?ctx, ?return) :-
   AssignReturnValue(?invocation, ?return),
   isImmutableHContext(?hctx).
 #endif // DISABLE_POINTS_TO
+
+
+/*
+ * Infer potential points for analyzing the instruction, based on virtual inlining
+ */
+
+// This is a context-insensitive concept. *If* there is a call-graph edge (which is a context-sensitive, analysis-level concept),
+// the mapping of these variables is purely static, based on program text, not analysis results, so it doesn't need contexts.
+.decl MapFormalToActualArg(?formalVar:Var, ?actualVar:Var, ?invocation: MethodInvocation, ?toMethod:Method)
+MapFormalToActualArg(?formal, ?actual, ?invocation, ?toMethod) :-
+  CallGraphEdge(_, ?invocation, _, ?toMethod),
+  FormalParam(?index, ?toMethod, ?formal),
+  ActualParam(?index, ?invocation, ?actual).
+
+MapFormalToActualArg(?this, ?base, ?invocation, ?toMethod) :-
+  CallGraphEdge(_, ?invocation, _, ?toMethod),
+  ThisVar(?toMethod, ?this),
+  (VirtualMethodInvocation_Base(?invocation, ?base);
+   SuperMethodInvocation_Base(?invocation, ?base);
+   SpecialMethodInvocation_Base(?invocation, ?base)).
+
+.decl MapFormalToActualReturn(?formalVar:Var, ?actualVar:Var, ?invocation: MethodInvocation, ?toMethod:Method)
+MapFormalToActualReturn(?formalVar, ?actualVar, ?invocation, ?toMethod) :-
+  CallGraphEdge(_, ?invocation, _, ?toMethod),
+  ReturnVar(?toMethod, ?formalVar),
+  AssignReturnValue(?invocation, ?actualVar).
+
+
+.decl PotentialAnalysisSite_LoadInstanceField(?base:Var, ?sig:Field, ?to:Var, ?inMethod:Method)
+.decl PotentialAnalysisSite_StoreInstanceField(?from:Var, ?base:Var, ?signature:Field, ?inMethod:Method)
+.decl PotentialAnalysisSite_LoadStaticField(?sig:Field, ?to:Var, ?inMethod:Method)
+.decl PotentialAnalysisSite_StoreStaticField(?from:Var, ?signature:Field, ?inMethod:Method)
+.decl PotentialAnalysisSite_LoadArrayIndex(?base:Var, ?to:Var, ?inMethod:Method)
+.decl PotentialAnalysisSite_StoreArrayIndex(?from:Var, ?base:Var, ?inMethod:Method)
+.decl PotentialAnalysisSite_VirtualMethodInvocation_Base(?invocation:VirtualMethodInvocation_Insn, ?base:Var)
+.decl PotentialAnalysisSite_SuperMethodInvocation_Base(?invocation:SuperMethodInvocation_Insn, ?base:Var)
+.decl PotentialAnalysisSite_SpecialMethodInvocation_Base(?invocation:SpecialMethodInvocation_Insn, ?base:Var)
+.decl PotentialAnalysisSite_StaticMethodInvocation(?invocation:MethodInvocation, ?signature:Method, ?inMethod:Method)
+.decl PotentialAnalysisSite_ActualParam(?index:number, ?invocation:MethodInvocation, ?var:Var)
+
+.decl FinalAnalysisSite_LoadInstanceField(?base:Var, ?sig:Field, ?to:Var, ?inMethod:Method)
+.decl FinalAnalysisSite_StoreInstanceField(?from:Var, ?base:Var, ?signature:Field, ?inMethod:Method)
+.decl FinalAnalysisSite_LoadStaticField(?sig:Field, ?to:Var, ?inMethod:Method)
+.decl FinalAnalysisSite_StoreStaticField(?from:Var, ?signature:Field, ?inMethod:Method)
+.decl FinalAnalysisSite_LoadArrayIndex(?base:Var, ?to:Var, ?inMethod:Method)
+.decl FinalAnalysisSite_StoreArrayIndex(?from:Var, ?base:Var, ?inMethod:Method)
+.decl FinalAnalysisSite_VirtualMethodInvocation_Base(?invocation:VirtualMethodInvocation_Insn, ?base:Var)
+.decl FinalAnalysisSite_SuperMethodInvocation_Base(?invocation:SuperMethodInvocation_Insn, ?base:Var)
+.decl FinalAnalysisSite_SpecialMethodInvocation_Base(?invocation:SpecialMethodInvocation_Insn, ?base:Var)
+.decl FinalAnalysisSite_StaticMethodInvocation(?invocation:MethodInvocation, ?signature:Method, ?inMethod:Method)
+.decl FinalAnalysisSite_ActualParam(?index:number, ?invocation:MethodInvocation, ?var:Var)
+
+PotentialAnalysisSite_LoadInstanceField(?base, ?sig, ?to, ?inMethod) :-
+  LoadInstanceField(?base, ?sig, ?to, ?inMethod).
+  
+PotentialAnalysisSite_LoadInstanceField(?callerBase, ?sig, ?callerTo, ?callerMethod) :-
+  PotentialAnalysisSite_LoadInstanceField(?base, ?sig, ?to, ?inMethod),
+  basic.MustAliasFormalArg(?base, ?formalBase),
+  basic.MustAliasFormalReturn(?to, ?formalTo),
+  CallGraphEdge(_, ?invocation, _, ?inMethod),
+  MapFormalToActualArg(?formalBase, ?callerBase, ?invocation, ?inMethod),
+  MapFormalToActualReturn(?formalTo, ?callerTo, ?invocation, ?inMethod),
+  Instruction_Method(?invocation, ?callerMethod),
+  !IsEntryPoint(?inMethod).
+.plan 1:(4,1,2,3,5,6,7)
+
+FinalAnalysisSite_LoadInstanceField(?base, ?sig, ?to, ?inMethod) :-
+  PotentialAnalysisSite_LoadInstanceField(?base, ?sig, ?to, ?inMethod),
+  (!basic.MustAliasFormalArg(?base, _);
+   !basic.MustAliasFormalReturn(?to, _);
+   IsEntryPoint(?inMethod)).
+
+PotentialAnalysisSite_StoreInstanceField(?from, ?base, ?signature, ?inMethod) :-
+  StoreInstanceField(?from, ?base, ?signature, ?inMethod).
+
+PotentialAnalysisSite_StoreInstanceField(?callerFrom, ?callerBase, ?signature, ?callerMethod) :-
+  PotentialAnalysisSite_StoreInstanceField(?from, ?base, ?signature, ?inMethod),
+  basic.MustAliasFormalArg(?base, ?formalBase),
+  basic.MustAliasFormalArg(?from, ?formalFrom),
+  CallGraphEdge(_, ?invocation, _, ?inMethod),
+  MapFormalToActualArg(?formalBase, ?callerBase, ?invocation, ?inMethod),
+  MapFormalToActualArg(?formalFrom, ?callerFrom, ?invocation, ?inMethod),
+  Instruction_Method(?invocation, ?callerMethod),
+  !IsEntryPoint(?inMethod).
+.plan 1:(4,1,2,3,5,6,7)
+
+FinalAnalysisSite_StoreInstanceField(?from, ?base, ?sig, ?inMethod) :-
+  PotentialAnalysisSite_StoreInstanceField(?from, ?base, ?sig, ?inMethod),
+  (!basic.MustAliasFormalArg(?base, _);
+   !basic.MustAliasFormalArg(?from, _);
+   IsEntryPoint(?inMethod)).
+
+.printsize PotentialAnalysisSite_LoadInstanceField
+.printsize PotentialAnalysisSite_StoreInstanceField
+.printsize FinalAnalysisSite_LoadInstanceField
+.printsize FinalAnalysisSite_StoreInstanceField
+.printsize LoadInstanceField
+.printsize StoreInstanceField
+.printsize MapFormalToActualArg
+.printsize basic.MustAliasFormalArg
+
+.output PotentialAnalysisSite_LoadInstanceField
+.output PotentialAnalysisSite_StoreInstanceField
+.output FinalAnalysisSite_LoadInstanceField
+.output FinalAnalysisSite_StoreInstanceField
+.output LoadInstanceField
+.output StoreInstanceField
+.output MapFormalToActualArg
+.output basic.MustAliasFormalArg
