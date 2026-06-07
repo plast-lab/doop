@@ -813,9 +813,10 @@ MapFormalToActualArg(?this, ?base, ?invocation, ?toMethod) :-
 .decl MapFormalToActualReturn(?formalVar:Var, ?actualVar:Var, ?invocation: MethodInvocation, ?toMethod:Method)
 MapFormalToActualReturn(?formalVar, ?actualVar, ?invocation, ?toMethod) :-
   CallGraphEdge(_, ?invocation, _, ?toMethod),
-  ReturnVar(?toMethod, ?formalVar),
+  ReturnVar(?formalVar, ?toMethod),
   AssignReturnValue(?invocation, ?actualVar).
 
+// ?aliasVar is inside ?toMethod
 .decl MapAliasToActualArg(?aliasVar:Var, ?actualArg:Var, ?invocation: MethodInvocation, ?toMethod:Method)
 MapAliasToActualArg(?aliasVar, ?actualArg, ?invocation, ?toMethod) :-
   MapFormalToActualArg(?formalArg, ?actualArg, ?invocation, ?toMethod),
@@ -824,7 +825,7 @@ MapAliasToActualArg(?aliasVar, ?actualArg, ?invocation, ?toMethod) :-
 .decl MapAliasToActualReturn(?aliasVar:Var, ?actualRet:Var, ?invocation: MethodInvocation, ?toMethod:Method)
 MapAliasToActualReturn(?aliasVar, ?actualRet, ?invocation, ?toMethod) :-
   MapFormalToActualReturn(?formalRet, ?actualRet, ?invocation, ?toMethod),
-  basic.MustAliasFormalArg(?aliasVar, ?formalRet).
+  basic.MustAliasFormalReturn(?aliasVar, ?formalRet).
 
 
 .decl PotentialAnalysisSite_LoadInstanceField(?base:Var, ?sig:Field, ?to:Var, ?inMethod:Method)
@@ -893,6 +894,9 @@ FinalAnalysisSite_StoreInstanceField(?from, ?base, ?sig, ?inMethod) :-
 .printsize StoreInstanceField
 .printsize MapFormalToActualArg
 .printsize basic.MustAliasFormalArg
+.printsize basic.MustAliasFormalReturn
+.printsize MapAliasToActualArg
+.printsize MapAliasToActualReturn
 
 .output PotentialAnalysisSite_LoadInstanceField
 .output PotentialAnalysisSite_StoreInstanceField
