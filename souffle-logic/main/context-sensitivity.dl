@@ -261,7 +261,7 @@ BOUND_INSTANCE_FIELD_POINTS_TO(?hctx, ?value, ?signature, ?basehctx, ?basevalue)
 
 BOUND_VAR_POINTS_TO(?hctx, ?value, ?ctx, ?to) :-
   StaticFieldPointsTo(?hctx, ?value, ?sig),
-  LoadStaticField(?sig, ?to, ?inmethod),
+  FinalAnalysisSite_LoadStaticField(?sig, ?to, ?inmethod),
   ReachableContext(?ctx, ?inmethod).
 #ifndef X_CONTEXT_REMOVER
   .plan 1:(3,2,1)
@@ -273,13 +273,13 @@ BOUND_VAR_POINTS_TO(?hctx, ?value, ?ctx, ?to) :-
 #if !defined(FEATHERWEIGHT_ANALYSIS) && !defined(DISABLE_POINTS_TO)
 StaticFieldPointsTo(?hctx, ?value, ?signature) :-
   ReachableStoreStaticFieldFrom(?from),
-  StoreStaticField(?from, ?signature, _),
+  FinalAnalysisSite_StoreStaticField(?from, ?signature, _),
   VarPointsTo(?hctx, ?value, _, ?from).
 #endif // FEATHERWEIGHT_ANALYSIS, DISABLE_POINTS_TO
 #if defined(FEATHERWEIGHT_ANALYSIS) && defined(INFORMATION_FLOW)
 StaticFieldPointsTo(?hctx, ?value, ?signature) :-
   ReachableStoreStaticFieldFrom(?from),
-  StoreStaticField(?from, ?signature, _),
+  FinalAnalysisSite_StoreStaticField(?from, ?signature, _),
   TaintedVarPointsTo(?value, _, ?from),
   isImmutableHContext(?hctx).
 #endif // FEATHERWEIGHT_ANALYSIS, INFORMATION_FLOW
@@ -288,7 +288,7 @@ StaticFieldPointsTo(?hctx, ?value, ?signature) :-
 
 ReachableStoreStaticFieldFrom(?from) :-
   Reachable(?inmethod),
-  StoreStaticField(?from, _, ?inmethod).
+  FinalAnalysisSite_StoreStaticField(?from, _, ?inmethod).
 
 #if defined(ANDROID) && !defined(DISABLE_POINTS_TO)
 
@@ -382,13 +382,13 @@ LoadHeapArrayIndex(?ctx, ?to, ?basehctx, ?basevalue) :-
   VarPointsTo(?basehctx, ?basevalue, ?ctx, ?base).
 
 OptLoadArrayIndex(?to, ?base) :-
-  LoadArrayIndex(?base, ?to, _).
+  FinalAnalysisSite_LoadArrayIndex(?base, ?to, _).
 
 .decl ReachableLoadArrayIndexBase(?base:Var)
 
 ReachableLoadArrayIndexBase(?base) :-
   Reachable(?inmethod),
-  LoadArrayIndex(?base, _, ?inmethod).
+  FinalAnalysisSite_LoadArrayIndex(?base, _, ?inmethod).
 
 /**
  * Store array index
@@ -430,10 +430,10 @@ StoreHeapArrayIndex(?basehctx, ?basevalue, ?ctx, ?from) :-
 
 ReachableStoreArrayIndexBase(?base) :-
   Reachable(?inmethod),
-  StoreArrayIndex(_, ?base, ?inmethod).
+  FinalAnalysisSite_StoreArrayIndex(_, ?base, ?inmethod).
 
 OptStoreArrayIndex(?from, ?base) :-
-  StoreArrayIndex(?from, ?base, _).
+  FinalAnalysisSite_StoreArrayIndex(?from, ?base, _).
 
 
 /**
@@ -852,9 +852,11 @@ MapAliasToActualReturn(?aliasVar, ?actualRet, ?invocation, ?toMethod) :-
 .decl FinalAnalysisSite_StaticMethodInvocation(?invocation:MethodInvocation, ?signature:Method, ?inMethod:Method)
 .decl FinalAnalysisSite_ActualParam(?index:number, ?invocation:MethodInvocation, ?var:Var)
 
+
+// x = y.f, where y is a function arg and x a function return 
 PotentialAnalysisSite_LoadInstanceField(?base, ?sig, ?to, ?inMethod) :-
   LoadInstanceField(?base, ?sig, ?to, ?inMethod).
-  
+
 PotentialAnalysisSite_LoadInstanceField(?callerBase, ?sig, ?callerTo, ?callerMethod) :-
   PotentialAnalysisSite_LoadInstanceField(?base, ?sig, ?to, ?inMethod),
   MapAliasToActualArg(?base, ?callerBase, ?invocation, ?inMethod),
@@ -869,6 +871,8 @@ FinalAnalysisSite_LoadInstanceField(?base, ?sig, ?to, ?inMethod) :-
    !basic.MustAliasFormalReturn(?to, _);
    IsEntryPoint(?inMethod)).
 
+
+// x.f = y, where x,y are function args
 PotentialAnalysisSite_StoreInstanceField(?from, ?base, ?signature, ?inMethod) :-
   StoreInstanceField(?from, ?base, ?signature, ?inMethod).
 
@@ -886,12 +890,99 @@ FinalAnalysisSite_StoreInstanceField(?from, ?base, ?sig, ?inMethod) :-
    !basic.MustAliasFormalArg(?from, _);
    IsEntryPoint(?inMethod)).
 
+
+// x = f, where x is a function return.
+// This is unlikely to make a difference: the values read will be the same for all callers of a function, inlining won't help
+PotentialAnalysisSite_LoadStaticField(?sig, ?to, ?inMethod) :-
+  LoadStaticField(?sig, ?to, ?inMethod).
+
+PotentialAnalysisSite_LoadStaticField(?sig, ?callerTo, ?callerMethod) :-
+  PotentialAnalysisSite_LoadStaticField(?sig, ?to, ?inMethod),
+  MapAliasToActualReturn(?to, ?callerTo, ?invocation, ?inMethod),
+  Instruction_Method(?invocation, ?callerMethod),
+  !IsEntryPoint(?inMethod).
+.plan 1:(2,1,3)
+
+FinalAnalysisSite_LoadStaticField(?sig, ?to, ?inMethod) :-
+  PotentialAnalysisSite_LoadStaticField(?sig, ?to, ?inMethod),
+  (!basic.MustAliasFormalReturn(?to, _);
+   IsEntryPoint(?inMethod)).
+
+
+// f = y, where y is a function arg
+// Again, probably a no-op
+PotentialAnalysisSite_StoreStaticField(?from, ?signature, ?inMethod) :-
+  StoreStaticField(?from, ?signature, ?inMethod).
+
+PotentialAnalysisSite_StoreStaticField(?callerFrom, ?signature, ?callerMethod) :-
+  PotentialAnalysisSite_StoreStaticField(?from, ?signature, ?inMethod),
+  MapAliasToActualArg(?from, ?callerFrom, ?invocation, ?inMethod),
+  Instruction_Method(?invocation, ?callerMethod),
+  !IsEntryPoint(?inMethod).
+.plan 1:(2,1,3)
+
+FinalAnalysisSite_StoreStaticField(?from, ?sig, ?inMethod) :-
+  PotentialAnalysisSite_StoreStaticField(?from, ?sig, ?inMethod),
+  (!basic.MustAliasFormalArg(?from, _);
+   IsEntryPoint(?inMethod)).
+
+
+// x = y[*], where y is a function arg and x a function return 
+PotentialAnalysisSite_LoadArrayIndex(?base, ?to, ?inMethod) :-
+  LoadArrayIndex(?base, ?to, ?inMethod).
+
+PotentialAnalysisSite_LoadArrayIndex(?callerBase, ?callerTo, ?callerMethod) :-
+  PotentialAnalysisSite_LoadArrayIndex(?base, ?to, ?inMethod),
+  MapAliasToActualArg(?base, ?callerBase, ?invocation, ?inMethod),
+  MapAliasToActualReturn(?to, ?callerTo, ?invocation, ?inMethod),
+  Instruction_Method(?invocation, ?callerMethod),
+  !IsEntryPoint(?inMethod).
+.plan 1:(2,1,3,4), 2:(3,1,2,4)
+
+FinalAnalysisSite_LoadArrayIndex(?base, ?to, ?inMethod) :-
+  PotentialAnalysisSite_LoadArrayIndex(?base, ?to, ?inMethod),
+  (!basic.MustAliasFormalArg(?base, _);
+   !basic.MustAliasFormalReturn(?to, _);
+   IsEntryPoint(?inMethod)).
+
+
+// x[*] = y, where x,y are function args
+PotentialAnalysisSite_StoreArrayIndex(?from, ?base, ?inMethod) :-
+  StoreArrayIndex(?from, ?base, ?inMethod).
+
+PotentialAnalysisSite_StoreArrayIndex(?callerFrom, ?callerBase, ?callerMethod) :-
+  PotentialAnalysisSite_StoreArrayIndex(?from, ?base, ?inMethod),
+  MapAliasToActualArg(?base, ?callerBase, ?invocation, ?inMethod),
+  MapAliasToActualArg(?from, ?callerFrom, ?invocation, ?inMethod),
+  Instruction_Method(?invocation, ?callerMethod),
+  !IsEntryPoint(?inMethod).
+.plan 1:(2,1,3,4), 2:(3,1,2,4)
+
+FinalAnalysisSite_StoreArrayIndex(?from, ?base, ?inMethod) :-
+  PotentialAnalysisSite_StoreArrayIndex(?from, ?base, ?inMethod),
+  (!basic.MustAliasFormalArg(?base, _);
+   !basic.MustAliasFormalArg(?from, _);
+   IsEntryPoint(?inMethod)).
+
+
 .printsize PotentialAnalysisSite_LoadInstanceField
+.printsize PotentialAnalysisSite_LoadStaticField
 .printsize PotentialAnalysisSite_StoreInstanceField
+.printsize PotentialAnalysisSite_StoreStaticField
+.printsize PotentialAnalysisSite_LoadArrayIndex
+.printsize PotentialAnalysisSite_StoreArrayIndex
 .printsize FinalAnalysisSite_LoadInstanceField
 .printsize FinalAnalysisSite_StoreInstanceField
+.printsize FinalAnalysisSite_LoadStaticField
+.printsize FinalAnalysisSite_StoreStaticField
+.printsize FinalAnalysisSite_LoadArrayIndex
+.printsize FinalAnalysisSite_StoreArrayIndex
 .printsize LoadInstanceField
+.printsize LoadStaticField
 .printsize StoreInstanceField
+.printsize StoreStaticField
+.printsize LoadArrayIndex
+.printsize StoreArrayIndex
 .printsize MapFormalToActualArg
 .printsize basic.MustAliasFormalArg
 .printsize basic.MustAliasFormalReturn
@@ -899,12 +990,25 @@ FinalAnalysisSite_StoreInstanceField(?from, ?base, ?sig, ?inMethod) :-
 .printsize MapAliasToActualReturn
 
 .output PotentialAnalysisSite_LoadInstanceField
+.output PotentialAnalysisSite_LoadStaticField
 .output PotentialAnalysisSite_StoreInstanceField
+.output PotentialAnalysisSite_StoreStaticField
+.output PotentialAnalysisSite_LoadArrayIndex
+.output PotentialAnalysisSite_StoreArrayIndex
 .output FinalAnalysisSite_LoadInstanceField
 .output FinalAnalysisSite_StoreInstanceField
+.output FinalAnalysisSite_LoadStaticField
+.output FinalAnalysisSite_StoreStaticField
+.output FinalAnalysisSite_LoadArrayIndex
+.output FinalAnalysisSite_StoreArrayIndex
 .output LoadInstanceField
+.output LoadStaticField
 .output StoreInstanceField
+.output StoreStaticField
+.output LoadArrayIndex
+.output StoreArrayIndex
 .output MapFormalToActualArg
 .output basic.MustAliasFormalArg
+.output basic.MustAliasFormalReturn
 .output MapAliasToActualArg
 .output MapAliasToActualReturn
