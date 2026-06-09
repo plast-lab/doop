@@ -135,6 +135,12 @@ BOUND_VAR_POINTS_TO(?hctx, ?value, ?ctx, ?to) :-
   VarPointsTo(?hctx, ?value, ?ctx, ?from),
   AssignLocal(?from, ?to, _).
 
+// A very common idiom, shouldn't be too costly to materialize
+.decl ValueIsTypeCompatible(?value:Value, ?type:Type)
+ValueIsTypeCompatible(?value, ?type) :-
+  Value_Type(?value, ?valuetype),
+  basic.SupertypeOf(?type, ?valuetype).
+
 /**
  * Cast assignments
  */
@@ -142,9 +148,8 @@ BOUND_VAR_POINTS_TO(?hctx, ?value, ?ctx, ?to) :-
 BOUND_VAR_POINTS_TO(?hctx, ?value, ?ctx, ?to) :-
   OptAssignCast(?type, ?to, ?from),
   VarPointsTo(?hctx, ?value, ?ctx, ?from),
-  Value_Type(?value, ?valuetype),
-  basic.SupertypeOf(?type, ?valuetype).
- .plan 2:(3,2,1,4)
+  ValueIsTypeCompatible(?value, ?type).
+ .plan 2:(3,2,1)
 
 .decl OptAssignCast(?type:Type, ?to:Var, ?from:Var)
 OptAssignCast(?type, ?to, ?from) :-
@@ -155,21 +160,28 @@ OptAssignCast(?type, ?to, ?from) :-
  * Load/Store instance fields
  */
 
+// Some of the concepts below (e.g., LoadHeapInstanceField) are read (but not written) in far-away
+// places in the analysis. Others (HeapInterproceduralAssign) are written but not read.
+// So, we produce refined versions with type constraints (TC_) and link them to the coarser
+// concepts as appropriate per case, for use elsewhere. In this file, the refined version should be used when possible.
+
+// Should be only read elsewhere
+.decl TC_LoadHeapInstanceField(?ctx:configuration.Context, ?to:Var, ?toConstraint:Type, ?sig:Field, ?basehctx:configuration.HContext, ?basevalue:Value)
+
+TC_LoadHeapInstanceField(?ctx, ?to, ?toConstraint, ?sig, ?basehctx, ?basevalue) :-
+  FinalAnalysisSite_LoadInstanceField(?base, ?baseConstraint, ?sig, ?to, ?toConstraint, _),
+  VarPointsTo(?basehctx, ?basevalue, ?ctx, ?base),
+  ValueIsTypeCompatible(?basevalue, ?baseConstraint).
+ .plan 1:(2,1,3), 2:(3,2,1)
+
 LoadHeapInstanceField(?ctx, ?to, ?sig, ?basehctx, ?basevalue) :-
-  FinalAnalysisSite_LoadInstanceField(?base, ?sig, ?to, _),
-  VarPointsTo(?basehctx, ?basevalue, ?ctx, ?base).
+  TC_LoadHeapInstanceField(?ctx, ?to, _, ?sig, ?basehctx, ?basevalue).
 
 StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from) :-
-  FinalAnalysisSite_StoreInstanceField(?from, ?base, ?signature, _),
+  FinalAnalysisSite_StoreInstanceField(?from, /*FIX*/_, ?base, /*FIX*/_, ?signature, _),
   VarPointsTo(?basehctx, ?basevalue, ?ctx, ?base).
 
 #if !defined(FEATHERWEIGHT_ANALYSIS) && !defined(DISABLE_POINTS_TO)
-
-HeapInterproceduralAssign(?ctxTo, ?to, ?ctxFrom, ?from) :-
-  LoadHeapInstanceField(?ctxTo, ?to, ?signature, ?basehctx, ?basevalue),
-  StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctxFrom, ?from),
-  !Value_Null(?basevalue).
- .plan 1:(2,1)
 
 BOUND_VAR_POINTS_TO(?hctx, ?value, ?toCtx, ?to) :-
   HeapInterproceduralAssign(?toCtx, ?to, ?fromCtx, ?from),
@@ -177,11 +189,28 @@ BOUND_VAR_POINTS_TO(?hctx, ?value, ?toCtx, ?to) :-
   NotSpecialObject(?value).
  .plan 1:(2,1,3), 2:(3,2,1)
 
-//// Much slower in Souffle, for large analyses
+// REVIEW: Should be only written elsewhere
+.decl TC_HeapInterproceduralAssign(?toCtx:configuration.Context, ?to:Var, ?toConstraint:Type, ?fromCtx:configuration.Context, ?from:Var)
+
+TC_HeapInterproceduralAssign(?ctxTo, ?to, ?toConstraint, ?ctxFrom, ?from) :-
+  TC_LoadHeapInstanceField(?ctxTo, ?to, ?toConstraint, ?signature, ?basehctx, ?basevalue),
+  StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctxFrom, ?from),
+  !Value_Null(?basevalue).
+ .plan 1:(2,1)
+
+BOUND_VAR_POINTS_TO(?hctx, ?value, ?toCtx, ?to) :-
+  TC_HeapInterproceduralAssign(?toCtx, ?to, ?toConstraint, ?fromCtx, ?from),
+  VarPointsTo(?hctx, ?value, ?fromCtx, ?from),
+  ValueIsTypeCompatible(?value, ?toConstraint),
+  NotSpecialObject(?value).
+ .plan 1:(2,1,3,4), 2:(3,2,1,4), 3:(4,2,1,3)
+
+//// Straightforward logic, but less efficient for large analyses
 // BOUND_VAR_POINTS_TO(?hctx, ?value, ?ctx, ?to) :-
-//   LoadHeapInstanceField(?ctx, ?to, ?signature, ?basehctx, ?basevalue),
-//   InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue).
-//    .plan 1:(2,1)
+//   TC_LoadHeapInstanceField(?ctx, ?to, ?toConstraint, ?signature, ?basehctx, ?basevalue),
+//   InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue),
+//   ValueIsTypeCompatible(?value, ?toConstraint).
+//  .plan 1:(2,1,3), 2:(3,2,1)
 
 BOUND_INSTANCE_FIELD_POINTS_TO(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
   StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from),
@@ -194,8 +223,10 @@ BOUND_INSTANCE_FIELD_POINTS_TO(?hctx, ?value, ?signature, ?basehctx, ?basevalue)
 #if defined(FEATHERWEIGHT_ANALYSIS)
 
 BOUND_VAR_POINTS_TO(?hctx, ?value, ?ctx, ?to) :-
-  LoadHeapInstanceField(?ctx, ?to, ?signature, ?basehctx, ?basevalue),
-  InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue).
+  TC_LoadHeapInstanceField(?ctx, ?to, ?toConstraint, ?signature, ?basehctx, ?basevalue),
+  InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue),
+  ValueIsTypeCompatible(?value, ?toConstraint).
+ .plan 1:(2,1,3), 2:(3,2,1)
 
 .decl NoInformationOnSignature(?signature: Field)
 .output NoInformationOnSignature
@@ -241,8 +272,10 @@ BOUND_INSTANCE_FIELD_POINTS_TO(?hctx, ?value, ?signature, ?basehctx, ?basevalue)
   HeapDLInstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue).
 
 BOUND_VAR_POINTS_TO(?hctx, ?value, ?ctx, ?to) :-
-  LoadHeapInstanceField(?ctx, ?to, ?signature, ?basehctx, ?basevalue),
-  HeapDLInstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue).
+  TC_LoadHeapInstanceField(?ctx, ?to, ?toConstraint, ?signature, ?basehctx, ?basevalue),
+  HeapDLInstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue),
+  ValueIsTypeCompatible(?value, ?toConstraint).
+ .plan 1:(2,1,3), 2:(3,2,1)
 #endif // HEAPDLS, IMPORT_DYNAMIC_FACTS
 
 #if defined(FEATHERWEIGHT_ANALYSIS) && defined(INFORMATION_FLOW)
@@ -798,11 +831,15 @@ BOUND_VAR_POINTS_TO(?hctx, ?value, ?ctx, ?return) :-
 // This is a context-insensitive concept. *If* there is a call-graph edge (which is a context-sensitive, analysis-level concept),
 // the mapping of these variables is purely static, based on program text, not analysis results, so it doesn't need contexts.
 .decl MapFormalToActualArg(?formalVar:Var, ?actualVar:Var, ?invocation: MethodInvocation, ?toMethod:Method)
+
+.decl MapFormalToActualReturn(?formalVar:Var, ?actualVar:Var, ?invocation: MethodInvocation, ?toMethod:Method)
+
 MapFormalToActualArg(?formal, ?actual, ?invocation, ?toMethod) :-
   CallGraphEdge(_, ?invocation, _, ?toMethod),
   FormalParam(?index, ?toMethod, ?formal),
   ActualParam(?index, ?invocation, ?actual).
 
+MapFormalToActualReturn(?this, ?base, ?invocation, ?toMethod),
 MapFormalToActualArg(?this, ?base, ?invocation, ?toMethod) :-
   CallGraphEdge(_, ?invocation, _, ?toMethod),
   ThisVar(?toMethod, ?this),
@@ -810,26 +847,25 @@ MapFormalToActualArg(?this, ?base, ?invocation, ?toMethod) :-
    SuperMethodInvocation_Base(?invocation, ?base);
    SpecialMethodInvocation_Base(?invocation, ?base)).
 
-.decl MapFormalToActualReturn(?formalVar:Var, ?actualVar:Var, ?invocation: MethodInvocation, ?toMethod:Method)
 MapFormalToActualReturn(?formalVar, ?actualVar, ?invocation, ?toMethod) :-
   CallGraphEdge(_, ?invocation, _, ?toMethod),
   ReturnVar(?formalVar, ?toMethod),
   AssignReturnValue(?invocation, ?actualVar).
 
 // ?aliasVar is inside ?toMethod
-.decl MapAliasToActualArg(?aliasVar:Var, ?actualArg:Var, ?invocation: MethodInvocation, ?toMethod:Method)
-MapAliasToActualArg(?aliasVar, ?actualArg, ?invocation, ?toMethod) :-
+.decl MapAliasToActualArg(?aliasVar:Var, ?actualArg:Var, ?typeConstraint: Type, ?invocation: MethodInvocation, ?toMethod:Method)
+MapAliasToActualArg(?aliasVar, ?actualArg, ?typeConstraint, ?invocation, ?toMethod) :-
   MapFormalToActualArg(?formalArg, ?actualArg, ?invocation, ?toMethod),
-  basic.MustAliasFormalArg(?aliasVar, ?formalArg).
+  basic.MustAliasFormalArg(?aliasVar, ?formalArg, ?typeConstraint).
 
-.decl MapAliasToActualReturn(?aliasVar:Var, ?actualRet:Var, ?invocation: MethodInvocation, ?toMethod:Method)
-MapAliasToActualReturn(?aliasVar, ?actualRet, ?invocation, ?toMethod) :-
+.decl MapAliasToActualReturn(?aliasVar:Var, ?actualRet:Var, ?typeConstraint: Type, ?invocation: MethodInvocation, ?toMethod:Method)
+MapAliasToActualReturn(?aliasVar, ?actualRet, ?typeConstraint, ?invocation, ?toMethod) :-
   MapFormalToActualReturn(?formalRet, ?actualRet, ?invocation, ?toMethod),
-  basic.MustAliasFormalReturn(?aliasVar, ?formalRet).
+  basic.MustAliasFormalReturn(?aliasVar, ?formalRet, ?typeConstraint).
 
 
-.decl PotentialAnalysisSite_LoadInstanceField(?base:Var, ?sig:Field, ?to:Var, ?inMethod:Method)
-.decl PotentialAnalysisSite_StoreInstanceField(?from:Var, ?base:Var, ?signature:Field, ?inMethod:Method)
+.decl PotentialAnalysisSite_LoadInstanceField(?base:Var, ?baseConstraint:Type, ?sig:Field, ?to:Var, ?toConstraint:Type, ?inMethod:Method)
+.decl PotentialAnalysisSite_StoreInstanceField(?from:Var, ?fromConstraint:Type, ?base:Var, ?baseConstraint:Type, ?signature:Field, ?inMethod:Method)
 .decl PotentialAnalysisSite_LoadStaticField(?sig:Field, ?to:Var, ?inMethod:Method)
 .decl PotentialAnalysisSite_StoreStaticField(?from:Var, ?signature:Field, ?inMethod:Method)
 .decl PotentialAnalysisSite_LoadArrayIndex(?base:Var, ?to:Var, ?inMethod:Method)
@@ -840,8 +876,8 @@ MapAliasToActualReturn(?aliasVar, ?actualRet, ?invocation, ?toMethod) :-
 .decl PotentialAnalysisSite_StaticMethodInvocation(?invocation:MethodInvocation, ?signature:Method, ?inMethod:Method)
 .decl PotentialAnalysisSite_ActualParam(?index:number, ?invocation:MethodInvocation, ?var:Var)
 
-.decl FinalAnalysisSite_LoadInstanceField(?base:Var, ?sig:Field, ?to:Var, ?inMethod:Method)
-.decl FinalAnalysisSite_StoreInstanceField(?from:Var, ?base:Var, ?signature:Field, ?inMethod:Method)
+.decl FinalAnalysisSite_LoadInstanceField(?base:Var, ?baseConstraint:Type, ?sig:Field, ?to:Var, ?toConstraint:Type, ?inMethod:Method)
+.decl FinalAnalysisSite_StoreInstanceField(?from:Var, ?fromConstraint:Type, ?base:Var, ?baseConstraint:Type, ?signature:Field, ?inMethod:Method)
 .decl FinalAnalysisSite_LoadStaticField(?sig:Field, ?to:Var, ?inMethod:Method)
 .decl FinalAnalysisSite_StoreStaticField(?from:Var, ?signature:Field, ?inMethod:Method)
 .decl FinalAnalysisSite_LoadArrayIndex(?base:Var, ?to:Var, ?inMethod:Method)
@@ -854,40 +890,58 @@ MapAliasToActualReturn(?aliasVar, ?actualRet, ?invocation, ?toMethod) :-
 
 
 // x = y.f, where y is a function arg and x a function return 
-PotentialAnalysisSite_LoadInstanceField(?base, ?sig, ?to, ?inMethod) :-
-  LoadInstanceField(?base, ?sig, ?to, ?inMethod).
+PotentialAnalysisSite_LoadInstanceField(?base, ?baseType, ?sig, ?to, ?toType, ?inMethod) :-
+  LoadInstanceField(?base, ?sig, ?to, ?inMethod),
+  Var_Type(?base, ?baseType),
+  Var_Type(?to, ?toType).
 
-PotentialAnalysisSite_LoadInstanceField(?callerBase, ?sig, ?callerTo, ?callerMethod) :-
-  PotentialAnalysisSite_LoadInstanceField(?base, ?sig, ?to, ?inMethod),
-  MapAliasToActualArg(?base, ?callerBase, ?invocation, ?inMethod),
-  MapAliasToActualReturn(?to, ?callerTo, ?invocation, ?inMethod),
+// Helper predicate: the rule is slow and needs a plan, but MoreSpecificType is an inline predicate so it does not easily admit a plan.
+.decl Aux_PotentialAnalysisSite_LoadInstanceField(?base:Var, ?prevBaseConstraint:Type, ?curBaseConstraint:Type, ?sig:Field, ?to:Var, ?prevToConstraint:Type, ?curToConstraint:Type, ?callerMethod:Method)
+Aux_PotentialAnalysisSite_LoadInstanceField(?callerBase, ?prevBaseConstraint, ?curBaseConstraint, ?sig, ?callerTo, ?prevToConstraint, ?curToConstraint, ?callerMethod) :-
+  PotentialAnalysisSite_LoadInstanceField(?base, ?prevBaseConstraint, ?sig, ?to, ?prevToConstraint, ?inMethod),
+  MapAliasToActualArg(?base, ?callerBase, ?curBaseConstraint, ?invocation, ?inMethod),
+  MapAliasToActualReturn(?to, ?callerTo, ?curToConstraint, ?invocation, ?inMethod),
   Instruction_Method(?invocation, ?callerMethod),
   !IsEntryPoint(?inMethod).
 .plan 1:(2,1,3,4), 2:(3,1,2,4)
 
-FinalAnalysisSite_LoadInstanceField(?base, ?sig, ?to, ?inMethod) :-
-  PotentialAnalysisSite_LoadInstanceField(?base, ?sig, ?to, ?inMethod),
-  (!basic.MustAliasFormalArg(?base, _);
-   !basic.MustAliasFormalReturn(?to, _);
+// This rule has a variable number of clauses (due to the inlining of MoreSpecificType) but should not need a plan.
+PotentialAnalysisSite_LoadInstanceField(?callerBase, ?baseConstraint, ?sig, ?callerTo, ?toConstraint, ?callerMethod) :-
+  Aux_PotentialAnalysisSite_LoadInstanceField(?callerBase, ?prevBaseConstraint, ?curBaseConstraint, ?sig, ?callerTo, ?prevToConstraint, ?curToConstraint, ?callerMethod),
+  basic.MoreSpecificType(?prevBaseConstraint, ?curBaseConstraint, ?baseConstraint),
+  basic.MoreSpecificType(?prevToConstraint, ?curToConstraint, ?toConstraint).
+  
+FinalAnalysisSite_LoadInstanceField(?base, ?baseConstraint, ?sig, ?to, ?toConstraint, ?inMethod) :-
+  PotentialAnalysisSite_LoadInstanceField(?base, ?baseConstraint, ?sig, ?to, ?toConstraint, ?inMethod),
+  (!basic.MustAliasFormalArg(?base, _, _);
+   !basic.MustAliasFormalReturn(?to, _, _);
    IsEntryPoint(?inMethod)).
 
 
 // x.f = y, where x,y are function args
-PotentialAnalysisSite_StoreInstanceField(?from, ?base, ?signature, ?inMethod) :-
-  StoreInstanceField(?from, ?base, ?signature, ?inMethod).
+PotentialAnalysisSite_StoreInstanceField(?from, ?fromType, ?base, ?baseType, ?signature, ?inMethod) :-
+  StoreInstanceField(?from, ?base, ?signature, ?inMethod),
+  Var_Type(?base, ?baseType),
+  Var_Type(?from, ?fromType).
 
-PotentialAnalysisSite_StoreInstanceField(?callerFrom, ?callerBase, ?signature, ?callerMethod) :-
-  PotentialAnalysisSite_StoreInstanceField(?from, ?base, ?signature, ?inMethod),
-  MapAliasToActualArg(?base, ?callerBase, ?invocation, ?inMethod),
-  MapAliasToActualArg(?from, ?callerFrom, ?invocation, ?inMethod),
+.decl Aux_PotentialAnalysisSite_StoreInstanceField(?from:Var, ?prevFromConstraint:Type, ?curFromConstraint:Type, ?base:Var, ?prevBaseConstraint:Type, ?curBaseConstraint:Type, ?signature:Field, ?callerMethod:Method)
+Aux_PotentialAnalysisSite_StoreInstanceField(?callerFrom, ?prevFromConstraint, ?curFromConstraint, ?callerBase, ?prevBaseConstraint, ?curBaseConstraint, ?signature, ?callerMethod) :-
+  PotentialAnalysisSite_StoreInstanceField(?from, ?prevFromConstraint, ?base, ?prevBaseConstraint, ?signature, ?inMethod),
+  MapAliasToActualArg(?base, ?callerBase, ?curBaseConstraint, ?invocation, ?inMethod),
+  MapAliasToActualArg(?from, ?callerFrom, ?curFromConstraint, ?invocation, ?inMethod),
   Instruction_Method(?invocation, ?callerMethod),
   !IsEntryPoint(?inMethod).
 .plan 1:(2,1,3,4), 2:(3,1,2,4)
 
-FinalAnalysisSite_StoreInstanceField(?from, ?base, ?sig, ?inMethod) :-
-  PotentialAnalysisSite_StoreInstanceField(?from, ?base, ?sig, ?inMethod),
-  (!basic.MustAliasFormalArg(?base, _);
-   !basic.MustAliasFormalArg(?from, _);
+PotentialAnalysisSite_StoreInstanceField(?callerFrom, ?fromConstraint, ?callerBase, ?baseConstraint, ?signature, ?callerMethod) :-
+  Aux_PotentialAnalysisSite_StoreInstanceField(?callerFrom, ?prevFromConstraint, ?curFromConstraint, ?callerBase, ?prevBaseConstraint, ?curBaseConstraint, ?signature, ?callerMethod),
+  basic.MoreSpecificType(?prevBaseConstraint, ?curBaseConstraint, ?baseConstraint),
+  basic.MoreSpecificType(?prevFromConstraint, ?curFromConstraint, ?fromConstraint).
+  
+FinalAnalysisSite_StoreInstanceField(?from, ?fromConstraint, ?base, ?baseConstraint, ?sig, ?inMethod) :-
+  PotentialAnalysisSite_StoreInstanceField(?from, ?fromConstraint, ?base, ?baseConstraint, ?sig, ?inMethod),
+  (!basic.MustAliasFormalArg(?base, _, _);
+   !basic.MustAliasFormalArg(?from, _, _);
    IsEntryPoint(?inMethod)).
 
 
@@ -898,14 +952,14 @@ PotentialAnalysisSite_LoadStaticField(?sig, ?to, ?inMethod) :-
 
 PotentialAnalysisSite_LoadStaticField(?sig, ?callerTo, ?callerMethod) :-
   PotentialAnalysisSite_LoadStaticField(?sig, ?to, ?inMethod),
-  MapAliasToActualReturn(?to, ?callerTo, ?invocation, ?inMethod),
+  MapAliasToActualReturn(?to, ?callerTo, /*FIX*/ _, ?invocation, ?inMethod),
   Instruction_Method(?invocation, ?callerMethod),
   !IsEntryPoint(?inMethod).
 .plan 1:(2,1,3)
 
 FinalAnalysisSite_LoadStaticField(?sig, ?to, ?inMethod) :-
   PotentialAnalysisSite_LoadStaticField(?sig, ?to, ?inMethod),
-  (!basic.MustAliasFormalReturn(?to, _);
+  (!basic.MustAliasFormalReturn(?to, _, _);
    IsEntryPoint(?inMethod)).
 
 
@@ -916,14 +970,14 @@ PotentialAnalysisSite_StoreStaticField(?from, ?signature, ?inMethod) :-
 
 PotentialAnalysisSite_StoreStaticField(?callerFrom, ?signature, ?callerMethod) :-
   PotentialAnalysisSite_StoreStaticField(?from, ?signature, ?inMethod),
-  MapAliasToActualArg(?from, ?callerFrom, ?invocation, ?inMethod),
+  MapAliasToActualArg(?from, ?callerFrom, /*FIX*/ _, ?invocation, ?inMethod),
   Instruction_Method(?invocation, ?callerMethod),
   !IsEntryPoint(?inMethod).
 .plan 1:(2,1,3)
 
 FinalAnalysisSite_StoreStaticField(?from, ?sig, ?inMethod) :-
   PotentialAnalysisSite_StoreStaticField(?from, ?sig, ?inMethod),
-  (!basic.MustAliasFormalArg(?from, _);
+  (!basic.MustAliasFormalArg(?from, _, _);
    IsEntryPoint(?inMethod)).
 
 
@@ -933,16 +987,16 @@ PotentialAnalysisSite_LoadArrayIndex(?base, ?to, ?inMethod) :-
 
 PotentialAnalysisSite_LoadArrayIndex(?callerBase, ?callerTo, ?callerMethod) :-
   PotentialAnalysisSite_LoadArrayIndex(?base, ?to, ?inMethod),
-  MapAliasToActualArg(?base, ?callerBase, ?invocation, ?inMethod),
-  MapAliasToActualReturn(?to, ?callerTo, ?invocation, ?inMethod),
+  MapAliasToActualArg(?base, ?callerBase, /*FIX*/ _, ?invocation, ?inMethod),
+  MapAliasToActualReturn(?to, ?callerTo, /*FIX*/ _, ?invocation, ?inMethod),
   Instruction_Method(?invocation, ?callerMethod),
   !IsEntryPoint(?inMethod).
 .plan 1:(2,1,3,4), 2:(3,1,2,4)
 
 FinalAnalysisSite_LoadArrayIndex(?base, ?to, ?inMethod) :-
   PotentialAnalysisSite_LoadArrayIndex(?base, ?to, ?inMethod),
-  (!basic.MustAliasFormalArg(?base, _);
-   !basic.MustAliasFormalReturn(?to, _);
+  (!basic.MustAliasFormalArg(?base, _, _);
+   !basic.MustAliasFormalReturn(?to, _, _);
    IsEntryPoint(?inMethod)).
 
 
@@ -952,16 +1006,16 @@ PotentialAnalysisSite_StoreArrayIndex(?from, ?base, ?inMethod) :-
 
 PotentialAnalysisSite_StoreArrayIndex(?callerFrom, ?callerBase, ?callerMethod) :-
   PotentialAnalysisSite_StoreArrayIndex(?from, ?base, ?inMethod),
-  MapAliasToActualArg(?base, ?callerBase, ?invocation, ?inMethod),
-  MapAliasToActualArg(?from, ?callerFrom, ?invocation, ?inMethod),
+  MapAliasToActualArg(?base, ?callerBase, /*FIX*/ _, ?invocation, ?inMethod),
+  MapAliasToActualArg(?from, ?callerFrom, /*FIX*/ _, ?invocation, ?inMethod),
   Instruction_Method(?invocation, ?callerMethod),
   !IsEntryPoint(?inMethod).
 .plan 1:(2,1,3,4), 2:(3,1,2,4)
 
 FinalAnalysisSite_StoreArrayIndex(?from, ?base, ?inMethod) :-
   PotentialAnalysisSite_StoreArrayIndex(?from, ?base, ?inMethod),
-  (!basic.MustAliasFormalArg(?base, _);
-   !basic.MustAliasFormalArg(?from, _);
+  (!basic.MustAliasFormalArg(?base, _, _);
+   !basic.MustAliasFormalArg(?from, _, _);
    IsEntryPoint(?inMethod)).
 
 

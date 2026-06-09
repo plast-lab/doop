@@ -1,35 +1,70 @@
 // Pre-analysis that establishes virtual inlinability
 
+.decl MoreSpecificType_Core(?type1:Type, ?type2:Type, ?subtype:Type)
+MoreSpecificType_Core(?type1, ?type2, ?type1) :-
+  SubtypeOf(?type1, ?type2).
+
+MoreSpecificType_Core(?type1, ?type2, ?type2) :-
+  SubtypeOf(?type2, ?type1).
+
+.decl MoreSpecificType(?type1:Type, ?type2:Type, ?result:Type) inline
+MoreSpecificType(?type1, ?type2, ?result) :-
+  MoreSpecificType_Core(?type1, ?type2, ?result).
+
+MoreSpecificType(?type1, ?type2, ?type1) :-
+  isType(?type1),
+  isType(?type2),
+  !MoreSpecificType_Core(?type1, ?type2, _).
+
+
+
 // A simple pre-analysis to infer variables that get values entirely from a formal argument of
 // the enclosing function, i.e., must alias it. Note that the variable may have a *subset*
-// of the values of the formal, because others are filtered via cast.
+// of the values of the formal, because others are filtered via cast. A type constraint is
+// kept, to designate the conditions for this aliasing.
 // SSA is assumed, i.e., a local assignment is evidence of aliasing.
-.decl MustAliasFormalArg(?var:Var, ?formal:Var)
+.decl MustAliasFormalArg(?var:Var, ?formal:Var, ?typeConstraint:Type)
 
-MustAliasFormalArg(?formal, ?formal) :-
-  FormalParam(_, _, ?formal).
+MustAliasFormalArg(?formal, ?formal, ?type) :-
+  FormalParam(_, _, ?formal),
+  Var_Type(?formal, ?type).
 
-MustAliasFormalArg(?this, ?this) :-
-  ThisVar(_, ?this).
+MustAliasFormalArg(?this, ?this, ?type) :-
+  ThisVar(_, ?this),
+  Var_Type(?this, ?type).
 
-MustAliasFormalArg(?var, ?formal) :-
-  MustAliasFormalArg(?other, ?formal),
-  ((AssignLocal_From(?insn, ?other), !PhiNodeHead(?insn, _))
-   ;
-   AssignCast_From(?insn, ?other)),
+MustAliasFormalArg(?var, ?formal, ?type) :-
+  MustAliasFormalArg(?other, ?formal, ?type),
+  AssignLocal_From(?insn, ?other),
+  !PhiNodeHead(?insn, _),
   AssignInstruction_To(?insn, ?var).
 
-.decl MustAliasFormalReturn(?var:Var, ?ret:Var)
+MustAliasFormalArg(?to, ?formal, ?type) :-
+  MustAliasFormalArg(?other, ?formal, ?otherType),
+  AssignCast(?castType, ?other, ?to, _),
+  MoreSpecificType(?otherType, ?castType, ?type).
+  
 
-MustAliasFormalReturn(?ret, ?ret) :-
-  ReturnVar(?ret, _).
+.decl MustAliasFormalReturn(?var:Var, ?ret:Var, ?typeConstraint:Type)
 
-MustAliasFormalReturn(?var, ?ret) :-
-  MustAliasFormalReturn(?other, ?ret),
+MustAliasFormalReturn(?ret, ?ret, ?type) :-
+  ReturnVar(?ret, _),
+  Var_Type(?ret, ?type).
+
+MustAliasFormalReturn(?var, ?ret, ?type) :-
+  MustAliasFormalReturn(?other, ?ret, ?otherType),
   AssignInstruction_To(?insn, ?other),
-  ((AssignLocal_From(?insn, ?var), !PhiNodeHead(?insn, _))
-   ;
-   AssignCast_From(?insn, ?var)).
+  AssignLocal_From(?insn, ?var),
+  !PhiNodeHead(?insn, _),
+  Var_Type(?var, ?varType),
+  MoreSpecificType(?otherType, ?varType, ?type).
+
+MustAliasFormalReturn(?from, ?ret, ?type) :-
+  MustAliasFormalReturn(?other, ?ret, ?otherType),
+  AssignCast(?castType, ?from, ?other, _),
+  Var_Type(?from, ?fromType),
+  MoreSpecificType(?fromType, ?castType, ?curType),
+  MoreSpecificType(?curType, ?otherType, ?type).
 
 
 
@@ -62,7 +97,7 @@ VInlinableStoreInstanceField(?realFrom, ?realBase, ?signature, ?inMethod) :-
   MustAliasFormalArg(?from, ?realFrom).
 
 VInlinableLoadStaticField(?sig, ?realTo, ?inMethod) :-
-  LoadStaticField(?sig, ?to, ?inMethod),
+10  LoadStaticField(?sig, ?to, ?inMethod),
   MustAliasFormalArg(?to, ?realTo).
 
 VInlinableStoreStaticField(?realFrom, ?signature, ?inMethod) :-
@@ -113,10 +148,10 @@ NotVirtuallyInlinableInvocation(?invocation) :-
   (VirtualMethodInvocation_Base(?invocation, ?base);
    SpecialMethodInvocation_Base(?invocation, ?base);
    SuperMethodInvocation_Base(?invocation, ?base)),
-  !MustAliasFormalArg(?base, _).
+  !MustAliasFormalArg(?base, _, _).
 
 NotVirtuallyInlinableInvocation(?invocation) :-
   ActualParam(_, ?invocation, ?param),
-  !MustAliasFormalArg(?param, _).
+  !MustAliasFormalArg(?param, _, _).
 
   
