@@ -33,11 +33,29 @@ MustAliasFormalArg(?this, ?this, ?type) :-
   ThisVar(_, ?this),
   Var_Type(?this, ?type).
 
+.decl TwoVarPhiNode(?insn1:Instruction, ?insn2:Instruction, ?var1:Var, ?var2:Var)
+TwoVarPhiNode(?insn1, ?insn2, ?var1, ?var2) :-
+  NextInSamePhiNode(?insn1, ?insn2),
+  AssignLocal_From(?insn1, ?var1),
+  AssignLocal_From(?insn2, ?var2),
+  !NextInSamePhiNode(?insn2, _),
+  !NextInSamePhiNode(_, ?insn1).
+
+TwoVarPhiNode(?insn1, ?insn2, ?var1, ?var2) :-
+  TwoVarPhiNode(?insn2, ?insn1, ?var2, ?var1).
+
 MustAliasFormalArg(?var, ?formal, ?type) :-
   MustAliasFormalArg(?other, ?formal, ?type),
   AssignLocal_From(?insn, ?other),
   !PhiNodeHead(?insn, _),
   AssignInstruction_To(?insn, ?var).
+
+MustAliasFormalArg(?var, ?formal, ?type) :-
+  MustAliasFormalArg(?other, ?formal, ?type),
+  TwoVarPhiNode(?insn, _, ?other, ?var2),
+  MustAliasFormalArg(?var2, _, _),
+  AssignInstruction_To(?insn, ?var).
+ .plan 1:(3,2,1,4)
 
 MustAliasFormalArg(?to, ?formal, ?type) :-
   MustAliasFormalArg(?other, ?formal, ?otherType),
@@ -51,20 +69,43 @@ MustAliasFormalReturn(?ret, ?ret, ?type) :-
   ReturnVar(?ret, _),
   Var_Type(?ret, ?type).
 
+.decl DuallyReadVar(?var:Var)
+DuallyReadVar(?var) :-
+  AssignOper_From(?instruction, _, ?var),
+  AssignOper_From(?other, _, ?var),
+  ?other != ?instruction.
+  
 MustAliasFormalReturn(?var, ?ret, ?type) :-
   MustAliasFormalReturn(?other, ?ret, ?otherType),
   AssignInstruction_To(?insn, ?other),
   AssignLocal_From(?insn, ?var),
   !PhiNodeHead(?insn, _),
   Var_Type(?var, ?varType),
-  MoreSpecificType(?otherType, ?varType, ?type).
+  MoreSpecificType(?otherType, ?varType, ?type),
+  !DuallyReadVar(?var).
+
+.decl Aux_MustAliasFormalReturn(?var:Var, ?ret:Var, ?typeConstraint:Type, ?other2:Var)
+Aux_MustAliasFormalReturn(?var, ?ret, ?type, ?other2) :-
+  MustAliasFormalReturn(?other, ?ret, ?otherType),
+  AssignInstruction_To(?insn, ?other),
+  TwoVarPhiNode(?insn, _, ?var, ?other2),
+  Var_Type(?var, ?varType),
+  MoreSpecificType(?otherType, ?varType, ?type),
+  !DuallyReadVar(?var).
+
+MustAliasFormalReturn(?var, ?ret, ?type) :-
+  Aux_MustAliasFormalReturn(?var, ?ret, ?type, ?other2),
+  MustAliasFormalReturn(?other2, _, _).
+ .plan 1:(2,1)
+
 
 MustAliasFormalReturn(?from, ?ret, ?type) :-
   MustAliasFormalReturn(?other, ?ret, ?otherType),
   AssignCast(?castType, ?from, ?other, _),
   Var_Type(?from, ?fromType),
   MoreSpecificType(?fromType, ?castType, ?curType),
-  MoreSpecificType(?curType, ?otherType, ?type).
+  MoreSpecificType(?curType, ?otherType, ?type),
+  !DuallyReadVar(?from).
 
 
 
