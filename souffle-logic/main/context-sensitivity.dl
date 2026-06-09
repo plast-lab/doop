@@ -160,11 +160,6 @@ StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from) :-
   VarPointsTo(?basehctx, ?basevalue, ?ctx, ?base).
 
 #if !defined(FEATHERWEIGHT_ANALYSIS) && !defined(DISABLE_POINTS_TO)
-//// Much slower in Souffle, for large analyses
-// VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
-//   LoadHeapInstanceField(?ctx, ?to, ?signature, ?basehctx, ?basevalue),
-//   BOUND_INSTANCE_FIELD_POINTS_TO(?hctx, ?value, ?signature, ?basehctx, ?basevalue).
-//    .plan 1:(2,1)
 
 HeapInterproceduralAssign(?ctxTo, ?to, ?ctxFrom, ?from) :-
   LoadHeapInstanceField(?ctxTo, ?to, ?signature, ?basehctx, ?basevalue),
@@ -178,9 +173,11 @@ BOUND_VAR_POINTS_TO(?hctx, ?value, ?toCtx, ?to) :-
   NotSpecialObject(?value).
  .plan 1:(2,1,3), 2:(3,2,1)
 
-BOUND_VAR_POINTS_TO(?hctx, ?value, ?ctx, ?to) :-
-  LoadHeapInstanceField(?ctx, ?to, ?signature, ?basehctx, ?basevalue),
-  InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue).
+//// Much slower in Souffle, for large analyses
+// BOUND_VAR_POINTS_TO(?hctx, ?value, ?ctx, ?to) :-
+//   LoadHeapInstanceField(?ctx, ?to, ?signature, ?basehctx, ?basevalue),
+//   InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue).
+//    .plan 1:(2,1)
 
 BOUND_INSTANCE_FIELD_POINTS_TO(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
   StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from),
