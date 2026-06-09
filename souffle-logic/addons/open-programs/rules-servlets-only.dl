@@ -112,6 +112,21 @@ PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void doFilter(jak
 PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void doFilter(javax.servlet.ServletRequest,javax.servlet.ServletResponse,javax.servlet.FilterChain)>")) :-
   ServletFilterClass(?class).
 
+// Http Servlet Filters (Spec 4.0+)
+.decl HttpFilterClass(?class:Type)
+
+HttpFilterClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "jakarta.servlet.http.HttpFilter").
+
+HttpFilterClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "javax.servlet.http.HttpFilter").
+
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void doFilter(jakarta.servlet.http.HttpServletRequest,jakarta.servlet.http.HttpServletResponse,jakarta.servlet.FilterChain)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void doFilter(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse,javax.servlet.FilterChain)>")) :-
+  HttpFilterClass(?class).
+
 // Servlet Context Listener
 .decl ServletContextListenerClass(?class:Type)
 
@@ -130,6 +145,255 @@ PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void contextIniti
 PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void contextDestroyed(jakarta.servlet.ServletContextEvent)>")),
 PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void contextDestroyed(javax.servlet.ServletContextEvent)>")) :-
   ServletContextListenerClass(?class).
+
+// Servlet Container Initializer
+.decl ServletContainerInitializerClass(?class:Type)
+
+ServletContainerInitializerClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "jakarta.servlet.ServletContainerInitializer").
+
+// For older servlet frameworks
+ServletContainerInitializerClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "javax.servlet.ServletContainerInitializer").
+
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void <init>()>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void onStartup(java.util.Set,jakarta.servlet.ServletContext)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void onStartup(java.util.Set,javax.servlet.ServletContext)>")) :-
+  ServletContainerInitializerClass(?class).
+
+// Async Listner
+.decl AsyncListenerClass(?class:Type)
+
+AsyncListenerClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "jakarta.servlet.AsyncListener").
+
+// For older servlet frameworks
+AsyncListenerClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "javax.servlet.AsyncListener").
+
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void <init>()>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void onComplete(jakarta.servlet.AsyncEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void onError(jakarta.servlet.AsyncEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void onStartAsync(jakarta.servlet.AsyncEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void onTimeout(jakarta.servlet.AsyncEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void onComplete(javax.servlet.AsyncEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void onError(javax.servlet.AsyncEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void onStartAsync(javax.servlet.AsyncEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void onTimeout(javax.servlet.AsyncEvent)>")) :-
+  AsyncListenerClass(?class).
+
+// Read Listner
+.decl ReadListenerClass(?class:Type)
+
+ReadListenerClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "jakarta.servlet.ReadListener").
+
+// For older servlet frameworks
+ReadListenerClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "javax.servlet.ReadListener").
+
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void <init>()>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void onDataAvailable()>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void onAllDataRead()>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void onError(java.lang.Throwable)>")) :-
+  ReadListenerClass(?class).
+
+// Write Listner
+.decl WriteListenerClass(?class:Type)
+
+WriteListenerClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "jakarta.servlet.WriteListener").
+
+// For older servlet frameworks
+WriteListenerClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "javax.servlet.WriteListener").
+
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void <init>()>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void onWritePossible()>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void onError(java.lang.Throwable)>")) :-
+  WriteListenerClass(?class).
+
+// Servlet Request Listener
+.decl ServletRequestListenerClass(?class:Type)
+
+ServletRequestListenerClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "jakarta.servlet.ServletRequestListener").
+
+// For older servlet frameworks
+ServletRequestListenerClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "javax.servlet.ServletRequestListener").
+
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void <init>()>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void requestDestroyed(jakarta.servlet.ServletRequestEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void requestInitialized(jakarta.servlet.ServletRequestEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void requestDestroyed(javax.servlet.ServletRequestEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void requestInitialized(javax.servlet.ServletRequestEvent)>")) :-
+  ServletRequestListenerClass(?class).
+
+// Servlet Request Attribute Listener
+.decl ServletRequestAttributeListenerClass(?class:Type)
+
+ServletRequestAttributeListenerClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "jakarta.servlet.ServletRequestAttributeListener").
+
+// For older servlet frameworks
+ServletRequestAttributeListenerClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "javax.servlet.ServletRequestAttributeListener").
+
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void <init>()>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void attributeAdded(jakarta.servlet.ServletRequestAttributeEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void attributeRemoved(jakarta.servlet.ServletRequestAttributeEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void attributeReplaced(jakarta.servlet.ServletRequestAttributeEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void attributeAdded(javax.servlet.ServletRequestAttributeEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void attributeRemoved(javax.servlet.ServletRequestAttributeEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void attributeReplaced(javax.servlet.ServletRequestAttributeEvent)>")) :-
+  ServletRequestAttributeListenerClass(?class).
+
+// Servlet Context Attribute Listener
+.decl ServletContextAttributeListenerClass(?class:Type)
+
+ServletContextAttributeListenerClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "jakarta.servlet.ServletContextAttributeListener").
+
+// For older servlet frameworks
+ServletContextAttributeListenerClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "javax.servlet.ServletContextAttributeListener").
+
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void <init>()>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void attributeAdded(jakarta.servlet.ServletContextAttributeEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void attributeRemoved(jakarta.servlet.ServletContextAttributeEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void attributeReplaced(jakarta.servlet.ServletContextAttributeEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void attributeAdded(javax.servlet.ServletContextAttributeEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void attributeRemoved(javax.servlet.ServletContextAttributeEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void attributeReplaced(javax.servlet.ServletContextAttributeEvent)>")) :-
+  ServletContextAttributeListenerClass(?class).
+
+// Http Upgrade Handler
+.decl HttpUpgradeHandlerClass(?class:Type)
+
+HttpUpgradeHandlerClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "jakarta.servlet.http.HttpUpgradeHandler").
+
+// For older servlet frameworks
+HttpUpgradeHandlerClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "javax.servlet.http.HttpUpgradeHandler").
+
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void <init>()>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void init(jakarta.servlet.http.WebConnection)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void init(javax.servlet.http.WebConnection)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void destroy()>")) :-
+  HttpUpgradeHandlerClass(?class).
+
+// Http Session Listener
+.decl HttpSessionListenerClass(?class:Type)
+
+HttpSessionListenerClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "jakarta.servlet.http.HttpSessionListener").
+
+// For older servlet frameworks
+HttpSessionListenerClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "javax.servlet.http.HttpSessionListener").
+
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void <init>()>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void sessionCreated(jakarta.servlet.http.HttpSessionEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void sessionDestroyed(jakarta.servlet.http.HttpSessionEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void sessionCreated(javax.servlet.http.HttpSessionEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void sessionDestroyed(javax.servlet.http.HttpSessionEvent)>")) :-
+  HttpSessionListenerClass(?class).
+
+// HttpSessionActivationListener
+.decl HttpSessionActivationListenerClass(?class:Type)
+
+HttpSessionActivationListenerClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "jakarta.servlet.http.HttpSessionActivationListener").
+
+// For older servlet frameworks
+HttpSessionActivationListenerClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "javax.servlet.http.HttpSessionActivationListener").
+
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void <init>()>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void sessionDidActivate(jakarta.servlet.http.HttpSessionEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void sessionWillPassivate(jakarta.servlet.http.HttpSessionEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void sessionDidActivate(javax.servlet.http.HttpSessionEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void sessionWillPassivate(javax.servlet.http.HttpSessionEvent)>")) :-
+  HttpSessionActivationListenerClass(?class).
+
+// HttpSessionAttributeListener
+.decl HttpSessionAttributeListenerClass(?class:Type)
+
+HttpSessionAttributeListenerClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "jakarta.servlet.http.HttpSessionAttributeListener").
+
+// For older servlet frameworks
+HttpSessionAttributeListenerClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "javax.servlet.http.HttpSessionAttributeListener").
+
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void <init>()>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void attributeAdded(jakarta.servlet.http.HttpSessionBindingEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void attributeRemoved(jakarta.servlet.http.HttpSessionBindingEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void attributeReplaced(jakarta.servlet.http.HttpSessionBindingEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void attributeAdded(javax.servlet.http.HttpSessionBindingEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void attributeRemoved(javax.servlet.http.HttpSessionBindingEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void attributeReplaced(javax.servlet.http.HttpSessionBindingEvent)>")) :-
+  HttpSessionAttributeListenerClass(?class).
+
+// HttpSessionBindingListener
+.decl HttpSessionBindingListenerClass(?class:Type)
+
+HttpSessionBindingListenerClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "jakarta.servlet.http.HttpSessionBindingListener").
+
+// For older servlet frameworks
+HttpSessionBindingListenerClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "javax.servlet.http.HttpSessionBindingListener").
+
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void <init>()>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void valueBound(jakarta.servlet.http.HttpSessionBindingEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void valueUnbound(jakarta.servlet.http.HttpSessionBindingEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void valueBound(javax.servlet.http.HttpSessionBindingEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void valueUnbound(javax.servlet.http.HttpSessionBindingEvent)>")) :-
+  HttpSessionBindingListenerClass(?class).
+
+// HttpSessionIdListener
+.decl HttpSessionIdListenerClass(?class:Type)
+
+HttpSessionIdListenerClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "jakarta.servlet.http.HttpSessionIdListener").
+
+// For older servlet frameworks
+HttpSessionIdListenerClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "javax.servlet.http.HttpSessionIdListener").
+
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void <init>()>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void sessionIdChanged(jakarta.servlet.http.HttpSessionEvent,java.lang.String)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void sessionIdChanged(javax.servlet.http.HttpSessionEvent,java.lang.String)>")) :-
+  HttpSessionIdListenerClass(?class).
 
 // Servlet service methods
 MockOpenProgramEntryPoint(?class, ?entry) :-
