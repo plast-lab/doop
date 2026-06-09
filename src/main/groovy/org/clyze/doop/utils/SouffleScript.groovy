@@ -94,7 +94,7 @@ class SouffleScript {
 			String souffleCmd = 'souffle'
 			String outputCpp = "${executablePath}.cpp"
 			String outputCppOpts = "-g ${outputCpp}"
-			String outputOpts = options.translateOnly ? outputCppOpts : "-c -o ${executablePath}"
+			String outputOpts = options.translateOnly ? outputCppOpts : "-o ${executablePath}"
 			// On Windows, compile logic to C++ via WSL/Souffle.
 			if (OS.win) {
 				log.warn("WARNING: Windows detected, using experimental WSL/Cygwin mode.")
