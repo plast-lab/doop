@@ -60,7 +60,7 @@ MustAliasFormalArg(?var, ?formal, ?type) :-
 MustAliasFormalArg(?to, ?formal, ?type) :-
   MustAliasFormalArg(?other, ?formal, ?otherType),
   AssignCast(?castType, ?other, ?to, _),
-  MoreSpecificType(?otherType, ?castType, ?type).
+  MoreSpecificType(?castType, ?otherType, ?type).
   
 
 .decl MustAliasFormalReturn(?var:Var, ?ret:Var, ?typeConstraint:Type)
@@ -81,7 +81,7 @@ MustAliasFormalReturn(?var, ?ret, ?type) :-
   AssignLocal_From(?insn, ?var),
   !PhiNodeHead(?insn, _),
   Var_Type(?var, ?varType),
-  MoreSpecificType(?otherType, ?varType, ?type),
+  MoreSpecificType(?varType, ?otherType, ?type),
   !DuallyReadVar(?var).
 
 .decl Aux_MustAliasFormalReturn(?var:Var, ?ret:Var, ?typeConstraint:Type, ?other2:Var)
@@ -90,7 +90,7 @@ Aux_MustAliasFormalReturn(?var, ?ret, ?type, ?other2) :-
   AssignInstruction_To(?insn, ?other),
   TwoVarPhiNode(?insn, _, ?var, ?other2),
   Var_Type(?var, ?varType),
-  MoreSpecificType(?otherType, ?varType, ?type),
+  MoreSpecificType(?varType, ?otherType, ?type),
   !DuallyReadVar(?var).
 
 MustAliasFormalReturn(?var, ?ret, ?type) :-
@@ -103,7 +103,7 @@ MustAliasFormalReturn(?from, ?ret, ?type) :-
   MustAliasFormalReturn(?other, ?ret, ?otherType),
   AssignCast(?castType, ?from, ?other, _),
   Var_Type(?from, ?fromType),
-  MoreSpecificType(?fromType, ?castType, ?curType),
+  MoreSpecificType(?castType, ?fromType, ?curType),
   MoreSpecificType(?curType, ?otherType, ?type),
   !DuallyReadVar(?from).
 
