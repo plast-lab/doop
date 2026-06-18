@@ -405,6 +405,7 @@
 // [Invocation Instructions]
 //-----------------------------------------------------------------------------
 
+.decl MockInvocation(?invo:MethodInvocation)
 // The line number of a method invocation
 .decl MethodInvocation_Line(?invocation:MethodInvocation, ?line:number)
 

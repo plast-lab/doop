@@ -1,11 +1,12 @@
 .decl OpenProgramEntryPoint(?method:Method)
+.output OpenProgramEntryPoint
 .decl PossibleOpenProgramEntryPoint(?method:Method)
 .decl ClassHasPossibleOpenProgramEntryPoint(?class:ReferenceType)
 
 ClassHasPossibleOpenProgramEntryPoint(?class),
 PossibleOpenProgramEntryPoint(?method) :-
   Method_DeclaringType(?method, ?class),
-  Method_Modifier("public", ?method),
+  !Method_Modifier("private", ?method),
   !Method_Modifier("abstract", ?method),
 //// Remove comment for original behavior
 //   !Method_Modifier("static", ?method),

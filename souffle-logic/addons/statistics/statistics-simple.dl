@@ -110,6 +110,23 @@ Stats_Simple_NonReachableAndroidApplicationConcreteMethod(?method) :-
   match(?regex, ?class).
 #endif // ANDROID
 
+#ifdef OPEN_PROGRAMS
+.decl AAR_EntryPoint(?method:Method)
+.output AAR_EntryPoint
+
+AAR_EntryPoint(?method) :-
+  ApplicationMethod(?method),
+  !Method_Modifier("private", ?method),
+  !Method_Modifier("abstract", ?method),
+  !RealCallGraphEdge(_, ?method).
+
+.decl RealCallGraphEdge(?invo:MethodInvocation, ?method:Method)
+
+RealCallGraphEdge(?invo, ?method) :-
+  mainAnalysis.AnyCallGraphEdge(?invo, ?method),
+  !MockInvocation(?invo).
+#endif // OPEN_PROGRAMS
+
 /***************************************************
  * Virtual method invocations
  ***************************************************/

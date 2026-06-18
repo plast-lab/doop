@@ -7,6 +7,7 @@
 .decl MockObjFromField(?type:ReferenceType)
 .decl MockObjFromFormal(?type:ReferenceType)
 
+
 .decl Servlet(?class:Type)
 
 Servlet(?class) :-
@@ -46,7 +47,7 @@ mainAnalysis.ReachableContext(?ctx, ?method) :-
 
 /**
  * Main policy: If the argument type has concrete subtypes in the application, pass them all as mock objects
- * If it does not have concrete subtypes but it's a concrete type, pass that the mock object of the itself as argument.
+ * If it does not have concrete subtypes but it's a concrete type, pass the mock object of the type itself as argument.
  **/
 mainAnalysis_MockValueConsMacro(?mockObj, ?concreteType),
 mainAnalysis.VarPointsTo(?hctx, ?mockObj, ?ctx, ?param),
@@ -125,7 +126,6 @@ mainAnalysis.InstanceFieldPointsTo(?hctx, ?mockBeanObject, ?injectedField, ?base
  *  XML driven dependency injection
  **/
 .decl XMLIFPTDI(?hctx:mainAnalysis.configuration.HContext, ?mo:Value, ?fld:Field, ?bhctx:mainAnalysis.configuration.HContext, ?bval:Value)
-.output XMLIFPTDI
 
 // Property injection from XML specification
 XMLIFPTDI(?hctx, ?mockObject, ?injectedField, ?basehctx, ?basevalue),
@@ -471,6 +471,8 @@ ExercisedEntryPointMethod(?type, ?method) :-
   Method_DeclaringType(?method, ?type).
 
 .decl EntryPointMethod(?method:Method)
+.input EntryPointMethod
+.output EntryPointMethod
 
 EntryPointMethod(?method) :-
   ExercisedEntryPointMethod(_, ?method).
@@ -922,3 +924,11 @@ MethodWithBuggySerializableArg(?method) :-
     Method_Arity(?method, 1),
     FormalParam(0, ?method, ?var),
     Var_Type(?var, "java.io.Serializable").
+
+.decl DeepReachableApplicationMethod(?method:Method)
+.output DeepReachableApplicationMethod
+
+DeepReachableApplicationMethod(?method) :-
+  mainAnalysis.Reachable(?method),
+  Stats_Simple_ApplicationConcreteMethod(?method),
+  !EntryPointMethod(?method).
