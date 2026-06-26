@@ -1,11 +1,9 @@
 #include "../../commonMacros.dl"
 #include "application-concrete-types.dl"
+#include "rules-servlets-only.dl"
 
-// The following 3 predicate declarations are needed in case that
-// statistics are enabled.
-.decl MockObjFromArray(?type:ReferenceType)
-.decl MockObjFromField(?type:ReferenceType)
-.decl MockObjFromFormal(?type:ReferenceType)
+ExercisedEntryPointMethod(?entryPointDeclaringType, ?method) :-
+    PossibleOpenProgramEntryPoint(?entryPointDeclaringType, ?method).
 
 
 .decl Servlet(?class:Type)
@@ -41,6 +39,26 @@ EntryPointClass(?class) :-
 mainAnalysis.ReachableContext(?ctx, ?method) :-
   mainAnalysis.isImmutableContext(?ctx),
   EntryPointMethod(?method).
+
+// Bind the receiver (this) of every exercised entry-point instance method to
+// the mock object of its declaring (entry-point) class. Framework-invoked
+// entry points have no call site, so without this `this` has an empty
+// points-to set: instance-field loads (e.g. this.injectedField) never even
+// form a LoadHeapInstanceField, and virtual calls on `this` never dispatch.
+// The other open-program profiles do this via ReceiverPointsTo (see
+// rules-concrete-types.dl); rules-jackee.dl omitted it. This is also the
+// precondition that lets the injected-field load-bridge below fire.
+//
+// We reuse the declaring type's existing MockObject (idempotent, no new
+// mocks): this covers Spring @Component/@Service/@Repository/@Controller,
+// @Configuration, predicate/XML beans, etc. Entry-point classes that are not
+// otherwise mocked (e.g. *Resource, TagSupport subtypes) keep an empty `this`.
+mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?this) :-
+  ExercisedEntryPointMethod(?type, ?method),
+  ThisVar(?method, ?this),
+  MockObject(?value, ?type),
+  mainAnalysis.isImmutableHContext(?hctx),
+  mainAnalysis.isImmutableContext(?ctx).
 
 // Set flag to enable statistics print logic.
 #define OPEN_PROGRAM_MOCK_OBJS
@@ -166,6 +184,45 @@ mainAnalysis.InstanceFieldPointsTo(?hctx, ?mockBeanObject, ?injectedField, ?base
   MockObject(?mockBeanObject, ?resourceClass),
   mainAnalysis.isImmutableHContext(?basehctx),
   mainAnalysis.isImmutableHContext(?hctx).
+
+/**
+ * Bridge: feed framework-injected field contents into field loads.
+ *
+ * The DI rules above assert directly into mainAnalysis.InstanceFieldPointsTo,
+ * because framework injection has no backing bytecode store. In the default
+ * (non-featherweight, non-HeapDL) configuration the active instance-load path
+ * (context-sensitivity.dl) pairs a LoadInstanceField with a matching
+ * StoreInstanceField *instruction* via HeapInterproceduralAssign; it never
+ * consults InstanceFieldPointsTo. The direct
+ *   LoadHeapInstanceField |><| InstanceFieldPointsTo -> VarPointsTo
+ * rule that would propagate an asserted field value is gated behind
+ * FEATHERWEIGHT_ANALYSIS / HeapDLS and is commented out otherwise. Without
+ * this bridge, a load `x = base.injectedField` never observes the injected
+ * mock, so injected beans stay invisible to the call graph.
+ *
+ * We scope the join to mock values (Value_isMock, stamped by
+ * mainAnalysis_MockValueConsMacro on every mock we create) so it applies only
+ * to asserted field-points-to and not to ordinary heap stores, which the
+ * store-driven path already handles.
+ *
+ * Efficiency: InstanceFieldPointsTo is one of the largest relations (millions
+ * of tuples), but only a tiny fraction (~0.4%) hold a mock value. We therefore
+ * materialize that subset first in MockInstanceFieldPointsTo, then drive the
+ * load-join from it. This guarantees the small relation is the driver across
+ * all of Souffle's semi-naive delta versions, instead of relying on the
+ * scheduler to push the Value_isMock filter ahead of the
+ * InstanceFieldPointsTo |><| LoadHeapInstanceField join (the join upstream
+ * commented out as "much slower for large analyses").
+ **/
+.decl MockInstanceFieldPointsTo(?hctx:mainAnalysis.configuration.HContext, ?value:Value, ?sig:Field, ?basehctx:mainAnalysis.configuration.HContext, ?basevalue:Value)
+
+MockInstanceFieldPointsTo(?hctx, ?value, ?sig, ?basehctx, ?basevalue) :-
+  mainAnalysis.InstanceFieldPointsTo(?hctx, ?value, ?sig, ?basehctx, ?basevalue),
+  mainAnalysis.Value_isMock(?value).
+
+mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
+  MockInstanceFieldPointsTo(?hctx, ?value, ?sig, ?basehctx, ?basevalue),
+  mainAnalysis.LoadHeapInstanceField(?ctx, ?to, ?sig, ?basehctx, ?basevalue).
 
 /**
  * Method-level dependency injection: constructor and setter injection via
