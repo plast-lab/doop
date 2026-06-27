@@ -1,0 +1,134 @@
+/**
+ * Serialization-driven reachability for open-program (JackEE-style) analysis.
+ * ---------------------------------------------------------------------------
+ *
+ * Problem
+ *   In framework-driven applications a large fraction of "application methods"
+ *   are property accessors (get/set/is) on data classes -- DTOs, JPA
+ *   entities, and generated JAXB/SOAP stubs. These accessors are invoked at
+ *   runtime *reflectively* by frameworks the static call graph never executes:
+ *   Jackson (JSON @RequestBody/@ResponseBody), JAXB (XML/SOAP), Freemarker/
+ *   Thymeleaf templating, and MyBatis/Hibernate ORM mapping. As a result the
+ *   accessors stay unreachable and application-method coverage is bounded well
+ *   below what is actually exercised at runtime.
+ *
+ * Approach
+ *   Model the framework contract directly. For any type whose properties are
+ *   (de)serialized, treat its accessors as exercised entry points and give the
+ *   type a receiver mock. Combined with the existing open-program rules this
+ *   makes the accessors reachable (ExercisedEntryPointMethod -> EntryPointMethod
+ *   -> ReachableContext), binds their receiver `this` (the ThisVar rule in
+ *   rules-jackee.dl), and resolves `this.field` reads/writes inside accessor
+ *   bodies (the injected-field load bridge in rules-jackee.dl).
+ *
+ * Usage
+ *   #include this file from rules-jackee.dl (after commonMacros.dl, so that
+ *   MOCK_OBJECT_OF_TYPE / mainAnalysis_MockValueConsMacro are in scope), e.g.
+ *
+ *       #include "../../commonMacros.dl"
+ *       #include "application-concrete-types.dl"
+ *       #include "serialization-accessors.dl"
+ *
+ *   It relies on the following predicates already declared by the surrounding
+ *   analysis / rules-jackee.dl:
+ *     ExercisedEntryPointMethod, MockObject, mainAnalysis.ApplicationConcreteType,
+ *     mainAnalysis.AllApplicationConcreteImplementations, and the standard
+ *     schema relations (Method_DeclaringType, Method_SimpleName, Method_Arity,
+ *     Method_ReturnType, Method_Annotation, Type_Annotation, Param_Annotation,
+ *     FormalParam, Var_Type, isClassType, ClassModifier).
+ *
+ * Caveats
+ *   - Generic erasure: a getter returning List<Foo> / ResponseEntity<Foo> is
+ *     seen as List / ResponseEntity in bytecode, so the transitive closure (d)
+ *     cannot follow into collection/wrapper element types. Getters returning a
+ *     DTO directly are followed.
+ *   - This mocks more types and binds more receivers, so it enlarges VarPointsTo;
+ *     measure runtime/precision on a context-sensitive analysis (e.g. 2objH),
+ *     not only coverage.
+ *   - match(pattern, symbol) in Souffle is an anchored full match, so "get.+"
+ *     means exactly "get" followed by >= 1 character.
+ *   - The javax.xml.bind.* / org.springframework.* annotation FQNs target the
+ *     javax (Java EE 8 / Spring 5) namespace. For Jakarta EE 9+ / Spring 6 add
+ *     the jakarta.xml.bind.* equivalents.
+ */
+
+/**
+ * SerializedType: a type whose properties are (de)serialized by a framework,
+ * so the framework invokes its accessors reflectively.
+ */
+.decl SerializedType(?type:Type)
+
+// (a) JAXB-bound types: generated XML/SOAP stubs (e.g. ca.canadapost.cpcdp.rating).
+SerializedType(?type) :-
+  mainAnalysis.ApplicationConcreteType(?type),
+  (Type_Annotation(?type, "javax.xml.bind.annotation.XmlRootElement");
+   Type_Annotation(?type, "javax.xml.bind.annotation.XmlType");
+   Type_Annotation(?type, "javax.xml.bind.annotation.XmlAccessorType")).
+
+// (b) Jackson request deserialization: @RequestBody parameter types of reached
+//     entry-point methods.
+SerializedType(?type) :-
+  ExercisedEntryPointMethod(_, ?method),
+  FormalParam(?i, ?method, ?param),
+  Param_Annotation(?method, ?i, "org.springframework.web.bind.annotation.RequestBody"),
+  Var_Type(?param, ?type),
+  mainAnalysis.ApplicationConcreteType(?type).
+
+// (c) Jackson response serialization: return types of @ResponseBody methods or
+//     methods declared in @RestController classes.
+SerializedType(?type) :-
+  ExercisedEntryPointMethod(?cls, ?method),
+  (Method_Annotation(?method, "org.springframework.web.bind.annotation.ResponseBody");
+   Type_Annotation(?cls, "org.springframework.web.bind.annotation.RestController")),
+  Method_ReturnType(?method, ?type),
+  mainAnalysis.ApplicationConcreteType(?type).
+
+// (d) Transitive closure: (de)serializers recurse into property types. The
+//     declared return type of a getter of a serialized type is itself
+//     serialized -- concrete property types directly, abstract/interface
+//     property types via their application concrete implementations.
+SerializedType(?propType) :-
+  SerializedType(?type),
+  Method_DeclaringType(?getter, ?type),
+  Method_SimpleName(?getter, ?name),
+  (match("get.+", ?name); match("is.+", ?name)),
+  Method_Arity(?getter, 0),
+  Method_ReturnType(?getter, ?propType),
+  mainAnalysis.ApplicationConcreteType(?propType).
+
+SerializedType(?concrete) :-
+  SerializedType(?type),
+  Method_DeclaringType(?getter, ?type),
+  Method_SimpleName(?getter, ?name),
+  (match("get.+", ?name); match("is.+", ?name)),
+  Method_Arity(?getter, 0),
+  Method_ReturnType(?getter, ?propStatic),
+  mainAnalysis.AllApplicationConcreteImplementations(?concrete, ?propStatic).
+
+/**
+ * PropertyAccessor: JavaBean-style accessors -- getters/is (arity 0) and
+ * setters (arity 1).
+ */
+.decl PropertyAccessor(?method:Method)
+
+PropertyAccessor(?method) :-
+  Method_SimpleName(?method, ?name),
+  ((match("get.+", ?name), Method_Arity(?method, 0));
+   (match("is.+",  ?name), Method_Arity(?method, 0));
+   (match("set.+", ?name), Method_Arity(?method, 1))).
+
+// Accessors of serialized types become exercised entry points (reachable, and
+// via the ThisVar rule in rules-jackee.dl receiver-bound).
+ExercisedEntryPointMethod(?type, ?method) :-
+  SerializedType(?type),
+  Method_DeclaringType(?method, ?type),
+  PropertyAccessor(?method).
+
+// Give serialized types a receiver mock so accessor bodies (this.field reads
+// for getters, stores for setters) resolve through the injected-field bridge.
+mainAnalysis_MockValueConsMacro(?mockObj, ?type),
+MockObject(?mockObj, ?type) :-
+  SerializedType(?type),
+  isClassType(?type),
+  !ClassModifier("abstract", ?type),
+  ?mockObj = MOCK_OBJECT_OF_TYPE(?type).

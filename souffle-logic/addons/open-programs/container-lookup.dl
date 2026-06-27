@@ -1,0 +1,102 @@
+/**
+ * Programmatic Spring-container lookup: getBean(...) / getBeansOfType(...).
+ * ---------------------------------------------------------------------------
+ *
+ * Models the *real* call path for beans that are not @Autowired by interface
+ * but retrieved from the container at runtime (the shopizer payment/shipping
+ * integration modules). A reachable application method calls a container lookup;
+ * we resolve which concrete bean class(es) the lookup yields, mint a mock of
+ * each, and flow it to the call's return value. The application's own
+ * polymorphic call on that return then dispatches to the impl through the
+ * normal call-graph rules -- with real receiver/argument points-to, unlike the
+ * blanket "every bean method is an entry point" of stereotype-bean entry points.
+ *
+ * #include after rules-jackee.dl's other includes (needs MOCK_OBJECT_OF_TYPE,
+ * MockObject, ConcreteBean_Id, mainAnalysis.AllApplicationConcreteImplementations).
+ *
+ * Reflection-independent: the Class argument is mapped to its type through the
+ * global ClassHeap_InstanceType relation (populated from ClassHeap.facts), so it
+ * works with REFLECTION=false.
+ */
+
+// ---- 1. Container-lookup call sites in reachable application code ----
+.decl ContainerLookupInvocation(?ctx:mainAnalysis.configuration.Context, ?invo:MethodInvocation)
+
+ContainerLookupInvocation(?ctx, ?invo) :-
+  mainAnalysis.ReachableContext(?ctx, ?method),
+  ApplicationMethod(?method),
+  Instruction_Method(?invo, ?method),
+  VirtualMethodInvocation_SimpleName(?invo, ?sn),
+  (?sn = "getBean"; ?sn = "getBeansOfType"),
+  VirtualMethodInvocation_Base(?invo, ?base),
+  Var_Type(?base, ?baseType),
+  basic.SubtypeOf(?baseType, "org.springframework.beans.factory.BeanFactory").
+
+// ---- 2. Which concrete bean class(es) does the lookup yield? ----
+.decl ContainerLookupYields(?ctx:mainAnalysis.configuration.Context, ?invo:MethodInvocation, ?beanClass:ClassType)
+
+// (a) getBean(Class) / getBeansOfType(Class): the actual argument points to a
+//     class constant (Foo.class). ClassHeap_InstanceType maps that heap value to
+//     the requested type; every application concrete implementation is a bean.
+//     ActualParam with any index handles all overloads.
+ContainerLookupYields(?ctx, ?invo, ?beanClass) :-
+  ContainerLookupInvocation(?ctx, ?invo),
+  ActualParam(_, ?invo, ?actual),
+  mainAnalysis.VarPointsTo(_, ?classValue, ?ctx, ?actual),
+  ClassHeap_InstanceType(?classValue, ?requestedType),
+  mainAnalysis.AllApplicationConcreteImplementations(?beanClass, ?requestedType).
+
+// (b) getBean(String): the name constant maps directly to a concrete bean class
+//     via jackee's bean-id table (@Component("x")/@Service("x")/XML id="x").
+ContainerLookupYields(?ctx, ?invo, ?beanClass) :-
+  ContainerLookupInvocation(?ctx, ?invo),
+  ActualParam(_, ?invo, ?actual),
+  mainAnalysis.VarPointsTo(_, ?nameConstant, ?ctx, ?actual),
+  ConcreteBean_Id(?beanClass, ?nameConstant).
+
+// ---- 3a. getBean(...) returns the bean directly: flow its mock to the return ----
+// Reuse the bean's existing MockObject (these are @Component/@Service beans,
+// already mocked by jackee). Crucially we do NOT mint a MockObject here: doing
+// so from a VarPointsTo-dependent body would pull MockObject -- and BeanResource,
+// which is negated in the @Resource rule -- into the VarPointsTo SCC, producing
+// a cyclic-negation / unstratifiable program.
+mainAnalysis.VarPointsTo(?immHctx, ?beanMock, ?ctx, ?ret) :-
+  ContainerLookupYields(?ctx, ?invo, ?beanClass),
+  VirtualMethodInvocation_SimpleName(?invo, "getBean"),
+  AssignReturnValue(?invo, ?ret),
+  MockObject(?beanMock, ?beanClass),
+  mainAnalysis.isImmutableHContext(?immHctx).
+
+// ---- 3b. getBeansOfType(...) returns a Map<String,T> whose VALUES are beans ----
+// Create one HashMap mock per call site and flow it to the return value, then
+// seed its internal table/$Node/value chain with each yielded bean mock so the
+// application's map.values()/get(code) -> module.foo() dispatches to the impl.
+// Mirrors the XML BeanMap collection-content modeling in rules-jackee.dl.
+.decl GetBeansOfTypeMap(?ctx:mainAnalysis.configuration.Context, ?invo:MethodInvocation, ?mapValue:Value)
+
+mainAnalysis_MockValueConsMacro(?mapValue, "java.util.HashMap"),
+mainAnalysis.VarPointsTo(?immHctx, ?mapValue, ?ctx, ?ret),
+GetBeansOfTypeMap(?ctx, ?invo, ?mapValue) :-
+  ContainerLookupInvocation(?ctx, ?invo),
+  VirtualMethodInvocation_SimpleName(?invo, "getBeansOfType"),
+  AssignReturnValue(?invo, ?ret),
+  ?mapValue = cat("<getBeansOfType map @ ", cat(?invo, ">")),
+  mainAnalysis.isImmutableHContext(?immHctx).
+
+// Store each yielded bean mock as a value of the map (table -> $Node -> value),
+// exactly as the BeanMap rule does, so HashMap.get()/values() return the beans.
+mainAnalysis.InstanceFieldPointsTo(?h, ?beanMock, ?valueField, ?h, ?nodeMock),
+mainAnalysis.InstanceFieldPointsTo(?h, ?arrayMock, ?tableField, ?h, ?mapValue),
+mainAnalysis.ArrayIndexPointsTo(?h, ?nodeMock, ?h, ?arrayMock),
+mainAnalysis_MockValueConsMacro(?arrayMock, "java.util.HashMap$Node[]"),
+mainAnalysis_MockValueConsMacro(?nodeMock, "java.util.HashMap$Node") :-
+  GetBeansOfTypeMap(?ctx, ?invo, ?mapValue),
+  ContainerLookupYields(?ctx, ?invo, ?beanClass),
+  MockObject(?beanMock, ?beanClass),
+  ?nodeMock  = cat(cat(?beanClass, " @node "), ?mapValue),
+  ?arrayMock = cat(cat(?beanClass, " @table "), ?mapValue),
+  Field_DeclaringType(?tableField, "java.util.HashMap"),
+  Field_SimpleName(?tableField, "table"),
+  Field_DeclaringType(?valueField, "java.util.HashMap$Node"),
+  Field_SimpleName(?valueField, "value"),
+  mainAnalysis.isImmutableHContext(?h).

@@ -25,6 +25,16 @@ ResolveInvocation(?basetype, ?invocation, ?tomethod) :-
     DirectSuperclass(?basetype, ?supertype),
     MethodLookup(?simplename, ?descriptor, ?supertype, ?tomethod).
 
+.decl SpringDataProxyDelegate(?ifaceType:symbol, ?implType:symbol)
+.input SpringDataProxyDelegate(IO="file", filename="SpringDataProxyDelegate.csv", delimiter="\t")
+
+ResolveInvocation(?implType, ?invo, ?tomethod) :-
+  SpringDataProxyDelegate(?ifaceType, ?implType),
+  VirtualMethodInvocation_BaseType(?invo, ?baseType),
+  SubtypeOf(?ifaceType, ?baseType),
+  VirtualMethodInvocation_SimpleName(?invo, ?sn),
+  VirtualMethodInvocation_Descriptor(?invo, ?desc),
+  MethodLookup(?sn, ?desc, ?implType, ?tomethod).
 
 .decl ConcreteMethodDeclared(?meth:Method, ?class:ClassType)
 ConcreteMethodDeclared(?meth, ?class) :-

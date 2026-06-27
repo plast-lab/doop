@@ -1,6 +1,9 @@
 #include "../../commonMacros.dl"
 #include "application-concrete-types.dl"
 #include "rules-servlets-only.dl"
+#include "serialization-accessors.dl"
+#include "bean-collection-injection.dl"
+#include "container-lookup.dl"
 
 ExercisedEntryPointMethod(?entryPointDeclaringType, ?method) :-
     PossibleOpenProgramEntryPoint(?entryPointDeclaringType, ?method).
