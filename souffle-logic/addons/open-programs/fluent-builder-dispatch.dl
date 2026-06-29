@@ -1,0 +1,84 @@
+/**
+ * Fluent functional-builder callback dispatch.
+ * ---------------------------------------------------------------------------
+ *
+ * Some applications put their business logic inside lambdas handed to a fluent
+ * builder that invokes them at a terminal operation, e.g. openkoda's Flow:
+ *
+ *     Flow.init(...).then(m -> service.doX(m)).thenSet(...).execute();
+ *
+ * The lambda is stored inside the Flow and invoked later in execute(); under
+ * context-insensitive analysis the value-flow through the builder's internal
+ * storage does not reconnect, so the callback -- and every service/helper it
+ * calls -- stays cold. This is the dominant cold driver on Flow-style apps
+ * (services have 0 callers because their only caller is a cold Flow lambda).
+ *
+ * This is the one COMPLETENESS-for-PRECISION trade in the open-program rules:
+ * we over-approximate "a lambda handed to a fluent builder is invoked". We keep
+ * the blast radius tight with a STRUCTURAL discriminator -- an APPLICATION type
+ * with >= 3 self-returning methods taking a functional-interface argument --
+ * which matches Flow / FrontendMappingFieldDefinition without naming them, and
+ * deliberately EXCLUDES library fluent pipelines (Stream/Flux/Mono/
+ * CompletableFuture) that the base analysis already models and that would
+ * explode reachability.
+ *
+ * Stratification: identifying the invoked lambda needs VarPointsTo (the lambda
+ * value flowing to the builder call), so this file NEVER mints a MockObject from
+ * that body -- it only drives ReachableContext and binds the callback's captured
+ * receiver to the enclosing class's EXISTING mock (reuse), exactly like the
+ * ThisVar receiver-binding in rules-jackee.dl. No new mock -> no !BeanResource
+ * cyclic negation.
+ *
+ * #include after rules-jackee.dl's other includes (needs MockObject, ThisVar).
+ */
+
+// Functional-interface parameter types (the callback the builder will invoke).
+.decl FunctionalParamType(?t:Type)
+FunctionalParamType(?t) :- isType(?t), match("java.util.function..*", ?t).
+FunctionalParamType("java.lang.Runnable").
+FunctionalParamType("java.util.concurrent.Callable").
+
+// A self-returning (fluent) instance method that takes a functional argument.
+.decl FluentBuilderMethod(?t:Type, ?m:Method)
+FluentBuilderMethod(?t, ?m) :-
+  Method_DeclaringType(?m, ?t),
+  Method_ReturnType(?m, ?t),
+  !Method_Modifier("static", ?m),
+  FormalParam(_, ?m, ?p),
+  Var_Type(?p, ?pt),
+  FunctionalParamType(?pt).
+
+// A fluent functional builder: an application type with >= 3 such methods.
+.decl FluentBuilderType(?t:Type)
+FluentBuilderType(?t) :-
+  ApplicationClass(?t),
+  ?n = count : { FluentBuilderMethod(?t, _) },
+  ?n >= 3.
+
+// The implementing method of a lambda handed as an argument to a (reached)
+// fluent-builder method. VarPointsTo-dependent -> drives ReachableContext /
+// receiver binding ONLY, never a mock mint.
+.decl FluentBuilderInvokedLambda(?implMethod:Method, ?enclosing:Type)
+FluentBuilderInvokedLambda(?implMethod, ?enclosing) :-
+  FluentBuilderMethod(?bt, ?bm),
+  FluentBuilderType(?bt),
+  mainAnalysis.CallGraphEdge(_, ?invo, _, ?bm),
+  ActualParam(_, ?invo, ?arg),
+  mainAnalysis.VarPointsTo(_, ?lambda, _, ?arg),
+  mainAnalysis.LambdaObject(_, ?lambda, _, _, ?implMethod, _),
+  Method_DeclaringType(?implMethod, ?enclosing).
+
+// Make the callback body reachable.
+mainAnalysis.ReachableContext(?ctx, ?implMethod) :-
+  FluentBuilderInvokedLambda(?implMethod, _),
+  mainAnalysis.isImmutableContext(?ctx).
+
+// Bind the callback's captured receiver `this` to the enclosing class's existing
+// mock, so its captured-field reads (this.service) and calls on `this` resolve.
+// Reuse only -- no new mock.
+mainAnalysis.VarPointsTo(?hctx, ?mock, ?ctx, ?this) :-
+  FluentBuilderInvokedLambda(?implMethod, ?enclosing),
+  ThisVar(?implMethod, ?this),
+  MockObject(?mock, ?enclosing),
+  mainAnalysis.isImmutableHContext(?hctx),
+  mainAnalysis.isImmutableContext(?ctx).

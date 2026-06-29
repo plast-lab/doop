@@ -3,76 +3,115 @@
  * ---------------------------------------------------------------------------
  *
  * Models the real path by which shopizer reaches its payment/shipping
- * integration modules. The modules are NOT retrieved via getBean; they are
- * injected as a collection:
+ * integration modules. The modules are injected as a collection and consumed
+ * either by key lookup or by iteration:
  *
- *     @Inject @Resource Map<String,PaymentModule> paymentModules;   // generics erased
- *     ...
- *     PaymentModule m = (PaymentModule) paymentModules.get(code);   // cast recovers T
- *     m.processPayment(...);
+ *     @Inject Map<String,PaymentModule> paymentModules;                 // Map.get
+ *     PaymentModule m = (PaymentModule) paymentModules.get(code);
  *
- * Spring fills the map with every PaymentModule bean. We reproduce that: for an
- * injected Map field, recover the element type T from the cast applied to values
- * read out of it (the declared field type is just java.util.Map -- generics are
- * erased and GenericField did not carry it here), create a HashMap mock for the
- * field, and seed its contents with the existing mocks of all application
- * concrete implementations of T. The base analysis' HashMap.get()/values() then
- * return those beans, and the application's own cast + virtual call dispatch to
- * the module impls.
+ *     @Inject List<ShippingQuotePrePostProcessModule> shippingModulePreProcessors;   // iteration
+ *     for (ShippingQuotePrePostProcessModule p : shippingModulePreProcessors) { ... }
  *
- * #include after rules-jackee.dl's other includes (uses InjectionAnnotatedField,
- * MockObject, mainAnalysis.AllApplicationConcreteImplementations, the field-load
- * bridge, and MOCK_OBJECT_OF_TYPE / mainAnalysis_MockValueConsMacro).
+ * Spring fills the collection with every bean of the element type. We reproduce
+ * that: recover the element type T from the cast applied to values pulled OUT of
+ * the field (generics are erased), create a concrete collection mock for the
+ * field, and seed it with the existing mocks of all application concrete
+ * implementations of T. The base analysis' HashMap.get() / ArrayList iterator
+ * then return those beans, and the application's own cast + virtual call
+ * dispatch to the module impls.
  *
- * IMPORTANT (stratification): like container-lookup, we only ever REUSE existing
- * MockObjects here; minting a MockObject from a VarPointsTo-dependent body would
- * pull MockObject/BeanResource into the VarPointsTo SCC and make the program
- * unstratifiable (cyclic negation through the @Resource !BeanResource rule).
+ * Precision: the element type is tied to the field through SHARED VARIABLES
+ * along the load -> (get | iterator+next) -> cast chain (not merely the
+ * enclosing method), so a class with several collection fields or unrelated
+ * interface casts cannot cross-wire. Copy-closures make the chain survive
+ * intervening assignments.
+ *
+ * Stratification: we only ever REUSE existing MockObjects; minting one from a
+ * VarPointsTo-dependent body would pull MockObject/BeanResource into the
+ * VarPointsTo SCC (cyclic negation via the @Resource !BeanResource rule).
+ *
+ * #include after rules-jackee.dl's other includes.
  */
 
-// ---- 1. Injected Map field + element type recovered from a downstream cast ----
-// Heuristic: a method of the field's declaring class loads the field and casts
-// some value to an application interface T that has concrete implementations.
-// (Precise generic info is unavailable; the cast is the reliable signal.)
+// ---- 0. Copy-closures: follow local assignments through the chain ----
+.decl FieldLoadAlias(?var:Var, ?field:Field)
+FieldLoadAlias(?v, ?field)  :- LoadInstanceField(_, ?field, ?v, _).
+FieldLoadAlias(?to, ?field) :- FieldLoadAlias(?from, ?field), AssignLocal(?from, ?to, _).
+
+.decl GetResultAlias(?var:Var, ?root:Var)
+GetResultAlias(?v, ?v)      :- AssignReturnValue(_, ?v).
+GetResultAlias(?to, ?root)  :- GetResultAlias(?from, ?root), AssignLocal(?from, ?to, _).
+
 .decl InjectedCollectionField(?field:Field, ?elemType:Type)
 
+// ---- 1a. Map.get pattern: load -> get(...) -> cast ----
 InjectedCollectionField(?field, ?elemType) :-
   (InjectionAnnotatedField(?field);
    Field_Annotation(?field, "javax.annotation.Resource")),
   Field_Type(?field, ?ct),
   basic.SubtypeOf(?ct, "java.util.Map"),
-  Field_DeclaringType(?field, ?declType),
-  Method_DeclaringType(?m, ?declType),
-  LoadInstanceField(_, ?field, _, ?m),
-  AssignCast(?elemType, _, _, ?m),
+  FieldLoadAlias(?base, ?field),
+  VirtualMethodInvocation_Base(?get, ?base),
+  VirtualMethodInvocation_SimpleName(?get, "get"),
+  AssignReturnValue(?get, ?ret),
+  GetResultAlias(?castFrom, ?ret),
+  AssignCast(?elemType, ?castFrom, _, _),
   isInterfaceType(?elemType),
   mainAnalysis.AllApplicationConcreteImplementations(_, ?elemType).
 
-// ---- 2. One HashMap mock per injected collection field ----
-.decl CollectionInjectionMap(?field:Field, ?elemType:Type, ?mapValue:Value)
+// ---- 1b. Collection iteration pattern: load -> iterator() -> next() -> cast ----
+InjectedCollectionField(?field, ?elemType) :-
+  (InjectionAnnotatedField(?field);
+   Field_Annotation(?field, "javax.annotation.Resource")),
+  Field_Type(?field, ?ct),
+  basic.SubtypeOf(?ct, "java.util.Collection"),
+  FieldLoadAlias(?base, ?field),
+  VirtualMethodInvocation_Base(?it, ?base),
+  VirtualMethodInvocation_SimpleName(?it, "iterator"),
+  AssignReturnValue(?it, ?i0),
+  GetResultAlias(?iterVar, ?i0),
+  VirtualMethodInvocation_Base(?nx, ?iterVar),
+  VirtualMethodInvocation_SimpleName(?nx, "next"),
+  AssignReturnValue(?nx, ?n0),
+  GetResultAlias(?castFrom, ?n0),
+  AssignCast(?elemType, ?castFrom, _, _),
+  isInterfaceType(?elemType),
+  mainAnalysis.AllApplicationConcreteImplementations(_, ?elemType).
 
-mainAnalysis_MockValueConsMacro(?mapValue, "java.util.HashMap"),
-CollectionInjectionMap(?field, ?elemType, ?mapValue) :-
+// ---- 2. Concrete collection class to mock, by field type ----
+.decl CollectionFieldMockType(?field:Field, ?mockClass:ClassType)
+CollectionFieldMockType(?field, "java.util.HashMap") :-
+  InjectedCollectionField(?field, _),
+  Field_Type(?field, ?ct), basic.SubtypeOf(?ct, "java.util.Map").
+CollectionFieldMockType(?field, "java.util.ArrayList") :-
+  InjectedCollectionField(?field, _),
+  Field_Type(?field, ?ct),
+  basic.SubtypeOf(?ct, "java.util.Collection"),
+  !basic.SubtypeOf(?ct, "java.util.Map").
+
+// ---- 3. One concrete collection mock per field, attached to the field ----
+.decl CollectionInjectionMock(?field:Field, ?elemType:Type, ?mockClass:ClassType, ?mockValue:Value)
+
+mainAnalysis_MockValueConsMacro(?mockValue, ?mockClass),
+CollectionInjectionMock(?field, ?elemType, ?mockClass, ?mockValue) :-
   InjectedCollectionField(?field, ?elemType),
-  ?mapValue = cat("<injected collection ", cat(?field, ">")).
+  CollectionFieldMockType(?field, ?mockClass),
+  ?mockValue = cat(cat("<injected ", ?mockClass), cat(" ", cat(?field, ">"))).
 
-// Attach the map mock to the field on each instance of the declaring bean.
-// Value_isMock(?mapValue) lets the field-load bridge surface it on reads.
-mainAnalysis.InstanceFieldPointsTo(?h, ?mapValue, ?field, ?h, ?basevalue) :-
-  CollectionInjectionMap(?field, _, ?mapValue),
+// Value_isMock(?mockValue) lets the field-load bridge surface it on field reads.
+mainAnalysis.InstanceFieldPointsTo(?h, ?mockValue, ?field, ?h, ?basevalue) :-
+  CollectionInjectionMock(?field, _, _, ?mockValue),
   Field_DeclaringType(?field, ?declType),
   mainAnalysis.Value_Type(?basevalue, ?declType),
   mainAnalysis.isImmutableHContext(?h).
 
-// ---- 3. Seed the map's contents with the existing mock of every application
-//         concrete implementation of the element type (table -> $Node -> value),
-//         reusing MockObject (never minting it here). ----
+// ---- 4a. HashMap seeding (table -> $Node -> value) ----
 mainAnalysis.InstanceFieldPointsTo(?h, ?beanMock, ?valueField, ?h, ?nodeMock),
 mainAnalysis.InstanceFieldPointsTo(?h, ?arrayMock, ?tableField, ?h, ?mapValue),
 mainAnalysis.ArrayIndexPointsTo(?h, ?nodeMock, ?h, ?arrayMock),
 mainAnalysis_MockValueConsMacro(?arrayMock, "java.util.HashMap$Node[]"),
 mainAnalysis_MockValueConsMacro(?nodeMock, "java.util.HashMap$Node") :-
-  CollectionInjectionMap(?field, ?elemType, ?mapValue),
+  CollectionInjectionMock(?field, ?elemType, "java.util.HashMap", ?mapValue),
   mainAnalysis.AllApplicationConcreteImplementations(?implClass, ?elemType),
   MockObject(?beanMock, ?implClass),
   ?nodeMock  = cat(cat(?implClass, " @cnode "), ?mapValue),
@@ -81,4 +120,17 @@ mainAnalysis_MockValueConsMacro(?nodeMock, "java.util.HashMap$Node") :-
   Field_SimpleName(?tableField, "table"),
   Field_DeclaringType(?valueField, "java.util.HashMap$Node"),
   Field_SimpleName(?valueField, "value"),
+  mainAnalysis.isImmutableHContext(?h).
+
+// ---- 4b. ArrayList seeding (elementData[] -> beans); ArrayList.iterator()/Itr.next()
+//          read this.elementData, so the seeded array elements flow to next(). ----
+mainAnalysis.InstanceFieldPointsTo(?h, ?arrayMock, ?elemDataField, ?h, ?listValue),
+mainAnalysis.ArrayIndexPointsTo(?h, ?beanMock, ?h, ?arrayMock),
+mainAnalysis_MockValueConsMacro(?arrayMock, "java.lang.Object[]") :-
+  CollectionInjectionMock(?field, ?elemType, "java.util.ArrayList", ?listValue),
+  mainAnalysis.AllApplicationConcreteImplementations(?implClass, ?elemType),
+  MockObject(?beanMock, ?implClass),
+  ?arrayMock = cat(cat(?implClass, " @cdata "), ?listValue),
+  Field_DeclaringType(?elemDataField, "java.util.ArrayList"),
+  Field_SimpleName(?elemDataField, "elementData"),
   mainAnalysis.isImmutableHContext(?h).

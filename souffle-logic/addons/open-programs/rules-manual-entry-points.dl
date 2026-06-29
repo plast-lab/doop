@@ -328,4 +328,4 @@ mainAnalysis.InitializedClass(?class) :-
 DeepReachableApplicationMethod(?method) :-
   mainAnalysis.Reachable(?method),
   Stats_Simple_ApplicationConcreteMethod(?method),
-  !EntryPointMethod(?method).
+  RealCallGraphEdge(_, ?method).

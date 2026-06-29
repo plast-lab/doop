@@ -1,0 +1,124 @@
+/**
+ * Spring Data repository proxy return-value modeling.
+ * ---------------------------------------------------------------------------
+ *
+ * A Spring Data repository is an application *interface* extending
+ * org.springframework.data.repository.Repository (JpaRepository, CrudRepository,
+ * custom bases, ...). Spring generates the implementation as a runtime proxy, so
+ * a call like `User u = userRepo.findById(id).get(); u.foo()` has no application
+ * call site that produces the entity -- `u` points to nothing and everything
+ * downstream of a repository result is unreachable.
+ *
+ * We model the proxy contract: at a reached call on a repository-typed receiver,
+ * point the return at a mock of the domain entity (reusing the entity's existing
+ * @Entity mock -- never minting, so it stays stratified), wrapping it in the
+ * declared container (Optional / List / Page) so .get()/iteration/getContent()
+ * yield the entity.
+ *
+ * Entity type recovery: generics are erased and GenericType*.facts are empty, so
+ * (as with the MyBatis-mapper rule) the entity is recovered from the
+ * <Entity>Repository naming convention, validated against @Entity. Direct-entity
+ * returns (custom finders `User findByX()`) need no naming -- the return type IS
+ * the entity.
+ *
+ * #include after serialization-accessors.dl (uses MockObject of @Entity types,
+ * which that file mints, and TypeSimpleName which it loads).
+ */
+
+// Spring Data repository interfaces (transitively extend Repository).
+.decl SpringDataRepoType(?repo:Type)
+SpringDataRepoType(?repo) :-
+  isInterfaceType(?repo),
+  basic.SubtypeOf(?repo, "org.springframework.data.repository.Repository").
+
+// Domain entity via the <Entity>Repository naming convention, validated @Entity.
+.decl SpringDataRepoEntity(?repo:Type, ?entity:Type)
+SpringDataRepoEntity(?repo, ?entity) :-
+  SpringDataRepoType(?repo),
+  ApplicationClass(?repo),
+  TypeSimpleName(?repo, ?rn),
+  strlen(?rn) > 10,
+  substr(?rn, strlen(?rn) - 10, 10) = "Repository",
+  ?en = substr(?rn, 0, strlen(?rn) - 10),
+  TypeSimpleName(?entity, ?en),
+  mainAnalysis.ApplicationConcreteType(?entity),
+  (Type_Annotation(?entity, "javax.persistence.Entity");
+   Type_Annotation(?entity, "jakarta.persistence.Entity")).
+
+// Return variable of a reached call whose receiver is repository-typed.
+.decl RepoCallReturn(?ctx:mainAnalysis.configuration.Context, ?ret:Var, ?repo:Type, ?retType:Type)
+RepoCallReturn(?ctx, ?ret, ?repo, ?retType) :-
+  mainAnalysis.ReachableContext(?ctx, ?inMethod),
+  Instruction_Method(?invo, ?inMethod),
+  VirtualMethodInvocation_Base(?invo, ?base),
+  Var_Type(?base, ?repo),
+  SpringDataRepoType(?repo),
+  AssignReturnValue(?invo, ?ret),
+  Var_Type(?ret, ?retType).
+
+// (1) Direct entity return: a custom finder declared to return the entity
+//     (`User findByLogin(...)`). The return type IS the entity, so no naming
+//     needed; gated on @Entity + an existing mock for precision.
+mainAnalysis.VarPointsTo(?h, ?eMock, ?ctx, ?ret) :-
+  RepoCallReturn(?ctx, ?ret, _, ?entity),
+  (Type_Annotation(?entity, "javax.persistence.Entity");
+   Type_Annotation(?entity, "jakarta.persistence.Entity")),
+  MockObject(?eMock, ?entity),
+  mainAnalysis.isImmutableHContext(?h).
+
+// (2) Optional<E> (findById etc., erased to Optional): Optional mock whose
+//     `value` holds the entity, so .get()/.orElse(...) return it.
+mainAnalysis_MockValueConsMacro(?opt, "java.util.Optional"),
+mainAnalysis.VarPointsTo(?h, ?opt, ?ctx, ?ret),
+mainAnalysis.InstanceFieldPointsTo(?h, ?eMock, ?vField, ?h, ?opt) :-
+  RepoCallReturn(?ctx, ?ret, ?repo, "java.util.Optional"),
+  SpringDataRepoEntity(?repo, ?entity),
+  MockObject(?eMock, ?entity),
+  Field_DeclaringType(?vField, "java.util.Optional"),
+  Field_SimpleName(?vField, "value"),
+  ?opt = cat("<repo-Optional ", cat(?entity, ">")),
+  mainAnalysis.isImmutableHContext(?h).
+
+// (3) List/Collection/Set/Iterable<E> (findAll, list finders erased): ArrayList
+//     mock whose elementData[] holds the entity, so iteration yields entities.
+.decl ListReturnType(?t:Type)
+ListReturnType("java.util.List").
+ListReturnType("java.util.Collection").
+ListReturnType("java.lang.Iterable").
+ListReturnType("java.util.Set").
+
+mainAnalysis_MockValueConsMacro(?list, "java.util.ArrayList"),
+mainAnalysis_MockValueConsMacro(?arr, "java.lang.Object[]"),
+mainAnalysis.VarPointsTo(?h, ?list, ?ctx, ?ret),
+mainAnalysis.InstanceFieldPointsTo(?h, ?arr, ?edField, ?h, ?list),
+mainAnalysis.ArrayIndexPointsTo(?h, ?eMock, ?h, ?arr) :-
+  RepoCallReturn(?ctx, ?ret, ?repo, ?rt),
+  ListReturnType(?rt),
+  SpringDataRepoEntity(?repo, ?entity),
+  MockObject(?eMock, ?entity),
+  Field_DeclaringType(?edField, "java.util.ArrayList"),
+  Field_SimpleName(?edField, "elementData"),
+  ?list = cat("<repo-List ", cat(?entity, ">")),
+  ?arr  = cat("<repo-List-arr ", cat(?entity, ">")),
+  mainAnalysis.isImmutableHContext(?h).
+
+// (4) Page<E> (Spring Data, erased to Page): PageImpl mock whose Chunk.content
+//     holds an ArrayList(entity), so page.getContent()/iteration yield entities.
+mainAnalysis_MockValueConsMacro(?page, "org.springframework.data.domain.PageImpl"),
+mainAnalysis_MockValueConsMacro(?plist, "java.util.ArrayList"),
+mainAnalysis_MockValueConsMacro(?parr, "java.lang.Object[]"),
+mainAnalysis.VarPointsTo(?h, ?page, ?ctx, ?ret),
+mainAnalysis.InstanceFieldPointsTo(?h, ?plist, ?cField, ?h, ?page),
+mainAnalysis.InstanceFieldPointsTo(?h, ?parr, ?edField, ?h, ?plist),
+mainAnalysis.ArrayIndexPointsTo(?h, ?eMock, ?h, ?parr) :-
+  RepoCallReturn(?ctx, ?ret, ?repo, "org.springframework.data.domain.Page"),
+  SpringDataRepoEntity(?repo, ?entity),
+  MockObject(?eMock, ?entity),
+  Field_DeclaringType(?cField, "org.springframework.data.domain.Chunk"),
+  Field_SimpleName(?cField, "content"),
+  Field_DeclaringType(?edField, "java.util.ArrayList"),
+  Field_SimpleName(?edField, "elementData"),
+  ?page  = cat("<repo-Page ", cat(?entity, ">")),
+  ?plist = cat("<repo-Page-list ", cat(?entity, ">")),
+  ?parr  = cat("<repo-Page-arr ", cat(?entity, ">")),
+  mainAnalysis.isImmutableHContext(?h).

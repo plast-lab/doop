@@ -1,7 +1,13 @@
 // Context-insensitive pointer analysis with on-the-fly call graph discovery
 
-#include "../../main/single-phase-analysis.dl"
-#include "../../main/configuration.dl"
+#ifdef CHOICE_BOUND
+
+#define BOUND_VAR_POINTS_TO(hctx, value, ctx, var) VarPointsTo_Bounded(hctx, value, ctx, var, (ord(value)*ord(hctx)) % 10)
+
+#define CHOICE_CONFIG choice-domain (?ctx, ?var, ?n)
+.decl VarPointsTo_Bounded(?hctx:mainAnalysis.configuration.HContext, ?value:Value, ?ctx:mainAnalysis.configuration.Context, ?var:Var, ?n:number) CHOICE_CONFIG
+
+#endif
  
 // This analysis has no context for either method calls or heap objects.
 // This is emulated by creating a single Context object and a single HContext
@@ -49,3 +55,6 @@
       isImmutableContext(?ctx).
 #endif // HEAPDLS
 }
+
+#include "../../main/single-phase-analysis.dl"
+#include "../../main/configuration.dl"

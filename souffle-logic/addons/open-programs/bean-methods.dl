@@ -1,0 +1,101 @@
+/**
+ * Spring-managed bean public-method exercising  (EXPERIMENTAL completeness lever).
+ * ---------------------------------------------------------------------------
+ *
+ * A framework-managed bean (@Service/@Component/@Repository) has its public
+ * methods invoked by the framework and by peer beans. In indirection-heavy apps
+ * the controller -> service call chains do not statically connect (openkoda
+ * routes them through its functional Flow framework, dynamic-entity system and a
+ * JS runner), so the entire service layer stays cold even though the beans are
+ * instantiated. Here ~51% of the cold set is public methods of such beans.
+ *
+ * This exercises those public methods as entry points -- a BOUNDED
+ * over-approximation, the completeness-for-precision trade. Bounds:
+ *   - stereotype-gated (genuine framework beans, not name-matched like the
+ *     removed PossibleEntryPointClass),
+ *   - public instance methods only,
+ *   - methods with a bare java.lang.Object parameter are skipped, else the
+ *     generic arg-mock rule in rules-jackee.dl binds the param to EVERY
+ *     application type (the VarPointsTo explosion guard, same concern as SPI).
+ * Reachability / this-binding / arg-mocking come free from rules-jackee.dl.
+ * Pure static structure -> stratified. ALWAYS report VarPointsTo growth with it.
+ */
+.decl SpringManagedBean(?class:Type)
+SpringManagedBean(?class) :-
+  mainAnalysis.ApplicationConcreteType(?class),
+  (Type_Annotation(?class, "org.springframework.stereotype.Service");
+   Type_Annotation(?class, "org.springframework.stereotype.Component");
+   Type_Annotation(?class, "org.springframework.stereotype.Repository")).
+
+// Service-layer beans registered via Spring XML / a ServiceManager rather than a
+// @Component annotation (e.g. DSpace's entire service layer lives in
+// config/spring/api/*.xml, which is NOT in the analyzed jars) follow a strong
+// convention: the concrete impl implements an application interface whose role
+// name ends in Service/Manager/Dao/Factory/Provider. Treat such an impl as a
+// managed bean so bean-methods exercises its public API. Keyed on the
+// IMPLEMENTED INTERFACE's role (the contract), not the impl's name.
+SpringManagedBean(?class) :-
+  mainAnalysis.ApplicationConcreteType(?class),
+  isClassType(?class),
+  basic.SubtypeOf(?class, ?iface),
+  isInterfaceType(?iface),
+  ApplicationClass(?iface),
+  (match(".*Service", ?iface);
+   match(".*Manager", ?iface);
+   match(".*Dao", ?iface);
+   match(".*DAO", ?iface);
+   match(".*Factory", ?iface);
+   match(".*Provider", ?iface);
+   match(".*API", ?iface)).   // dotCMS's service layer uses the *API convention (ContentletAPI, RoleAPI, ...)
+
+// Universal/erasure parameter types. Binding a parameter of one of these to
+// EVERY application concrete implementation (the generic arg-mock "Main policy"
+// rule in rules-jackee.dl) is the VarPointsTo explosion that the old
+// Object-param guard crudely avoided by skipping the whole method. Instead we
+// now exercise the method but leave such params UNBOUND: rules-jackee.dl's
+// arg-mock rule skips UniversalParamType params (via !UniversalParamType), so
+// the framework-callback body and its calls through the bound `this` / typed
+// params still connect, while the universal param has an empty points-to and
+// cannot pollute. This recovers framework CRUD handlers like DSpace's
+// DSpaceRestRepository.findOne(Serializable)/patch(Object)/createAndReturn(...).
+.decl UniversalParamType(?type:Type)
+UniversalParamType("java.lang.Object").
+UniversalParamType("java.io.Serializable").
+UniversalParamType("java.lang.Comparable").
+UniversalParamType("java.lang.Cloneable").
+
+ExercisedEntryPointMethod(?class, ?method) :-
+  SpringManagedBean(?class),
+  Method_DeclaringType(?method, ?class),
+  Method_Modifier("public", ?method),
+  !Method_Modifier("static", ?method),
+  !Method_SimpleName(?method, "<init>"),
+  !Method_SimpleName(?method, "<clinit>").
+
+// Also exercise public methods INHERITED from an abstract application base
+// (framework CRUD/template methods declared on the base and not overridden in
+// the leaf -- bean-methods otherwise keys only on the leaf's own declared
+// methods, so base-declared handlers on the 92 abstract DSpace bases stay cold).
+// `this` binds to the leaf bean's mock (type-correct: leaf <: base).
+ExercisedEntryPointMethod(?leaf, ?method) :-
+  SpringManagedBean(?leaf),
+  basic.SubtypeOf(?leaf, ?base),
+  ?leaf != ?base,
+  isClassType(?base),
+  ClassModifier("abstract", ?base),
+  ApplicationClass(?base),
+  Method_DeclaringType(?method, ?base),
+  Method_Modifier("public", ?method),
+  !Method_Modifier("static", ?method),
+  !Method_Modifier("abstract", ?method),
+  !Method_SimpleName(?method, "<init>"),
+  !Method_SimpleName(?method, "<clinit>").
+
+// Receiver mock so each exercised body's `this`.field reads / calls on `this`
+// resolve (idempotent reuse of any existing bean mock).
+mainAnalysis_MockValueConsMacro(?mock, ?class),
+MockObject(?mock, ?class) :-
+  SpringManagedBean(?class),
+  isClassType(?class),
+  !ClassModifier("abstract", ?class),
+  ?mock = MOCK_OBJECT_OF_TYPE(?class).

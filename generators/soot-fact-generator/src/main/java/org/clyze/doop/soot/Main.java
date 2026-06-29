@@ -128,8 +128,17 @@ public class Main {
             // IR generation (needs information from previous steps).
             SootDriver.waitForExecutorShutdown(java.getExecutor());
             int numErrors = errors.intValue();
-            if (numErrors != 0)
-                throw DoopErrorCodeException.error34("Fact generation failed with " + numErrors + " errors.");
+            if (numErrors != 0) {
+                String msg = "Fact generation failed with " + numErrors + " errors.";
+                System.err.println(msg);
+                // Honor --ignore-factgen-errors here too: a Throwable escaping
+                // invokeSoot (e.g. Soot failing to build a Jimple body for a
+                // JiBX-generated marshalling method) would otherwise abort the
+                // whole run, unlike the per-method (FactGenerator) and
+                // Driver.shutdownExecutor paths which already respect the flag.
+                if (!sootParameters._ignoreFactGenErrors)
+                    throw DoopErrorCodeException.error34(msg);
+            }
 
             if (writeFacts && sootParameters._scanNativeCode)
 		ArtifactScanner.scanNativeCode(db, sootParameters, sootData.writer.getMethodStrings());
@@ -261,6 +270,18 @@ public class Main {
             } catch (Exception ex) {
                 System.err.println("Error: not all bodies retrieved.");
                 ex.printStackTrace();
+            } finally {
+                // Soot's parallel body retrieval propagates a worker failure
+                // (e.g. a method body it cannot build, such as a JiBX-generated
+                // marshalling adapter) by interrupting this thread. If that
+                // interrupt flag is left set, the very next executor await in
+                // generateInParallel() throws InterruptedException immediately
+                // and aborts the whole run (Doop error #10) -- losing facts for
+                // every other method. Clear it so a single un-buildable body
+                // only costs that one method, which Doop already tolerates as a
+                // "method without active body".
+                if (Thread.interrupted())
+                    System.err.println("Cleared stale interrupt after body retrieval.");
             }
         }
 

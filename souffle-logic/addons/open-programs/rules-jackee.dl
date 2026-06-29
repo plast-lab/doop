@@ -4,6 +4,9 @@
 #include "serialization-accessors.dl"
 #include "bean-collection-injection.dl"
 #include "container-lookup.dl"
+#include "spi-callbacks.dl"
+#include "fluent-builder-dispatch.dl"
+#include "bean-methods.dl"
 
 ExercisedEntryPointMethod(?entryPointDeclaringType, ?method) :-
     PossibleOpenProgramEntryPoint(?entryPointDeclaringType, ?method).
@@ -77,7 +80,17 @@ MockObject(?mockObj, ?concreteType) :-
   ExercisedEntryPointMethod(?entryPointDeclaringType, ?method),
   !BridgeMethod(?method, ?entryPointDeclaringType),
   FormalParam(_, ?method, ?param),
+  // Params bound precisely by an SPI rule (e.g. the recovered Validator.validate
+  // target type) are excluded here, so an Object-declared param does not get the
+  // all-application-types explosion. See spi-callbacks.dl.
+  !SpiPreciselyBoundParam(?param),
   Var_Type(?param, ?type),
+  // Never bind a universal/erasure-typed param (Object/Serializable/Comparable/
+  // Cloneable) to every application concrete type -- that is the VarPointsTo
+  // explosion. Such params are left unbound (empty points-to); the method is
+  // still exercised. Lets bean-methods.dl exercise framework CRUD handlers that
+  // take Serializable ids / Object bodies without exploding. See bean-methods.dl.
+  !UniversalParamType(?type),
   mainAnalysis.AllApplicationConcreteImplementations(?concreteType, ?type),
   mainAnalysis.isImmutableHContext(?hctx),
   mainAnalysis.isImmutableContext(?ctx),
@@ -434,6 +447,12 @@ EntryPointClass(?type) :-
    Type_Annotation(?type, "javax.servlet.annotation.WebFilter");
    Type_Annotation(?type, "javax.servlet.annotation.WebListener");
    Type_Annotation(?type, "javax.ejb.MessageDriven");
+   Type_Annotation(?type, "jakarta.ws.rs.Path");
+   Type_Annotation(?type, "jakarta.persistence.Entity");
+   Type_Annotation(?type, "jakarta.servlet.annotation.WebServlet");
+   Type_Annotation(?type, "jakarta.servlet.annotation.WebFilter");
+   Type_Annotation(?type, "jakarta.servlet.annotation.WebListener");
+   Type_Annotation(?type, "jakarta.ejb.MessageDriven");
    AuthenticationProviderBean(?type);
    AuthenticationFilterBean(?type);
    AuthenticationEntryPoint(?type);
@@ -467,7 +486,13 @@ MockObject(?mockObj, ?type) :-
    Type_Annotation(?type, "javax.servlet.annotation.WebServlet");
    Type_Annotation(?type, "javax.servlet.annotation.WebFilter");
    Type_Annotation(?type, "javax.servlet.annotation.WebListener");
-   Type_Annotation(?type, "javax.ejb.MessageDriven")),
+   Type_Annotation(?type, "javax.ejb.MessageDriven");
+   Type_Annotation(?type, "jakarta.ws.rs.Path");
+   Type_Annotation(?type, "jakarta.persistence.Entity");
+   Type_Annotation(?type, "jakarta.servlet.annotation.WebServlet");
+   Type_Annotation(?type, "jakarta.servlet.annotation.WebFilter");
+   Type_Annotation(?type, "jakarta.servlet.annotation.WebListener");
+   Type_Annotation(?type, "jakarta.ejb.MessageDriven")),
   ?mockObj = MOCK_OBJECT_OF_TYPE(?type).
 
 // Predicate-driven MockObjects: each disjunct's defining rules already constrain
@@ -493,19 +518,27 @@ isSpringApplication(1) :-
 
 .decl PossibleEntryPointClass(?type:Type)
 
+// Name-suffix fallback for non-Spring apps. Deliberately EXCLUDES ".*Bean":
+// it matched data-transfer beans (e.g. CmsGalleryDataBean, CmsResourceInfoBean)
+// whose every method then became a fabricated entry-point root -- those are
+// data classes, handled correctly (accessors only) by serialization-accessors.
+// The remaining suffixes are entry-point-shaped; real servlets/listeners are
+// also caught structurally (HttpServlet/Filter/ApplicationListener subtypes and
+// the SPI library-interface discriminator), so these are a thin fallback for
+// unannotated POJO controllers/handlers.
 PossibleEntryPointClass(?type) :-
    !isSpringApplication(1),
    ApplicationClass(?type),
    (match(".*Controller", ?type);
-    match(".*Bean", ?type);
     match(".*Listener", ?type);
     match(".*Servlet", ?type)).
 
-PossibleEntryPointClass(?type) :-
-  !isSpringApplication(1),
-  ApplicationClass(?type),
-  Method_DeclaringType(?method, ?type),
-  Method_SimpleName(?method, "init").
+// Removed: the "class has a method named init()" rule. `init` is an extremely
+// common method name (CmsUUID, CmsSqlManager, A_CmsHtmlConverter, ...), so the
+// rule turned ~69 arbitrary utilities/managers into entry-point classes with
+// ALL methods exercised as roots. Genuine init callbacks are caught precisely
+// elsewhere: javax.servlet init(ServletConfig) via the Servlet rules,
+// InitializingBean.afterPropertiesSet / XML init-method via their own rules.
 
 
 ExercisedEntryPointMethod(?type, ?method) :-
@@ -610,7 +643,15 @@ ExercisedEntryPointMethod(?class, ?method) :-
    Method_Annotation(?method, "javax.ws.rs.GET");
    Method_Annotation(?method, "javax.ws.rs.HEAD");
    Method_Annotation(?method, "javax.ws.rs.DELETE");
-   Method_Annotation(?method, "javax.ws.rs.PATH")).
+   Method_Annotation(?method, "javax.ws.rs.OPTIONS");
+   Method_Annotation(?method, "javax.ws.rs.PATCH");
+   Method_Annotation(?method, "jakarta.ws.rs.POST");
+   Method_Annotation(?method, "jakarta.ws.rs.PUT");
+   Method_Annotation(?method, "jakarta.ws.rs.GET");
+   Method_Annotation(?method, "jakarta.ws.rs.HEAD");
+   Method_Annotation(?method, "jakarta.ws.rs.DELETE");
+   Method_Annotation(?method, "jakarta.ws.rs.OPTIONS");
+   Method_Annotation(?method, "jakarta.ws.rs.PATCH")).
 
 // CDI event listeners: a method is invoked when any of its parameters carries
 // @Observes and an event of matching type is published.
@@ -991,4 +1032,4 @@ MethodWithBuggySerializableArg(?method) :-
 DeepReachableApplicationMethod(?method) :-
   mainAnalysis.Reachable(?method),
   Stats_Simple_ApplicationConcreteMethod(?method),
-  !EntryPointMethod(?method).
+  RealCallGraphEdge(_, ?method).

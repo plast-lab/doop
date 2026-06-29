@@ -47,9 +47,11 @@
  *     not only coverage.
  *   - match(pattern, symbol) in Souffle is an anchored full match, so "get.+"
  *     means exactly "get" followed by >= 1 character.
- *   - The javax.xml.bind.* / org.springframework.* annotation FQNs target the
- *     javax (Java EE 8 / Spring 5) namespace. For Jakarta EE 9+ / Spring 6 add
- *     the jakarta.xml.bind.* equivalents.
+ *   - JAXB and JPA annotation FQNs are matched in both the javax (Java EE 8 /
+ *     Spring 5) and jakarta (Jakarta EE 9+ / Spring 6) namespaces. The Jackson
+ *     @RequestBody/@ResponseBody/@RestController FQNs are still Spring-only
+ *     (org.springframework.web.bind.annotation.*), which is unchanged across
+ *     Spring 5/6.
  */
 
 /**
@@ -59,11 +61,87 @@
 .decl SerializedType(?type:Type)
 
 // (a) JAXB-bound types: generated XML/SOAP stubs (e.g. ca.canadapost.cpcdp.rating).
+//     Both the javax (Java EE 8) and jakarta (Jakarta EE 9+) namespaces.
 SerializedType(?type) :-
   mainAnalysis.ApplicationConcreteType(?type),
   (Type_Annotation(?type, "javax.xml.bind.annotation.XmlRootElement");
    Type_Annotation(?type, "javax.xml.bind.annotation.XmlType");
-   Type_Annotation(?type, "javax.xml.bind.annotation.XmlAccessorType")).
+   Type_Annotation(?type, "javax.xml.bind.annotation.XmlAccessorType");
+   Type_Annotation(?type, "jakarta.xml.bind.annotation.XmlRootElement");
+   Type_Annotation(?type, "jakarta.xml.bind.annotation.XmlType");
+   Type_Annotation(?type, "jakarta.xml.bind.annotation.XmlAccessorType")).
+
+// (a2) JPA/ORM-mapped types: @Entity / @MappedSuperclass / @Embeddable classes.
+//      Hibernate hydrates them reflectively (constructor + setters) and the
+//      templating layer (Thymeleaf/Freemarker) reads their getters, none of
+//      which the static call graph executes. @MappedSuperclass bases (e.g.
+//      Person, BaseEntity) must be matched directly because their inherited
+//      accessors are *declared* on the base type, so the ExercisedEntryPointMethod
+//      rule (which keys on Method_DeclaringType) needs the base in SerializedType.
+//      Both the javax (Java EE) and jakarta (Jakarta EE 9+) namespaces.
+// Gate on ApplicationClass, NOT ApplicationConcreteType: @MappedSuperclass bases
+// (e.g. BaseModel/BaseEntity/Person) are ABSTRACT, so the concrete gate silently
+// excluded them -- yet their accessors are declared on the base and must be
+// matched directly (the inherited copies on subclasses key on the base's
+// Method_DeclaringType). @Entity/@Embeddable are concrete anyway, so this is a
+// safe superset; the persistence annotation is the real filter.
+SerializedType(?type) :-
+  ApplicationClass(?type),
+  isClassType(?type),
+  (Type_Annotation(?type, "javax.persistence.Entity");
+   Type_Annotation(?type, "javax.persistence.MappedSuperclass");
+   Type_Annotation(?type, "javax.persistence.Embeddable");
+   Type_Annotation(?type, "jakarta.persistence.Entity");
+   Type_Annotation(?type, "jakarta.persistence.MappedSuperclass");
+   Type_Annotation(?type, "jakarta.persistence.Embeddable")).
+
+// (a3) MyBatis-Plus / MyBatis ORM entities. MyBatis-Plus maps result-set rows
+//      to entities reflectively (constructor + setters) and reads getters for
+//      insert/update parameter binding -- none of which the static call graph
+//      executes. This is the MyBatis analogue of the JPA @Entity case (a2):
+//      apps on MyBatis-Plus (e.g. pybbs) carry no javax/jakarta.persistence
+//      annotations, so (a2) recovers nothing for them. Entities are marked by
+//      @TableName on the class and/or @TableId / @TableField on fields;
+//      class-level @TableName is optional (the table name is inferred from the
+//      class name), so match either signal to catch every entity.
+SerializedType(?type) :-
+  mainAnalysis.ApplicationConcreteType(?type),
+  Type_Annotation(?type, "com.baomidou.mybatisplus.annotation.TableName").
+
+SerializedType(?type) :-
+  mainAnalysis.ApplicationConcreteType(?type),
+  Field_DeclaringType(?field, ?type),
+  (Field_Annotation(?field, "com.baomidou.mybatisplus.annotation.TableId");
+   Field_Annotation(?field, "com.baomidou.mybatisplus.annotation.TableField")).
+
+// (a4) Convention-only MyBatis entities: a MyBatis-Plus entity may carry NO
+//      annotations at all (table/columns inferred from names), so (a3) misses
+//      it. Such entities are still the type parameter T of an app mapper that
+//      extends BaseMapper<T>, but generics are erased (Generic*.facts empty) and
+//      a write-only entity is never cast, so neither the type-arg nor the
+//      cast-recovery signal is available. The reliable structural link is the
+//      MyBatis-Plus naming convention <Entity>Mapper <-> <Entity>.
+//
+//      Type-SimpleName.facts is emitted by fact-gen but NOT imported by the base
+//      analysis, so load it here.
+.decl TypeSimpleName(?type:Type, ?simpleName:symbol)
+.input TypeSimpleName(IO="file", filename="Type-SimpleName.facts", delimiter="\t")
+
+.decl MapperInterface(?mapper:Type)
+MapperInterface(?mapper) :-
+  isInterfaceType(?mapper),
+  ApplicationClass(?mapper),
+  basic.SubtypeOf(?mapper, "com.baomidou.mybatisplus.core.mapper.BaseMapper").
+
+SerializedType(?entity) :-
+  MapperInterface(?mapper),
+  TypeSimpleName(?mapper, ?mapperName),
+  strlen(?mapperName) > 6,
+  substr(?mapperName, strlen(?mapperName) - 6, 6) = "Mapper",
+  ?entityName = substr(?mapperName, 0, strlen(?mapperName) - 6),
+  TypeSimpleName(?entity, ?entityName),
+  isClassType(?entity),
+  mainAnalysis.ApplicationConcreteType(?entity).
 
 // (b) Jackson request deserialization: @RequestBody parameter types of reached
 //     entry-point methods.
@@ -71,6 +149,28 @@ SerializedType(?type) :-
   ExercisedEntryPointMethod(_, ?method),
   FormalParam(?i, ?method, ?param),
   Param_Annotation(?method, ?i, "org.springframework.web.bind.annotation.RequestBody"),
+  Var_Type(?param, ?type),
+  mainAnalysis.ApplicationConcreteType(?type).
+
+// (b2) Spring MVC form / command-object binding: an application-concrete
+//      parameter of a @RequestMapping/@*Mapping handler method is a form bean
+//      that Spring's WebDataBinder populates via setters from request params --
+//      there is no application call site, so the setters stay cold. The non-JSON
+//      analogue of (b). Precise by construction: keyed on actual handler methods
+//      (mapping annotation), and only the form is an ApplicationConcreteType
+//      among a handler's parameters (Model/BindingResult/HttpServletRequest are
+//      framework types; @PathVariable/@RequestParam are simple types). It folds
+//      into SerializedType, so only accessors are exercised -- it never
+//      fabricates roots for business logic.
+SerializedType(?type) :-
+  ExercisedEntryPointMethod(_, ?method),
+  (Method_Annotation(?method, "org.springframework.web.bind.annotation.RequestMapping");
+   Method_Annotation(?method, "org.springframework.web.bind.annotation.GetMapping");
+   Method_Annotation(?method, "org.springframework.web.bind.annotation.PostMapping");
+   Method_Annotation(?method, "org.springframework.web.bind.annotation.PutMapping");
+   Method_Annotation(?method, "org.springframework.web.bind.annotation.DeleteMapping");
+   Method_Annotation(?method, "org.springframework.web.bind.annotation.PatchMapping")),
+  FormalParam(_, ?method, ?param),
   Var_Type(?param, ?type),
   mainAnalysis.ApplicationConcreteType(?type).
 
@@ -104,6 +204,33 @@ SerializedType(?concrete) :-
   Method_Arity(?getter, 0),
   Method_ReturnType(?getter, ?propStatic),
   mainAnalysis.AllApplicationConcreteImplementations(?concrete, ?propStatic).
+
+// (e) Value-object / data-carrier discriminator. A class whose declared methods
+//     are predominantly JavaBean accessors is a data carrier (DTO, config bean,
+//     descriptor, status/result holder) that frameworks populate and read
+//     reflectively -- Jackson import/export, config binding -- with no
+//     application call site, so its accessors stay cold even under the most
+//     permissive analysis. Marking it SerializedType exercises ONLY its
+//     accessors (cheap; never fabricates a business-logic root, unlike the
+//     name-based PossibleEntryPointClass we removed). Structural and
+//     framework-agnostic; the high accessor share excludes genuine logic classes
+//     (services/helpers with a few getters). Pure static counts -> stratified.
+.decl DeclaredAccessor(?type:Type, ?m:Method)
+DeclaredAccessor(?type, ?m) :-
+  Method_DeclaringType(?m, ?type),
+  Method_SimpleName(?m, ?name),
+  (match("get[A-Z].*", ?name); match("set[A-Z].*", ?name); match("is[A-Z].*", ?name)).
+
+.decl DataCarrierType(?type:Type)
+DataCarrierType(?type) :-
+  mainAnalysis.ApplicationConcreteType(?type),
+  isClassType(?type),
+  ?acc = count : { DeclaredAccessor(?type, _) },
+  ?acc >= 6,
+  ?tot = count : { Method_DeclaringType(_, ?type) },
+  ?acc * 10 >= ?tot * 5.
+
+SerializedType(?type) :- DataCarrierType(?type).
 
 /**
  * PropertyAccessor: JavaBean-style accessors -- getters/is (arity 0) and

@@ -1,0 +1,295 @@
+/**
+ * SPI-callback reachability for open-program (JackEE-style) analysis.
+ * ---------------------------------------------------------------------------
+ *
+ * Problem
+ *   Framework Service Provider Interfaces (SPIs) invert the call direction: the
+ *   application *implements* an interface the framework owns, and the framework
+ *   calls back into it -- reflectively or through a registry -- with no bytecode
+ *   call site from application code. Spring examples: Formatter/Converter (type
+ *   conversion), Validator (data binding), CommandLineRunner/ApplicationRunner
+ *   (startup), ApplicationListener (events), InitializingBean (lifecycle). The
+ *   static call graph never executes the registrar, so these callbacks stay
+ *   unreachable and depress application-method coverage.
+ *
+ * Approach
+ *   Model the contract directly, mirroring serialization-accessors.dl. A
+ *   concrete application type implementing an SPI interface has its callback
+ *   methods marked ExercisedEntryPointMethod -- which, via rules-jackee.dl,
+ *   makes them reachable, binds their receiver `this` to a type mock, and mocks
+ *   their formal parameters. Everything here is derived from static type /
+ *   method-signature structure with NO VarPointsTo in any rule body, so the
+ *   program stays stratified (same cardinal rule as the other open-program
+ *   addons: never mint a mock from a VarPointsTo-dependent body).
+ *
+ * Usage
+ *   #include this file from rules-jackee.dl (after commonMacros.dl and
+ *   application-concrete-types.dl, so MOCK_OBJECT_OF_TYPE /
+ *   mainAnalysis_MockValueConsMacro and ApplicationConcreteType are in scope).
+ *   Both javax and jakarta SPI namespaces should be added as they arise; the
+ *   Spring FQNs below are stable across Spring 5/6.
+ *
+ * Caveats
+ *   - Binds more receivers/args, enlarging VarPointsTo; measure runtime/precision
+ *     on a context-sensitive analysis (e.g. 2objH), not only coverage.
+ *   - Repository proxy methods (Spring Data findById/save/derived queries) are
+ *     NOT SPI in this sense -- they are proxy-generated, not app-implemented --
+ *     and need a separate repository-proxy model.
+ */
+
+// === General SPI provider discovery (replaces the per-framework curated table) ===
+//
+// An SPI provider is an application concrete type implementing an interface the
+// FRAMEWORK dispatches to with no application call site. Two structural
+// discriminators, no framework-specific naming:
+//
+//  (1) A non-JDK LIBRARY interface the application implements (the framework
+//      owns it). Covers Spring/JavaEE/FreeMarker/Quartz/servlet SPIs uniformly
+//      -- this subsumes the entire old curated SpiCallback table (Formatter,
+//      Converter, Validator, CommandLineRunner, ApplicationListener,
+//      InitializingBean, FactoryBean, *Aware, AttributeConverter,
+//      ConstraintValidator, freemarker.*, ...).
+//  (2) An APPLICATION interface with >= 2 application concrete implementations
+//      (a polymorphic extension point). Needed when the framework ITSELF is the
+//      program under analysis (e.g. OpenCMS, whose I_Cms* SPI interfaces are
+//      application code, so (1) cannot see them).
+//
+// java.* interfaces are excluded from (1): Serializable/Cloneable are markers,
+// and Comparable/Runnable/Collection callbacks are reached through ordinary app
+// use -- including them would only add noise and VarPointsTo.
+.decl SpiInterface(?iface:Type)
+SpiInterface(?iface) :-
+  isInterfaceType(?iface),
+  !ApplicationClass(?iface),
+  !match("java[.].*", ?iface).
+SpiInterface(?iface) :-
+  isInterfaceType(?iface),
+  ApplicationClass(?iface),
+  ?n = count : { mainAnalysis.AllApplicationConcreteImplementations(_, ?iface) },
+  ?n >= 2.
+
+// A concrete application implementation of an SPI interface.
+.decl SpiProviderType(?type:Type, ?iface:Type)
+SpiProviderType(?impl, ?iface) :-
+  SpiInterface(?iface),
+  mainAnalysis.AllApplicationConcreteImplementations(?impl, ?iface).
+
+// Abstract-class analogue of SpiInterface(1): a non-JDK LIBRARY ABSTRACT CLASS
+// the application extends is a framework extension point the framework
+// instantiates and calls back -- e.g. Jackson JsonDeserializer/JsonSerializer
+// (abstract classes, NOT interfaces, so SpiInterface misses them), Spring
+// OncePerRequestFilter / AbstractAuthenticationProcessingFilter, etc. Gated on
+// the base declaring an abstract method, so it is a genuine override-required
+// extension point and not a code-reuse base (AbstractList-style). The app's
+// concrete subclasses become SpiProviderType, so the shared SpiCandidateMethod /
+// receiver-mock / SerializedType machinery exercises their callbacks.
+.decl SpiLibraryAbstractClass(?base:Type)
+SpiLibraryAbstractClass(?base) :-
+  isClassType(?base),
+  ClassModifier("abstract", ?base),
+  !ApplicationClass(?base),
+  !match("java[.].*", ?base),
+  Method_DeclaringType(?am, ?base),
+  Method_Modifier("abstract", ?am).
+
+SpiProviderType(?impl, ?base) :-
+  SpiLibraryAbstractClass(?base),
+  mainAnalysis.AllApplicationConcreteImplementations(?impl, ?base).
+
+// The impl's override of each interface-declared callback, matched by simple
+// name + arity, walking abstract bases between the leaf and the interface
+// (basic.SubtypeOf is reflexive for class types).
+//
+// NB on matching (verified empirically on OpenCMS): name+arity is intentionally
+// used here rather than a descriptor match. Generic-PARAMETER SPIs
+// (Comparator<T>.compare(T,T), Converter<S,T>.convert(S),
+// I_CmsListFormatter<T>.format(T), ...) erase the *parameter* types to Object,
+// so the real typed override compare(CmsXxx,CmsXxx) has a descriptor that
+// genuinely differs from the interface's erased compare(Object,Object). It is
+// NOT a covariant-RETURN override, and Doop exposes no parameter-bridge
+// relation (MethodMightBeCovariantBridge is return-only), so every
+// descriptor-based match (MethodLookup / MethodImplementedModuloCovariance)
+// finds only the synthetic bridge and the real override stays cold -- ~900
+// fewer reached methods on OpenCMS. name+arity catches the real override
+// directly; its only imprecision (unrelated same-name/same-count overloads) is
+// empirically negligible.
+.decl SpiCandidateMethod(?leaf:Type, ?method:Method)
+SpiCandidateMethod(?leaf, ?method) :-
+  SpiProviderType(?leaf, ?iface),
+  Method_DeclaringType(?ifaceMethod, ?iface),
+  Method_SimpleName(?ifaceMethod, ?name),
+  Method_Arity(?ifaceMethod, ?arity),
+  basic.SubtypeOf(?leaf, ?decl),
+  basic.SubtypeOf(?decl, ?iface),
+  Method_DeclaringType(?method, ?decl),
+  Method_SimpleName(?method, ?name),
+  Method_Arity(?method, ?arity).
+
+// Exercise a candidate iff none of its bare-Object params is left unbound (an
+// unbound Object param would let the generic arg-mock rule bind it to every app
+// type). The bridge-param rule in rules-jackee.dl handles synthetic Object
+// bridges.
+ExercisedEntryPointMethod(?leaf, ?method) :-
+  SpiCandidateMethod(?leaf, ?method),
+  !MethodHasUnboundObjectParam(?method).
+
+// Fold SPI impls into SerializedType so serialization-accessors.dl exercises
+// their bean accessors (config beans, widgets, list metadata are populated and
+// read reflectively by the framework).
+SerializedType(?impl) :-
+  SpiProviderType(?impl, _).
+
+// Receiver mock so callback bodies (this.repository reads, calls on `this`)
+// resolve -- idempotent reuse of any existing @Component/bean mock.
+mainAnalysis_MockValueConsMacro(?mockObj, ?type),
+MockObject(?mockObj, ?type) :-
+  SpiProviderType(?type, _),
+  isClassType(?type),
+  !ClassModifier("abstract", ?type),
+  ?mockObj = MOCK_OBJECT_OF_TYPE(?type).
+
+/**
+ * General Object-parameter cast-recovery (generalizes the old Validator case).
+ *
+ * Many SPI callbacks take a bare java.lang.Object the framework downcasts on
+ * entry: Validator.validate(Object,Errors) -> (Pet) target; OpenCMS list
+ * formatters format(Object,...) -> (CmsListItem) data; comparators
+ * compare(Object,Object). The declared Object would make the generic arg-mock
+ * rule in rules-jackee.dl bind the param to EVERY application type (explosion).
+ * Instead recover the real type from the in-body cast, bind the param only to
+ * that, and mark it precisely-bound so both the generic rule and the
+ * unbound-Object guard skip it. Seeded only from SPI-candidate Object params, so
+ * the AssignLocal closure stays small. All static structure -> stratified.
+ */
+
+// Bare-Object parameters of SPI callback candidates.
+.decl SpiObjectParam(?method:Method, ?param:Var)
+SpiObjectParam(?method, ?param) :-
+  SpiCandidateMethod(_, ?method),
+  FormalParam(_, ?method, ?param),
+  Var_Type(?param, "java.lang.Object").
+
+// Forward AssignLocal closure from those params (mirrors FieldLoadAlias).
+.decl SpiParamAlias(?var:Var, ?root:Var)
+SpiParamAlias(?param, ?param) :- SpiObjectParam(_, ?param).
+SpiParamAlias(?to, ?root)     :- SpiParamAlias(?from, ?root), AssignLocal(?from, ?to, _).
+
+// Recover the concrete type from an in-body cast of the param: (Foo) target.
+.decl SpiObjectParamType(?param:Var, ?type:Type)
+SpiObjectParamType(?param, ?type) :-
+  SpiObjectParam(?method, ?param),
+  SpiParamAlias(?castFrom, ?param),
+  AssignCast(?type, ?castFrom, _, ?method),   // schema: (?type, ?from, ?to, ?inmethod)
+  mainAnalysis.ApplicationConcreteType(?type).
+
+// An Object param is precisely bound iff a cast recovered its type; such params
+// are excluded from the generic arg-mock rule (via !SpiPreciselyBoundParam in
+// rules-jackee.dl) and bound to the recovered mock below.
+.decl SpiPreciselyBoundParam(?param:Var)
+SpiPreciselyBoundParam(?param) :- SpiObjectParamType(?param, _).
+
+// A candidate is blocked iff it has a bare-Object param with no recovery.
+.decl MethodHasUnboundObjectParam(?method:Method)
+MethodHasUnboundObjectParam(?method) :-
+  SpiObjectParam(?method, ?param),
+  !SpiPreciselyBoundParam(?param).
+
+// Bind each recovered Object param to the recovered type's mock.
+mainAnalysis_MockValueConsMacro(?mockObj, ?type),
+mainAnalysis.VarPointsTo(?hctx, ?mockObj, ?ctx, ?param),
+MockObject(?mockObj, ?type) :-
+  SpiObjectParamType(?param, ?type),
+  isClassType(?type),
+  !ClassModifier("abstract", ?type),
+  mainAnalysis.isImmutableHContext(?hctx),
+  mainAnalysis.isImmutableContext(?ctx),
+  ?mockObj = MOCK_OBJECT_OF_TYPE(?type).
+
+/**
+ * Annotation-driven framework callbacks.
+ *
+ * Some SPIs are marked by a *method annotation* rather than an interface: the
+ * framework scans for annotated methods and invokes them reflectively, with no
+ * application call site. The Spring web/messaging/lifecycle annotations
+ * (@RequestMapping, @EventListener, @Scheduled, @PostConstruct, @Bean, ...) are
+ * already exercised in rules-jackee.dl; this table covers container/endpoint
+ * annotations it misses -- notably javax/jakarta WebSocket (@ServerEndpoint
+ * methods: @OnOpen/@OnMessage/@OnClose/@OnError). The endpoint class is usually
+ * @Component (already mocked) or @ServerEndpoint; we mint a receiver mock to
+ * cover the latter.
+ *
+ * Only annotations whose methods take framework/app-concrete parameters (no
+ * bare java.lang.Object) belong here, to avoid the generic arg-mock explosion;
+ * the WebSocket callbacks take Session/CloseReason/Throwable + app message
+ * types, which is safe. Stays stratified -- driven purely by annotation /
+ * type / signature facts, no VarPointsTo.
+ */
+.decl SpiCallbackAnnotation(?annotation:symbol)
+SpiCallbackAnnotation("javax.websocket.OnOpen").
+SpiCallbackAnnotation("javax.websocket.OnMessage").
+SpiCallbackAnnotation("javax.websocket.OnClose").
+SpiCallbackAnnotation("javax.websocket.OnError").
+SpiCallbackAnnotation("jakarta.websocket.OnOpen").
+SpiCallbackAnnotation("jakarta.websocket.OnMessage").
+SpiCallbackAnnotation("jakarta.websocket.OnClose").
+SpiCallbackAnnotation("jakarta.websocket.OnError").
+
+.decl SpiAnnotatedCallback(?class:Type, ?method:Method)
+SpiAnnotatedCallback(?class, ?method) :-
+  SpiCallbackAnnotation(?ann),
+  Method_Annotation(?method, ?ann),
+  Method_DeclaringType(?method, ?class),
+  mainAnalysis.ApplicationConcreteType(?class).
+
+ExercisedEntryPointMethod(?class, ?method) :-
+  SpiAnnotatedCallback(?class, ?method).
+
+// Receiver mock for the endpoint class (idempotent reuse if already @Component).
+mainAnalysis_MockValueConsMacro(?mockObj, ?class),
+MockObject(?mockObj, ?class) :-
+  SpiAnnotatedCallback(?class, _),
+  isClassType(?class),
+  !ClassModifier("abstract", ?class),
+  ?mockObj = MOCK_OBJECT_OF_TYPE(?class).
+
+/**
+ * Spring data-binding validation callbacks (parameter-type discriminator).
+ *
+ * An application instance method that takes a Spring BindingResult/Errors is a
+ * data-binding validation callback: the framework calls it during request
+ * binding (a form's validate/validateField hook, a Validator.validate(target,
+ * Errors) override, ...), never application code. Without an entry point these
+ * form-lifecycle methods stay cold, and with them the whole form-processing
+ * region they reach (field readers, populate/validate helpers, the lambda field
+ * caches they consume). This is the exact analogue of the servlet-parameter
+ * EntryPointClass rule in rules-jackee.dl -- a framework-owned parameter type as
+ * the signal -- so it is precise (BindingResult/Errors appear only on binding
+ * callbacks) and framework-agnostic across Spring 5/6. Pure static structure ->
+ * stratified. @RequestMapping handlers that also take BindingResult are already
+ * exercised in rules-jackee.dl; re-marking them here is idempotent.
+ */
+.decl SpringBindingCallbackParamType(?type:Type)
+SpringBindingCallbackParamType("org.springframework.validation.BindingResult").
+SpringBindingCallbackParamType("org.springframework.validation.Errors").
+
+ExercisedEntryPointMethod(?class, ?method) :-
+  Method_DeclaringType(?method, ?class),
+  mainAnalysis.ApplicationConcreteType(?class),
+  !Method_Modifier("static", ?method),
+  FormalParam(_, ?method, ?param),
+  Var_Type(?param, ?paramType),
+  SpringBindingCallbackParamType(?paramType).
+
+// Receiver mock so the callback body's `this`.field reads / calls on `this`
+// resolve (idempotent reuse of any existing bean mock).
+mainAnalysis_MockValueConsMacro(?mockObj, ?class),
+MockObject(?mockObj, ?class) :-
+  Method_DeclaringType(?method, ?class),
+  mainAnalysis.ApplicationConcreteType(?class),
+  !Method_Modifier("static", ?method),
+  FormalParam(_, ?method, ?param),
+  Var_Type(?param, ?paramType),
+  SpringBindingCallbackParamType(?paramType),
+  isClassType(?class),
+  !ClassModifier("abstract", ?class),
+  ?mockObj = MOCK_OBJECT_OF_TYPE(?class).

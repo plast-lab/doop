@@ -562,16 +562,22 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                     log.debug msg
                     if (isFatal(loader, t))
                         throw new RuntimeException("Fatal error, see log for details: ${t.toString()}")
-                    if (factGenRun >= MAX_FACTGEN_RUNS) {
-                        println "Too many fact generation restarts, aborting."
-                        if (!(options.X_IGNORE_FACTGEN_ERRORS.value)) {
-                            log.info "Errors occurred, maybe retry with --${options.X_IGNORE_FACTGEN_ERRORS.name}?"
-                        }
-                        throw new RuntimeException(msg)
-                    } else {
+                    if (factGenRun < MAX_FACTGEN_RUNS) {
                         redo = true
                         factGenRun += 1
                         println "Errors occurred, restarting fact generation (run #${factGenRun})."
+                    } else if (options.X_IGNORE_FACTGEN_ERRORS.value) {
+                        // Honor the user's explicit request to tolerate
+                        // fact-gen errors: keep whatever facts were produced
+                        // and continue to the analysis instead of aborting.
+                        // (The primary fix lives in the Soot front-end, which
+                        // no longer lets a single un-buildable method body
+                        // poison the whole run; this is the last-resort net.)
+                        println "Too many fact generation restarts; continuing with partial facts due to --${options.X_IGNORE_FACTGEN_ERRORS.name}."
+                    } else {
+                        println "Too many fact generation restarts, aborting."
+                        log.info "Errors occurred, maybe retry with --${options.X_IGNORE_FACTGEN_ERRORS.name}?"
+                        throw new RuntimeException(msg)
                     }
                 } finally {
                     // Restarting cannot add to current facts: non-deterministic names
