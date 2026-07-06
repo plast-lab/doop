@@ -1,8 +1,15 @@
 // Context-sensitive pointer analysis with context of 1 call site and a
 // context-sensnitive heap abstraction of 1 call site.
 
-#include "../../main/single-phase-analysis.dl"
-#include "../../main/configuration.dl"
+#ifdef CHOICE_BOUND
+
+#define BOUND_VAR_POINTS_TO(hctx, value, ctx, var) VarPointsTo_Bounded(hctx, value, ctx, var, (ord(value)*ord(hctx)) % 101)
+
+#define CHOICE_CONFIG choice-domain (?ctx, ?var, ?n)
+.decl VarPointsTo_Bounded(?hctx:mainAnalysis.configuration.HContext, ?value:Value, ?ctx:mainAnalysis.configuration.Context, ?var:Var, ?n:number) CHOICE_CONFIG
+
+#endif
+
 
 .comp OneCallSiteSensitivePlusHeapConfiguration : AbstractConfiguration {
   // In this analysis, both the real context and the real heap context are
@@ -61,3 +68,6 @@
   isInstruction("<<immutable-hcontext>>").
   isMethodInvocation("<<immutable-hcontext>>").
 }
+
+#include "../../main/single-phase-analysis.dl"
+#include "../../main/configuration.dl"

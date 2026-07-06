@@ -48,6 +48,27 @@ SpringManagedBean(?class) :-
    match(".*Provider", ?iface);
    match(".*API", ?iface)).   // dotCMS's service layer uses the *API convention (ContentletAPI, RoleAPI, ...)
 
+// Same convention but via an ABSTRACT BASE CLASS rather than an interface: some
+// service layers (e.g. dotCMS ContentTypeFactory / FieldFactory) are abstract
+// classes with a concrete *Impl subclass, which the interface-only rule above
+// misses. Inherited base methods then come free via the inherited-abstract-base
+// rule below.
+SpringManagedBean(?class) :-
+  mainAnalysis.ApplicationConcreteType(?class),
+  isClassType(?class),
+  basic.SubtypeOf(?class, ?base),
+  ?class != ?base,
+  isClassType(?base),
+  ClassModifier("abstract", ?base),
+  ApplicationClass(?base),
+  (match(".*Service", ?base);
+   match(".*Manager", ?base);
+   match(".*Dao", ?base);
+   match(".*DAO", ?base);
+   match(".*Factory", ?base);
+   match(".*Provider", ?base);
+   match(".*API", ?base)).
+
 // Universal/erasure parameter types. Binding a parameter of one of these to
 // EVERY application concrete implementation (the generic arg-mock "Main policy"
 // rule in rules-jackee.dl) is the VarPointsTo explosion that the old

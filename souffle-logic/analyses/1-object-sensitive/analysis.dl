@@ -1,7 +1,14 @@
 // Context-sensitive pointer analysis with context of 1 object.
 
-#include "../../main/single-phase-analysis.dl"
-#include "../../main/configuration.dl"
+#ifdef CHOICE_BOUND
+
+#define BOUND_VAR_POINTS_TO(hctx, value, ctx, var) VarPointsTo_Bounded(hctx, value, ctx, var, (ord(value)*ord(hctx)) % 101)
+
+#define CHOICE_CONFIG choice-domain (?ctx, ?var, ?n)
+.decl VarPointsTo_Bounded(?hctx:mainAnalysis.configuration.HContext, ?value:Value, ?ctx:mainAnalysis.configuration.Context, ?var:Var, ?n:number) CHOICE_CONFIG
+
+#endif
+
 
 .comp OneObjectSensitiveConfiguration : AbstractConfiguration {
 
@@ -56,3 +63,6 @@
 #endif // HEAPDLS
 
 }
+
+#include "../../main/single-phase-analysis.dl"
+#include "../../main/configuration.dl"

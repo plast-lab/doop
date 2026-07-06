@@ -6,8 +6,15 @@
 // Subtle point: this may need to be created because even though it
 // exists as a Context it may not exist as an HContext.
 
-#include "../../main/single-phase-analysis.dl"
-#include "../../main/configuration.dl"
+#ifdef CHOICE_BOUND
+
+#define BOUND_VAR_POINTS_TO(hctx, value, ctx, var) VarPointsTo_Bounded(hctx, value, ctx, var, (ord(value)*ord(hctx)) % 101)
+
+#define CHOICE_CONFIG choice-domain (?ctx, ?var, ?n)
+.decl VarPointsTo_Bounded(?hctx:mainAnalysis.configuration.HContext, ?value:Value, ?ctx:mainAnalysis.configuration.Context, ?var:Var, ?n:number) CHOICE_CONFIG
+
+#endif
+
 
 .comp OneObjectSensitivePlusHeapConfiguration : AbstractConfiguration {
   // In this analysis, both the real context and the real heap context are
@@ -58,3 +65,6 @@ DynamicContextToHContext(?hctx, ?dynCtx) :-
 #endif // HEAPDLS
 
 }
+
+#include "../../main/single-phase-analysis.dl"
+#include "../../main/configuration.dl"

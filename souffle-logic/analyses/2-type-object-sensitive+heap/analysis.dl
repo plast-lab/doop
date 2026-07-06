@@ -1,5 +1,12 @@
-#include "../../main/single-phase-analysis.dl"
-#include "../../main/configuration.dl"
+#ifdef CHOICE_BOUND
+
+#define BOUND_VAR_POINTS_TO(hctx, value, ctx, var) VarPointsTo_Bounded(hctx, value, ctx, var, (ord(value)*ord(hctx)) % 101)
+
+#define CHOICE_CONFIG choice-domain (?ctx, ?var, ?n)
+.decl VarPointsTo_Bounded(?hctx:mainAnalysis.configuration.HContext, ?value:Value, ?ctx:mainAnalysis.configuration.Context, ?var:Var, ?n:number) CHOICE_CONFIG
+
+#endif
+
 
 .comp TwoTypeObjectSensitivePlusHeapConfiguration : AbstractConfiguration {
 // In this analysis, the real context is a Type and a Value and the
@@ -44,3 +51,6 @@ InitHContextResponse(?value, ?ctx) :-
 
 
 }
+
+#include "../../main/single-phase-analysis.dl"
+#include "../../main/configuration.dl"
