@@ -1,0 +1,92 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// rules-reflective-factory — INDEPENDENT reflective-factory / registry strategy
+// (EXPERIMENTAL).  Spec + build order: references/rules-reflective-factory.md
+//
+// Self-contained: builds on the manual-entry-points base (entry-point seeding +
+// mock minting) ONLY, and carries its OWN back-end (mock-on-return + auto no-arg
+// ctor). It does NOT depend on deep-llm or its LLMFactoryProduces relation.
+//
+// Install: copy into $DOOP_HOME/souffle-logic/addons/open-programs/ next to
+// rules-simple-llm.dl, then run with --open-programs reflective-factory.
+// ─────────────────────────────────────────────────────────────────────────────
+// Base = manual-entry-points (via simple-llm): reads EntryPointMethod facts, binds
+// each entry method's `this` to <class>::MockObject, and provides the ObjToMock ->
+// MockObject -> MockObjectForType minting cascade we rely on below.
+#include "rules-simple-llm.dl"
+
+// ─── front-end schema (spec §1) ──────────────────────────────────────────────
+.decl ReflectiveFactoryRegistry(?registry:symbol)
+.input ReflectiveFactoryRegistry(IO="file", filename="ReflectiveFactoryRegistry.csv", delimiter="\t")
+
+.decl MemberOfReflectiveFactoryRegistry(?registry:symbol, ?concrete:symbol)
+.input MemberOfReflectiveFactoryRegistry(IO="file", filename="MemberOfReflectiveFactoryRegistry.csv", delimiter="\t")
+
+.decl FactoryReadsRegistry(?factory:symbol, ?registry:symbol)
+.input FactoryReadsRegistry(IO="file", filename="FactoryReadsRegistry.csv", delimiter="\t")
+
+// ─── produced edge (spec §2) ─────────────────────────────────────────────────
+// This strategy's OWN internal contract (the analogue of deep-llm's
+// LLMFactoryProduces, but owned here). A factory draws instances from a declared
+// registry; the registry's members are the concrete types it can produce.
+.decl ReflectiveFactoryProduces(?factory:symbol, ?producedType:symbol)
+
+ReflectiveFactoryProduces(?factory, ?concrete) :-
+  FactoryReadsRegistry(?factory, ?registry),
+  ReflectiveFactoryRegistry(?registry),
+  MemberOfReflectiveFactoryRegistry(?registry, ?concrete).
+
+// ─── type-driven tier (spec §4): ReflectiveFactoryMethod ─────────────────────
+// A factory declared here (just its signature — no registry/members) produces all
+// APPLICATION concrete subtypes of its declared return type. This is the coarse
+// default; it is exact iff the registry is type-complete (every concrete subtype is
+// actually registered, e.g. avrora's Defaults). Over-approximates otherwise.
+.decl ReflectiveFactoryMethod(?factory:symbol)
+.input ReflectiveFactoryMethod(IO="file", filename="ReflectiveFactoryMethod.csv", delimiter="\t")
+
+// A factory has a PRECISE (data-driven) produced set when it reads a registry that
+// has members. Depends only on input relations -> the negation below is stratified.
+.decl HasDataDrivenMembers(?factory:symbol)
+HasDataDrivenMembers(?factory) :-
+  FactoryReadsRegistry(?factory, ?registry),
+  MemberOfReflectiveFactoryRegistry(?registry, _).
+
+// Fallback: type-driven production ONLY when the factory has no data-driven members,
+// so data-driven (precise) always wins per factory. ApplicationClass bounds the
+// over-approximation to app types — a broad/library return type would otherwise pull
+// in its whole subtype cone (incl. JDK).
+// IMPORTANT: ApplicationClass is defined by the app-regex, so the run's regex MUST
+// cover the analyzed subject, or this guard drops every produced type. For a DaCapo
+// subject analyzed in -i, that means the subject's own package (or an empty regex so
+// Doop derives the boundary from -i) — NOT the glue regex `org.dacapo.*`, under which
+// the subject is labeled library and ApplicationClass is empty.
+ReflectiveFactoryProduces(?factory, ?concrete) :-
+  ReflectiveFactoryMethod(?factory),
+  !HasDataDrivenMembers(?factory),
+  Method_ReturnType(?factory, ?retType),
+  basic.SubtypeOf(?concrete, ?retType),
+  ApplicationClass(?concrete),
+  isClassType(?concrete),
+  !ClassModifier("abstract", ?concrete).
+
+// ─── back-end: produced edge -> reachability (owned, not inherited) ───────────
+// (1) Connect the factory's RETURN var to the canonical mock of each produced
+//     type; the call-return edge carries it to callers, so `x = factory(...);
+//     x.m()` dispatches to producedType.m() via the real path.
+mainAnalysis.VarPointsTo(?hctx, ?mock, ?ctx, ?ret) :-
+  ReflectiveFactoryProduces(?factory, ?producedType),
+  ReturnVar(?ret, ?factory),
+  isType(?producedType),
+  MockObjectForType(?mock, ?producedType),
+  mainAnalysis.isImmutableHContext(?hctx),
+  mainAnalysis.isImmutableContext(?ctx).
+
+// (2) Auto-seed each produced type's no-arg constructor as an EntryPointMethod.
+//     This mints T::MockObject (via the manual-entry-points
+//     EntryPointMethod -> ObjToMock -> MockObject cascade) AND runs <T.init> on
+//     that same mock, so ctor-set fields populate and methods that read them
+//     resolve. No-arg only ("void()"), mirroring Class.newInstance().
+EntryPointMethod(?ctor) :-
+  ReflectiveFactoryProduces(_, ?producedType),
+  Method_DeclaringType(?ctor, ?producedType),
+  Method_SimpleName(?ctor, "<init>"),
+  Method_Descriptor(?ctor, "void()").

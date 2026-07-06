@@ -1,0 +1,343 @@
+/**
+ * opaque-callback.dl — modeling LIBRARY-INVOKED OPAQUE CALLBACKS via the dispatcher.
+ *
+ * > Status: EXPERIMENTAL — an `--open-programs opaque-callback` strategy (#include rules-simple-llm.dl).
+ * > COMPILES and the rule FIRES end-to-end on Doop 4.25 (validated on dacapo zxing: the executor
+ * > catalogue caught `ExecutorService.submit(new DecodeWorker)` → DecodeWorker.call via the call
+ * > site). Layer 1 is CALL-SITE anchored (MethodInvocation_Method + ActualParam / receiver) — NOT
+ * > the dispatcher method's body, because dispatcher methods are interface methods that are never
+ * > reachable contexts. The (B) proper-invocation path is still unexercised (opt-in, default off).
+ *
+ * ── The pattern ───────────────────────────────────────────────────────────
+ * The application *implements* a method that a LIBRARY *invokes* through a dispatch mechanism
+ * OPAQUE to the points-to analysis, so the analysis loses the link between "callback handed
+ * in" and "callback invoked" and the body goes unreached. Opacity, one effect, several causes:
+ *     native scheduler (Thread.start0) · work-queue (ExecutorService) · event queue
+ *     (AWT addXxxListener) · data-driven loop (SAX ContentHandler) · reflective/registry (OSGi).
+ * Contrast — a TRANSPARENT callback the library invokes through ANALYZED code is followed for
+ * free and needs nothing here (Collections.sort->compare, list.forEach->accept,
+ * Thread.run->this.target.run).
+ *
+ * Doop special-cases EXACTLY ONE opaque callback — Thread.start->run (souffle-logic/main/
+ * threads.dl). This subsystem GENERALIZES it from DATA. Key difference from reflective-factory:
+ * we MINT NOTHING — the callback is a real app object (the app did `new MyTask()` and handed
+ * it in), so this is purely "dispatch a method on an existing value": find the value, resolve
+ * the impl by MethodLookup, reach it with `this` bound. (The only future minting is mock ARGS
+ * for callbacks that take parameters — TODO (A).)
+ *
+ * ══ FOUR INPUT RELATIONS (the dispatcher is the spine) ═════════════════════
+ * An OpaqueDispatcher is the library construct you hand callbacks to and that invokes them.
+ * The dispatcher OBJECT is, by convention, the RECEIVER of the dispatcher methods; that is the
+ * join key (so receiver/param shapes need no dispatcher-slot). Four shapes by STRUCTURE:
+ *
+ *   (i)   callback = the RECEIVER, register≡execute      — Thread
+ *   (ii)  callback = a PARAMETER,  register≡execute      — Executor, Timer, invokeLater, runAsync
+ *   (iii) REGISTER then EXECUTE at DISTINCT methods, joined on the dispatcher object — event bus
+ *
+ * Slots are formal-parameter indices (0,1,…); the receiver is never a slot (it is `this`).
+ */
+
+// Strategy base: entry-point seeding (EntryPointMethod / --entrypoints) + the mock infrastructure
+// (ObjToMock / StaticToActualType / MockObject) our rules reuse. Same base as rules-reflective-factory.
+#include "rules-simple-llm.dl"
+
+// The dispatcher labels (abstract, e.g. "thread"/"executor"/"eventbus"). Grouping + a guard.
+.decl OpaqueDispatcher(?dispatcher:symbol)
+
+// (i) callback = the RECEIVER of ?method; ?callbackMethod/?descriptor invoked on it.
+//     OpaqueDispatcher("thread").
+//     DispatcherCallbackOnReceiver("thread","<java.lang.Thread: void start()>","run","void()").
+.decl DispatcherCallbackOnReceiver(?dispatcher:symbol, ?method:symbol,
+                                   ?callbackMethod:symbol, ?descriptor:symbol)
+
+// (ii) callback = formal parameter ?param of ?method (static vs instance is invisible here).
+//      DispatcherCallbackOnParam("executor","<...ExecutorService: ...submit(...Callable)>",0,"call","java.lang.Object()").
+//      DispatcherCallbackOnParam("commonpool","<...CompletableFuture: ...runAsync(...Runnable)>",0,"run","void()").
+.decl DispatcherCallbackOnParam(?dispatcher:symbol, ?method:symbol, ?param:number,
+                                ?callbackMethod:symbol, ?descriptor:symbol)
+
+// (iii-R) REGISTER: at ?registerMethod the receiver (the dispatcher object) takes param
+//         ?callbackParam into its keeping.  "dispatcher D holds callback C".
+//      DispatcherRegister("eventbus","<com.example.EventBus: void subscribe(com.example.Listener)>",0).
+.decl DispatcherRegister(?dispatcher:symbol, ?registerMethod:symbol, ?callbackParam:number)
+
+// (iii-X) EXECUTE: at ?executeMethod the receiver (the dispatcher object) invokes
+//         ?callbackMethod on the callbacks it holds.
+//      DispatcherExecute("eventbus","<com.example.EventBus: void publish(com.example.Event)>","onEvent","void(com.example.Event)").
+.decl DispatcherExecute(?dispatcher:symbol, ?executeMethod:symbol,
+                        ?callbackMethod:symbol, ?descriptor:symbol)
+
+#ifndef EXCLUDE_IMPLICITLY_REACHABLE_CODE
+
+/* ══ LAYER 1 — find the callback VALUE at the call SITE, unifying the input shapes ══
+ * Anchored at the call site (MethodInvocation_Method on the catalogue signature), NOT inside the
+ * library method's body. Dispatcher methods are INTERFACE methods (Executor.execute,
+ * ExecutorService.submit, XMLReader.parse, …) that are themselves NEVER reachable contexts — the
+ * concrete impl (AbstractExecutorService.submit, …) is. But the call site's *declared* signature IS
+ * the interface method, and the callback flows through that site's ActualParam / receiver
+ * regardless of which impl resolves — so the site is the robust, impl-independent anchor. */
+
+.decl OpaqueCallbackValue(?anchor:symbol, ?ctx:mainAnalysis.configuration.Context,
+                          ?hctx:mainAnalysis.configuration.HContext, ?value:Value,
+                          ?callbackMethod:symbol, ?descriptor:symbol)
+
+// (i) receiver-callback (e.g. Thread.start, omitted from the catalogue): callback = the call's receiver.
+OpaqueCallbackValue(?invo, ?ctx, ?hctx, ?val, ?cbm, ?desc) :-
+  OpaqueDispatcher(?d),
+  DispatcherCallbackOnReceiver(?d, ?sig, ?cbm, ?desc),
+  MethodInvocation_Method(?invo, ?sig),               // a call site whose declared target = ?sig
+  Instruction_Method(?invo, ?caller),
+  mainAnalysis.ReachableContext(?ctx, ?caller),       // ... in a reachable caller
+  VirtualMethodInvocation_Base(?invo, ?base),
+  mainAnalysis.VarPointsTo(?hctx, ?val, ?ctx, ?base).
+
+// (ii) param-callback (executor / timer / invokeLater / runAsync): callback = an actual argument.
+OpaqueCallbackValue(?invo, ?ctx, ?hctx, ?val, ?cbm, ?desc) :-
+  OpaqueDispatcher(?d),
+  DispatcherCallbackOnParam(?d, ?sig, ?idx, ?cbm, ?desc),
+  MethodInvocation_Method(?invo, ?sig),
+  Instruction_Method(?invo, ?caller),
+  mainAnalysis.ReachableContext(?ctx, ?caller),
+  ActualParam(?idx, ?invo, ?argvar),                  // the callback actual arg (0-based, receiver excluded)
+  mainAnalysis.VarPointsTo(?hctx, ?val, ?ctx, ?argvar).
+
+// (iii) register+execute (event bus / SAX): "dispatcher object D holds callback C", from the register site.
+.decl DispatcherHolds(?dispatcher:symbol,
+                      ?dHctx:mainAnalysis.configuration.HContext, ?dValue:Value,
+                      ?cbHctx:mainAnalysis.configuration.HContext, ?cbValue:Value)
+DispatcherHolds(?d, ?dh, ?dv, ?ch, ?cv) :-
+  OpaqueDispatcher(?d),
+  DispatcherRegister(?d, ?regsig, ?idx),
+  MethodInvocation_Method(?rinvo, ?regsig),
+  Instruction_Method(?rinvo, ?rcaller),
+  mainAnalysis.ReachableContext(?rc, ?rcaller),
+  VirtualMethodInvocation_Base(?rinvo, ?rbase),
+  mainAnalysis.VarPointsTo(?dh, ?dv, ?rc, ?rbase),        // dispatcher object = register's receiver
+  ActualParam(?idx, ?rinvo, ?cbvar),
+  mainAnalysis.VarPointsTo(?ch, ?cv, ?rc, ?cbvar).        // callback = register's argument
+
+// ... then at the execute site, dispatch on the callbacks held by THIS dispatcher object.
+OpaqueCallbackValue(?einvo, ?ec, ?ch, ?cv, ?cbm, ?desc) :-
+  OpaqueDispatcher(?d),
+  DispatcherExecute(?d, ?exesig, ?cbm, ?desc),
+  MethodInvocation_Method(?einvo, ?exesig),
+  Instruction_Method(?einvo, ?ecaller),
+  mainAnalysis.ReachableContext(?ec, ?ecaller),
+  VirtualMethodInvocation_Base(?einvo, ?ebase),
+  mainAnalysis.VarPointsTo(?dh, ?dv, ?ec, ?ebase),        // execute's receiver = dispatcher object
+  DispatcherHolds(?d, ?dh, ?dv, ?ch, ?cv).                // its held callbacks (join on the object)
+
+/* ══ LAYER 2 — resolve the concrete impl; MethodLookup is the FILTER ══
+ * (the executor object has no call() so "self" is dropped; the Thread HAS run() so it fires —
+ *  this is what makes the receiver/held union safe.) */
+
+.decl OpaqueCallbackInvokes(?ctx:mainAnalysis.configuration.Context, ?hctx:mainAnalysis.configuration.HContext,
+                            ?value:Value, ?impl:Method)
+OpaqueCallbackInvokes(?ctx, ?hctx, ?val, ?impl) :-
+  OpaqueCallbackValue(_, ?ctx, ?hctx, ?val, ?cbm, ?desc),
+  mainAnalysis.Value_Type(?val, ?t),
+  basic.MethodLookup(?cbm, ?desc, ?t, ?impl).
+
+/* ══ LAYER 3 — BACK-END: reach the impl with `this` bound to the REAL callback object.
+ *    Two modes, both publishing OpaqueCallbackReached(?implCtx, …) so (A) binds the impl's formals
+ *    in the SAME context the impl is reached in:
+ *      SHORTCUT (default)  — reuse the anchor context (threads.dl start->run style). Sound,
+ *                            context-imprecise (fine for object/insensitive).
+ *      PROPER, (B), opt-in — a real edge with a policy-computed callee context. ══ */
+
+.decl OpaqueCallbackReached(?implCtx:mainAnalysis.configuration.Context, ?hctx:mainAnalysis.configuration.HContext,
+                            ?value:Value, ?impl:Method)
+
+#ifndef OPAQUE_CALLBACK_PRECISE_INVOCATION
+OpaqueCallbackReached(?ctx, ?hctx, ?val, ?impl) :-
+  OpaqueCallbackInvokes(?ctx, ?hctx, ?val, ?impl).
+#else
+/* ── (B) PROPER SYNTHETIC INVOCATION — mint a fake invocation and route it through
+ *    configuration.ContextRequest/Response for a POLICY-COMPUTED callee context (a real edge,
+ *    not a context reuse → k-call-site / k-object precise). Modeled on threads.dl's thread-group
+ *    <init>: a FREE-FLOATING fake invocation (no enclosing instruction needed). ── */
+.decl OpaqueCallbackInvo(?invo:MethodInvocation, ?value:Value, ?impl:Method)
+
+OpaqueCallbackInvo(?invo, ?val, ?impl),
+PlusMethodInvocation(?invo) :-
+  OpaqueCallbackInvokes(_, _, ?val, ?impl),
+  ?invo = cat("<opaque-callback ", cat(?val, cat(" ", cat(?impl, ">")))).
+
+// caller ctx = the anchor's; receiver = the REAL callback (its hctx). Callbacks are instance
+// methods → the instance-method ContextRequest form (the trailing 1 marks arity, as in threads.dl).
+mainAnalysis.configuration.ContextRequest(?ctx, ?hctx, ?invo, ?val, ?impl, 1) :-
+  OpaqueCallbackInvokes(?ctx, ?hctx, ?val, ?impl),
+  OpaqueCallbackInvo(?invo, ?val, ?impl),
+  !Method_Modifier("static", ?impl).
+
+OpaqueCallbackReached(?calleeCtx, ?hctx, ?val, ?impl) :-
+  OpaqueCallbackInvo(?invo, ?val, ?impl),
+  mainAnalysis.configuration.ContextRequest(?ctx, ?hctx, ?invo, ?val, ?impl, 1),
+  mainAnalysis.configuration.ContextResponse(?ctx, ?hctx, ?invo, ?val, ?impl, ?calleeCtx).
+#endif // OPAQUE_CALLBACK_PRECISE_INVOCATION
+
+// common: reach the impl + bind `this` to the callback, in whichever context the mode produced.
+mainAnalysis.ReachableContext(?implCtx, ?impl),
+mainAnalysis.VarPointsTo(?hctx, ?val, ?implCtx, ?implThis) :-
+  OpaqueCallbackReached(?implCtx, ?hctx, ?val, ?impl),
+  ThisVar(?impl, ?implThis).
+
+/* ══ (A) CALLBACK ARGS — mock the impl's non-`this` formals IN THE IMPL'S REACHED CONTEXT, so a
+ *        body that USES the event/args cascades (actionPerformed(Event), onEvent(Event), SAX
+ *        startElement(...)). Reuses the manual-entry-points mock pipeline (ObjToMock / MockObject /
+ *        StaticToActualType) — but NOT its receiver path, so `this` keeps the real callback object.
+ *        No-op for run/call (no FormalParam). Reads OpaqueCallbackReached so it tracks whichever
+ *        context the back-end mode chose. Precision option: for dispatchers that PASS the event
+ *        (event bus publish(e)->onEvent(e)), forward the real arg instead of a mock. ══ */
+
+.decl OpaqueCallbackFormalMock(?implCtx:mainAnalysis.configuration.Context, ?formal:Var, ?type:ReferenceType)
+
+ObjToMock(?subtype),
+OpaqueCallbackFormalMock(?implCtx, ?formal, ?subtype) :-
+  OpaqueCallbackReached(?implCtx, _, _, ?impl),
+  FormalParam(_, ?impl, ?formal),
+  Var_Type(?formal, ?staticType),
+  StaticToActualType(?subtype, ?staticType).
+
+mainAnalysis.VarPointsTo(?hctx, ?value, ?implCtx, ?formal) :-
+  OpaqueCallbackFormalMock(?implCtx, ?formal, ?type),
+  MockObject(?value, ?type),
+  mainAnalysis.isImmutableHContext(?hctx).
+
+#endif // EXCLUDE_IMPLICITLY_REACHABLE_CODE
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * (C) CASE CATALOGUE — the built-in library dispatchers. We AUGMENT Doop, which already models
+ *     Thread.start->run (threads.dl), so THREAD IS DELIBERATELY OMITTED to avoid double-handling.
+ *     Custom dispatchers (an app's own event bus, framework, …) can be added via `.input`
+ *     extensions of the same relations. Signatures are Doop-canonical; descriptors are erased.
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+
+// ── java.util.concurrent — Executor / ExecutorService (param-callback; opaque work-queue) ──
+OpaqueDispatcher("executor").
+DispatcherCallbackOnParam("executor", "<java.util.concurrent.Executor: void execute(java.lang.Runnable)>", 0, "run", "void()").
+DispatcherCallbackOnParam("executor", "<java.util.concurrent.ExecutorService: java.util.concurrent.Future submit(java.util.concurrent.Callable)>", 0, "call", "java.lang.Object()").
+DispatcherCallbackOnParam("executor", "<java.util.concurrent.ExecutorService: java.util.concurrent.Future submit(java.lang.Runnable)>", 0, "run", "void()").
+DispatcherCallbackOnParam("executor", "<java.util.concurrent.ExecutorService: java.util.concurrent.Future submit(java.lang.Runnable,java.lang.Object)>", 0, "run", "void()").
+DispatcherCallbackOnParam("executor", "<java.util.concurrent.ScheduledExecutorService: java.util.concurrent.ScheduledFuture schedule(java.lang.Runnable,long,java.util.concurrent.TimeUnit)>", 0, "run", "void()").
+DispatcherCallbackOnParam("executor", "<java.util.concurrent.ScheduledExecutorService: java.util.concurrent.ScheduledFuture schedule(java.util.concurrent.Callable,long,java.util.concurrent.TimeUnit)>", 0, "call", "java.lang.Object()").
+DispatcherCallbackOnParam("executor", "<java.util.concurrent.ScheduledExecutorService: java.util.concurrent.ScheduledFuture scheduleAtFixedRate(java.lang.Runnable,long,long,java.util.concurrent.TimeUnit)>", 0, "run", "void()").
+DispatcherCallbackOnParam("executor", "<java.util.concurrent.ScheduledExecutorService: java.util.concurrent.ScheduledFuture scheduleWithFixedDelay(java.lang.Runnable,long,long,java.util.concurrent.TimeUnit)>", 0, "run", "void()").
+// concrete executor types — a call site on a concrete-typed var carries the concrete declared
+// signature (execute is overridden by ThreadPoolExecutor; submit is defined on AbstractExecutorService).
+DispatcherCallbackOnParam("executor", "<java.util.concurrent.ThreadPoolExecutor: void execute(java.lang.Runnable)>", 0, "run", "void()").
+DispatcherCallbackOnParam("executor", "<java.util.concurrent.AbstractExecutorService: java.util.concurrent.Future submit(java.util.concurrent.Callable)>", 0, "call", "java.lang.Object()").
+DispatcherCallbackOnParam("executor", "<java.util.concurrent.AbstractExecutorService: java.util.concurrent.Future submit(java.lang.Runnable)>", 0, "run", "void()").
+DispatcherCallbackOnParam("executor", "<java.util.concurrent.AbstractExecutorService: java.util.concurrent.Future submit(java.lang.Runnable,java.lang.Object)>", 0, "run", "void()").
+DispatcherCallbackOnParam("executor", "<java.util.concurrent.ScheduledThreadPoolExecutor: java.util.concurrent.ScheduledFuture schedule(java.lang.Runnable,long,java.util.concurrent.TimeUnit)>", 0, "run", "void()").
+DispatcherCallbackOnParam("executor", "<java.util.concurrent.ScheduledThreadPoolExecutor: java.util.concurrent.ScheduledFuture schedule(java.util.concurrent.Callable,long,java.util.concurrent.TimeUnit)>", 0, "call", "java.lang.Object()").
+// NOTE: invokeAll/invokeAny take a Collection<Callable> — the callbacks are COLLECTION ELEMENTS,
+//       not a direct param; needs a collection-element source shape (not yet modeled). Omitted.
+
+// ── java.util.concurrent — ForkJoinPool / ForkJoinTask (param + RECEIVER callback; opaque pool) ──
+//    App tasks extend RecursiveAction (compute:void()) / RecursiveTask<V> / CountedCompleter
+//    (compute:java.lang.Object()) — both compute descriptors are listed so MethodLookup resolves either.
+OpaqueDispatcher("forkjoin").
+DispatcherCallbackOnParam("forkjoin", "<java.util.concurrent.ForkJoinPool: void execute(java.util.concurrent.ForkJoinTask)>", 0, "compute", "void()").
+DispatcherCallbackOnParam("forkjoin", "<java.util.concurrent.ForkJoinPool: void execute(java.util.concurrent.ForkJoinTask)>", 0, "compute", "java.lang.Object()").
+DispatcherCallbackOnParam("forkjoin", "<java.util.concurrent.ForkJoinPool: void execute(java.lang.Runnable)>", 0, "run", "void()").
+DispatcherCallbackOnParam("forkjoin", "<java.util.concurrent.ForkJoinPool: java.util.concurrent.ForkJoinTask submit(java.util.concurrent.ForkJoinTask)>", 0, "compute", "void()").
+DispatcherCallbackOnParam("forkjoin", "<java.util.concurrent.ForkJoinPool: java.util.concurrent.ForkJoinTask submit(java.util.concurrent.ForkJoinTask)>", 0, "compute", "java.lang.Object()").
+DispatcherCallbackOnParam("forkjoin", "<java.util.concurrent.ForkJoinPool: java.util.concurrent.ForkJoinTask submit(java.util.concurrent.Callable)>", 0, "call", "java.lang.Object()").
+DispatcherCallbackOnParam("forkjoin", "<java.util.concurrent.ForkJoinPool: java.util.concurrent.ForkJoinTask submit(java.lang.Runnable)>", 0, "run", "void()").
+DispatcherCallbackOnParam("forkjoin", "<java.util.concurrent.ForkJoinPool: java.lang.Object invoke(java.util.concurrent.ForkJoinTask)>", 0, "compute", "void()").
+DispatcherCallbackOnParam("forkjoin", "<java.util.concurrent.ForkJoinPool: java.lang.Object invoke(java.util.concurrent.ForkJoinTask)>", 0, "compute", "java.lang.Object()").
+// receiver-callback: a task fork()ed / invoke()d on itself (exercises the OnReceiver path).
+DispatcherCallbackOnReceiver("forkjoin", "<java.util.concurrent.ForkJoinTask: java.util.concurrent.ForkJoinTask fork()>", "compute", "void()").
+DispatcherCallbackOnReceiver("forkjoin", "<java.util.concurrent.ForkJoinTask: java.util.concurrent.ForkJoinTask fork()>", "compute", "java.lang.Object()").
+DispatcherCallbackOnReceiver("forkjoin", "<java.util.concurrent.ForkJoinTask: java.lang.Object invoke()>", "compute", "void()").
+DispatcherCallbackOnReceiver("forkjoin", "<java.util.concurrent.ForkJoinTask: java.lang.Object invoke()>", "compute", "java.lang.Object()").
+
+// ── java.util.Timer (param-callback; opaque timer thread) ──
+OpaqueDispatcher("timer").
+DispatcherCallbackOnParam("timer", "<java.util.Timer: void schedule(java.util.TimerTask,long)>", 0, "run", "void()").
+DispatcherCallbackOnParam("timer", "<java.util.Timer: void schedule(java.util.TimerTask,java.util.Date)>", 0, "run", "void()").
+DispatcherCallbackOnParam("timer", "<java.util.Timer: void schedule(java.util.TimerTask,long,long)>", 0, "run", "void()").
+DispatcherCallbackOnParam("timer", "<java.util.Timer: void scheduleAtFixedRate(java.util.TimerTask,long,long)>", 0, "run", "void()").
+DispatcherCallbackOnParam("timer", "<java.util.Timer: void scheduleAtFixedRate(java.util.TimerTask,java.util.Date,long)>", 0, "run", "void()").
+
+// ── java.util.concurrent.CompletableFuture — async entry points (static → commonPool) ──
+OpaqueDispatcher("completablefuture").
+DispatcherCallbackOnParam("completablefuture", "<java.util.concurrent.CompletableFuture: java.util.concurrent.CompletableFuture runAsync(java.lang.Runnable)>", 0, "run", "void()").
+DispatcherCallbackOnParam("completablefuture", "<java.util.concurrent.CompletableFuture: java.util.concurrent.CompletableFuture runAsync(java.lang.Runnable,java.util.concurrent.Executor)>", 0, "run", "void()").
+DispatcherCallbackOnParam("completablefuture", "<java.util.concurrent.CompletableFuture: java.util.concurrent.CompletableFuture supplyAsync(java.util.function.Supplier)>", 0, "get", "java.lang.Object()").
+DispatcherCallbackOnParam("completablefuture", "<java.util.concurrent.CompletableFuture: java.util.concurrent.CompletableFuture supplyAsync(java.util.function.Supplier,java.util.concurrent.Executor)>", 0, "get", "java.lang.Object()").
+// combinator family — the dependent stage runs on whoever COMPLETES the future (an async pool, or
+// the completing thread); the dispatch hides the callback through the Completion-node stack, so it
+// is opaque. Callback is always param 0; each *Async has a twin *Async(…, Executor) overload with
+// the callback STILL at param 0 (executor is the later param), listed alongside.
+DispatcherCallbackOnParam("completablefuture", "<java.util.concurrent.CompletableFuture: java.util.concurrent.CompletableFuture thenApply(java.util.function.Function)>", 0, "apply", "java.lang.Object(java.lang.Object)").
+DispatcherCallbackOnParam("completablefuture", "<java.util.concurrent.CompletableFuture: java.util.concurrent.CompletableFuture thenApplyAsync(java.util.function.Function)>", 0, "apply", "java.lang.Object(java.lang.Object)").
+DispatcherCallbackOnParam("completablefuture", "<java.util.concurrent.CompletableFuture: java.util.concurrent.CompletableFuture thenApplyAsync(java.util.function.Function,java.util.concurrent.Executor)>", 0, "apply", "java.lang.Object(java.lang.Object)").
+DispatcherCallbackOnParam("completablefuture", "<java.util.concurrent.CompletableFuture: java.util.concurrent.CompletableFuture thenAccept(java.util.function.Consumer)>", 0, "accept", "void(java.lang.Object)").
+DispatcherCallbackOnParam("completablefuture", "<java.util.concurrent.CompletableFuture: java.util.concurrent.CompletableFuture thenAcceptAsync(java.util.function.Consumer)>", 0, "accept", "void(java.lang.Object)").
+DispatcherCallbackOnParam("completablefuture", "<java.util.concurrent.CompletableFuture: java.util.concurrent.CompletableFuture thenAcceptAsync(java.util.function.Consumer,java.util.concurrent.Executor)>", 0, "accept", "void(java.lang.Object)").
+DispatcherCallbackOnParam("completablefuture", "<java.util.concurrent.CompletableFuture: java.util.concurrent.CompletableFuture thenRun(java.lang.Runnable)>", 0, "run", "void()").
+DispatcherCallbackOnParam("completablefuture", "<java.util.concurrent.CompletableFuture: java.util.concurrent.CompletableFuture thenRunAsync(java.lang.Runnable)>", 0, "run", "void()").
+DispatcherCallbackOnParam("completablefuture", "<java.util.concurrent.CompletableFuture: java.util.concurrent.CompletableFuture thenRunAsync(java.lang.Runnable,java.util.concurrent.Executor)>", 0, "run", "void()").
+DispatcherCallbackOnParam("completablefuture", "<java.util.concurrent.CompletableFuture: java.util.concurrent.CompletableFuture thenCompose(java.util.function.Function)>", 0, "apply", "java.lang.Object(java.lang.Object)").
+DispatcherCallbackOnParam("completablefuture", "<java.util.concurrent.CompletableFuture: java.util.concurrent.CompletableFuture thenComposeAsync(java.util.function.Function)>", 0, "apply", "java.lang.Object(java.lang.Object)").
+DispatcherCallbackOnParam("completablefuture", "<java.util.concurrent.CompletableFuture: java.util.concurrent.CompletableFuture whenComplete(java.util.function.BiConsumer)>", 0, "accept", "void(java.lang.Object,java.lang.Object)").
+DispatcherCallbackOnParam("completablefuture", "<java.util.concurrent.CompletableFuture: java.util.concurrent.CompletableFuture whenCompleteAsync(java.util.function.BiConsumer)>", 0, "accept", "void(java.lang.Object,java.lang.Object)").
+DispatcherCallbackOnParam("completablefuture", "<java.util.concurrent.CompletableFuture: java.util.concurrent.CompletableFuture handle(java.util.function.BiFunction)>", 0, "apply", "java.lang.Object(java.lang.Object,java.lang.Object)").
+DispatcherCallbackOnParam("completablefuture", "<java.util.concurrent.CompletableFuture: java.util.concurrent.CompletableFuture handleAsync(java.util.function.BiFunction)>", 0, "apply", "java.lang.Object(java.lang.Object,java.lang.Object)").
+DispatcherCallbackOnParam("completablefuture", "<java.util.concurrent.CompletableFuture: java.util.concurrent.CompletableFuture exceptionally(java.util.function.Function)>", 0, "apply", "java.lang.Object(java.lang.Object)").
+// (thenCombine/thenAcceptBoth/applyToEither/… two-stage combinators carry the BiFunction/Consumer at
+//  param 1 — add as needed; same OnParam shape with idx=1.)
+
+// ── Swing / AWT event-dispatch thread (static invokeLater/invokeAndWait → EDT) ──
+OpaqueDispatcher("edt").
+DispatcherCallbackOnParam("edt", "<java.awt.EventQueue: void invokeLater(java.lang.Runnable)>", 0, "run", "void()").
+DispatcherCallbackOnParam("edt", "<java.awt.EventQueue: void invokeAndWait(java.lang.Runnable)>", 0, "run", "void()").
+DispatcherCallbackOnParam("edt", "<javax.swing.SwingUtilities: void invokeLater(java.lang.Runnable)>", 0, "run", "void()").
+DispatcherCallbackOnParam("edt", "<javax.swing.SwingUtilities: void invokeAndWait(java.lang.Runnable)>", 0, "run", "void()").
+
+// ── JVM shutdown (param-callback; the JVM runs the hook at exit) ──
+//    The hook is a Thread, but this is the Runtime/JVM-shutdown boundary — DISTINCT from
+//    Thread.start->run (which threads.dl owns), and Doop does NOT model it, so no double-handling.
+OpaqueDispatcher("runtime").
+DispatcherCallbackOnParam("runtime", "<java.lang.Runtime: void addShutdownHook(java.lang.Thread)>", 0, "run", "void()").
+
+// ── SAX — the genuine register/execute DUALITY (handler registered, then parse() fires it) ──
+OpaqueDispatcher("sax").
+// (collapsed) SAXParser.parse(src, handler): handler is param 1, parse invokes its methods.
+DispatcherCallbackOnParam("sax", "<javax.xml.parsers.SAXParser: void parse(org.xml.sax.InputSource,org.xml.sax.helpers.DefaultHandler)>", 1, "startElement", "void(java.lang.String,java.lang.String,java.lang.String,org.xml.sax.Attributes)").
+DispatcherCallbackOnParam("sax", "<javax.xml.parsers.SAXParser: void parse(org.xml.sax.InputSource,org.xml.sax.helpers.DefaultHandler)>", 1, "characters",   "void(char[],int,int)").
+DispatcherCallbackOnParam("sax", "<javax.xml.parsers.SAXParser: void parse(org.xml.sax.InputSource,org.xml.sax.helpers.DefaultHandler)>", 1, "endElement",   "void(java.lang.String,java.lang.String,java.lang.String)").
+// (duality) XMLReader.setContentHandler(h) … XMLReader.parse(src) fires h's methods; join on the reader object.
+DispatcherRegister("sax", "<org.xml.sax.XMLReader: void setContentHandler(org.xml.sax.ContentHandler)>", 0).
+DispatcherExecute("sax", "<org.xml.sax.XMLReader: void parse(org.xml.sax.InputSource)>", "startElement", "void(java.lang.String,java.lang.String,java.lang.String,org.xml.sax.Attributes)").
+DispatcherExecute("sax", "<org.xml.sax.XMLReader: void parse(org.xml.sax.InputSource)>", "characters",   "void(char[],int,int)").
+DispatcherExecute("sax", "<org.xml.sax.XMLReader: void parse(org.xml.sax.InputSource)>", "endElement",   "void(java.lang.String,java.lang.String,java.lang.String)").
+// (+ startDocument/endDocument/ignorableWhitespace/… and the other parse(File/InputStream/String) overloads, same shapes.)
+
+/* ── DELIBERATELY OMITTED ──────────────────────────────────────────────────
+ * • Thread — Doop already models Thread.start->run (threads.dl). Adding it would double-handle;
+ *   we only AUGMENT.
+ * • OSGi IApplication / extension points — registration is DECLARATIVE (plugin.xml / MANIFEST),
+ *   not a Java dispatcher method, so it does not fit this model; handle via entry-point seeding
+ *   (as done for the eclipse bench).
+ * • AWT/Swing listeners (addActionListener / addMouseListener / new javax.swing.Timer(int,l) / …) —
+ *   same OnParam shape, but a large per-listener-interface family (MouseListener 5 methods,
+ *   WindowListener 7, …) rarely on a headless path; add on demand.
+ * • TRANSPARENT functional callbacks — Collection/Iterable.forEach(Consumer), Map.forEach/compute*,
+ *   List.replaceAll, Optional.ifPresent, and the Stream pipeline (map/filter/forEach/collect). These
+ *   are dispatched through ANALYZED JDK code (the method body iterates and calls accept/apply), so
+ *   Doop already reaches them — NOT opaque. Files.walkFileTree(FileVisitor) likewise (analyzed walk).
+ *
+ * ── CANDIDATES PENDING VERIFICATION (a row only if Doop does NOT already special-case it, like Thread) ──
+ * • java.security.AccessController.doPrivileged(PrivilegedAction / PrivilegedExceptionAction) -> run
+ *   (java.lang.Object()) — a genuine NATIVE-boundary opaque callback (java_8 era). Verify Doop has no
+ *   built-in model before adding, to avoid double-handling.
+ * • java.util.concurrent.Flow (reactive: Subscriber.onSubscribe/onNext/onError/onComplete), and
+ *   AsynchronousChannel CompletionHandler.completed/failed — opaque async I/O; Java 9+, niche; add on demand.
+ *
+ * ── DEFERRED PRECISION ──
+ * • Forward the REAL event arg (vs a mock) for dispatchers that PASS it (event bus publish(e) ->
+ *   onEvent(e), SAX parse driving the handler) — beats (A)'s mock where the actual is in hand.
+ */

@@ -1,0 +1,173 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// deep-llm  —  LLM-extended Doop open-programs strategy  (EXPERIMENTAL)
+//
+// Install: copy this file into your Doop checkout at
+//   $DOOP_HOME/souffle-logic/addons/open-programs/rules-deep-llm.dl
+// (Doop makes any rules-<name>.dl selectable as --open-programs <name>.) Then run
+// it through reach-doop.sh with --open-programs deep-llm, feeding two fact files
+// via the `-- --Xextra-facts` passthrough and the impl types via --resolve:
+//   reach-doop.sh ... --open-programs deep-llm --resolve resolve.txt \
+//     -- --Xextra-facts EntryPointMethod.facts --Xextra-facts LLMInjectField.csv
+//
+// Base: manual-entry-points (reads EntryPointMethod facts; binds each entry
+// method's receiver `this` to <class>::MockObject — the correct binding the
+// `beans` strategy lacks). On top of that base we add MODEL-SUPPLIED IoC injection:
+// the model knows the concrete impl/proxy target injected at each field (which
+// static analysis cannot infer) and supplies it as facts; a NATIVE rule wires it.
+//
+// Input (tab-separated, via --Xextra-facts LLMInjectField.csv):
+//   <declaringType>\t<fieldSimpleName>\t<concreteImplType>
+// e.g.  ...TransactionServiceImpl  transactionRepository  ...SimpleJpaRepository
+//       ...SimpleJpaRepository     entityManager          org.hibernate.internal.SessionImpl
+//
+// TWO INJECTION SHAPES, both handled:
+//  (1) Real DI impl — injected type IS-A the field interface (e.g.
+//      TransactionServiceImpl <: TransactionService). Field injection alone
+//      dispatches, because Doop's SubtypeOf(receiver, callSiteBase) holds.
+//  (2) Proxy injection — Spring Data repositories / JDK dynamic proxies. The field
+//      is an app interface (TransactionRepository) but at runtime holds a $ProxyN
+//      delegating to an impl (SimpleJpaRepository), which is NOT a subtype of the
+//      interface, so plain field injection won't dispatch. The LLMProxyDelegate
+//      rule below models the delegation and crosses it (verified on Expense-Tracker:
+//      repo.save -> SimpleJpaRepository.save -> entityManager.persist -> SessionImpl,
+//      150 hibernate-core methods reached).
+// LIMIT: derived queries (e.g. findByUsername) have NO impl method anywhere (pure
+// runtime query synthesis), so MethodLookup finds no target and they do not cross —
+// only methods the impl actually declares (CRUD: save/delete/findById) do.
+// See references/llm-authored-facts.md ("Layer 7 — DI impl vs. proxy").
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Base = simple-llm (entry-point seeding); deep-llm adds DI injection + proxy
+// delegation below. (rules-simple-llm.dl just #includes rules-manual-entry-points.dl,
+// so this is identical to including it directly — it just names the layering.)
+#include "rules-simple-llm.dl"
+
+.decl LLMInjectField(?declType:symbol, ?fieldSimple:symbol, ?concreteImpl:symbol)
+.input LLMInjectField(IO="file", filename="LLMInjectField.csv", delimiter="\t")
+
+// Make each injected concrete impl a mock-able object: manual-entry-points then
+// mints <impl>::MockObject and derives MockObjectForType for it. Guarded on
+// isClassType so it only fires once the impl is in the program (--resolve).
+ObjToMock(?impl) :-
+  LLMInjectField(_, _, ?impl),
+  isClassType(?impl).
+
+// The native IoC wiring. CRITICAL: the default (non-featherweight) Doop analysis
+// flows fields STORE-FIRST — a field LOAD only sees values placed by a matching
+// StoreHeapInstanceField; the direct `load + InstanceFieldPointsTo -> VarPointsTo`
+// rule is commented out in core ("much slower"). So writing InstanceFieldPointsTo
+// is a no-op for loads. Instead we assert the load OUTCOME directly, targeted to
+// the injected fields only: for every load of declType.field whose base points to
+// a declType mock, make the load var point to the concrete-impl mock. Recursive —
+// the impl mock flowing to the load var drives the next dispatch/load.
+mainAnalysis.VarPointsTo(?ihctx, cat(?impl, "::MockObject"), ?ctx, ?to) :-
+  LLMInjectField(?declType, ?fieldSimple, ?impl),
+  Field_DeclaringType(?fld, ?declType),
+  Field_SimpleName(?fld, ?fieldSimple),
+  LoadInstanceField(?base, ?fld, ?to, _),
+  mainAnalysis.VarPointsTo(?bhctx, ?basevalue, ?ctx, ?base),
+  MockObjectForType(?basevalue, ?declType),
+  mainAnalysis.isImmutableHContext(?ihctx).
+
+// (Also expose it as InstanceFieldPointsTo for any consumer/inspection — harmless;
+// loads do not read this in the default analysis, per the note above.)
+mainAnalysis.InstanceFieldPointsTo(?hctx, cat(?impl, "::MockObject"), ?fld, ?hctx, ?basevalue) :-
+  LLMInjectField(?declType, ?fieldSimple, ?impl),
+  Field_DeclaringType(?fld, ?declType),
+  Field_SimpleName(?fld, ?fieldSimple),
+  MockObjectForType(?basevalue, ?declType),
+  mainAnalysis.isImmutableHContext(?hctx).
+
+// ─── PROXY DELEGATION (prototype) ───────────────────────────────────────────
+// Field injection alone fails for PROXY-based injection (Spring Data repositories,
+// JDK dynamic proxies): the field is declared as an app interface (e.g.
+// TransactionRepository) but at runtime holds a $ProxyN that delegates to an impl
+// (SimpleJpaRepository). Doop's dispatch soundly requires
+// SubtypeOf(receiverType, callSiteBaseType); SimpleJpaRepository is NOT a subtype
+// of TransactionRepository, so a call on the interface won't resolve to the impl.
+//
+// We model the proxy's observable behaviour with one extra fact + one extra rule:
+// LLMProxyDelegate(ifaceType, implType) says "an object reached through ifaceType is
+// a proxy that runs implType's methods". The rule contributes basic.ResolveInvocation
+// directly — bypassing the SubtypeOf check exactly at call sites on the proxied
+// interface — so an impl-typed receiver (placed by the field injection above) makes
+// the interface call resolve to the impl method. The further hop (e.g.
+// SimpleJpaRepository.entityManager -> SessionImpl) needs no proxy: SessionImpl IS-A
+// EntityManager, so standard dispatch handles it once save()'s body is reachable.
+//
+// Input (tab-separated, via --Xextra-facts LLMProxyDelegate.csv):
+//   <ifaceType>\t<implType>
+.decl LLMProxyDelegate(?ifaceType:symbol, ?implType:symbol)
+.input LLMProxyDelegate(IO="file", filename="LLMProxyDelegate.csv", delimiter="\t")
+
+basic.ResolveInvocation(?implType, ?invo, ?tomethod) :-
+  LLMProxyDelegate(?ifaceType, ?implType),
+  basic.VirtualMethodInvocation_BaseType(?invo, ?baseType),
+  basic.SubtypeOf(?ifaceType, ?baseType),
+  VirtualMethodInvocation_SimpleName(?invo, ?sn),
+  VirtualMethodInvocation_Descriptor(?invo, ?desc),
+  basic.MethodLookup(?sn, ?desc, ?implType, ?tomethod).
+
+// ─────────────────────────────────────────────────────────────────────────────
+// (3) REFLECTIVE FACTORY / NAME→CLASS REGISTRY  (LLMFactoryProduces)
+//
+// Pattern: a factory method returns objects whose concrete type is chosen at
+// runtime from a name→class registry instantiated reflectively (Class.newInstance),
+// e.g. avrora's `cck.util.ClassMap`: Defaults.getAction(name) → newInstance of a
+// registered action. Plain Doop can't see what getAction returns, so the receiver's
+// virtual calls (action.run()) resolve to nothing and the whole downstream subtree
+// drops out.
+//
+// UNIQUE PROPERTY — DERIVED, NOT ASSERTED. The produced set is recovered from the
+// `addClass(name, T.class)` CLASS LITERALS in the bytecode (the model reads them),
+// so this is the reflection resolution Doop lacks, not a judgment call. It is sound
+// (over-approximate: all registered types become reachable; precision↓, R_s\R_d↑) and
+// VERIFIABLE against the registration sites.
+//
+// Input (tab-separated, via --Xextra-facts LLMFactoryProduces.csv):
+//   <factoryMethodDescriptor>\t<producedType>
+// e.g.  <avrora.Defaults: avrora.actions.Action getAction(java.lang.String)>  avrora.actions.SimAction
+//
+// CTOR-RUN-ON-MOCK IS NOW AUTO-DERIVED — no second artifact to author. Each
+// producedType still needs (1) a mock object for the factory to return, and (2) its
+// constructor run on that mock (a bare mock is opaque — Doop never runs its <init>,
+// so ctor-set fields and ctor callees stay invisible). Previously BOTH were obtained
+// by hand-seeding `<T: void <init>()>` as an EntryPointMethod in the entry-point
+// file. The rule at the bottom of this block now derives that EntryPointMethod
+// straight from LLMFactoryProduces, so the model authors ONLY the (factory,
+// producedType) rows. The derivation cascades through the existing machinery:
+//   EntryPointMethod(<T.init>) → ObjToMock(T) → MockObject(T::MockObject)  [part 1]
+//                              → ReachableContext(<T.init>) + this↦T::MockObject [part 2]
+// The factory's returned mock and the ctor's `this` are the SAME canonical
+// T::MockObject, so ctor-initialised fields are visible to callers of the factory.
+// Result-equivalent to the old two-artifact approach; nested factories cascade
+// automatically (add another LLMFactoryProduces row, no manual ctor chaining).
+.decl LLMFactoryProduces(?factory:symbol, ?producedType:symbol)
+.input LLMFactoryProduces(IO="file", filename="LLMFactoryProduces.csv", delimiter="\t")
+
+// Connect: the factory's RETURN var points to the canonical mock of each produced
+// type; the call-return edge carries it to every caller, so `x = factory(name);
+// x.m()` dispatches to producedType.m() via the REAL path. (Validated on avrora:
+// getAction wiring lifted recall 4.8% → 27.2%, lighting up the simulation subtree;
+// the residual is the OTHER Defaults registries — getMicrocontroller/getPlatform/
+// getSimulation/getTopology — each its own LLMFactoryProduces row.)
+mainAnalysis.VarPointsTo(?hctx, ?mock, ?ctx, ?ret) :-
+  LLMFactoryProduces(?factory, ?producedType),
+  ReturnVar(?ret, ?factory),
+  isType(?producedType),
+  MockObjectForType(?mock, ?producedType),
+  mainAnalysis.isImmutableHContext(?hctx),
+  mainAnalysis.isImmutableContext(?ctx).
+
+// AUTO-SEED the produced type's no-arg constructor as an EntryPointMethod. This is
+// the single rule that removes the hand-authored ctor step: it mints T::MockObject
+// (via the existing EntryPointMethod→ObjToMock→MockObject cascade in
+// manual-entry-points) AND runs <T.init> on that mock with this↦T::MockObject.
+// No-arg only ("void()") — mirrors the Class.newInstance()/ServiceLoader contract
+// these registries use; drop the descriptor guard to seed all ctors (with mocked
+// args) for factories using getDeclaredConstructor(args).newInstance(args).
+EntryPointMethod(?ctor) :-
+  LLMFactoryProduces(_, ?producedType),
+  Method_DeclaringType(?ctor, ?producedType),
+  Method_SimpleName(?ctor, "<init>"),
+  Method_Descriptor(?ctor, "void()").

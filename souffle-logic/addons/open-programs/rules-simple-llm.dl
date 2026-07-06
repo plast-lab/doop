@@ -1,0 +1,30 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// simple-llm — entry-point-seeding open-programs strategy (the deep-llm base)
+//
+// Install: copy into $DOOP_HOME/souffle-logic/addons/open-programs/rules-simple-llm.dl
+// then run with --open-programs simple-llm, feeding the model-reasoned roots via:
+//   reach-doop.sh ... --open-programs simple-llm \
+//     -- --Xextra-facts EntryPointMethod.facts
+//
+// This is the LLM seed with NOTHING added: the model reasons out the real runtime
+// roots (Phase C — HTTP handlers, @Service impls behind injected interfaces, etc.),
+// writes them as Doop method descriptors to EntryPointMethod.facts, and Doop's native
+// manual-entry-points machinery makes them reachable (binding each method's receiver
+// `this` to <class>::MockObject and mocking its formals). No DI field injection and no
+// proxy delegation — so it under-reports any reachability that flows THROUGH a
+// reflectively-injected collaborator (Spring Data repositories, Hibernate, etc.).
+//
+// Relationship to the strategy family:
+//   simple-llm  =  manual-entry-points (entry-point seeding only)
+//   deep-llm    =  simple-llm  +  LLMInjectField (DI field injection)
+//                              +  LLMProxyDelegate (proxy delegation)
+// See assets/deep-llm/rules-deep-llm.dl and references/llm-authored-facts.md.
+//
+// NOTE: the skill's `--open-programs LLM` convenience route does the same thing
+// without installing this file — reach-doop.sh generates EntryPointMethod.facts from
+// --entrypoints and runs Doop's native manual-entry-points. simple-llm is the named,
+// installable counterpart that deep-llm builds on; prefer `--open-programs LLM` for a
+// plain run, and this asset when you want the explicit base of the deep-llm family.
+// ─────────────────────────────────────────────────────────────────────────────
+
+#include "rules-manual-entry-points.dl"

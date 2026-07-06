@@ -1,0 +1,66 @@
+// rules-reflective-factory-inject.dl — an `--open-programs reflective-factory-inject` strategy.
+//
+// COMBINES the reflective-factory strategy (ReflectiveFactoryMethod / data-driven registries) with
+// deep-llm's dependency-INJECTION mechanisms (LLMInjectField field injection + LLMProxyDelegate proxy
+// delegation), WITHOUT pulling in deep-llm's parallel LLMFactoryProduces factory model. Rationale:
+// some subjects need BOTH the reflective-factory facts (already authored for fop/avrora/…) AND a
+// field/alloc injection to thread a reflectively-constructed object into the field that uses it
+// (fop's ElementMappingRegistry -> FOTreeBuilder.elementMappingRegistry — the registry is built
+// reflectively and never flows to the handler, so findFOMaker is reached 0x). reflective-factory
+// alone can't inject; deep-llm can inject but uses a different factory format. This file is the union.
+//
+// reflective-factory already #includes rules-simple-llm.dl -> rules-manual-entry-points.dl, which
+// provides the mock base (ObjToMock / MockObject / MockObjectForType) both rule sets rely on, so
+// including it is enough — the lifted deep-llm DI rules below reuse that base.
+//
+// > Status: EXPERIMENTAL. The reflective-factory half is the proven strategy; the injection half is
+// > lifted verbatim from rules-deep-llm.dl (lines ~45-109). Provide LLMInjectField.csv (+ empty
+// > LLMProxyDelegate.csv) alongside the usual ReflectiveFactory* facts.
+
+#include "rules-reflective-factory.dl"
+
+// ─── (A) FIELD INJECTION  (LLMInjectField) — lifted from rules-deep-llm.dl ────────────────────────
+// Inject a concrete-impl mock into declType.fieldSimple, so a load of that field yields the impl.
+//   <declType>\t<fieldSimpleName>\t<concreteImpl>
+.decl LLMInjectField(?declType:symbol, ?fieldSimple:symbol, ?concreteImpl:symbol)
+.input LLMInjectField(IO="file", filename="LLMInjectField.csv", delimiter="\t")
+
+// make each injected impl mock-able (manual-entry-points mints <impl>::MockObject + MockObjectForType)
+ObjToMock(?impl) :-
+  LLMInjectField(_, _, ?impl),
+  isClassType(?impl).
+
+// Default Doop flows fields STORE-FIRST, so writing InstanceFieldPointsTo is a no-op for loads.
+// Instead assert the load OUTCOME directly: for every load of declType.field whose base points to a
+// declType mock, make the load var point to the concrete-impl mock (recursive — drives next dispatch).
+mainAnalysis.VarPointsTo(?ihctx, cat(?impl, "::MockObject"), ?ctx, ?to) :-
+  LLMInjectField(?declType, ?fieldSimple, ?impl),
+  Field_DeclaringType(?fld, ?declType),
+  Field_SimpleName(?fld, ?fieldSimple),
+  LoadInstanceField(?base, ?fld, ?to, _),
+  mainAnalysis.VarPointsTo(?bhctx, ?basevalue, ?ctx, ?base),
+  MockObjectForType(?basevalue, ?declType),
+  mainAnalysis.isImmutableHContext(?ihctx).
+
+// also expose as InstanceFieldPointsTo (harmless; loads don't read it in the default analysis)
+mainAnalysis.InstanceFieldPointsTo(?hctx, cat(?impl, "::MockObject"), ?fld, ?hctx, ?basevalue) :-
+  LLMInjectField(?declType, ?fieldSimple, ?impl),
+  Field_DeclaringType(?fld, ?declType),
+  Field_SimpleName(?fld, ?fieldSimple),
+  MockObjectForType(?basevalue, ?declType),
+  mainAnalysis.isImmutableHContext(?hctx).
+
+// ─── (B) PROXY DELEGATION  (LLMProxyDelegate) — lifted from rules-deep-llm.dl ─────────────────────
+// "an object reached through ifaceType is a proxy that runs implType's methods" — contribute
+// ResolveInvocation directly, bypassing the SubtypeOf check at call sites on the proxied interface.
+//   <ifaceType>\t<implType>
+.decl LLMProxyDelegate(?ifaceType:symbol, ?implType:symbol)
+.input LLMProxyDelegate(IO="file", filename="LLMProxyDelegate.csv", delimiter="\t")
+
+basic.ResolveInvocation(?implType, ?invo, ?tomethod) :-
+  LLMProxyDelegate(?ifaceType, ?implType),
+  basic.VirtualMethodInvocation_BaseType(?invo, ?baseType),
+  basic.SubtypeOf(?ifaceType, ?baseType),
+  VirtualMethodInvocation_SimpleName(?invo, ?sn),
+  VirtualMethodInvocation_Descriptor(?invo, ?desc),
+  basic.MethodLookup(?sn, ?desc, ?implType, ?tomethod).

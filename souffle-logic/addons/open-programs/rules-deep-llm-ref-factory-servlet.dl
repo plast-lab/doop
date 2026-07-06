@@ -1,0 +1,656 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// rules-deep-llm-ref-factory-servlet.dl — synthetic --open-programs strategy
+// (EXPERIMENTAL). Combines THREE strategies on ONE shared manual-entry-points base:
+//   (1) reflective-factory  — ReflectiveFactory* registries / factory-produces
+//   (2) deep-llm            — LLMInjectField / LLMProxyDelegate / LLMFactoryProduces
+//   (3) jackee servlet front-end (lifted from rules-servlets-only.dl) — detects
+//       HttpServlet/GenericServlet/Filter/Listener/SCI subject classes and seeds
+//       their lifecycle methods via the self-contained OpenProgramEntryPoint mock.
+//
+// STRUCTURE (why it compiles — see the base-conflict analysis):
+//  • The base rules-simple-llm.dl (→ manual-entry-points) is #included ONCE. It owns
+//    ObjToMock / MockObjectForType / EntryPointMethod / AllConcreteImplementations /
+//    the MockObjFrom* stats — everything (1) and (2) need.
+//  • (1) and (2) bodies are pasted VERBATIM below minus their own #include of
+//    rules-simple-llm.dl (which would double-include the base).
+//  • (3) is pasted from rules-servlets-only.dl with FOUR things removed, because
+//    servlets-only is jackee's PARALLEL fork of the same core and would otherwise
+//    redeclare 5 relations:
+//      - its  #include "../../commonMacros.dl"                 (base already pulls it)
+//      - its  .decl MockObjFromArray/Field/Formal              (stats stubs; base owns them)
+//      - its  .decl AllConcreteImplementations + 2 rules       (base's 4-rule superset is used)
+//      - its  .decl MockObjFromOpenProgramEntryPoint(Value)    (name clash w/ base's
+//        (?class) + the stats-only head that populates it) — the MockObject minting is kept.
+//    servlets-only's servlet pipeline is self-contained (Possible→MockOpen→MockObject→
+//    ReachableContext/receiver VarPointsTo) and needs none of ObjToMock/MockObjectForType.
+//
+// Facts to provide (empty file = that lever inert):
+//   reflective-factory: ReflectiveFactoryMethod.csv, ReflectiveFactoryRegistry.csv,
+//                       MemberOfReflectiveFactoryRegistry.csv, FactoryReadsRegistry.csv
+//   deep-llm:           LLMInjectField.csv, LLMProxyDelegate.csv, LLMFactoryProduces.csv
+//   servlet front-end:  none (auto-detected from the subject's servlet-API subtypes)
+//   base:               EntryPointMethod.facts (manual roots), as usual.
+// ─────────────────────────────────────────────────────────────────────────────
+#include "rules-simple-llm.dl"
+
+// ═══════════════════════ (1) reflective-factory (body, #include stripped) ═══════════════════════
+// ─── front-end schema (spec §1) ──────────────────────────────────────────────
+.decl ReflectiveFactoryRegistry(?registry:symbol)
+.input ReflectiveFactoryRegistry(IO="file", filename="ReflectiveFactoryRegistry.csv", delimiter="\t")
+
+.decl MemberOfReflectiveFactoryRegistry(?registry:symbol, ?concrete:symbol)
+.input MemberOfReflectiveFactoryRegistry(IO="file", filename="MemberOfReflectiveFactoryRegistry.csv", delimiter="\t")
+
+.decl FactoryReadsRegistry(?factory:symbol, ?registry:symbol)
+.input FactoryReadsRegistry(IO="file", filename="FactoryReadsRegistry.csv", delimiter="\t")
+
+// ─── produced edge (spec §2) ─────────────────────────────────────────────────
+// This strategy's OWN internal contract (the analogue of deep-llm's
+// LLMFactoryProduces, but owned here). A factory draws instances from a declared
+// registry; the registry's members are the concrete types it can produce.
+.decl ReflectiveFactoryProduces(?factory:symbol, ?producedType:symbol)
+
+ReflectiveFactoryProduces(?factory, ?concrete) :-
+  FactoryReadsRegistry(?factory, ?registry),
+  ReflectiveFactoryRegistry(?registry),
+  MemberOfReflectiveFactoryRegistry(?registry, ?concrete).
+
+// ─── type-driven tier (spec §4): ReflectiveFactoryMethod ─────────────────────
+// A factory declared here (just its signature — no registry/members) produces all
+// APPLICATION concrete subtypes of its declared return type. This is the coarse
+// default; it is exact iff the registry is type-complete (every concrete subtype is
+// actually registered, e.g. avrora's Defaults). Over-approximates otherwise.
+.decl ReflectiveFactoryMethod(?factory:symbol)
+.input ReflectiveFactoryMethod(IO="file", filename="ReflectiveFactoryMethod.csv", delimiter="\t")
+
+// A factory has a PRECISE (data-driven) produced set when it reads a registry that
+// has members. Depends only on input relations -> the negation below is stratified.
+.decl HasDataDrivenMembers(?factory:symbol)
+HasDataDrivenMembers(?factory) :-
+  FactoryReadsRegistry(?factory, ?registry),
+  MemberOfReflectiveFactoryRegistry(?registry, _).
+
+// Fallback: type-driven production ONLY when the factory has no data-driven members,
+// so data-driven (precise) always wins per factory. ApplicationClass bounds the
+// over-approximation to app types — a broad/library return type would otherwise pull
+// in its whole subtype cone (incl. JDK).
+// IMPORTANT: ApplicationClass is defined by the app-regex, so the run's regex MUST
+// cover the analyzed subject, or this guard drops every produced type. For a DaCapo
+// subject analyzed in -i, that means the subject's own package (or an empty regex so
+// Doop derives the boundary from -i) — NOT the glue regex `org.dacapo.*`, under which
+// the subject is labeled library and ApplicationClass is empty.
+ReflectiveFactoryProduces(?factory, ?concrete) :-
+  ReflectiveFactoryMethod(?factory),
+  !HasDataDrivenMembers(?factory),
+  Method_ReturnType(?factory, ?retType),
+  basic.SubtypeOf(?concrete, ?retType),
+  ApplicationClass(?concrete),
+  isClassType(?concrete),
+  !ClassModifier("abstract", ?concrete).
+
+// ─── back-end: produced edge -> reachability (owned, not inherited) ───────────
+// (1) Connect the factory's RETURN var to the canonical mock of each produced
+//     type; the call-return edge carries it to callers, so `x = factory(...);
+//     x.m()` dispatches to producedType.m() via the real path.
+mainAnalysis.VarPointsTo(?hctx, ?mock, ?ctx, ?ret) :-
+  ReflectiveFactoryProduces(?factory, ?producedType),
+  ReturnVar(?ret, ?factory),
+  isType(?producedType),
+  MockObjectForType(?mock, ?producedType),
+  mainAnalysis.isImmutableHContext(?hctx),
+  mainAnalysis.isImmutableContext(?ctx).
+
+// (2) Auto-seed each produced type's no-arg constructor as an EntryPointMethod.
+//     This mints T::MockObject (via the manual-entry-points
+//     EntryPointMethod -> ObjToMock -> MockObject cascade) AND runs <T.init> on
+//     that same mock, so ctor-set fields populate and methods that read them
+//     resolve. No-arg only ("void()"), mirroring Class.newInstance().
+EntryPointMethod(?ctor) :-
+  ReflectiveFactoryProduces(_, ?producedType),
+  Method_DeclaringType(?ctor, ?producedType),
+  Method_SimpleName(?ctor, "<init>"),
+  Method_Descriptor(?ctor, "void()").
+
+// ═══════════════════════ (2) deep-llm (body, #include stripped) ═════════════════════════════════
+.decl LLMInjectField(?declType:symbol, ?fieldSimple:symbol, ?concreteImpl:symbol)
+.input LLMInjectField(IO="file", filename="LLMInjectField.csv", delimiter="\t")
+
+// Make each injected concrete impl a mock-able object: manual-entry-points then
+// mints <impl>::MockObject and derives MockObjectForType for it. Guarded on
+// isClassType so it only fires once the impl is in the program (--resolve).
+ObjToMock(?impl) :-
+  LLMInjectField(_, _, ?impl),
+  isClassType(?impl).
+
+// The native IoC wiring. CRITICAL: the default (non-featherweight) Doop analysis
+// flows fields STORE-FIRST — a field LOAD only sees values placed by a matching
+// StoreHeapInstanceField; the direct `load + InstanceFieldPointsTo -> VarPointsTo`
+// rule is commented out in core ("much slower"). So writing InstanceFieldPointsTo
+// is a no-op for loads. Instead we assert the load OUTCOME directly, targeted to
+// the injected fields only: for every load of declType.field whose base points to
+// a declType mock, make the load var point to the concrete-impl mock. Recursive —
+// the impl mock flowing to the load var drives the next dispatch/load.
+mainAnalysis.VarPointsTo(?ihctx, cat(?impl, "::MockObject"), ?ctx, ?to) :-
+  LLMInjectField(?declType, ?fieldSimple, ?impl),
+  Field_DeclaringType(?fld, ?declType),
+  Field_SimpleName(?fld, ?fieldSimple),
+  LoadInstanceField(?base, ?fld, ?to, _),
+  mainAnalysis.VarPointsTo(?bhctx, ?basevalue, ?ctx, ?base),
+  MockObjectForType(?basevalue, ?declType),
+  mainAnalysis.isImmutableHContext(?ihctx).
+
+// (Also expose it as InstanceFieldPointsTo for any consumer/inspection — harmless;
+// loads do not read this in the default analysis, per the note above.)
+mainAnalysis.InstanceFieldPointsTo(?hctx, cat(?impl, "::MockObject"), ?fld, ?hctx, ?basevalue) :-
+  LLMInjectField(?declType, ?fieldSimple, ?impl),
+  Field_DeclaringType(?fld, ?declType),
+  Field_SimpleName(?fld, ?fieldSimple),
+  MockObjectForType(?basevalue, ?declType),
+  mainAnalysis.isImmutableHContext(?hctx).
+
+// ─── PROXY DELEGATION (prototype) ───────────────────────────────────────────
+// Field injection alone fails for PROXY-based injection (Spring Data repositories,
+// JDK dynamic proxies): the field is declared as an app interface (e.g.
+// TransactionRepository) but at runtime holds a $ProxyN that delegates to an impl
+// (SimpleJpaRepository). Doop's dispatch soundly requires
+// SubtypeOf(receiverType, callSiteBaseType); SimpleJpaRepository is NOT a subtype
+// of TransactionRepository, so a call on the interface won't resolve to the impl.
+//
+// We model the proxy's observable behaviour with one extra fact + one extra rule:
+// LLMProxyDelegate(ifaceType, implType) says "an object reached through ifaceType is
+// a proxy that runs implType's methods". The rule contributes basic.ResolveInvocation
+// directly — bypassing the SubtypeOf check exactly at call sites on the proxied
+// interface — so an impl-typed receiver (placed by the field injection above) makes
+// the interface call resolve to the impl method. The further hop (e.g.
+// SimpleJpaRepository.entityManager -> SessionImpl) needs no proxy: SessionImpl IS-A
+// EntityManager, so standard dispatch handles it once save()'s body is reachable.
+//
+// Input (tab-separated, via --Xextra-facts LLMProxyDelegate.csv):
+//   <ifaceType>\t<implType>
+.decl LLMProxyDelegate(?ifaceType:symbol, ?implType:symbol)
+.input LLMProxyDelegate(IO="file", filename="LLMProxyDelegate.csv", delimiter="\t")
+
+basic.ResolveInvocation(?implType, ?invo, ?tomethod) :-
+  LLMProxyDelegate(?ifaceType, ?implType),
+  basic.VirtualMethodInvocation_BaseType(?invo, ?baseType),
+  basic.SubtypeOf(?ifaceType, ?baseType),
+  VirtualMethodInvocation_SimpleName(?invo, ?sn),
+  VirtualMethodInvocation_Descriptor(?invo, ?desc),
+  basic.MethodLookup(?sn, ?desc, ?implType, ?tomethod).
+
+// ─────────────────────────────────────────────────────────────────────────────
+// (3) REFLECTIVE FACTORY / NAME→CLASS REGISTRY  (LLMFactoryProduces)
+//
+// Pattern: a factory method returns objects whose concrete type is chosen at
+// runtime from a name→class registry instantiated reflectively (Class.newInstance),
+// e.g. avrora's `cck.util.ClassMap`: Defaults.getAction(name) → newInstance of a
+// registered action. Plain Doop can't see what getAction returns, so the receiver's
+// virtual calls (action.run()) resolve to nothing and the whole downstream subtree
+// drops out.
+//
+// UNIQUE PROPERTY — DERIVED, NOT ASSERTED. The produced set is recovered from the
+// `addClass(name, T.class)` CLASS LITERALS in the bytecode (the model reads them),
+// so this is the reflection resolution Doop lacks, not a judgment call. It is sound
+// (over-approximate: all registered types become reachable; precision↓, R_s\R_d↑) and
+// VERIFIABLE against the registration sites.
+//
+// Input (tab-separated, via --Xextra-facts LLMFactoryProduces.csv):
+//   <factoryMethodDescriptor>\t<producedType>
+// e.g.  <avrora.Defaults: avrora.actions.Action getAction(java.lang.String)>  avrora.actions.SimAction
+//
+// CTOR-RUN-ON-MOCK IS NOW AUTO-DERIVED — no second artifact to author. Each
+// producedType still needs (1) a mock object for the factory to return, and (2) its
+// constructor run on that mock (a bare mock is opaque — Doop never runs its <init>,
+// so ctor-set fields and ctor callees stay invisible). Previously BOTH were obtained
+// by hand-seeding `<T: void <init>()>` as an EntryPointMethod in the entry-point
+// file. The rule at the bottom of this block now derives that EntryPointMethod
+// straight from LLMFactoryProduces, so the model authors ONLY the (factory,
+// producedType) rows. The derivation cascades through the existing machinery:
+//   EntryPointMethod(<T.init>) → ObjToMock(T) → MockObject(T::MockObject)  [part 1]
+//                              → ReachableContext(<T.init>) + this↦T::MockObject [part 2]
+// The factory's returned mock and the ctor's `this` are the SAME canonical
+// T::MockObject, so ctor-initialised fields are visible to callers of the factory.
+// Result-equivalent to the old two-artifact approach; nested factories cascade
+// automatically (add another LLMFactoryProduces row, no manual ctor chaining).
+.decl LLMFactoryProduces(?factory:symbol, ?producedType:symbol)
+.input LLMFactoryProduces(IO="file", filename="LLMFactoryProduces.csv", delimiter="\t")
+
+// Connect: the factory's RETURN var points to the canonical mock of each produced
+// type; the call-return edge carries it to every caller, so `x = factory(name);
+// x.m()` dispatches to producedType.m() via the REAL path. (Validated on avrora:
+// getAction wiring lifted recall 4.8% → 27.2%, lighting up the simulation subtree;
+// the residual is the OTHER Defaults registries — getMicrocontroller/getPlatform/
+// getSimulation/getTopology — each its own LLMFactoryProduces row.)
+mainAnalysis.VarPointsTo(?hctx, ?mock, ?ctx, ?ret) :-
+  LLMFactoryProduces(?factory, ?producedType),
+  ReturnVar(?ret, ?factory),
+  isType(?producedType),
+  MockObjectForType(?mock, ?producedType),
+  mainAnalysis.isImmutableHContext(?hctx),
+  mainAnalysis.isImmutableContext(?ctx).
+
+// AUTO-SEED the produced type's no-arg constructor as an EntryPointMethod. This is
+// the single rule that removes the hand-authored ctor step: it mints T::MockObject
+// (via the existing EntryPointMethod→ObjToMock→MockObject cascade in
+// manual-entry-points) AND runs <T.init> on that mock with this↦T::MockObject.
+// No-arg only ("void()") — mirrors the Class.newInstance()/ServiceLoader contract
+// these registries use; drop the descriptor guard to seed all ctors (with mocked
+// args) for factories using getDeclaredConstructor(args).newInstance(args).
+EntryPointMethod(?ctor) :-
+  LLMFactoryProduces(_, ?producedType),
+  Method_DeclaringType(?ctor, ?producedType),
+  Method_SimpleName(?ctor, "<init>"),
+  Method_Descriptor(?ctor, "void()").
+
+// ═══════════════════════ (3) jackee servlet front-end (lifted from rules-servlets-only.dl) ══════
+// (dropped: commonMacros include, MockObjFrom{Array,Field,Formal} stubs, AllConcreteImplementations
+//  decl+rules, and the MockObjFromOpenProgramEntryPoint(Value) decl+stats head — all owned by base)
+.decl OpenProgramEntryPoint(?method:Method)
+.decl MockOpenProgramEntryPoint(?class:Type, ?method:Method)
+.decl PossibleOpenProgramEntryPoint(?class:Type, ?method:Method)
+
+OpenProgramEntryPoint(?method) :-
+  MockOpenProgramEntryPoint(_, ?method).
+
+// Contribute to the global summary relation
+mainAnalysis.ApplicationEntryPoint(?meth) :-
+  OpenProgramEntryPoint(?meth),
+  ApplicationMethod(?meth).
+
+// TODO(saiko): Are ConcreteImplementationsOrd & ConcreteImplementations used somewhere?
+//.decl ConcreteImplementationsOrd(?staticType:Type, ?classOrd:number)
+//.decl ConcreteImplementations(?staticType:Type, ?class:Type)
+//
+//ConcreteImplementationsOrd(?staticType, ?classOrd) :-
+//  AllConcreteImplementations(_, ?staticType),
+//  ?classOrd = min ord(?allClasses): AllConcreteImplementations(?allClasses, ?staticType).
+//
+//ConcreteImplementations(?staticType, ?class) :-
+//  ConcreteImplementationsOrd(?staticType, ?classOrd),
+//  isClassType(?class),
+//  ord(?class) = ?classOrd.
+
+// GenericServlet is an abstract class that implements Servlet & ServletConfig.
+// HttpServlet extends it.
+.decl GenericServletClass(?class:Type)
+
+GenericServletClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "jakarta.servlet.GenericServlet").
+
+// For older Servlet frameworks.
+GenericServletClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "javax.servlet.GenericServlet").
+
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void <init>()>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void init()>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void init(jakarta.servlet.ServletConfig)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void init(javax.servlet.ServletConfig)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void destroy()>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void service(jakarta.servlet.ServletRequest,jakarta.servlet.ServletResponse)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void service(javax.servlet.ServletRequest,javax.servlet.ServletResponse)>")) :-
+  GenericServletClass(?class).
+
+// HttpServlet
+.decl HttpServletClass(?class:Type)
+
+HttpServletClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "jakarta.servlet.http.HttpServlet").
+
+// For older Servlet frameworks.
+HttpServletClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "javax.servlet.http.HttpServlet").
+
+.decl HttpServletEntryMethodName(?method:Method)
+
+HttpServletEntryMethodName("doGet").
+HttpServletEntryMethodName("doPost").
+HttpServletEntryMethodName("doPut").
+HttpServletEntryMethodName("doDelete").
+HttpServletEntryMethodName("doHead").
+HttpServletEntryMethodName("doOptions").
+HttpServletEntryMethodName("doTrace").
+HttpServletEntryMethodName("service").
+
+PossibleOpenProgramEntryPoint(?class, cat(cat(cat(cat("<", ?class), ": void "), ?serviceMethodName), "(jakarta.servlet.http.HttpServletRequest,jakarta.servlet.http.HttpServletResponse)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat(cat(cat("<", ?class), ": void "), ?serviceMethodName), "(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>")) :-
+  HttpServletClass(?class),
+  HttpServletEntryMethodName(?serviceMethodName).
+
+// Servlet Filters
+.decl ServletFilterClass(?class:Type)
+
+ServletFilterClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "jakarta.servlet.Filter").
+
+// For older servlet frameworks
+ServletFilterClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "javax.servlet.Filter").
+
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void <init>()>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void init(jakarta.servlet.FilterConfig)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void init(javax.servlet.FilterConfig)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void destroy()>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void doFilter(jakarta.servlet.ServletRequest,jakarta.servlet.ServletResponse,jakarta.servlet.FilterChain)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void doFilter(javax.servlet.ServletRequest,javax.servlet.ServletResponse,javax.servlet.FilterChain)>")) :-
+  ServletFilterClass(?class).
+
+// Http Servlet Filters (Spec 4.0+)
+.decl HttpFilterClass(?class:Type)
+
+HttpFilterClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "jakarta.servlet.http.HttpFilter").
+
+HttpFilterClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "javax.servlet.http.HttpFilter").
+
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void doFilter(jakarta.servlet.http.HttpServletRequest,jakarta.servlet.http.HttpServletResponse,jakarta.servlet.FilterChain)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void doFilter(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse,javax.servlet.FilterChain)>")) :-
+  HttpFilterClass(?class).
+
+// Servlet Context Listener
+.decl ServletContextListenerClass(?class:Type)
+
+ServletContextListenerClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "jakarta.servlet.ServletContextListener").
+
+// For older servlet frameworks
+ServletContextListenerClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "javax.servlet.ServletContextListener").
+
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void <init>()>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void contextInitialized(jakarta.servlet.ServletContextEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void contextInitialized(javax.servlet.ServletContextEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void contextDestroyed(jakarta.servlet.ServletContextEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void contextDestroyed(javax.servlet.ServletContextEvent)>")) :-
+  ServletContextListenerClass(?class).
+
+// Servlet Container Initializer
+.decl ServletContainerInitializerClass(?class:Type)
+
+ServletContainerInitializerClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "jakarta.servlet.ServletContainerInitializer").
+
+// For older servlet frameworks
+ServletContainerInitializerClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "javax.servlet.ServletContainerInitializer").
+
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void <init>()>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void onStartup(java.util.Set,jakarta.servlet.ServletContext)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void onStartup(java.util.Set,javax.servlet.ServletContext)>")) :-
+  ServletContainerInitializerClass(?class).
+
+// Async Listner
+.decl AsyncListenerClass(?class:Type)
+
+AsyncListenerClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "jakarta.servlet.AsyncListener").
+
+// For older servlet frameworks
+AsyncListenerClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "javax.servlet.AsyncListener").
+
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void <init>()>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void onComplete(jakarta.servlet.AsyncEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void onError(jakarta.servlet.AsyncEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void onStartAsync(jakarta.servlet.AsyncEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void onTimeout(jakarta.servlet.AsyncEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void onComplete(javax.servlet.AsyncEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void onError(javax.servlet.AsyncEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void onStartAsync(javax.servlet.AsyncEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void onTimeout(javax.servlet.AsyncEvent)>")) :-
+  AsyncListenerClass(?class).
+
+// Read Listner
+.decl ReadListenerClass(?class:Type)
+
+ReadListenerClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "jakarta.servlet.ReadListener").
+
+// For older servlet frameworks
+ReadListenerClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "javax.servlet.ReadListener").
+
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void <init>()>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void onDataAvailable()>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void onAllDataRead()>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void onError(java.lang.Throwable)>")) :-
+  ReadListenerClass(?class).
+
+// Write Listner
+.decl WriteListenerClass(?class:Type)
+
+WriteListenerClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "jakarta.servlet.WriteListener").
+
+// For older servlet frameworks
+WriteListenerClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "javax.servlet.WriteListener").
+
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void <init>()>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void onWritePossible()>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void onError(java.lang.Throwable)>")) :-
+  WriteListenerClass(?class).
+
+// Servlet Request Listener
+.decl ServletRequestListenerClass(?class:Type)
+
+ServletRequestListenerClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "jakarta.servlet.ServletRequestListener").
+
+// For older servlet frameworks
+ServletRequestListenerClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "javax.servlet.ServletRequestListener").
+
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void <init>()>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void requestDestroyed(jakarta.servlet.ServletRequestEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void requestInitialized(jakarta.servlet.ServletRequestEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void requestDestroyed(javax.servlet.ServletRequestEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void requestInitialized(javax.servlet.ServletRequestEvent)>")) :-
+  ServletRequestListenerClass(?class).
+
+// Servlet Request Attribute Listener
+.decl ServletRequestAttributeListenerClass(?class:Type)
+
+ServletRequestAttributeListenerClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "jakarta.servlet.ServletRequestAttributeListener").
+
+// For older servlet frameworks
+ServletRequestAttributeListenerClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "javax.servlet.ServletRequestAttributeListener").
+
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void <init>()>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void attributeAdded(jakarta.servlet.ServletRequestAttributeEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void attributeRemoved(jakarta.servlet.ServletRequestAttributeEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void attributeReplaced(jakarta.servlet.ServletRequestAttributeEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void attributeAdded(javax.servlet.ServletRequestAttributeEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void attributeRemoved(javax.servlet.ServletRequestAttributeEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void attributeReplaced(javax.servlet.ServletRequestAttributeEvent)>")) :-
+  ServletRequestAttributeListenerClass(?class).
+
+// Servlet Context Attribute Listener
+.decl ServletContextAttributeListenerClass(?class:Type)
+
+ServletContextAttributeListenerClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "jakarta.servlet.ServletContextAttributeListener").
+
+// For older servlet frameworks
+ServletContextAttributeListenerClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "javax.servlet.ServletContextAttributeListener").
+
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void <init>()>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void attributeAdded(jakarta.servlet.ServletContextAttributeEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void attributeRemoved(jakarta.servlet.ServletContextAttributeEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void attributeReplaced(jakarta.servlet.ServletContextAttributeEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void attributeAdded(javax.servlet.ServletContextAttributeEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void attributeRemoved(javax.servlet.ServletContextAttributeEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void attributeReplaced(javax.servlet.ServletContextAttributeEvent)>")) :-
+  ServletContextAttributeListenerClass(?class).
+
+// Http Upgrade Handler
+.decl HttpUpgradeHandlerClass(?class:Type)
+
+HttpUpgradeHandlerClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "jakarta.servlet.http.HttpUpgradeHandler").
+
+// For older servlet frameworks
+HttpUpgradeHandlerClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "javax.servlet.http.HttpUpgradeHandler").
+
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void <init>()>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void init(jakarta.servlet.http.WebConnection)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void init(javax.servlet.http.WebConnection)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void destroy()>")) :-
+  HttpUpgradeHandlerClass(?class).
+
+// Http Session Listener
+.decl HttpSessionListenerClass(?class:Type)
+
+HttpSessionListenerClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "jakarta.servlet.http.HttpSessionListener").
+
+// For older servlet frameworks
+HttpSessionListenerClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "javax.servlet.http.HttpSessionListener").
+
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void <init>()>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void sessionCreated(jakarta.servlet.http.HttpSessionEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void sessionDestroyed(jakarta.servlet.http.HttpSessionEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void sessionCreated(javax.servlet.http.HttpSessionEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void sessionDestroyed(javax.servlet.http.HttpSessionEvent)>")) :-
+  HttpSessionListenerClass(?class).
+
+// HttpSessionActivationListener
+.decl HttpSessionActivationListenerClass(?class:Type)
+
+HttpSessionActivationListenerClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "jakarta.servlet.http.HttpSessionActivationListener").
+
+// For older servlet frameworks
+HttpSessionActivationListenerClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "javax.servlet.http.HttpSessionActivationListener").
+
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void <init>()>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void sessionDidActivate(jakarta.servlet.http.HttpSessionEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void sessionWillPassivate(jakarta.servlet.http.HttpSessionEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void sessionDidActivate(javax.servlet.http.HttpSessionEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void sessionWillPassivate(javax.servlet.http.HttpSessionEvent)>")) :-
+  HttpSessionActivationListenerClass(?class).
+
+// HttpSessionAttributeListener
+.decl HttpSessionAttributeListenerClass(?class:Type)
+
+HttpSessionAttributeListenerClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "jakarta.servlet.http.HttpSessionAttributeListener").
+
+// For older servlet frameworks
+HttpSessionAttributeListenerClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "javax.servlet.http.HttpSessionAttributeListener").
+
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void <init>()>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void attributeAdded(jakarta.servlet.http.HttpSessionBindingEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void attributeRemoved(jakarta.servlet.http.HttpSessionBindingEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void attributeReplaced(jakarta.servlet.http.HttpSessionBindingEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void attributeAdded(javax.servlet.http.HttpSessionBindingEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void attributeRemoved(javax.servlet.http.HttpSessionBindingEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void attributeReplaced(javax.servlet.http.HttpSessionBindingEvent)>")) :-
+  HttpSessionAttributeListenerClass(?class).
+
+// HttpSessionBindingListener
+.decl HttpSessionBindingListenerClass(?class:Type)
+
+HttpSessionBindingListenerClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "jakarta.servlet.http.HttpSessionBindingListener").
+
+// For older servlet frameworks
+HttpSessionBindingListenerClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "javax.servlet.http.HttpSessionBindingListener").
+
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void <init>()>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void valueBound(jakarta.servlet.http.HttpSessionBindingEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void valueUnbound(jakarta.servlet.http.HttpSessionBindingEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void valueBound(javax.servlet.http.HttpSessionBindingEvent)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void valueUnbound(javax.servlet.http.HttpSessionBindingEvent)>")) :-
+  HttpSessionBindingListenerClass(?class).
+
+// HttpSessionIdListener
+.decl HttpSessionIdListenerClass(?class:Type)
+
+HttpSessionIdListenerClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "jakarta.servlet.http.HttpSessionIdListener").
+
+// For older servlet frameworks
+HttpSessionIdListenerClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "javax.servlet.http.HttpSessionIdListener").
+
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void <init>()>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void sessionIdChanged(jakarta.servlet.http.HttpSessionEvent,java.lang.String)>")),
+PossibleOpenProgramEntryPoint(?class, cat(cat("<", ?class), ": void sessionIdChanged(javax.servlet.http.HttpSessionEvent,java.lang.String)>")) :-
+  HttpSessionIdListenerClass(?class).
+
+// Servlet service methods
+MockOpenProgramEntryPoint(?class, ?entry) :-
+  PossibleOpenProgramEntryPoint(?class, ?entry),
+  isMethod(?entry).
+
+mainAnalysis.configuration.InitContextRequest(?value) :-
+  MockOpenProgramEntryPoint(_, ?method),
+  Method_DeclaringType(?method, ?class),
+  MockObject(?value, ?class).
+
+mainAnalysis.ReachableContext(?ctx, ?method) :-
+  MockOpenProgramEntryPoint(_, ?method),
+  Method_DeclaringType(?method, ?class),
+  MockObject(?value, ?class),
+  mainAnalysis.configuration.InitContextResponse(?value, ?ctx).
+
+// The following two rules were originally separated to stratify negation (no longer needed)
+mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?receiver) :-
+  mainAnalysis.isImmutableHContext(?hctx),
+  ValueForReceiverInContext(?ctx, ?receiver, ?value).
+
+mainAnalysis_MockValueConsMacro(cat(cat("<Mock receiver ", ?class), " >"), ?class),
+MockObject(cat(cat("<Mock receiver ", ?class), " >"), ?class) :-
+  MockOpenProgramEntryPoint(?class, _).
+.decl ValueForReceiverInContext(?ctx:mainAnalysis.configuration.Context, ?receiver:Var, ?value:Value)
+
+ValueForReceiverInContext(?ctx, ?receiver, ?value) :-
+  mainAnalysis.ReachableContext(?ctx, ?method),
+  ThisVar(?method, ?receiver),
+  Method_DeclaringType(?method, ?class),
+  MockObject(?value, ?class).
