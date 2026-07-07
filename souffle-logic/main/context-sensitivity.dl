@@ -14,37 +14,7 @@
 VarPointsTo(?hctx, ?value, ?ctx, ?var) :-    
   VarPointsTo_Bounded(?hctx, ?value, ?ctx, ?var, _).
 
-#endif   
-
-/*** ORACULAR BEGIN ***/
-// .decl Method_NumberOfContexts(?method:Method, ?n:number)
-
-// Method_NumberOfContexts(?method, ?n) :-
-//       mainAnalysis.Reachable(?method),
-//       ?n =  count : {ReachableContext(_, ?method)}.
-
-// .output Method_NumberOfContexts
-
-// .decl VPTCountPerMethodVariable(?method:Method, ?var:Var, ?n:number)
-
-// VPTCountPerMethodVariable(?method, ?var, Y) :-
-//     Var_DeclaringMethod(?var, ?method),
-//     Y =  count : {mainAnalysis.VarPointsTo(_, _, _, ?var)}.
-
-// .decl MethodTotalCost(?method:Method, Y:number)
-
-// MethodTotalCost(?method, Y) :-
-//     mainAnalysis.Reachable(?method),
-//     Y = sum ?n : {VPTCountPerMethodVariable(?method, _, ?n)}.
-
-// MethodTotalCost(?method, 0) :-
-//     mainAnalysis.Reachable(?method),
-//     !Var_DeclaringMethod(_, ?method).
-
-// .output MethodTotalCost
-/*** ORACULAR END ***/
-
-
+#endif
 
 ReachableValue(?hctx, ?heapValue) :-
   AssignContextInsensitiveHeapAllocation(?heapValue, _, ?inmethod),
@@ -449,70 +419,9 @@ OptArgAssign(?calleeCtx, ?formal, ?callerCtx, ?actual) :-
 
 OptArgAssign(?calleeCtx, ?formal, ?callerCtx, ?actual, ?allowedType) :-
   CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method),
-#ifdef PRECISE_GENERICS
-  !isMapPutMethod(?method),
-  !isCollectionAddMethod(?method),
-#endif
   ActualParam(?index, ?invocation, ?actual),
   FormalParam(?index, ?method, ?formal),
   Var_Type(?formal, ?allowedType).
-
-#ifdef PRECISE_GENERICS
-.decl isCollectionAddMethod(?method:Method)
-.decl isMapPutMethod(?method:Method)
-
-isMapPutMethod(?method) :-
-  Method_SimpleName(?method, "put"),
-  Method_DeclaringType(?method, ?mapType),
-  basic.SubtypeOf(?mapType, "java.util.Map").
-
-isCollectionAddMethod(?method) :-
-  Method_SimpleName(?method, "add"),
-  Method_DeclaringType(?method, ?collectionType),
-  basic.SubtypeOf(?collectionType, "java.util.Collection").
-
-OptArgAssign(?calleeCtx, ?formal, ?callerCtx, ?actual, ?allowedType) :-
-  isMapPutMethod(?method),
-  CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method),
-  MethodInvocation_Base(?invocation, ?base),
-  VarPointsTo(_, ?mapValue, ?callerCtx, ?base),
-  (MapAcceptsKeyType(?mapValue, ?allowedType);
-   MapAcceptsKeyFallbackType(?mapValue, ?allowedType)),
-  ActualParam(0, ?invocation, ?actual),
-  FormalParam(0, ?method, ?formal).
-
-OptArgAssign(?calleeCtx, ?formal, ?callerCtx, ?actual, ?allowedType) :-
-  isMapPutMethod(?method),
-  CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method),
-  MethodInvocation_Base(?invocation, ?base),
-  VarPointsTo(_, ?mapValue, ?callerCtx, ?base),
-  (MapAcceptsValueType(?mapValue, ?allowedType);
-   MapAcceptsValueFallbackType(?mapValue, ?allowedType)),
-  ActualParam(1, ?invocation, ?actual),
-  FormalParam(1, ?method, ?formal).
-
-OptArgAssign(?calleeCtx, ?formal, ?callerCtx, ?actual, ?allowedType) :-
-  isCollectionAddMethod(?method),
-  Method_Arity(?method, 1),
-  CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method),
-  MethodInvocation_Base(?invocation, ?base),
-  VarPointsTo(_, ?collectionValue, ?callerCtx, ?base),
-  (CollectionAcceptsValueType(?collectionValue, ?allowedType);
-   CollectionAcceptsValueFallbackType(?collectionValue, ?allowedType)),
-  ActualParam(0, ?invocation, ?actual),
-  FormalParam(0, ?method, ?formal).
-
-OptArgAssign(?calleeCtx, ?formal, ?callerCtx, ?actual, ?allowedType) :-
-  isCollectionAddMethod(?method),
-  Method_Arity(?method, 2),
-  CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method),
-  MethodInvocation_Base(?invocation, ?base),
-  VarPointsTo(_, ?collectionValue, ?callerCtx, ?base),
-  (CollectionAcceptsValueType(?collectionValue, ?allowedType);
-   CollectionAcceptsValueFallbackType(?collectionValue, ?allowedType)),
-  ActualParam(1, ?invocation, ?actual),
-  FormalParam(1, ?method, ?formal).
-#endif
 
 #ifdef INFORMATION_FLOW
 

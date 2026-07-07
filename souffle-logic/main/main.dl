@@ -26,14 +26,6 @@
 #include "reflection/declarations.dl"
 #endif // REFLECTION
 
-#ifdef SCALER_PRE_ANALYSIS
-#include "scaler-pre-analysis.dl"
-#endif // SCALER_PRE_ANALYSIS
-
-#ifdef GENERICS_PRE_ANALYSIS
-#include "generics-pre-analysis.dl"
-#endif // GENERICS_PRE_ANALYSIS
-
 #ifdef X_ZIPPER_PRE_ANALYSIS
 #include "zipper-pre-analysis.dl"
 #endif // X_ZIPPER_PRE_ANALYSIS
@@ -105,14 +97,6 @@
 
   .init configuration = Configuration
 }
-
-#ifdef X_ORACULAR_HEURISTICS
-#include "../addons/oracular/oracular-heuristics.dl"
-#endif // X_ORACULAR_HEURISTICS
-
-#ifdef X_CONTEXT_DEPENDENCY_HEURISTIC
-#include "../addons/oracular/2-object-ctx-dependency-heuristic.dl"
-#endif // X_CONTEXT_DEPENDENCY_HEURISTIC
 
 #ifdef X_SERVER_LOGIC
 #include "../addons/server-logic/queries.dl"

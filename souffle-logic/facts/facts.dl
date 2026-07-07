@@ -19,10 +19,6 @@
 #include "import-dynamic-facts.dl"
 #endif
 
-#ifdef GENERICS_PRE_ANALYSIS
-#include "generics.dl"
-#endif
-
 #ifdef TAMIFLEX
 #include "../addons/tamiflex/fact-declarations.dl"
 #include "../addons/tamiflex/import.dl"

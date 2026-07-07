@@ -47,26 +47,12 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			"2-type-sensitive+heap"              : "TwoTypeSensitivePlusHeapConfiguration",
 			"2-object-sensitive"                 : "TwoObjectSensitiveConfiguration",
 			"2-object-sensitive+heap"            : "TwoObjectSensitivePlusHeapConfiguration",
-			"blacklist-1-object-sensitive+heap"	 : "BlacklistOneObjectSensitivePlusHeapConfiguration",
-			"blacklist-2-object-sensitive+heap"	 : "BlacklistTwoObjectSensitivePlusHeapConfiguration",
-			"oracular-scalability"				 : "OracularScalabilityConfiguration",
-			"oracular-precision"				 : "OracularPrecisionConfiguration",
-			"fully-guided-context-sensitive"     : "FullyGuidedContextSensitiveConfiguration",
-			"special-2-type-sensitive+heap"      : "SpecialTwoTypeSensitivePlusHeapConfiguration",
 			"2-object-sensitive+2-heap"          : "TwoObjectSensitivePlusTwoHeapConfiguration",
 			"3-object-sensitive+2-heap"          : "ThreeObjectSensitivePlusTwoHeapConfiguration",
 			"3-object-sensitive+3-heap"          : "ThreeObjectSensitivePlusThreeHeapConfiguration",
 			"4-object-sensitive+4-heap"			 : "FourObjectSensitivePlusFourHeapConfiguration",
-			"2-type-object-sensitive+heap"       : "TwoTypeObjectSensitivePlusHeapConfiguration",
-			"2-type-object-sensitive+2-heap"     : "TwoTypeObjectSensitivePlusTwoHeapConfiguration",
 			"3-type-sensitive+2-heap"            : "ThreeTypeSensitivePlusTwoHeapConfiguration",
-			"3-type-sensitive+3-heap"            : "ThreeTypeSensitivePlusThreeHeapConfiguration",
-			"selective-2-object-sensitive+heap"  : "SelectiveTwoObjectSensitivePlusHeapConfiguration",
-			"partitioned-2-object-sensitive+heap": "PartitionedTwoObjectSensitivePlusHeapConfiguration",
-			"1-object-1-type-sensitive+heap"     : "OneObjectOneTypeSensitivePlusHeapConfiguration",
-			"web-app-sensitive"                  : "WebAppSensitiveConfiguration",
-			"sticky-2-object-sensitive"          : "StickyTwoObjectSensitiveConfiguration",
-			"adaptive-2-object-sensitive+heap"   : "AdaptiveTwoObjectSensitivePlusHeapConfiguration"
+			"3-type-sensitive+3-heap"            : "ThreeTypeSensitivePlusThreeHeapConfiguration"
 	]
 
 	/**
@@ -172,12 +158,6 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 				return new SoufflePythonAnalysis(options, context, commandsEnv)
 			} else if (options.USER_DEFINED_PARTITIONS.value) {
 				return new SoufflePartitionedAnalysis(options, context, commandsEnv)
-			} else if (options.ANALYSIS.value == "fully-guided-context-sensitive") {
-				return new SouffleScalerMultiPhaseAnalysis(options, context, commandsEnv)
-			} else if (options.ANALYSIS.value == "oracular-scalability") {
-				return new SouffleOracularScalabilityMultiPhaseAnalysis(options, context, commandsEnv)
-			} else if (options.ANALYSIS.value == "oracular-precision") {
-				return new SouffleOracularPrecisionMultiPhaseAnalysis(options, context, commandsEnv)
 			} else {
 				return new SouffleAnalysis(options, context, commandsEnv)
 			}

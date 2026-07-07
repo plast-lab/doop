@@ -99,22 +99,3 @@
 // Is the ValueToRefine the real list of objects needing
 // refinement or its negation?
 // .decl NegativeObjectFilter(?v:symbol)
-
-#ifdef PRECISE_GENERICS
-.decl MapAcceptsValueType(?value:Value, ?type:Type)
-.decl MapAcceptsKeyType(?value:Value, ?type:Type)
-.decl CollectionAcceptsValueType(?value:Value, ?type:Type)
-
-.input MapAcceptsValueType(IO="file",filename="MapAcceptsValueType.facts",delimiter="\t")
-.input MapAcceptsKeyType(IO="file",filename="MapAcceptsKeyType.facts",delimiter="\t")
-.input CollectionAcceptsValueType(IO="file",filename="CollectionAcceptsValueType.facts",delimiter="\t")
-
-.decl MapAcceptsKeyFallbackType(?mapValue:Value, ?type:Type)
-.decl CollectionAcceptsValueFallbackType(?mapValue:Value, ?type:Type)
-.decl MapAcceptsValueFallbackType(?mapValue:Value, ?type:Type)
-
-.input MapAcceptsKeyFallbackType(IO="file",filename="MapAcceptsKeyFallbackType.facts",delimiter="\t")
-.input CollectionAcceptsValueFallbackType(IO="file",filename="CollectionAcceptsValueFallbackType.facts",delimiter="\t")
-.input MapAcceptsValueFallbackType(IO="file",filename="MapAcceptsValueFallbackType.facts",delimiter="\t")
-
-#endif

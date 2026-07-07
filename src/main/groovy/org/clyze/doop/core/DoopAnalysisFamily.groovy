@@ -467,23 +467,6 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			),
 			/* End Main options */
 
-			/* Start Scaler related options */
-			new BooleanAnalysisOption(
-					id: "SCALER_PRE_ANALYSIS",
-					name: "Xscaler-pre",
-					group: GROUP_EXPERIMENTAL,
-					description: "Enable the analysis to be the pre-analysis of Scaler, and outputs the information required by Scaler.",
-					forPreprocessor: true
-			),
-			new BooleanAnalysisOption(
-					id: "GENERICS_PRE_ANALYSIS",
-					name: "Xgenerics-pre",
-					group: GROUP_EXPERIMENTAL,
-					description: "Enable precise generics pre-analysis to infer content types for Collections and Maps.",
-					forPreprocessor: true
-			),
-			/* End Scaler related options */
-
 			/* Start Zipper related options */
 			new BooleanAnalysisOption(
 					id: "X_ZIPPER_PRE_ANALYSIS",
@@ -533,13 +516,6 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "NO_MERGES",
 					name: "no-merges",
 					description: "No merges for string constants.",
-					forPreprocessor: true
-			),
-			new BooleanAnalysisOption(
-					id: "PRECISE_GENERICS",
-					name: "Xprecise-generics",
-					group: GROUP_EXPERIMENTAL,
-					description: "Precise handling for maps and collections.",
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
@@ -1022,20 +998,6 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					group: GROUP_STATS,
 					description: "Run extra metrics logic under addons/statistics.",
 					forPreprocessor: false
-			),
-			new BooleanAnalysisOption(
-					id: "X_ORACULAR_HEURISTICS",
-					name: "Xoracular-heuristics",
-					group: GROUP_EXPERIMENTAL,
-					description: "Run sensitivity heuristics logic under addons/oracular.",
-					forPreprocessor: true
-			),
-			new BooleanAnalysisOption(
-					id: "X_CONTEXT_DEPENDENCY_HEURISTIC",
-					name: "Xcontext-dependency-heuristic",
-					group: GROUP_EXPERIMENTAL,
-					description: "Run context dependency heuristics logic under addons/oracular.",
-					forPreprocessor: true
 			),
 			new AnalysisOption<String>(
 					id: "EXTRA_LOGIC",

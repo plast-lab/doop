@@ -270,10 +270,11 @@ tasks.register('printExtClasspath') {
 tasks.register('zipper', JavaExec) {
     description 'Run Zipper'
     group = 'Doop'
-    mainClass = 'ptatoolkit.zipper.doop.Main'
-    classpath = sourceSets.main.runtimeClasspath.filter {
-        !it.name.startsWith("scaler")
-    }
+    // Zipper is an external tool (github.com/silverbullettt/zipper). Drop its
+    // prebuilt jar at local-dependencies/zipper.jar; its entry point is
+    // ptatoolkit.zipper.Main (root package 'ptatoolkit').
+    mainClass = 'ptatoolkit.zipper.Main'
+    classpath = sourceSets.main.runtimeClasspath + files('local-dependencies/zipper.jar')
     if (project.hasProperty("args"))
         args project.property("args").split()
     //jvmArgs = ['-Xmx=48g']

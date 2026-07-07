@@ -85,14 +85,8 @@
       isImmutableContext(?calleeCtx).
 
 
-    // Scaler behaviour, keep caller contexts for static invocations
-    /**StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
-         StaticContextRequest(?callerCtx, ?invo),
-        ?calleeCtx = ?callerCtx.
-    **/
-
-    // Oracular behaviour, keep caller contexts if method is analyzed
-    // sensitively, drop context if method is analyzed insensitively
+    // Keep caller contexts if method is analyzed sensitively, drop
+    // context if method is analyzed insensitively.
     TwoObjectMethod(?tomethod),
     StaticContextResponse(?callerCtx, ?invo, ?calleeCtx) :-
        StaticContextRequest(?callerCtx, ?invo),
