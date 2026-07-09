@@ -1,5 +1,14 @@
 #include "../../commonMacros.dl"
-#include "entry-points.dl"
+
+.decl EntryPointMethod(?method:Method)
+.output EntryPointMethod
+
+EntryPointMethod(?method) :-
+    ApplicationMethod(?method),
+    Method_DeclaringType(?method, ?class),
+    !Method_Modifier("private", ?method),
+    !Method_Modifier("abstract", ?method),
+    !ClassModifier("private", ?class).
 
 .decl AllConcreteImplementations(?class:ReferenceType, ?type:ReferenceType)
 .decl ConcreteType(?class:ReferenceType)
@@ -33,7 +42,7 @@ ConcreteType(?type) :-
 
 MockObjFromOpenProgramEntryPoint(?class),
 ObjToMock(?class) :-
-  OpenProgramEntryPoint(?method),
+  EntryPointMethod(?method),
   Method_DeclaringType(?method, ?class),
   isReferenceType(?class),
   !ClassModifier("abstract", ?class).
@@ -105,7 +114,7 @@ mainAnalysis.ArrayIndexPointsTo(?hctx, ?componentValue, ?hctx, ?arrayValue) :-
 .decl FormalsForOpenProgramEntryPoints(?method:Method, ?formal:Var)
 
 FormalsForOpenProgramEntryPoints(?method, ?formal) :-
-  OpenProgramEntryPoint(?method),
+  EntryPointMethod(?method),
   FormalParam(_, ?method, ?formal).
 
 .decl MockObjFromFormal(?type:ReferenceType)
@@ -181,7 +190,7 @@ mainAnalysis.ReachableContext(?ctx, ?method),
 MockInvocation(cat(cat(cat("<mock-invo ", ?value), ?method), ">")),
 MockInvocationForEntryPoint(?value, ?method, cat(cat(cat("<mock-invo ", ?value), ?method), ">")),
 PlusMethodInvocation(cat(cat(cat("<mock-invo ", ?value), ?method), ">")) :-
-  OpenProgramEntryPoint(?method),
+  EntryPointMethod(?method),
   Method_DeclaringType(?method, ?class),
   MockObjectForType(?value, ?class),
   mainAnalysis.isImmutableContext(?ctx).
@@ -208,7 +217,7 @@ ContextForOpenProgramEntryPoint(?calleeCtx, ?method) :-
   mainAnalysis.configuration.ContextRequest(?callerCtx, ?immutablehctx, ?invo, ?value, ?method, 1),
 #endif // MergeOpenProgramEntryPointMacro
 #endif // OPEN_PROGRAMS_IMMUTABLE_CTX
-  OpenProgramEntryPoint(?method).
+  EntryPointMethod(?method).
 
 // TODO: requires major tweaking for context sensitive analyses
 // Consider a recency abstraction for context in static methods
@@ -218,7 +227,7 @@ ContextForOpenProgramEntryPoint(?calleeCtx, ?method) :-
   mainAnalysis.isImmutableContext(?calleeCtx),
   Method_Modifier("static", ?method),
   !Method_Modifier("abstract", ?method),
-  OpenProgramEntryPoint(?method).
+  EntryPointMethod(?method).
 
 .decl TypeToConcreteImplementationOrd(?staticType:ReferenceType, ?classOrd:number)
 .decl ConcreteImplementations(?staticType:ReferenceType, ?class:ClassType)
