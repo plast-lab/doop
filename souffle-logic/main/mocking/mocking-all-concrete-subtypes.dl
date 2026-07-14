@@ -1,0 +1,15 @@
+// ===========================================================================
+// mocking-all-concrete-subtypes.dl -- ALL-subtypes mocking policy.
+//
+// To stand in for a (non-universal, non-array) type, create a mock of EVERY
+// eligible concrete class of it (eligibility defined in mocking-core.dl). Core
+// wires the mocks in.
+// ===========================================================================
+
+#include "mocking-core.dl"
+
+MOCK_OBJECT_FOR_TYPE(?value, ?class, ?type) :-
+  MockSiteType(?type),
+  EligibleConcreteImpl(?class, ?type),
+  !RefinedClass(?class),            // refined classes are represented per-instance (jackee)
+  ?value = MOCK_OBJECT_OF_TYPE(?class).

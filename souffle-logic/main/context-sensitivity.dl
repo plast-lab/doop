@@ -692,12 +692,19 @@ Value_DeclaringType(?constValue, ?declaringType) :-
 
 #ifndef DISABLE_POINTS_TO
 // Core mocking rule.
+// Lead with MockedMethodReturns: it is tiny and highly selective (only the few
+// methods whose returns are mocked), whereas Instruction_Method spans every
+// instruction in the program (millions). Choice-bound pulls this rule into the
+// recursive VarPointsTo fixpoint via ReachableContext, so starting from the
+// small relation and probing the large ones by key -- rather than scanning
+// Instruction_Method each iteration -- is dramatically cheaper. Order only;
+// the derived tuples are identical.
 MockValueConsMacro(?value, ?type),
 BOUND_VAR_POINTS_TO(?hctx, ?value, ?ctx, ?return) :-
+  MockedMethodReturns(?method, ?value, ?type),
+  MethodInvocation_Method(?invocation, ?method),
+  AssignReturnValue(?invocation, ?return),
   Instruction_Method(?invocation, ?inmethod),
   ReachableContext(?ctx, ?inmethod),
-  MethodInvocation_Method(?invocation, ?method),
-  MockedMethodReturns(?method, ?value, ?type),
-  AssignReturnValue(?invocation, ?return),
   isImmutableHContext(?hctx).
 #endif // DISABLE_POINTS_TO

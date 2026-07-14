@@ -1,0 +1,43 @@
+// ===========================================================================
+// mock-quality.dl -- diagnostics for auditing the open-world mock objects.
+//
+// Emits SMALL per-slot relations (bounded by mock objects x their fields),
+// computed from the full analysis. Because they are small, they persist even
+// after the giant InstanceFieldPointsTo dump is discarded -- so mock quality can
+// be studied on large apps (fineract etc.) without keeping 100s of GB.
+//
+// bin/mock-quality.py post-processes these into completeness + precision reports.
+//
+// #include at the END of a mocking policy file (after MockedObject /
+// InstanceFieldInClass / PreciselyMockedField exist). Output-only: adds nothing
+// to the analysis fixpoint, so results (VPT/IFPT/mocks) are unchanged.
+// ===========================================================================
+
+// A reference-typed field slot that a mock object SHOULD carry (the deep field
+// closure only tracks application-class mock fields; library mocks are opaque).
+.decl MockFieldSlot(?mock:Value, ?field:Field, ?fieldType:Type)
+MockFieldSlot(?mock, ?field, ?fieldType) :-
+  MockedObject(?mock, ?class),
+  InstanceFieldInClass(?field, ?fieldType, ?class),
+  isReferenceType(?fieldType).
+
+// Distinct values flowing into each slot.
+.decl MockFieldValue(?mock:Value, ?field:Field, ?value:Value)
+MockFieldValue(?mock, ?field, ?value) :-
+  MockFieldSlot(?mock, ?field, _),
+  mainAnalysis.InstanceFieldPointsTo(_, ?value, ?field, _, ?mock).
+
+// Fan-out of each slot (n = 0 -> empty; n = 1 -> precise; n > 1 -> imprecise).
+// This single small relation captures BOTH invariants (completeness + precision).
+.decl MockFieldFanout(?mock:Value, ?field:Field, ?fieldType:Type, ?n:number)
+MockFieldFanout(?mock, ?field, ?fieldType, ?n) :-
+  MockFieldSlot(?mock, ?field, ?fieldType),
+  ?n = count : { MockFieldValue(?mock, ?field, _) }.
+.output MockFieldFanout
+.output MockFieldValue
+
+// Classification inputs consumed by bin/mock-quality.py (all small):
+//   PreciselyMockedField -> a >1 slot on such a field is a DI-LEAK (lost precision)
+// (UnmockableType is already .output'd in mocking-core.dl; SerializedType is
+//  .output'd from rules-jackee.dl, where it is defined.)
+.output PreciselyMockedField

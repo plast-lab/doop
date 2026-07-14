@@ -1,0 +1,345 @@
+// ===========================================================================
+// mocking-core.dl -- shared machinery for open-world mock objects.
+//
+// A policy file (mocking-all-concrete-subtypes.dl OR
+// mocking-represenative-subtypes.dl) is #included on top of this one and, for
+// each non-universal, non-array type that needs a mock, registers the mock
+// object(s) that may stand in for it using the macro below:
+//
+//     MOCK_OBJECT_FOR_TYPE(?value, ?class, ?type)
+//        creates a mock object ?value of concrete class ?class and records
+//        (via MockObjectForType) that it may stand in for static type ?type.
+//
+// The seam the rest of this file reads is object-keyed:
+//
+//     MockObjectForType(?value, ?type)   "mock ?value may stand in for ?type"
+//
+// Sections:
+//   1. Roots        -- entry points whose callers are outside the program.
+//   2. Eligibility  -- which concrete classes may represent a type (prefer
+//                      application; library fallback only when the application
+//                      provides none).
+//   3. Universals & arrays -- registered here (policy-independent).
+//   4. Mock sites   -- every type that needs a mock: receivers, arguments, and
+//                      (transitively) the fields and array elements of mocks.
+//   5. Wiring       -- point receivers, arguments, instance fields, static
+//                      fields, and array elements at the mocks.
+//
+// Included at the end of the analysis, so analysis relations are qualified with
+// mainAnalysis.* (like the open-programs profiles).
+// ===========================================================================
+
+#include "../../commonMacros.dl"
+
+// The seam: a mock object that may stand in for a static type.
+.decl MockObjectForType(?value:Value, ?type:ReferenceType)
+
+// Create a mock object of ?class and record that it may stand in for ?type.
+// (MockObject is the global mock registry read by the rest of the analysis.)
+#define MOCK_OBJECT_FOR_TYPE(value, class, type) \
+  MockObjectForType(value, type), \
+  MockObject(value, class), \
+  mainAnalysis_MockValueConsMacro(value, class), \
+  mainAnalysis.Value_DeclaringType(value, class)
+
+// ===========================================================================
+// 1. ROOTS
+// ===========================================================================
+
+// Entry-point roots: their real callers are outside the program. Make reachable.
+.decl MockSiteMethod(?method:Method)
+MockSiteMethod(?method) :- mainAnalysis.EntryPointMethod(?method).
+
+// JUnit/TestNG/EvoSuite/keep/root methods are also open-world roots: their real
+// callers (the test harness / DI container / ProGuard-kept caller) are outside
+// the program, and they are made reachable in the immutable context -- exactly
+// what this layer binds mocks in. Methods reachable from native code are NOT
+// included: they live in a native context (isNativeContext), not the immutable
+// context, and their arguments are already modeled by native.dl.
+MockSiteMethod(?method) :- mainAnalysis.ForcedReachable(?method).
+
+mainAnalysis.ReachableContext(?ctx, ?method) :-
+  MockSiteMethod(?method),
+  mainAnalysis.isImmutableContext(?ctx).
+
+// The roots' own receiver and argument types are the "seed" types that need a
+// mock; the full set (MockSiteType) grows from these in section 4.
+.decl SeedType(?type:ReferenceType)
+SeedType(?type) :-
+  MockSiteMethod(?method),
+  !Method_Modifier("static", ?method),
+  Method_DeclaringType(?method, ?type).
+SeedType(?type) :-
+  MockSiteMethod(?method),
+  FormalParam(_, ?method, ?formal),
+  Var_Type(?formal, ?type),
+  isReferenceType(?type).
+
+// ===========================================================================
+// 2. ELIGIBILITY  (which concrete class may represent a type)
+//
+// Computed over the type hierarchy up front -- NOT gated by the recursive mock-
+// site closure below -- so the closure and the representative choice can depend
+// on it without a negative/aggregate cycle.
+// ===========================================================================
+
+// Universal types are handled specially (section 3); never treated as eligible.
+.decl UniversalType(?type:Type)
+UniversalType("java.lang.Object").
+UniversalType("java.io.Serializable").
+UniversalType("java.lang.Comparable").
+UniversalType("java.lang.Cloneable").
+
+.decl TypeHasAppConcreteImpl(?type:ReferenceType)
+TypeHasAppConcreteImpl(?type) :-
+  mainAnalysis.AllApplicationConcreteImplementations(_, ?type).
+
+// The application concrete implementations of a type -- what the POLICY chooses
+// among (all of them, or the representative). Library-only types are NOT here;
+// they get a single mock in section 3, so the deep field/array closure can never
+// enumerate library implementations.
+.decl EligibleConcreteImpl(?class:ClassType, ?type:ReferenceType)
+EligibleConcreteImpl(?class, ?type) :-
+  mainAnalysis.AllApplicationConcreteImplementations(?class, ?type),
+  !UniversalType(?type).
+
+// ===========================================================================
+// 3. UNIVERSALS & ARRAYS  (registered here, independent of the policy)
+// ===========================================================================
+
+// Universal types get a single representative, regardless of policy (otherwise
+// one Object-typed slot pulls in the whole program).
+//   java.lang.Object is concrete: mock it as itself.
+MOCK_OBJECT_FOR_TYPE(?value, ?type, ?type) :-
+  MockSiteType(?type),
+  UniversalType(?type),
+  ConcreteClassType(?type),
+  ?value = MOCK_OBJECT_OF_TYPE(?type).
+
+//   Serializable/Comparable/Cloneable are interfaces: one min-ord concrete impl.
+.decl UniversalRepOrd(?type:ReferenceType, ?classOrd:number)
+UniversalRepOrd(?type, ?classOrd) :-
+  MockSiteType(?type),
+  UniversalType(?type),
+  ( isInterfaceType(?type) ; AbstractClassType(?type) ),
+  ?classOrd = min ord(?c) : {
+    ConcreteClassType(?c), basic.SubtypeOf(?c, ?type)
+  }.
+MOCK_OBJECT_FOR_TYPE(?value, ?class, ?type) :-
+  UniversalRepOrd(?type, ?classOrd),
+  isClassType(?class),
+  ord(?class) = ?classOrd,
+  ?value = MOCK_OBJECT_OF_TYPE(?class).
+
+// An array type is mocked as itself: one mock array per array type.
+MOCK_OBJECT_FOR_TYPE(?value, ?arrayType, ?arrayType) :-
+  MockSiteType(?arrayType),
+  isArrayType(?arrayType),
+  ?value = MOCK_OBJECT_OF_TYPE(?arrayType).
+
+// A concrete LIBRARY type mocks itself -- covers library value types (String,
+// Date, ...) used as fields or array elements. One shared mock per type. E.g. a
+// String[] element type is String, mocked as a single shared String object.
+// Concrete APPLICATION types go through the policy instead; a concrete library
+// type may additionally have application subclasses, which the policy mocks too.
+MOCK_OBJECT_FOR_TYPE(?value, ?type, ?type) :-
+  MockSiteType(?type),
+  ConcreteClassType(?type),
+  !UniversalType(?type),
+  !CollectionOrMapType(?type),   // collections go through the seeded canonical container (mocking-collections.dl)
+  !ApplicationClass(?type),
+  ?value = MOCK_OBJECT_OF_TYPE(?type).
+
+// An abstract/interface LIBRARY type with no application implementation gets a
+// single representative library concrete impl (bounded, like universals). This
+// covers e.g. a Runnable[]/EventListener[] element, or a Number/CharSequence
+// field, whose only implementations live in the library. Types WITH an
+// application implementation go through the policy instead.
+.decl LibraryRepOrd(?type:ReferenceType, ?classOrd:number)
+LibraryRepOrd(?type, ?classOrd) :-
+  MockSiteType(?type),
+  !UniversalType(?type),
+  !CollectionOrMapType(?type),   // collections go through the seeded canonical container (mocking-collections.dl)
+  !TypeHasAppConcreteImpl(?type),
+  ( isInterfaceType(?type) ; AbstractClassType(?type) ),
+  ?classOrd = min ord(?c) : {
+    ConcreteClassType(?c), basic.SubtypeOf(?c, ?type)
+  }.
+MOCK_OBJECT_FOR_TYPE(?value, ?class, ?type) :-
+  LibraryRepOrd(?type, ?classOrd),
+  isClassType(?class),
+  ord(?class) = ?classOrd,
+  ?value = MOCK_OBJECT_OF_TYPE(?class).
+
+// ===========================================================================
+// 4. MOCK SITES  (every type that needs a mock)
+//
+// MockedObject = the mock objects this layer created (with their class); a
+// subset of the global MockObject registry.
+// ===========================================================================
+.decl MockedObject(?value:Value, ?class:ReferenceType)
+MockedObject(?value, ?class) :-
+  MockObjectForType(?value, _),
+  MockObject(?value, ?class).
+
+// The mock sites grow from the seed types by following mocked objects' fields
+// and array elements.
+.decl MockSiteType(?type:ReferenceType)
+
+MockSiteType(?type) :- SeedType(?type).
+
+// Instance and static field types of a mocked class are themselves mock sites.
+// (InstanceFieldInClass / StaticFieldInClass are already restricted to mocked
+// classes, so no extra guard is needed here.)
+MockSiteType(?fieldType) :-
+  InstanceFieldInClass(_, ?fieldType, _),
+  isReferenceType(?fieldType).
+MockSiteType(?fieldType) :-
+  StaticFieldInClass(_, ?fieldType, _),
+  isReferenceType(?fieldType).
+
+// The element type of a mocked array is a mock site.
+MockSiteType(?componentType) :-
+  MockedObject(_, ?arrayType),
+  isArrayType(?arrayType),
+  ComponentType(?arrayType, ?componentType),
+  isReferenceType(?componentType).
+
+// Fields visible on an instance of a mocked class (declared or inherited).
+// Only application objects' fields are followed; a library mock (String, a
+// servlet request, ...) is an opaque leaf, so we don't drag the JDK field graph
+// into the closure. Arrays are transparent and handled separately below.
+.decl InstanceFieldInClass(?field:Field, ?fieldType:Type, ?class:ReferenceType)
+InstanceFieldInClass(?field, ?fieldType, ?class) :-
+  MockedObject(_, ?class),
+  ApplicationClass(?class),
+  basic.SubtypeOf(?class, ?declaring),
+  Field_DeclaringType(?field, ?declaring),
+  !Field_Modifier("static", ?field),
+  Field_Type(?field, ?fieldType).
+
+// Static fields belong to their declaring class (not inherited).
+.decl StaticFieldInClass(?field:Field, ?fieldType:Type, ?class:ReferenceType)
+StaticFieldInClass(?field, ?fieldType, ?class) :-
+  MockedObject(_, ?class),
+  ApplicationClass(?class),
+  Field_DeclaringType(?field, ?class),
+  Field_Modifier("static", ?field),
+  Field_Type(?field, ?fieldType).
+
+// ===========================================================================
+// PRECISION HOOKS
+//
+// A precision layer (e.g. jackee) may resolve the exact mock for a site from
+// DI/IoC configuration (XML bean definitions, @Inject/@Autowired/@Resource/
+// @Bean/@Qualifier, servlet/JAX-RS mappings) and wire it itself, reusing the
+// shared MockObject registry. It marks each resolved site here; the generic
+// wiring below then YIELDS that site to the precise wiring.
+//
+// Empty by default, so concrete-types / manual-entry-points get full generic
+// mocking (plug and play). A precision layer should mark a site ONLY when it
+// genuinely narrows the binding; if it merely knows the site is DI-managed but
+// cannot pin the concrete bean, it should NOT mark it and let the generic policy
+// mock the declared type.
+//
+// IMPORTANT: these are keyed on STATIC program elements (a Var, a Field), and a
+// precision layer must populate them from STATIC structure (types, signatures,
+// casts, bean tables) only -- never from Value_Type / VarPointsTo /
+// InstanceFieldPointsTo -- or the negations below close a cycle through the
+// analysis SCC and it will not stratify. In particular an instance-field mark is
+// per-field-signature, NOT per-(base value, field): the base value is dynamic.
+// ===========================================================================
+.decl PreciselyMockedVar(?var:Var)                     // a receiver or parameter
+.decl PreciselyMockedField(?field:Field)               // an instance field
+.decl PreciselyMockedStaticField(?field:Field)
+
+// A precision layer may REFINE a class into per-INSTANCE mocks -- e.g. jackee, when a
+// class is declared as several XML beans with different wiring, so one per-class blob
+// would merge their fields. When it marks a class here, it MUST itself register the
+// per-instance mocks (MockObjectForType/MockObject for that class and its supertypes)
+// and wire their fields; the policy below then skips the single per-class mock so the
+// class is represented ONLY by the precise per-instance mocks. Empty by default.
+.decl RefinedClass(?class:ClassType)
+
+// ===========================================================================
+// 5. WIRING  (point program locations at the mocks; skip precisely-wired sites)
+// ===========================================================================
+
+// Receiver: `this` of each non-static root.
+mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?this) :-
+  MockSiteMethod(?method),
+  !Method_Modifier("static", ?method),
+  ThisVar(?method, ?this),
+  !PreciselyMockedVar(?this),
+  Method_DeclaringType(?method, ?type),
+  MockObjectForType(?value, ?type),
+  mainAnalysis.isImmutableContext(?ctx),
+  mainAnalysis.isImmutableHContext(?hctx).
+
+// Arguments: each reference-typed formal parameter of each root.
+mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?formal) :-
+  MockSiteMethod(?method),
+  FormalParam(_, ?method, ?formal),
+  !PreciselyMockedVar(?formal),
+  Var_Type(?formal, ?type),
+  MockObjectForType(?value, ?type),
+  mainAnalysis.isImmutableContext(?ctx),
+  mainAnalysis.isImmutableHContext(?hctx).
+
+// Instance fields: each field of a mocked object points at mocks of its type.
+mainAnalysis.InstanceFieldPointsTo(?hctx, ?value, ?field, ?hctx, ?baseValue) :-
+  MockedObject(?baseValue, ?baseClass),
+  InstanceFieldInClass(?field, ?fieldType, ?baseClass),
+  !PreciselyMockedField(?field),
+  MockObjectForType(?value, ?fieldType),
+  mainAnalysis.isImmutableHContext(?hctx).
+
+// Static fields: each static field of a mocked class points at mocks of its type.
+mainAnalysis.StaticFieldPointsTo(?hctx, ?value, ?field) :-
+  StaticFieldInClass(?field, ?fieldType, _),
+  !PreciselyMockedStaticField(?field),
+  MockObjectForType(?value, ?fieldType),
+  mainAnalysis.isImmutableHContext(?hctx).
+
+// Array elements: each mock array's cells point at mocks of the element type.
+mainAnalysis.ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?arrayValue) :-
+  MockedObject(?arrayValue, ?arrayType),
+  isArrayType(?arrayType),
+  ComponentType(?arrayType, ?componentType),
+  MockObjectForType(?value, ?componentType),
+  mainAnalysis.isImmutableHContext(?hctx).
+
+// Bridge: make asserted mock field-points-to visible to field loads. The
+// default analysis pairs a load `x = base.field` with a matching store
+// *instruction* and never consults InstanceFieldPointsTo, so without this bridge
+// an injected/mocked field value is never observed by a load. We scope the join
+// to mock values (a tiny subset of InstanceFieldPointsTo) for efficiency, first
+// materializing that subset so it drives the join across all delta versions.
+.decl MockInstanceFieldPointsTo(?hctx:mainAnalysis.configuration.HContext, ?value:Value, ?sig:Field, ?basehctx:mainAnalysis.configuration.HContext, ?basevalue:Value)
+MockInstanceFieldPointsTo(?hctx, ?value, ?sig, ?basehctx, ?basevalue) :-
+  mainAnalysis.InstanceFieldPointsTo(?hctx, ?value, ?sig, ?basehctx, ?basevalue),
+  mainAnalysis.Value_isMock(?value).
+
+mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
+  MockInstanceFieldPointsTo(?hctx, ?value, ?sig, ?basehctx, ?basevalue),
+  mainAnalysis.LoadHeapInstanceField(?ctx, ?to, ?sig, ?basehctx, ?basevalue).
+
+// ===========================================================================
+// DIAGNOSTIC: types that need a mock but got none -- an interface/abstract type
+// with no concrete implementation anywhere (application or library). Because
+// receivers, arguments, fields, and array elements all funnel through
+// MockSiteType, this single relation reports every unmockable site.
+// ===========================================================================
+.decl UnmockableType(?type:ReferenceType)
+.output UnmockableType
+UnmockableType(?type) :-
+  MockSiteType(?type),
+  !MockObjectForType(_, ?type).
+
+// Open-world collection-content fallback (element-type-agnostic; specializes at
+// the cast). #included here so it shares the MockSiteType/MockObjectForType seam
+// and runs under both policies.
+#include "mocking-collections.dl"
+
+// Mock-quality diagnostics (output-only; small per-slot relations for bin/mock-quality.py).
+#include "mock-quality.dl"

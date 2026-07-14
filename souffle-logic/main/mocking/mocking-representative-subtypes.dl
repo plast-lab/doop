@@ -1,0 +1,22 @@
+// ===========================================================================
+// mocking-representative-subtypes.dl -- REPRESENTATIVE mocking policy.
+//
+// To stand in for a (non-universal, non-array) type, create a mock of ONE
+// eligible concrete class of it -- the min-ord one, chosen deterministically
+// (eligibility defined in mocking-core.dl). Core wires the mock in.
+// ===========================================================================
+
+#include "mocking-core.dl"
+
+.decl RepresentativeImplOrd(?type:ReferenceType, ?classOrd:number)
+RepresentativeImplOrd(?type, ?classOrd) :-
+  EligibleConcreteImpl(_, ?type),
+  ?classOrd = min ord(?c) : { EligibleConcreteImpl(?c, ?type) }.
+
+MOCK_OBJECT_FOR_TYPE(?value, ?class, ?type) :-
+  MockSiteType(?type),
+  RepresentativeImplOrd(?type, ?classOrd),
+  isClassType(?class),
+  ord(?class) = ?classOrd,
+  !RefinedClass(?class),            // refined classes are represented per-instance (jackee)
+  ?value = MOCK_OBJECT_OF_TYPE(?class).

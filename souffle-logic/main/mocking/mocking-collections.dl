@@ -1,0 +1,247 @@
+// ===========================================================================
+// mocking-collections.dl -- open-world collection-content fallback.
+//
+// #included at the end of mocking-core.dl, so it shares the same seam
+// (MockSiteType / MockObjectForType / MOCK_OBJECT_FOR_TYPE) and runs under both
+// policies. It is the generic FALLBACK for collection contents; a precision
+// layer (jackee) that resolves the exact element type of a collection field
+// marks it PreciselyMockedField and this fallback then skips that field.
+//
+// The problem: Java generics are erased, so a mock object's `List<Foo>` /
+// `Map<K,V>` / `Set<Foo>` field has element type Foo invisible in the bytecode,
+// and the base analysis models collections by analyzing the real JDK classes --
+// so an unseeded container yields nothing on get()/iteration and every method
+// reached only through the collection stays cold.
+//
+// The model (deliberately element-type-agnostic):
+//   * one shared canonical container mock per collection class (ArrayList for
+//     List/Collection/Iterable, HashSet for Set, HashMap for Map), whose real
+//     internal storage points at a single java.lang.Object mock. So get() /
+//     iterator().next() / values() return that Object mock.
+//   * the Object mock is specialized AT THE CAST: the application always downcasts
+//     an erased element it reads out --
+//         for (Foo f : mock.getList()) f.use();   // javac: (Foo) it.next()
+//     -- and the base cast rule filters the Object-typed mock out of that strict
+//     downcast (context-sensitivity.dl: value passes only if its type <: T). So
+//     we add mocks of the cast target T at the cast instead. This generalizes
+//     beyond collections to any Object-typed mock slot (Object field/param/[]).
+// ===========================================================================
+
+// ---- The single Object mock (created in mocking-core section 3 once Object is
+//      a mock site; we force that below whenever a collection mock exists). ----
+.decl ObjectMockValue(?v:Value)
+ObjectMockValue(?v) :- MockObjectForType(?v, "java.lang.Object").
+
+// ===========================================================================
+// 1. Object-mock cast specialization  (the general mechanism)
+// ===========================================================================
+
+// An application downcast `to = (castType) from` whose source is statically
+// java.lang.Object -- exactly the shape javac emits when reading an erased
+// element out of a collection (or any Object-typed slot). Static structural
+// prefilter; the Object-mock-reaching gate below turns it into the live signal.
+.decl ObjectDowncast(?castType:Type, ?from:Var, ?to:Var)
+ObjectDowncast(?castType, ?from, ?to) :-
+  AssignCast(?castType, ?from, ?to, ?inmethod),
+  ApplicationMethod(?inmethod),
+  Var_Type(?from, "java.lang.Object"),
+  isReferenceType(?castType).
+
+// Guard: does the open-world layer actually produce the single Object mock --
+// from ANY source (a mocked collection's content, an Object-typed field/param/
+// receiver of a mocked object, an Object[] element)? The Object mock is minted
+// exactly when java.lang.Object is a mock site, so MockSiteType("java.lang.Object")
+// IS that condition. Its ORIGIN does not matter: whenever the Object mock exists
+// and gets downcast, we should specialize. A closed program that merely uses real
+// collections/objects (no open-world Object mock) has this false, so NONE of the
+// cast-target machinery fires. Static (no VarPointsTo) -> mock layer stays out of
+// the points-to SCC.
+
+// Ensure a mock of each Object-downcast target exists to specialize to -- but
+// ONLY when the Object mock genuinely exists (guard). So the erased/Object-typed
+// values a real open-world mock flows through get specialized at their downcast,
+// while a closed program's ordinary downcasts never fabricate any mock.
+MockSiteType(?castType) :- ObjectDowncast(?castType, _, _), MockSiteType("java.lang.Object").
+
+// Specialize: when the single Object mock reaches the downcast, propagate mocks
+// of the cast target to the result. The base cast rule drops the Object mock
+// itself (its type is not a subtype of castType), so this is purely additive.
+// This reads VarPointsTo but only WRITES VarPointsTo (a normal points-to rule);
+// it never feeds mock-site creation, so it does not pull the mock layer into a
+// cyclic-negation SCC.
+mainAnalysis.VarPointsTo(?hctx, ?tMock, ?ctx, ?to) :-
+  ObjectDowncast(?castType, ?from, ?to),
+  mainAnalysis.VarPointsTo(_, ?objMock, ?ctx, ?from),
+  ObjectMockValue(?objMock),
+  MockObjectForType(?tMock, ?castType),
+  mainAnalysis.isImmutableHContext(?hctx).
+
+// ===========================================================================
+// 2. Collection containers, seeded to the Object mock (table-driven)
+// ===========================================================================
+// The base analysis has NO collection summary -- it runs the real JDK bytecode --
+// so to make get()/iterator() return our content we must seed the EXACT internal
+// storage field each implementation reads, and those differ per class. Containers
+// are grouped into structural families, each a fact table (add a container = add a
+// row, verified against a real analyzed JDK) with one seeding rule. Every chain
+// ends at the single Object mock.
+
+// -- Array-backed: an Object[] field holds the elements directly.
+.decl ArrayBacked(?class:symbol, ?fieldDeclType:symbol, ?fieldName:symbol)
+ArrayBacked("java.util.ArrayList",    "java.util.ArrayList",    "elementData").
+ArrayBacked("java.util.Vector",       "java.util.Vector",       "elementData").
+ArrayBacked("java.util.Stack",        "java.util.Vector",       "elementData").   // Stack inherits Vector.elementData
+ArrayBacked("java.util.ArrayDeque",   "java.util.ArrayDeque",   "elements").
+ArrayBacked("java.util.PriorityQueue","java.util.PriorityQueue","queue").
+ArrayBacked("java.util.concurrent.CopyOnWriteArrayList","java.util.concurrent.CopyOnWriteArrayList","array").
+ArrayBacked("java.util.IdentityHashMap","java.util.IdentityHashMap","table").     // flat Object[] key/value slots
+
+// -- Node-table maps: table -> Node[] -> Node.{key,value}.
+.decl NodeTableBacked(?class:symbol, ?tblDeclType:symbol, ?tblName:symbol, ?nodeType:symbol, ?keyName:symbol, ?valName:symbol)
+NodeTableBacked("java.util.HashMap",      "java.util.HashMap",    "table", "java.util.HashMap$Node",    "key","value").
+NodeTableBacked("java.util.LinkedHashMap","java.util.HashMap",    "table", "java.util.HashMap$Node",    "key","value").  // inherits HashMap.table
+NodeTableBacked("java.util.Hashtable",    "java.util.Hashtable",  "table", "java.util.Hashtable$Entry", "key","value").
+
+// -- Tree map: root -> Entry -> {key,value} (left/right self-loop for traversal).
+.decl TreeBackedMap(?class:symbol, ?rootDeclType:symbol, ?rootName:symbol, ?entryType:symbol, ?keyName:symbol, ?valName:symbol)
+TreeBackedMap("java.util.TreeMap", "java.util.TreeMap", "root", "java.util.TreeMap$Entry", "key","value").
+
+// -- Linked list: first -> Node -> item (next self-loop).
+.decl LinkedBacked(?class:symbol, ?headDeclType:symbol, ?headName:symbol, ?nodeType:symbol, ?itemName:symbol, ?nextName:symbol)
+LinkedBacked("java.util.LinkedList", "java.util.LinkedList", "first", "java.util.LinkedList$Node", "item","next").
+
+// -- Sets that delegate to a backing map (element = map KEY).
+.decl SetDelegatesToMap(?setClass:symbol, ?mapDeclType:symbol, ?mapName:symbol, ?backingMapClass:symbol)
+SetDelegatesToMap("java.util.HashSet",       "java.util.HashSet", "map", "java.util.HashMap").
+SetDelegatesToMap("java.util.LinkedHashSet", "java.util.HashSet", "map", "java.util.LinkedHashMap").  // inherits HashSet.map
+SetDelegatesToMap("java.util.TreeSet",       "java.util.TreeSet", "m",   "java.util.TreeMap").
+
+// -- Which container can stand in for a site type, and its selection rank.
+//    Lower rank = preferred. Standard impls rank first so interface sites pick
+//    them (List->ArrayList, Map->HashMap, SortedMap->TreeMap); concrete-only
+//    impls rank later so they are chosen only when they are the exact subtype.
+.decl ContainerRank(?class:symbol, ?rank:number)
+ContainerRank("java.util.ArrayList", 10).  ContainerRank("java.util.HashMap", 11).
+ContainerRank("java.util.HashSet",   12).  ContainerRank("java.util.ArrayDeque", 13).
+ContainerRank("java.util.TreeMap",   14).  ContainerRank("java.util.TreeSet", 15).
+ContainerRank("java.util.LinkedList",20).  ContainerRank("java.util.Vector", 21).
+ContainerRank("java.util.Stack",     22).  ContainerRank("java.util.PriorityQueue", 23).
+ContainerRank("java.util.concurrent.CopyOnWriteArrayList", 24).
+ContainerRank("java.util.LinkedHashMap", 25).  ContainerRank("java.util.LinkedHashSet", 26).
+ContainerRank("java.util.Hashtable", 27).  ContainerRank("java.util.IdentityHashMap", 28).
+
+// Routes collections out of the generic library-rep rules in mocking-core.
+// STATIC (type hierarchy only), so the mock layer stays out of the points-to SCC.
+// A site type is a collection iff some seedable container is a subtype of it --
+// exactly the types CollectionContainer covers, so nothing is excluded-then-dropped.
+.decl CollectionOrMapType(?t:Type)
+CollectionOrMapType(?t) :-
+  ContainerRank(?c, _), basic.SubtypeOf(?c, ?t), isReferenceType(?t), !UniversalType(?t).
+
+// The single container to mock a site with: the lowest-rank seedable container
+// that is genuinely a subtype of the site type.
+.decl CollectionContainer(?type:ReferenceType, ?container:ClassType)
+CollectionContainer(?type, ?container) :-
+  MockSiteType(?type),
+  !UniversalType(?type),
+  ?best = min ?r : { ContainerRank(?c2, ?r), basic.SubtypeOf(?c2, ?type) },
+  ContainerRank(?container, ?best),
+  basic.SubtypeOf(?container, ?type).
+
+// One shared container mock per class stands in for every site it fits.
+MOCK_OBJECT_FOR_TYPE(?container, ?containerClass, ?type) :-
+  CollectionContainer(?type, ?containerClass),
+  ?container = MOCK_OBJECT_OF_TYPE(?containerClass).
+
+// A collection mock implies a java.lang.Object mock (its content).
+MockSiteType("java.lang.Object") :- CollectionContainer(_, _).
+
+// -- Seed drivers: a container/backing-map value + how to fill it -----------
+.decl SeedArray(?holder:Value, ?fdt:symbol, ?fn:symbol)
+.decl SeedNodeTable(?holder:Value, ?tdt:symbol, ?tn:symbol, ?nodeT:symbol, ?kf:symbol, ?vf:symbol)
+.decl SeedTree(?holder:Value, ?rdt:symbol, ?rn:symbol, ?entryT:symbol, ?kf:symbol, ?vf:symbol)
+.decl SeedLinked(?holder:Value, ?hdt:symbol, ?hn:symbol, ?nodeT:symbol, ?itf:symbol, ?nxf:symbol)
+.decl SeedMapDelegate(?setHolder:Value, ?mdt:symbol, ?mn:symbol, ?backing:Value, ?backingClass:symbol)
+
+SeedArray(?v, ?fdt, ?fn) :-
+  CollectionContainer(_, ?c), ArrayBacked(?c, ?fdt, ?fn), ?v = MOCK_OBJECT_OF_TYPE(?c).
+SeedNodeTable(?v, ?tdt, ?tn, ?nt, ?kf, ?vf) :-
+  CollectionContainer(_, ?c), NodeTableBacked(?c, ?tdt, ?tn, ?nt, ?kf, ?vf), ?v = MOCK_OBJECT_OF_TYPE(?c).
+SeedTree(?v, ?rdt, ?rn, ?et, ?kf, ?vf) :-
+  CollectionContainer(_, ?c), TreeBackedMap(?c, ?rdt, ?rn, ?et, ?kf, ?vf), ?v = MOCK_OBJECT_OF_TYPE(?c).
+SeedLinked(?v, ?hdt, ?hn, ?nt, ?itf, ?nxf) :-
+  CollectionContainer(_, ?c), LinkedBacked(?c, ?hdt, ?hn, ?nt, ?itf, ?nxf), ?v = MOCK_OBJECT_OF_TYPE(?c).
+SeedMapDelegate(?sv, ?mdt, ?mn, ?bv, ?bc) :-
+  CollectionContainer(_, ?sc), SetDelegatesToMap(?sc, ?mdt, ?mn, ?bc),
+  ?sv = MOCK_OBJECT_OF_TYPE(?sc), ?bv = cat("<collection-fallback backing-map ", cat(?sc, ">")).
+// The backing map is seeded by its own family (element flows as its keys).
+mainAnalysis_MockValueConsMacro(?bv, ?bc),
+SeedNodeTable(?bv, ?tdt, ?tn, ?nt, ?kf, ?vf) :-
+  SeedMapDelegate(_, _, _, ?bv, ?bc), NodeTableBacked(?bc, ?tdt, ?tn, ?nt, ?kf, ?vf).
+mainAnalysis_MockValueConsMacro(?bv, ?bc),
+SeedTree(?bv, ?rdt, ?rn, ?et, ?kf, ?vf) :-
+  SeedMapDelegate(_, _, _, ?bv, ?bc), TreeBackedMap(?bc, ?rdt, ?rn, ?et, ?kf, ?vf).
+
+// -- The seeding rules (one per family), all ending at the Object mock -------
+
+// Array-backed: holder.field -> Object[] mock -> Object mock.
+mainAnalysis.InstanceFieldPointsTo(?h, ?arr, ?fld, ?h, ?holder),
+mainAnalysis.ArrayIndexPointsTo(?h, ?objMock, ?h, ?arr),
+mainAnalysis_MockValueConsMacro(?arr, "java.lang.Object[]") :-
+  SeedArray(?holder, ?fdt, ?fn),
+  ObjectMockValue(?objMock),
+  ?arr = cat("<collection-fallback array ", ?holder),
+  Field_DeclaringType(?fld, ?fdt), Field_SimpleName(?fld, ?fn),
+  mainAnalysis.isImmutableHContext(?h).
+
+// Node-table maps: holder.table -> Node[] -> Node.{key,value} -> Object mock.
+mainAnalysis.InstanceFieldPointsTo(?h, ?objMock, ?vF, ?h, ?node),
+mainAnalysis.InstanceFieldPointsTo(?h, ?objMock, ?kF, ?h, ?node),
+mainAnalysis.InstanceFieldPointsTo(?h, ?arr, ?tF, ?h, ?holder),
+mainAnalysis.ArrayIndexPointsTo(?h, ?node, ?h, ?arr),
+mainAnalysis_MockValueConsMacro(?arr, cat(?nodeT, "[]")),
+mainAnalysis_MockValueConsMacro(?node, ?nodeT) :-
+  SeedNodeTable(?holder, ?tdt, ?tn, ?nodeT, ?kf, ?vf),
+  ObjectMockValue(?objMock),
+  ?arr  = cat("<collection-fallback nodearray ", ?holder),
+  ?node = cat("<collection-fallback node ", ?holder),
+  Field_DeclaringType(?tF, ?tdt), Field_SimpleName(?tF, ?tn),
+  Field_DeclaringType(?vF, ?nodeT), Field_SimpleName(?vF, ?vf),
+  Field_DeclaringType(?kF, ?nodeT), Field_SimpleName(?kF, ?kf),
+  mainAnalysis.isImmutableHContext(?h).
+
+// Tree maps: holder.root -> Entry -> {key,value} -> Object mock; left/right self-loop.
+mainAnalysis.InstanceFieldPointsTo(?h, ?objMock, ?vF, ?h, ?entry),
+mainAnalysis.InstanceFieldPointsTo(?h, ?objMock, ?kF, ?h, ?entry),
+mainAnalysis.InstanceFieldPointsTo(?h, ?entry, ?rF, ?h, ?holder),
+mainAnalysis.InstanceFieldPointsTo(?h, ?entry, ?lF, ?h, ?entry),
+mainAnalysis.InstanceFieldPointsTo(?h, ?entry, ?riF, ?h, ?entry),
+mainAnalysis_MockValueConsMacro(?entry, ?entryT) :-
+  SeedTree(?holder, ?rdt, ?rn, ?entryT, ?kf, ?vf),
+  ObjectMockValue(?objMock),
+  ?entry = cat("<collection-fallback entry ", ?holder),
+  Field_DeclaringType(?rF, ?rdt), Field_SimpleName(?rF, ?rn),
+  Field_DeclaringType(?vF, ?entryT), Field_SimpleName(?vF, ?vf),
+  Field_DeclaringType(?kF, ?entryT), Field_SimpleName(?kF, ?kf),
+  Field_DeclaringType(?lF, ?entryT), Field_SimpleName(?lF, "left"),
+  Field_DeclaringType(?riF, ?entryT), Field_SimpleName(?riF, "right"),
+  mainAnalysis.isImmutableHContext(?h).
+
+// Linked list: holder.first -> Node -> item -> Object mock; next self-loop.
+mainAnalysis.InstanceFieldPointsTo(?h, ?objMock, ?itF, ?h, ?node),
+mainAnalysis.InstanceFieldPointsTo(?h, ?node, ?hF, ?h, ?holder),
+mainAnalysis.InstanceFieldPointsTo(?h, ?node, ?nxF, ?h, ?node),
+mainAnalysis_MockValueConsMacro(?node, ?nodeT) :-
+  SeedLinked(?holder, ?hdt, ?hn, ?nodeT, ?itf, ?nxf),
+  ObjectMockValue(?objMock),
+  ?node = cat("<collection-fallback lnode ", ?holder),
+  Field_DeclaringType(?hF, ?hdt), Field_SimpleName(?hF, ?hn),
+  Field_DeclaringType(?itF, ?nodeT), Field_SimpleName(?itF, ?itf),
+  Field_DeclaringType(?nxF, ?nodeT), Field_SimpleName(?nxF, ?nxf),
+  mainAnalysis.isImmutableHContext(?h).
+
+// Delegating sets: set.mapField -> backing map value (itself seeded above).
+mainAnalysis.InstanceFieldPointsTo(?h, ?bv, ?mF, ?h, ?setHolder) :-
+  SeedMapDelegate(?setHolder, ?mdt, ?mn, ?bv, _),
+  Field_DeclaringType(?mF, ?mdt), Field_SimpleName(?mF, ?mn),
+  mainAnalysis.isImmutableHContext(?h).
