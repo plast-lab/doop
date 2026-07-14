@@ -46,11 +46,6 @@ class FactGenerator implements Runnable {
 
     @Override
     public void run() {
-        final boolean ignoreErrors = _driver._ignoreFactGenErrors;
-
-        if (!ignoreErrors && _driver.errorsExist())
-            return;
-
         for (SootClass _sootClass : _sootClasses) {
             _writer.writeClassOrInterfaceType(_sootClass);
 
@@ -83,15 +78,12 @@ class FactGenerator implements Runnable {
                     //         System.err.println("\tat " + trace[j]);
                     //     }
                     // }
+                    // Fact-gen errors are always tolerated: report the
+                    // un-buildable method, count it (for the end-of-run summary
+                    // warning), and continue with the next one.
                     String msg = "Error while processing method: " + m + ": " + t.getMessage();
                     System.err.println(msg);
-                    if (!ignoreErrors) {
-                        // Inform the driver. This is safer than throwing an
-                        // exception, since it could be lost due to the executor
-                        // service running this class.
-                        _driver.markError();
-                        return;
-                    }
+                    _driver.markError();
                 }
             }
         }

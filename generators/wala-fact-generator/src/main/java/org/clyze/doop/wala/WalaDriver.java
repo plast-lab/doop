@@ -11,9 +11,9 @@ class WalaDriver extends Driver<IClass> {
     private final boolean _android;
 
     WalaDriver(int totalClasses, Integer cores, IAnalysisCacheView cache,
-               boolean ignoreFactGenErrors, WalaFactWriter factWriter,
+               WalaFactWriter factWriter,
                String outDir, boolean isAndroidAnalysis) {
-        super(totalClasses, cores, ignoreFactGenErrors);
+        super(totalClasses, cores);
         _cache = cache;
         _factWriter = factWriter;
         _outDir = outDir;

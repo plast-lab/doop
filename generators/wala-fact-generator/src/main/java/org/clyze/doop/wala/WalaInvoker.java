@@ -133,7 +133,7 @@ class WalaInvoker {
             }
             walaFactWriter.setSignaturePolyMorphicMethods(signaturePolymorphicMethods);
 
-            WalaDriver driver = new WalaDriver(cha.getNumberOfClasses(), walaParameters._cores, cache, false, walaFactWriter, outputDir, walaParameters._android);
+            WalaDriver driver = new WalaDriver(cha.getNumberOfClasses(), walaParameters._cores, cache, walaFactWriter, outputDir, walaParameters._android);
             driver.generateInParallel(classesSet);
 
             if (walaFactWriter.getNumberOfPhantomTypes() > 0)

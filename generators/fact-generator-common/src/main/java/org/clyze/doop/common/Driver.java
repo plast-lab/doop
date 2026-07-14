@@ -22,14 +22,12 @@ public abstract class Driver<C> {
     private final int _totalClasses;
     private final int _classSplit = 80;
     private int errors;
-    public final boolean _ignoreFactGenErrors;
 
-    protected Driver(int totalClasses, Integer cores, boolean ignoreFactGenErrors) {
+    protected Driver(int totalClasses, Integer cores) {
         this._totalClasses = totalClasses;
         this._cores = cores == null? Runtime.getRuntime().availableProcessors() : cores;
         this._classCounter = 0;
         initTmpClassGroup();
-        this._ignoreFactGenErrors = ignoreFactGenErrors;
 
         System.out.println("Fact generation cores: " + _cores);
     }
@@ -82,10 +80,9 @@ public abstract class Driver<C> {
     private void shutdownExecutor() throws DoopErrorCodeException {
         waitForExecutorShutdown(_executor);
         if (errorsExist()) {
-            String msg = "Fact generation failed (" + errors + " errors).";
-            System.err.println(msg);
-            if (!_ignoreFactGenErrors)
-                throw DoopErrorCodeException.error5(msg);
+            // Fact-gen errors are always tolerated: warn with the total count of
+            // ignored (un-buildable) methods and continue.
+            System.err.println("WARNING: fact generation ignored " + errors + " error(s) (un-buildable method bodies); continuing with the facts produced.");
         }
         errors = 0;
     }

@@ -67,8 +67,9 @@ public class Main {
             Options.v().setPhaseOption("jb", "use-original-names:true");
         Options.v().setPhaseOption("jb", "model-lambdametafactory:false");
 
-        if (sootParameters._ignoreWrongStaticness || sootParameters._ignoreFactGenErrors)
-            Options.v().set_wrong_staticness(Options.wrong_staticness_ignore);
+        // Fact-gen errors are always tolerated, so wrong static-ness (a common
+        // cause of un-buildable bodies) is always ignored rather than fatal.
+        Options.v().set_wrong_staticness(Options.wrong_staticness_ignore);
 
         if (sootParameters._ssa) {
             Options.v().set_via_shimple(true);
@@ -129,15 +130,11 @@ public class Main {
             SootDriver.waitForExecutorShutdown(java.getExecutor());
             int numErrors = errors.intValue();
             if (numErrors != 0) {
-                String msg = "Fact generation failed with " + numErrors + " errors.";
-                System.err.println(msg);
-                // Honor --ignore-factgen-errors here too: a Throwable escaping
+                // Fact-gen errors are always tolerated: a Throwable escaping
                 // invokeSoot (e.g. Soot failing to build a Jimple body for a
-                // JiBX-generated marshalling method) would otherwise abort the
-                // whole run, unlike the per-method (FactGenerator) and
-                // Driver.shutdownExecutor paths which already respect the flag.
-                if (!sootParameters._ignoreFactGenErrors)
-                    throw DoopErrorCodeException.error34(msg);
+                // JiBX-generated marshalling method) is reported but never
+                // aborts the run.
+                System.err.println("WARNING: fact generation ignored " + numErrors + " top-level error(s); continuing with the facts produced.");
             }
 
             if (writeFacts && sootParameters._scanNativeCode)
@@ -291,7 +288,7 @@ public class Main {
 
         Phantoms phantoms = new Phantoms(reportPhantoms);
         FactWriter writer = new FactWriter(db, sootParameters, rep, phantoms);
-        SootDriver driver = new SootDriver(classes.size(), sootParameters._cores, sootParameters._ignoreFactGenErrors, writer, sootParameters, phantoms);
+        SootDriver driver = new SootDriver(classes.size(), sootParameters._cores, writer, sootParameters, phantoms);
 
         if (writeFacts) {
 
@@ -310,8 +307,9 @@ public class Main {
             logDebug(logger, "Checking class heaps for missing types...");
             Collection<String> unrecorded = new ClassHeapFinder().getUnrecordedTypes(classes);
             if (!unrecorded.isEmpty()) {
-                // If option is set, fail and notify caller that fact generation
-                // must run again with these classes added.
+                // If option is set (--thorough-fact-gen), fail and notify the
+                // caller that fact generation must run again with these classes
+                // added.
                 String outFile = sootParameters._missingClassesOut;
                 if (outFile != null) {
                     try (FileWriter fWriter = new FileWriter(outFile)) {
@@ -324,7 +322,7 @@ public class Main {
                     }
                     logError(logger, "ERROR: some classes were not resolved (see " + outFile + "), restarting fact generation: " + Arrays.toString(unrecorded.toArray()));
                 } else
-                    logWarn(logger, "WARNING: some classes were not resolved, consider using thorough fact generation or adding them manually via --also-resolve: " + Arrays.toString(unrecorded.toArray()));
+                    logWarn(logger, "WARNING: some classes were not resolved, consider using --thorough-fact-gen: " + Arrays.toString(unrecorded.toArray()));
             }
 
             writer.writeLastFacts(java);

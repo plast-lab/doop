@@ -1088,23 +1088,6 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forCacheID: true
 			),
 			new BooleanAnalysisOption(
-					id: "X_IGNORE_FACTGEN_ERRORS",
-					name: "Xignore-factgen-errors",
-					group: GROUP_FACTS,
-					description: "Continue with analysis despite fact generation errors.",
-					forCacheID: true
-			),
-			new AnalysisOption<List<String>>(
-					id: "ALSO_RESOLVE",
-					name: "also-resolve",
-					group: GROUP_FACTS,
-					description: "Force resolution of class(es) by Soot.",
-					value: [],
-					multipleValues: true,
-					argName: "CLASS",
-					forCacheID: true
-			),
-			new BooleanAnalysisOption(
 					id: "THOROUGH_FACT_GEN",
 					name: "thorough-fact-gen",
 					group: GROUP_FACTS,

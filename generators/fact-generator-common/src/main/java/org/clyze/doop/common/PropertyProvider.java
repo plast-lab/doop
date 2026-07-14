@@ -34,8 +34,8 @@ public class PropertyProvider {
             // A malformed properties file (e.g. a bad \\uXXXX escape, as shipped
             // in some BouncyCastle jars) makes Properties.load throw an unchecked
             // IllegalArgumentException. Skip the bad file instead of aborting the
-            // whole fact-generation run (preprocessing is not covered by
-            // --ignore-factgen-errors).
+            // whole fact-generation run (preprocessing runs before, and outside
+            // of, the tolerated per-method fact generation).
             System.err.println("WARNING: skipping malformed properties file in " + filePath + ": " + exc.getMessage());
             properties.clear();
         }

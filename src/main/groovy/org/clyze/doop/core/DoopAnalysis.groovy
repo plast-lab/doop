@@ -469,14 +469,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             params += ["--generate-jimple"]
         }
 
-        if (options.X_IGNORE_FACTGEN_ERRORS.value) {
-            params += ["--ignore-factgen-errors"]
-        }
-
-        if (options.ALSO_RESOLVE.value) {
-            alsoResolve(params, options.ALSO_RESOLVE.value as Collection<String>)
-        }
-
         File missingClasses = null
         if (options.THOROUGH_FACT_GEN.value) {
             missingClasses = File.createTempFile("fact-gen-missing-classes", ".tmp")
@@ -562,23 +554,13 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                     log.debug msg
                     if (isFatal(loader, t))
                         throw new RuntimeException("Fatal error, see log for details: ${t.toString()}")
-                    if (factGenRun < MAX_FACTGEN_RUNS) {
-                        redo = true
-                        factGenRun += 1
-                        println "Errors occurred, restarting fact generation (run #${factGenRun})."
-                    } else if (options.X_IGNORE_FACTGEN_ERRORS.value) {
-                        // Honor the user's explicit request to tolerate
-                        // fact-gen errors: keep whatever facts were produced
-                        // and continue to the analysis instead of aborting.
-                        // (The primary fix lives in the Soot front-end, which
-                        // no longer lets a single un-buildable method body
-                        // poison the whole run; this is the last-resort net.)
-                        println "Too many fact generation restarts; continuing with partial facts due to --${options.X_IGNORE_FACTGEN_ERRORS.name}."
-                    } else {
-                        println "Too many fact generation restarts, aborting."
-                        log.info "Errors occurred, maybe retry with --${options.X_IGNORE_FACTGEN_ERRORS.name}?"
-                        throw new RuntimeException(msg)
-                    }
+                    // Fact-gen errors are always tolerated by the front-end: a
+                    // single un-buildable method body (e.g. a synthetic lambda in
+                    // a shaded library) never aborts the run, so there is nothing
+                    // to retry on error. Keep whatever facts were produced and
+                    // continue. (The missing-classes restart above is a separate,
+                    // resolution-driven retry.) Genuinely fatal errors are rethrown.
+                    println "Non-fatal fact generation error; continuing with the facts produced."
                 } finally {
                     // Restarting cannot add to current facts: non-deterministic names
                     // from different runs blow up relations (e.g., VarPointsTo).

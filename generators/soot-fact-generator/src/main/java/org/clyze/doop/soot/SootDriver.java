@@ -9,10 +9,10 @@ class SootDriver extends Driver<SootClass> {
     private final SootParameters sootParameters;
     private final Phantoms phantoms;
 
-    SootDriver(int totalClasses, Integer cores, boolean ignoreFactGenErrors,
+    SootDriver(int totalClasses, Integer cores,
                FactWriter factWriter, SootParameters sootParameters,
                Phantoms phantoms) {
-        super(totalClasses, cores, ignoreFactGenErrors);
+        super(totalClasses, cores);
         this.factWriter = factWriter;
         this.sootParameters = sootParameters;
         this.phantoms = phantoms;

@@ -26,7 +26,6 @@ class DexDriver extends Driver<DexBackedClassDef> {
      *
      * @param totalClasses              the total number of classes
      * @param cores                     the number of CPU cores
-     * @param ignoreFactGenErrors       flag to ignore fact generation errors
      * @param db                        the database object
      * @param dexParams                 the front-end parameters
      * @param dexEntry                  the .dex entry ("classes.dex")
@@ -37,12 +36,12 @@ class DexDriver extends Driver<DexBackedClassDef> {
      * @param cachedMethodDescriptors   the cache of method descriptors
      */
     DexDriver(int totalClasses, Integer cores,
-              boolean ignoreFactGenErrors, Database db,
+              Database db,
               DexParameters dexParams, String dexEntry,
               String apkName, CHA cha,
               boolean moreStrings,
               BasicJavaSupport java, Map<String, MethodSig> cachedMethodDescriptors) {
-        super(totalClasses, cores, ignoreFactGenErrors);
+        super(totalClasses, cores);
         this.db = db;
         this.dexParams = dexParams;
         this.dexEntry = dexEntry;

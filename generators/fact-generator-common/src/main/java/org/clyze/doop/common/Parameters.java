@@ -41,7 +41,6 @@ public class Parameters {
     public String _rOutDir = null;
     public FactsSubSet _factsSubSet = null;
     private boolean _noFacts = false;
-    public boolean _ignoreFactGenErrors = false;
     private boolean _decodeApk = false;
     public boolean _extractMoreStrings = false;
     // Enable this by default
@@ -212,9 +211,6 @@ public class Parameters {
             break;
         case "--no-facts":
             _noFacts = true;
-            break;
-        case "--ignore-factgen-errors":
-            _ignoreFactGenErrors = true;
             break;
         case "--main":
             i = shift(args, i);

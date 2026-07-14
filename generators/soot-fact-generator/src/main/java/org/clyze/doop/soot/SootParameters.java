@@ -94,13 +94,11 @@ public class SootParameters extends Parameters {
         System.err.println("  -ld <archive>                         Find dependency classes in <archive>.");
         System.err.println("  -lsystem                              Find classes in default system classes.");
         System.err.println("  --facts-subset <subset>               Produce facts only for a subset of the given classes " + Arrays.asList(Parameters.FactsSubSet.values()) + ".");
-        System.err.println("  --ignore-factgen-errors               Continue with the analysis even if fact generation fails.");
+        System.err.println("  --failOnMissingClasses <file>         Terminate if classes are missing (and record them to <file>).");
         System.err.println("  --legacy-android-processing           Enable legacy Android XML processing.");
         System.err.println("  --no-facts                            Don't generate facts (just empty files -- used for debugging).");
         System.err.println("  --ignore-wrong-staticness             Ignore \"wrong static-ness\" errors in Soot.");
         System.err.println("  --lowMem                              Consume less memory.");
-        System.err.println("  --failOnMissingClasses <file>         Terminate if classes are missing (and record them to <file>).");
-        System.err.println("  --also-resolve <class>                Force resolution of class that may not be found automatically.");
         System.err.println("  --debug                               Enable debug mode (verbose output).");
         System.err.println("  --log-dir <dir>                       Write logs in directory <dir>.");
         System.err.println("  --args-file <file>                    Read command-line arguments from <file> (one per line).");
