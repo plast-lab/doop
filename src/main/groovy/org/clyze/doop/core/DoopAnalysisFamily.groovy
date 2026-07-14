@@ -379,6 +379,12 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
+					id: "MODEL_PRIMITIVES",
+					name: "enable-model-primitives",
+					description: "Model primitive values as autoboxed mock objects (parameters, arithmetic results, numeric constants), so primitive-typed variables/fields/returns participate in points-to. No arithmetic or numeric-domain reasoning.",
+					forPreprocessor: true
+			),
+			new BooleanAnalysisOption(
 					id: "DACAPO_BACH",
 					name: "dacapo-bach",
 					description: "Load additional logic for DaCapo (Bach) benchmarks properties.",

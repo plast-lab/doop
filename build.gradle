@@ -76,7 +76,7 @@ application {
         include 'docs', 'COLLABORATORS', 'LICENSE', 'README.md'
     }
 
-    def testSubprojects = [ '016-reflection', '104-method-references', '107-lambdas', '115-invokedynamic' ]
+    def testSubprojects = [ '016-reflection', '104-method-references', '107-lambdas', '115-invokedynamic', '116-model-primitives' ]
 
     testSubprojects.each {
         def path = "tests/${it}/build/libs"
