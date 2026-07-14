@@ -1,0 +1,112 @@
+/**
+ * Primitive value modeling
+ * ========================
+ *
+ * A points-to analysis only tracks reference Values, so primitive-typed
+ * variables (int, long, boolean, ...) never appear in VarPointsTo: there is no
+ * object to record, and value-level information about primitives is simply
+ * absent. This module extends the allocation-site abstraction to primitives so
+ * that a slice of that information becomes available, WITHOUT any arithmetic,
+ * numeric domain, or path sensitivity.
+ *
+ * The idea: every site that *produces* a primitive mints ONE synthetic mock
+ * object, typed as the boxed wrapper of that primitive (int -> java.lang.Integer,
+ * boolean -> java.lang.Boolean, ...). The primitive is "autoboxed" into a real
+ * reference object. The existing, type-agnostic flow rules (AssignLocal,
+ * parameter passing, field load/store, returns) then carry these objects through
+ * VarPointsTo with no further changes, exactly as they do for real heap objects.
+ *
+ * Because the object carries a real reference type, it participates in virtual
+ * dispatch (intValue(), equals(), ...) and in type-based library modeling. What
+ * it does NOT carry is any numeric meaning: an arithmetic result is a fresh,
+ * opaque object with no relation to its operands, no value range, and no way to
+ * distinguish array indices or prune branches. That imprecision is deliberate
+ * and remains sound for points-to and reachability.
+ *
+ * Design choices, each deliberately cheap:
+ *   - What is a primitive value?  A mock object typed as the boxed wrapper, so
+ *     it has a reference type and flows like any other Value.
+ *   - How many objects?           One per producing site. Numeric constants are
+ *     keyed by the constant, so equal literals merge to a single object
+ *     program-wide; parameters and arithmetic results are per-site.
+ *   - What context?               Context-insensitive (isImmutableHContext).
+ *     Primitives are pervasive, so a primitive object is never split across heap
+ *     contexts; the single immutable heap context keeps their number bounded.
+ *
+ * Off by default. Enable with --enable-model-primitives, which defines the
+ * MODEL_PRIMITIVES preprocessor macro that gates the #include of this file in
+ * main/main.dl.
+ *
+ * Type note: a mock object's Value_Type is the wrapper (java.lang.Integer) while
+ * the primitive var's Var_Type is the primitive (int); these are not
+ * subtype-related. The core propagation rules do not type-check, so they carry
+ * the object regardless. Rule (1) below relies on this: it seeds each formal
+ * DIRECTLY under its reachable context rather than through actual->formal flow,
+ * so the primitive/wrapper mismatch can never cause the object to be filtered.
+ */
+
+#ifndef DISABLE_POINTS_TO
+
+// A mock primitive object is named by its producing site, making the name
+// deterministic and stable. Constants are keyed by the constant symbol, so
+// equal literals collapse to one object.
+#define PRIM_PARAM_OBJ(formal) cat("<prim-param ", cat(formal, ">"))
+#define PRIM_ARITH_OBJ(insn)   cat("<prim-arith ", cat(insn, ">"))
+#define PRIM_CONST_OBJ(const)  cat("<prim-const ", cat(const, ">"))
+
+// ---------------------------------------------------------------------------
+// (1) Autoboxed parameters: give every primitive formal a mock object.
+//
+// Seeded at the definition site (not via actual->formal flow) so the
+// primitive/wrapper type mismatch cannot cause the object to be filtered out.
+// ---------------------------------------------------------------------------
+MockValueConsMacro(?value, ?boxedType),
+BOUND_VAR_POINTS_TO(?hctx, ?value, ?ctx, ?formal) :-
+  FormalParam(_, ?method, ?formal),
+  Var_Type(?formal, ?primType),
+  PrimitiveType_Boxed(?primType, ?boxedType),
+  ReachableContext(?ctx, ?method),
+  isImmutableHContext(?hctx),
+  ?value = PRIM_PARAM_OBJ(?formal).
+
+// ---------------------------------------------------------------------------
+// (2) Arithmetic results: a fresh mock object per binop/unop. No arithmetic is
+// performed -- the object is opaque and unrelated to its operands.
+// ---------------------------------------------------------------------------
+.decl PrimitiveArithmeticSite(?insn:Instruction, ?to:Var, ?method:Method, ?boxedType:Type)
+PrimitiveArithmeticSite(?insn, ?to, ?method, ?boxedType) :-
+  ( isAssignBinop_Insn(?insn) ; isAssignUnop_Insn(?insn) ),
+  Instruction_Method(?insn, ?method),
+  AssignInstruction_To(?insn, ?to),
+  Var_Type(?to, ?primType),
+  PrimitiveType_Boxed(?primType, ?boxedType).
+
+MockValueConsMacro(?value, ?boxedType),
+BOUND_VAR_POINTS_TO(?hctx, ?value, ?ctx, ?to) :-
+  PrimitiveArithmeticSite(?insn, ?to, ?method, ?boxedType),
+  ReachableContext(?ctx, ?method),
+  isImmutableHContext(?hctx),
+  ?value = PRIM_ARITH_OBJ(?insn).
+
+// ---------------------------------------------------------------------------
+// (3) Numeric constants: an object per literal, keyed by the constant so equal
+// literals merge. Covers plain and cast-typed numeric constant assignments,
+// for every primitive type.
+// ---------------------------------------------------------------------------
+.decl PrimitiveConstantSite(?insn:Instruction, ?const:symbol, ?to:Var, ?method:Method, ?boxedType:Type)
+PrimitiveConstantSite(?insn, ?const, ?to, ?method, ?boxedType) :-
+  ( AssignNumConstant_Id(?insn, ?const) ; AssignCastNumConstant_Id(?insn, ?const) ),
+  Instruction_Method(?insn, ?method),
+  AssignInstruction_To(?insn, ?to),
+  Var_Type(?to, ?primType),
+  NumConstantRaw(?const, ?primType),
+  PrimitiveType_Boxed(?primType, ?boxedType).
+
+MockValueConsMacro(?value, ?boxedType),
+BOUND_VAR_POINTS_TO(?hctx, ?value, ?ctx, ?to) :-
+  PrimitiveConstantSite(_, ?const, ?to, ?method, ?boxedType),
+  ReachableContext(?ctx, ?method),
+  isImmutableHContext(?hctx),
+  ?value = PRIM_CONST_OBJ(?const).
+
+#endif // DISABLE_POINTS_TO

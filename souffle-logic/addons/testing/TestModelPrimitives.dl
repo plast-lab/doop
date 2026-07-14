@@ -1,0 +1,128 @@
+// ============================================================================
+// Test queries for the primitive-value modeling logic (main/model-primitives.dl).
+//
+// Loaded via --extra-logic against a context-insensitive analysis of the
+// tests/116-model-primitives driver (class Main). The suite is "property-
+// primary": every check is expressed as a FAIL relation that should be EMPTY
+// when the feature works, so the Groovy spec asserts each with relationIsEmpty.
+// Checks are anchored only on stable source signatures (method/field/type
+// names), never on generated object names.
+//
+// Relation qualification:
+//   - component relations (VarPointsTo, StaticFieldPointsTo,
+//     InstanceFieldPointsTo, Value_Type, PrimitiveType_Boxed) are
+//     mainAnalysis.-qualified;
+//   - input facts (FormalParam, AssignReturnValue, MethodInvocation_Method) are
+//     global / unqualified.
+// A primitive mock object is recognised by its name prefix "<prim-".
+// ============================================================================
+
+// ---- shared helpers --------------------------------------------------------
+
+// Every primitive mock object currently in points-to, with its type.
+.decl PrimValue(?v:symbol, ?t:symbol)
+PrimValue(?v, ?t) :-
+  mainAnalysis.VarPointsTo(_, ?v, _, _),
+  substr(?v, 0, 6) = "<prim-",
+  mainAnalysis.Value_Type(?v, ?t).
+
+// Debug dump (not asserted): all primitive objects seen, for eyeballing.
+.decl ModelPrim_Seen(?v:symbol, ?t:symbol)
+.output ModelPrim_Seen
+ModelPrim_Seen(?v, ?t) :- PrimValue(?v, ?t).
+
+// ---- (1) parameter seeding -------------------------------------------------
+// scale's primitive formal must carry an Integer-typed value.
+.decl ScaleParamHasIntegerValue(?f:symbol)
+ScaleParamHasIntegerValue(?f) :-
+  FormalParam(_, "<Main: int scale(int)>", ?f),
+  mainAnalysis.VarPointsTo(_, ?v, _, ?f),
+  mainAnalysis.Value_Type(?v, "java.lang.Integer").
+
+.decl ModelPrim_FAIL_ParamUnseeded(?f:symbol)
+.output ModelPrim_FAIL_ParamUnseeded
+ModelPrim_FAIL_ParamUnseeded(?f) :-
+  FormalParam(_, "<Main: int scale(int)>", ?f),
+  !ScaleParamHasIntegerValue(?f).
+
+// ---- invariant: every <prim-*> object is typed as a boxed wrapper ----------
+.decl ModelPrim_FAIL_BadlyTyped(?v:symbol, ?t:symbol)
+.output ModelPrim_FAIL_BadlyTyped
+ModelPrim_FAIL_BadlyTyped(?v, ?t) :-
+  PrimValue(?v, ?t),
+  !mainAnalysis.PrimitiveType_Boxed(_, ?t).
+
+// ---- (2) arithmetic seeding fired ------------------------------------------
+.decl AnyArithPrim()
+AnyArithPrim() :-
+  mainAnalysis.VarPointsTo(_, ?v, _, _),
+  substr(?v, 0, 12) = "<prim-arith ".
+
+.decl ModelPrim_FAIL_ArithMissing(?msg:symbol)
+.output ModelPrim_FAIL_ArithMissing
+ModelPrim_FAIL_ArithMissing("no <prim-arith ...> value found") :- !AnyArithPrim().
+
+// ---- (3) constant seeding fired --------------------------------------------
+.decl AnyConstPrim()
+AnyConstPrim() :-
+  mainAnalysis.VarPointsTo(_, ?v, _, _),
+  substr(?v, 0, 12) = "<prim-const ".
+
+.decl ModelPrim_FAIL_ConstMissing(?msg:symbol)
+.output ModelPrim_FAIL_ConstMissing
+ModelPrim_FAIL_ConstMissing("no <prim-const ...> value found") :- !AnyConstPrim().
+
+// Driver-anchored: loopSum holds a surviving numeric constant (its loop-header
+// merge defeats Soot constant propagation), so some var declared in loopSum
+// must point to a <prim-const ...> object. Proves rule (3) is exercised by the
+// driver itself, not merely by library code.
+.decl LoopSumHasConst()
+LoopSumHasConst() :-
+  Var_DeclaringMethod(?var, "<Main: int loopSum(int)>"),
+  mainAnalysis.VarPointsTo(_, ?v, _, ?var),
+  substr(?v, 0, 12) = "<prim-const ".
+
+.decl ModelPrim_FAIL_DriverConstMissing(?msg:symbol)
+.output ModelPrim_FAIL_DriverConstMissing
+ModelPrim_FAIL_DriverConstMissing("loopSum produced no <prim-const ...> value") :- !LoopSumHasConst().
+
+// ---- interprocedural return flow -------------------------------------------
+// scale's returned primitive object must reach the caller's receiving var.
+.decl ScaleReturnReaches()
+ScaleReturnReaches() :-
+  MethodInvocation_Method(?i, "<Main: int scale(int)>"),
+  AssignReturnValue(?i, ?to),
+  mainAnalysis.VarPointsTo(_, ?v, _, ?to),
+  substr(?v, 0, 6) = "<prim-".
+
+.decl ModelPrim_FAIL_ReturnFlowMissing(?msg:symbol)
+.output ModelPrim_FAIL_ReturnFlowMissing
+ModelPrim_FAIL_ReturnFlowMissing("scale return did not reach caller") :- !ScaleReturnReaches().
+
+// ---- heap flow: static & instance fields -----------------------------------
+.decl StaticFieldSeeded()
+StaticFieldSeeded() :- mainAnalysis.StaticFieldPointsTo(_, _, "<Main: int sField>").
+
+.decl ModelPrim_FAIL_StaticFieldUnseeded(?msg:symbol)
+.output ModelPrim_FAIL_StaticFieldUnseeded
+ModelPrim_FAIL_StaticFieldUnseeded("<Main: int sField> has no value") :- !StaticFieldSeeded().
+
+.decl InstanceFieldSeeded()
+InstanceFieldSeeded() :- mainAnalysis.InstanceFieldPointsTo(_, _, "<Main: long iField>", _, _).
+
+.decl ModelPrim_FAIL_InstanceFieldUnseeded(?msg:symbol)
+.output ModelPrim_FAIL_InstanceFieldUnseeded
+ModelPrim_FAIL_InstanceFieldUnseeded("<Main: long iField> has no value") :- !InstanceFieldSeeded().
+
+// ---- non-int coverage: Integer / Long / Double / Boolean all appear --------
+.decl ExpectedPrimType(?t:symbol)
+ExpectedPrimType("java.lang.Integer").
+ExpectedPrimType("java.lang.Long").
+ExpectedPrimType("java.lang.Double").
+ExpectedPrimType("java.lang.Boolean").
+
+.decl ModelPrim_FAIL_TypeMissing(?t:symbol)
+.output ModelPrim_FAIL_TypeMissing
+ModelPrim_FAIL_TypeMissing(?t) :-
+  ExpectedPrimType(?t),
+  !PrimValue(_, ?t).

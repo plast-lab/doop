@@ -1,0 +1,39 @@
+buildscript {
+    //configurations.classpath.resolutionStrategy.cacheChangingModulesFor(0, 'seconds')
+    configurations.all {
+        //This is required for SNAPSHOT dependencies
+        resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+        //This is required for dependencies using the "+" notation
+        resolutionStrategy.cacheDynamicVersionsFor 0, 'seconds'
+    }
+
+    repositories {
+        mavenLocal()
+        mavenCentral()
+    }
+}
+
+apply plugin: 'java'
+apply plugin: 'maven-publish'
+apply plugin: 'application'
+
+group = 'org.clyze'
+description = """org.clyze:116-model-primitives-test"""
+version = null
+
+
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+application {
+    mainClass = "Main"
+
+    jar {
+        manifest {
+            attributes 'Main-Class': mainClass
+        }
+        archiveVersion.set(null)
+    }
+}

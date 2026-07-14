@@ -59,6 +59,9 @@
 #include "../commonMacros.dl"
 #include "prologue.dl"
 #include "context-sensitivity.dl"
+#ifdef MODEL_PRIMITIVES
+#include "model-primitives.dl"
+#endif // MODEL_PRIMITIVES
 #include "full-call-graph.dl"
 #include "export.dl"
 
