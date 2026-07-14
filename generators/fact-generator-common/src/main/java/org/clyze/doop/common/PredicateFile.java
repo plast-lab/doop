@@ -17,6 +17,7 @@ public enum PredicateFile
     ANDROID_ID("AndroidId"),
     ANDROID_INCLUDE_XML("AndroidIncludeXML"),
     ANNOTATION_ELEMENT("AnnotationElement"),
+    ENTRY_POINT_METHOD("EntryPointMethod"),
     APP_CLASS("ApplicationClass"),
     APP_PACKAGE("ApplicationPackage"),
     ARRAY_INITIAL_VALUE_FROM_LOCAL("ArrayInitialValueFromLocal"),

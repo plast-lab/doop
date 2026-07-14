@@ -1,0 +1,229 @@
+// ==========================================================================
+// jackee component: xml-beans.dl
+// XML bean tables: ConcreteBean_Id, BeanFieldInjection, BeanMap, BeanResource, ActionClass.
+// Depends on: framework-beans
+// ==========================================================================
+/**
+ * Spring Beans - XML
+ **/
+.decl isConcreteBean(?bean:Type)
+
+.decl MVCInterceptorBean(?bean:Type)
+
+.decl Validator(?class:Type)
+
+.decl AuthenticationProviderBean(?bean:Type)
+
+.decl AuthenticationFilterBean(?bean:Type)
+
+.decl AuthenticationEntryPoint(?type:Type)
+
+.decl ApplicationListener(?type:Type)
+
+isConcreteBean(?class) :-
+  ConcreteBean_Id(?class, _).
+
+.decl ConcreteBean_Id(?class:ClassType, ?id:symbol)
+
+ConcreteBean_Id(?class, ?id) :-
+  XMLNodeAttribute(?XMLFile, ?nodeId, "0", "id", "id", ?id),
+  XMLNodeAttribute(?XMLFile, ?nodeId, "1", "class", "class", ?class),
+  isClassType(?class),
+  !match("java[.].*", ?class),
+  !match("sun[.].*", ?class).
+
+// Stereotype/EJB annotations whose value() is an explicit bean id.
+.decl BeanStereotypeAnnotation(?ann:symbol)
+BeanStereotypeAnnotation("org.springframework.stereotype.Component").
+BeanStereotypeAnnotation("org.springframework.stereotype.Service").
+BeanStereotypeAnnotation("org.springframework.stereotype.Repository").
+BeanStereotypeAnnotation("org.springframework.stereotype.Controller").
+BeanStereotypeAnnotation("javax.ejb.Stateful").
+BeanStereotypeAnnotation("javax.ejb.Stateless").
+BeanStereotypeAnnotation("javax.ejb.Singleton").
+BeanStereotypeAnnotation("jakarta.ejb.Stateful").
+BeanStereotypeAnnotation("jakarta.ejb.Stateless").
+BeanStereotypeAnnotation("jakarta.ejb.Singleton").
+
+ConcreteBean_Id(?type, ?beanId) :-
+  Type_Annotation(?type, ?ann),
+  BeanStereotypeAnnotation(?ann),
+  AnnotationElement("type", ?type, "0", "0.0", "value", ?beanId, "-").
+
+isConcreteBean(?class) :-
+  XMLNodeAttribute(_, _, _, _, _, ?class),
+  mainAnalysis.ApplicationConcreteType(?class).
+
+MVCInterceptorBean(?class) :-
+  XMLNode(?XMLFile, ?parentNodeId, _, _, "interceptor", "mvc:interceptor"),
+  XMLNode(?XMLFile, ?nodeId, ?parentNodeId, _, "bean", _),
+  XMLNodeAttribute(?XMLFile, ?nodeId, _, "class", "class", ?class).
+
+AuthenticationFilterBean(?bean) :-
+  mainAnalysis.ApplicationConcreteType(?bean),
+  basic.SubtypeOf(?bean, "javax.servlet.Filter").
+
+AuthenticationEntryPoint(?type) :-
+  mainAnalysis.ApplicationConcreteType(?type),
+  (basic.SubtypeOf(?type, "org.springframework.security.web.AuthenticationEntryPoint");
+   basic.SubtypeOf(?type, "org.springframework.security.web.authentication.AuthenticationSuccessHandler");
+   basic.SubtypeOf(?type, "org.springframework.security.web.access.AccessDeniedHandler")).
+
+ApplicationListener(?type) :-
+  mainAnalysis.ApplicationConcreteType(?type),
+  basic.SubtypeOf(?type, "org.springframework.context.ApplicationListener").
+
+Validator(?validator) :-
+  AnnotationElement("type", _, "0.0", "0.0.0", _, ?validator, _),
+  match(".*Validator", ?validator).
+
+AuthenticationProviderBean(?authenticationProviderClass),
+ConcreteBean_Id(?authenticationProviderClass, ?id) :-
+  XMLNode(?XMLFile, ?parentNodeId, _, _, "authentication-manager", "authentication-manager"),
+  XMLNodeAttribute(?XMLFile, ?parentNodeId, _, "id", "id", ?id),
+  XMLNode(?XMLFile, ?nodeId, ?parentNodeId, _, "authentication-provider", "authentication-provider"),
+  XMLNodeAttribute(?XMLFile, ?nodeId, _, "ref", "ref", ?refId),
+  XMLNode(?XMLFile, ?differentNodeId, _, _, _, _),
+  XMLNodeAttribute(?XMLFile, ?differentNodeId, _, "id", "id", ?refId),
+  XMLNodeAttribute(?XMLFile, ?differentNodeId, _, "class", "class", ?authenticationProviderClass).
+
+/** Pattern:
+ * <bean class="?class">
+ *   <property name="?injectedField" ref="?refId"
+ * </bean>
+ *
+ * The injected bean is referred in the ref attribute of the property tag
+ **/
+.decl BeanFieldInjection(?class:ClassType, ?injectedField:Field, ?mockObject:Value)
+
+BeanFieldInjection(?class, ?injectedField, ?mockObject) :-
+  XMLNode(?XMLFile, ?parentNodeId, _, _, _, _),
+  XMLNodeAttribute(?XMLFile, ?parentNodeId, _, "id", "id", _),
+  XMLNodeAttribute(?XMLFile, ?parentNodeId, _, "class", "class", ?class),
+  XMLNode(?XMLFile, ?nodeId, ?parentNodeId, _, "property", _),
+  XMLNodeAttribute(?XMLFile, ?nodeId, _, "name", "name", ?fieldName),
+  XMLNodeAttribute(?XMLFile, ?nodeId, _, "ref", "ref", ?refId),
+  Field_DeclaringType(?injectedField, ?class),
+  Field_SimpleName(?injectedField, ?fieldName),
+  RefTargetMock(?refId, ?mockObject).   // per-instance-aware: the specific bean, not all mocks of its class
+
+/** Pattern:
+ * <bean class="?class">
+ *   <property name="?injectedField">
+ *     <ref bean="?refId">
+ *     ....
+ * </bean>
+ *
+ * The injected bean is referred in the ref attribute of the property tag
+ **/
+BeanFieldInjection(?class, ?injectedField, ?mockObject) :-
+  XMLNode(?XMLFile, ?parentNodeId, _, _, _, _),
+  XMLNodeAttribute(?XMLFile, ?parentNodeId, _, "id", "id", _),
+  XMLNodeAttribute(?XMLFile, ?parentNodeId, _, "class", "class", ?class),
+  XMLNode(?XMLFile, ?nodeId, ?parentNodeId, _, "property", _),
+  XMLNodeAttribute(?XMLFile, ?nodeId, _, "name", "name", ?fieldName),
+  XMLNode(?XMLFile, ?injectedBeanNodeId, ?nodeId, _, "ref", _),
+  XMLNodeAttribute(?XMLFile, ?injectedBeanNodeId, _, "bean", "bean", ?injectedBeanId),
+  Field_DeclaringType(?injectedField, ?class),
+  Field_SimpleName(?injectedField, ?fieldName),
+  RefTargetMock(?injectedBeanId, ?mockObject).   // per-instance-aware: the specific bean, not all mocks of its class
+
+/**
+ * Special handling for java.util.Collection data structures containing beans
+ * Creates a unique mock object of the xml-specified collection along
+ * and stores the bean mock objects into it.
+ **/
+.decl BeanMap(?id:symbol, ?mapClass:Type, ?mapMockObject:Value)
+
+.decl BeanMapEntry(?id:symbol, ?entryBeanId:symbol, ?entryBeanMockObject:Value)
+
+.decl BeanResource(?id:symbol, ?mapClass:Type, ?mapMockObject:Value)
+
+BeanResource(?id, ?mapClass, ?value),
+mainAnalysis_MockValueConsMacro(?value, ?mapClass),
+BeanMapEntry(?id, ?entryBeanKey, ?entryBeanMockObject),
+BeanMap(?id, ?mapClass, ?value) :-
+  XMLNode(?XMLFile, ?parentNodeId, _, _, "map", "util:map"),
+  XMLNodeAttribute(?XMLFile, ?parentNodeId, _, "id", "id", ?id),
+  XMLNodeAttribute(?XMLFile, ?parentNodeId, _, "map-class", "map-class", ?mapClass),
+  XMLNode(?XMLFile, ?nodeId, ?parentNodeId, _, "entry", "beans:entry"),
+  XMLNodeAttribute(?XMLFile, ?nodeId, _, "key", "key", ?entryBeanKey),
+  XMLNodeAttribute(?XMLFile, ?nodeId, _, "value-ref", "value-ref", ?entryBeanId),
+  ConcreteBean_Id(?entryBeanClass, ?entryBeanId),
+  MockObject(?entryBeanMockObject, ?entryBeanClass),
+  ?value = cat("Mock map: ", cat(?id, ?mapClass)).
+
+BeanFieldInjection(?beanClass, ?injectedField, ?value),
+BeanResource(?id, ?mapClass, ?value),
+mainAnalysis_MockValueConsMacro(?value, ?mapClass),
+BeanMapEntry(?id, ?entryBeanKey, ?entryBeanMockObject),
+BeanMap(?id, ?mapClass, ?value) :-
+  XMLNode(?XMLFile, ?beanNodeId, _, _, "bean", "bean"),
+  XMLNodeAttribute(?XMLFile, ?beanNodeId, _, "class", "class", ?beanClass),
+  XMLNode(?XMLFile, ?beanPropertyNodeId, ?beanNodeId, _, "property", "property"),
+  XMLNodeAttribute(?XMLFile, ?beanPropertyNodeId, _, "name", "name", ?injectedField),
+  XMLNode(?XMLFile, ?mapNodeId, ?beanPropertyNodeId, _, "map", "map"),
+  XMLNode(?XMLFile, ?entryNodeId, ?mapNodeId, _, "entry", "entry"),
+  XMLNodeAttribute(?XMLFile, ?entryNodeId, _, "key", "key", ?entryBeanKey),
+  XMLNode(?XMLFile, ?valueNodeId, ?entryNodeId, _, "bean", "bean"),
+  XMLNodeAttribute(?XMLFile, ?valueNodeId, _, "class", "class", ?entryBeanId),
+  ConcreteBean_Id(?entryBeanClass, ?entryBeanId),
+  MockObject(?entryBeanMockObject, ?entryBeanClass),
+  ?mapClass = "java.util.HashMap",
+  ?id = cat(cat(?beanClass, " "), ?injectedField),
+  ?value = cat("Mock map: ", cat(?id, ?mapClass)).
+
+mainAnalysis.InstanceFieldPointsTo(?hctx, ?entryBeanMockObject, ?valueField, ?basehctx, ?nodeMockObject),
+mainAnalysis.InstanceFieldPointsTo(?hctx, ?entryBeanId, ?keyField, ?basehctx, ?nodeMockObject),
+mainAnalysis.InstanceFieldPointsTo(?hctx, ?arrayMockObject, ?tableField, ?basehctx, ?mapMockObject),
+mainAnalysis.ArrayIndexPointsTo(?hctx, ?nodeMockObject, ?basehctx, ?arrayMockObject),
+mainAnalysis_MockValueConsMacro(?arrayMockObject, ?arrayType),
+mainAnalysis_MockValueConsMacro(?nodeMockObject, ?nodeType) :-
+  BeanMap(?id, ?mapClass, ?mapMockObject),
+  BeanMapEntry(?id, ?entryBeanId, ?entryBeanMockObject),
+  ?arrayMockObject = cat(cat(cat(?entryBeanId, ": "), ?mapClass), "$Node[]"),
+  ?nodeMockObject = cat(cat(cat(?entryBeanId, ": "), ?mapClass), "$Node"),
+  Field_DeclaringType(?tableField, ?mapClass),
+  Field_SimpleName(?tableField, "table"),
+  Field_DeclaringType(?keyField, ?nodeType),
+  Field_SimpleName(?keyField, "key"),
+  Field_DeclaringType(?valueField, ?nodeType),
+  Field_SimpleName(?valueField, "value"),
+  ?nodeType = cat(?mapClass, "$Node"),
+  ?arrayType = cat(?mapClass, "$Node[]"),
+  mainAnalysis.isImmutableHContext(?hctx),
+  mainAnalysis.isImmutableHContext(?basehctx).
+
+mainAnalysis.InstanceFieldPointsTo(?hctx, ?entryBeanMockObject, ?valueField, ?basehctx, ?nodeMockObject),
+mainAnalysis.InstanceFieldPointsTo(?hctx, ?entryBeanId, ?keyField, ?basehctx, ?nodeMockObject),
+mainAnalysis.InstanceFieldPointsTo(?hctx, ?nodeMockObject, ?contentsField, ?basehctx, ?mapMockObject),
+//mainAnalysis.ArrayIndexPointsTo(?hctx, ?nodeMockObject, ?basehctx, ?arrayMockObject),
+//mainAnalysis_MockValueConsMacro(?arrayMockObject, ?arrayType),
+mainAnalysis_MockValueConsMacro(?nodeMockObject, ?nodeType) :-
+  BeanMap(?id, ?mapClass, ?mapMockObject),
+  BeanMapEntry(?id, ?entryBeanId, ?entryBeanMockObject),
+  //?arrayMockObject = cat(cat(cat(?entryBeanId, ": "), ?mapClass), "$Node[]"),
+  ?nodeMockObject = cat(cat(cat(?entryBeanId, ": "), ?mapClass), "$Node"),
+  Field_DeclaringType(_, ?mapClass),
+  Field_SimpleName(?contentsField, "contents"),
+  Field_DeclaringType(?keyField, ?nodeType),
+  Field_SimpleName(?keyField, "key"),
+  Field_DeclaringType(?valueField, ?nodeType),
+  Field_SimpleName(?valueField, "value"),
+  ?nodeType = cat(?mapClass, "$Node"),
+  //?arrayType = cat(?mapClass, "$Node[]"),
+  mainAnalysis.isImmutableHContext(?hctx),
+  mainAnalysis.isImmutableHContext(?basehctx).
+
+// Struts 2
+.decl ActionClass(?class:Type)
+
+ActionClass(?class) :-
+    (mainAnalysis.AllApplicationConcreteImplementations(?class, "com.opensymphony.xwork2.ActionSupport");
+     mainAnalysis.AllApplicationConcreteImplementations(?class, "com.opensymphony.xwork2.Action");
+     Type_Annotation(?class, "org.apache.struts2.convention.annotation.Action");
+     Type_Annotation(?class, "org.apache.struts2.convention.annotation.Result")).
+
+EntryPointClass(?class) :-
+    ActionClass(?class),
+    mainAnalysis.ApplicationConcreteType(?class).

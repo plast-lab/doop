@@ -4,7 +4,12 @@
 .decl ImplicitReachable(?sig:Method)
 .output ImplicitReachable
 
-.decl ApplicationEntryPoint(?meth:Method)
+.decl EntryPointMethod(?meth:Method)
+// Open-programs / manual entry-point seeding: --Xextra-facts EntryPointMethod.facts
+// feeds this relation directly (empty file auto-created by fact generation when no
+// seeds are given). Profiles such as jackee only contribute rules to it.
+.input EntryPointMethod(IO="file", filename="EntryPointMethod.facts")
+.output EntryPointMethod
 
 #ifndef MICRO
 .decl ForcedReachable(?method:Method)

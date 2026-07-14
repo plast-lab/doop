@@ -1,0 +1,39 @@
+// ==========================================================================
+// jackee component: dead-store-suppression.dl
+// SuppressedInstanceFieldStore: drop dead <init>/null stores into DI-managed fields.
+// Depends on: di-resolver, injection-fields
+// ==========================================================================
+// Suppress the dead constructor store into an injection-annotated field. Spring field
+// injection runs in populateBean after the constructor and overwrites it:
+//
+//     class Service { @Autowired private Repo repo; }
+//     // javac emits `this.repo = <default>` in <init>(); Spring then sets the real repo,
+//     // so that <init> store is dead.
+//
+// Dropping it keeps `repo` precise (only the injected bean) without unmocking it: if field
+// injection cannot resolve the field, it stays unmarked and central generic mocking still
+// values it. Scoped to framework-instantiated beans (so field injection actually runs) and
+// keyed by (field, ctor). (No ThisVar/base bind -- for these constructors ThisVar does not
+// unify with the store's base var, which would silently empty the whole relation.)
+mainAnalysis.SuppressedInstanceFieldStore(?field, ?ctor) :-
+  ( InjectionAnnotatedField(?field) ; ResourceAnnotatedField(?field) ),
+  Method_SimpleName(?ctor, "<init>"),
+  Method_DeclaringType(?ctor, ?type),
+  FrameworkInstantiatedType(?type),
+  StoreInstanceField(_, _, ?field, ?ctor).
+
+// A store of a null constant into a DI-managed field is always dead: the field's real value
+// comes from injection (field / setter / XML), which overwrites the default. Dropping such
+// stores removes null contamination without touching any real bean value (null is never the
+// injected value). This catches setter/XML-injected fields whose null-init the rule above
+// misses, because the field itself carries no @Inject/@Autowired/@Resource annotation:
+//
+//     class Service {
+//         private Repo repo;                            // no annotation on the field
+//         public void setRepo(Repo r){ this.repo = r; } // injected via setter (XML / @Autowired setter)
+//         // <init> still null-inits this.repo -> dead
+//     }
+mainAnalysis.SuppressedInstanceFieldStore(?field, ?method) :-
+  ( PreciselyMockedField(?field) ; InjectionAnnotatedField(?field) ; ResourceAnnotatedField(?field) ),
+  StoreInstanceField(?from, _, ?field, ?method),
+  AssignNull(?from, ?method).

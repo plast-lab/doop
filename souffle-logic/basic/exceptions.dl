@@ -24,7 +24,7 @@ ExceptionHandler_TypeIsCaught(?type, ?block) :-
 	ExceptionHandler_SameBlock_Repr(?repr, ?block),
 	ExceptionHandler_Type(?handler, ?handlerType),
 	basic.SubtypeOf(?type, ?handlerType),
-	ConcreteClass(?type).
+	ConcreteClassType(?type).
 
 /*
  * Inclusion of instuction is important. E.g. handler1 covers indices 20-30,
@@ -41,7 +41,7 @@ ExceptionHandler_Impossible(?type, ?h2, ?insn) :-
 	ExceptionHandler_Type(?h2, ?h2Type),
 	basic.SubtypeOf(?type, ?h1Type),
 	basic.SubtypeOf(?type, ?h2Type),
-	ConcreteClass(?type).
+	ConcreteClassType(?type).
 
 ///////////////////////////////////////////////////////////////////////////////
 

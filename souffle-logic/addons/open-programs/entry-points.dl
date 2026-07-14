@@ -72,7 +72,7 @@ OpenProgramEntryPoint(?method) :-
 #endif // OPEN_PROGRAMS
 
 // Contribute to the global summary relation
-mainAnalysis.ApplicationEntryPoint(?meth) :-
+mainAnalysis.EntryPointMethod(?meth) :-
   OpenProgramEntryPoint(?meth),
   ApplicationMethod(?meth).
 

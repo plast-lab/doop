@@ -1,0 +1,68 @@
+// ==========================================================================
+// jackee component: common-helpers.dl
+// Shared type-hierarchy / concrete-impl helpers.
+// Depends on: base Doop hierarchy relations
+// ==========================================================================
+// ==========================================================================
+// helper relations & annotation tables
+// ==========================================================================
+// The following 3 predicate declarations are needed in case
+// statistics are enabled.
+.decl MockObjFromArray(?type:ReferenceType)
+
+.decl MockObjFromField(?type:ReferenceType)
+
+.decl MockObjFromFormal(?type:ReferenceType)
+
+.decl AllConcreteImplementations(?type1:Type, ?type2:Type)
+
+AllConcreteImplementations(?class, ?staticType) :-
+  ConcreteClassType(?class),
+  basic.SubtypeOf(?class, ?staticType).
+
+AllConcreteImplementations(?class, ?class) :-
+  ConcreteClassType(?class).
+
+.decl BridgeMethod(?bridge:Method, ?type:Type)
+
+BridgeMethod(?bridge, ?type) :-
+    basic._BridgeMethod(?bridge, _, ?type).
+
+.decl TypeHasNoApplicationConcreteImplementations(?type:Type)
+
+TypeHasNoApplicationConcreteImplementations(?class) :-
+    isType(?class),
+    !mainAnalysis.TypeHasApplicationConcreteSubtypes(?class).
+
+.decl AbstractOrInterfaceTypeHasNoApplicationConcreteImplementations(?type:Type)
+
+AbstractOrInterfaceTypeHasNoApplicationConcreteImplementations(?class) :-
+    isInterfaceType(?class),
+    !ClassModifier("annotation", ?class),
+    !mainAnalysis.TypeHasApplicationConcreteSubtypes(?class),
+    !mainAnalysis.AllApplicationConcreteImplementations(_, ?class).
+
+AbstractOrInterfaceTypeHasNoApplicationConcreteImplementations(?class) :-
+    AbstractClassType(?class),
+    !mainAnalysis.TypeHasApplicationConcreteSubtypes(?class),
+    !mainAnalysis.AllApplicationConcreteImplementations(_, ?class).
+
+.decl NonApplicationConcreteImplementations(?class:Type, ?staticType:Type)
+
+.decl NonApplicationConcreteImplementationsOrd(?classOrd:number, ?staticType:Type)
+
+.decl NonApplicationConcreteImplementationRepresentative(?class:Type, ?staticType:Type)
+
+NonApplicationConcreteImplementations(?class, ?staticType) :-
+    AbstractOrInterfaceTypeHasNoApplicationConcreteImplementations(?staticType),
+    ConcreteClassType(?class),
+    basic.SubtypeOf(?class, ?staticType).
+
+NonApplicationConcreteImplementationsOrd(?classOrd, ?staticType) :-
+    NonApplicationConcreteImplementations(_, ?staticType),
+    ?classOrd = min ord(?allConcreteImplementations): NonApplicationConcreteImplementations(?allConcreteImplementations, ?staticType).
+
+NonApplicationConcreteImplementationRepresentative(?class, ?staticType) :-
+    NonApplicationConcreteImplementationsOrd(?classOrd, ?staticType),
+    isClassType(?class),
+    ord(?class) = ?classOrd.

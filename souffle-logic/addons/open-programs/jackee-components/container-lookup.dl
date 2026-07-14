@@ -3,10 +3,14 @@
  * ---------------------------------------------------------------------------
  *
  * Models the *real* call path for beans that are not @Autowired by interface
- * but retrieved from the container at runtime (the shopizer payment/shipping
- * integration modules). A reachable application method calls a container lookup;
- * we resolve which concrete bean class(es) the lookup yields, mint a mock of
- * each, and flow it to the call's return value. The application's own
+ * but retrieved from the container at runtime:
+ *
+ *     PaymentModule m = ctx.getBean(code, PaymentModule.class);
+ *     Map<String,PaymentModule> all = ctx.getBeansOfType(PaymentModule.class);
+ *
+ * A reachable application method calls a container lookup; we resolve which
+ * concrete bean class(es) the lookup yields, mint a mock of each, and flow it to
+ * the call's return value. The application's own
  * polymorphic call on that return then dispatches to the impl through the
  * normal call-graph rules -- with real receiver/argument points-to, unlike the
  * blanket "every bean method is an entry point" of stereotype-bean entry points.
@@ -16,7 +20,7 @@
  *
  * Reflection-independent: the Class argument is mapped to its type through the
  * global ClassHeap_InstanceType relation (populated from ClassHeap.facts), so it
- * works with REFLECTION=false.
+ * works with reflection=false.
  */
 
 // ---- 1. Container-lookup call sites in reachable application code ----
@@ -56,7 +60,7 @@ ContainerLookupYields(?ctx, ?invo, ?beanClass) :-
 
 // ---- 3a. getBean(...) returns the bean directly: flow its mock to the return ----
 // Reuse the bean's existing MockObject (these are @Component/@Service beans,
-// already mocked by jackee). Crucially we do NOT mint a MockObject here: doing
+// already mocked by jackee). Crucially we do not mint a MockObject here: doing
 // so from a VarPointsTo-dependent body would pull MockObject -- and BeanResource,
 // which is negated in the @Resource rule -- into the VarPointsTo SCC, producing
 // a cyclic-negation / unstratifiable program.
@@ -67,7 +71,7 @@ mainAnalysis.VarPointsTo(?immHctx, ?beanMock, ?ctx, ?ret) :-
   MockObject(?beanMock, ?beanClass),
   mainAnalysis.isImmutableHContext(?immHctx).
 
-// ---- 3b. getBeansOfType(...) returns a Map<String,T> whose VALUES are beans ----
+// ---- 3b. getBeansOfType(...) returns a Map<String,T> whose values are beans ----
 // Create one HashMap mock per call site and flow it to the return value, then
 // seed its internal table/$Node/value chain with each yielded bean mock so the
 // application's map.values()/get(code) -> module.foo() dispatches to the impl.

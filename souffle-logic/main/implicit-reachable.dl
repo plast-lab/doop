@@ -44,7 +44,7 @@ ForcedReachable(?m) :- EvoSuiteEntryPoint(?m).
 #endif // DISCOVER_TESTS
 
 // Contribute to the global summary relation.
-ApplicationEntryPoint(?meth) :-
+EntryPointMethod(?meth) :-
   ForcedReachable(?meth),
   ApplicationMethod(?meth).
 
@@ -58,13 +58,6 @@ ForcedReachableContext(?ctx, ?method) :-
 // Forced-reachable contexts are reachable contexts.
 ReachableContext(?ctx, ?meth) :-
   ForcedReachableContext(?ctx, ?meth).
-
-// Formals of forced-reachable contexts, recorded here for mocking.
-.decl FormalOfForcedReachableContext(?ctx:configuration.Context, ?formal:Var, ?formalType:Type)
-FormalOfForcedReachableContext(?ctx, ?formal, ?formalType) :-
-  ForcedReachableContext(?ctx, ?meth),
-  FormalParam(_, ?meth, ?formal),
-  Var_Type(?formal, ?formalType).
 
 .decl ApplicationConcreteType(?type:ClassType)
 
@@ -87,7 +80,7 @@ AllApplicationConcreteImplementations(?class, ?abstractType) :-
     ?abstractType != "java.lang.Object",
     !ClassModifier("abstract", ?class).
 
-AllApplicationConcreteImplementations(?class, ?class) :- ConcreteClass(?class).
+AllApplicationConcreteImplementations(?class, ?class) :- ConcreteClassType(?class).
 
 .decl ServletParamType(?paramType:ReferenceType)
 ServletParamType(?paramType) :-
@@ -114,38 +107,10 @@ TypeToConcreteImplementation(?type, ?class) :-
   AllApplicationConcreteImplementations(?class, ?type) ;
   SpecialConcreteImplementations(?class, ?type).
 
-/**
- *  Mock arguments for entry points
- **/
-// REVIEW: this is imprecise, it assigns one or more mock arguments
-// for each parameter in a forced-reachable method.
-MockValueConsMacro(?mockObj, ?class),
-MockObjFromOpenProgramEntryPointArg(?mockObj),
-BOUND_VAR_POINTS_TO(?hctx, ?mockObj, ?ctx, ?formal) :-
-  FormalOfForcedReachableContext(?ctx, ?formal, ?formalType),
-  TypeToConcreteImplementation(?formalType, ?class),
-  isImmutableHContext(?hctx),
-  ?mockObj = cat("<mock value for forced-reachable parameter ", cat(?class, ">")).
-
-// Helper/statistics relation.
-UnmockableFormalOfForcedReachableContext(?formal, ?formalType) :-
-  FormalOfForcedReachableContext(_, ?formal, ?formalType),
-  !TypeToConcreteImplementation(?formalType, _).
-
-/**
- *  Mock receivers for entry points
- **/
-MockValueConsMacro(?value, ?class),
-BOUND_VAR_POINTS_TO(?hctx, ?value, ?ctx, ?receiver),
-MockObjFromOpenProgramEntryPointReceiver(?value),
-MockObject(?value, ?class) :-
-  ( ExercisedEntryPointMethod(?class, ?method)
-  ; (ForcedReachable(?method), Method_DeclaringType(?method, ?class))),
-  ThisVar(?method, ?receiver),
-  ?value = MOCK_OBJECT_OF_TYPE(?class),
-  mainAnalysis.isImmutableContext(?ctx),
-  mainAnalysis.isImmutableHContext(?hctx).
-
+// Argument and receiver mocking for entry points (EntryPointMethod) and
+// forced-reachable roots was moved to the central mocking layer
+// (souffle-logic/main/mocking/), which makes both reachable and mocks their
+// receivers/arguments/fields/arrays in the immutable context.
 
 /*
  * The following rules handle the 'keep' specification, by

@@ -75,7 +75,11 @@ public class BasicJavaSupport {
 
         ArtifactScanner.EntryProcessor gProc = (jarFile, entry, entryName) -> {
             if (entryName.endsWith(".properties"))
-                propertyProvider.addProperties(jarFile.getInputStream(entry), filename);
+                // Key by archive!entry, not just the archive: a jar routinely holds many
+                // .properties files (pom.properties, app config, per-profile copies) and
+                // keying by archive alone made them clobber each other in the map, so only
+                // one survived per jar (e.g. shopizer's config.cms.method was lost).
+                propertyProvider.addProperties(jarFile.getInputStream(entry), filename + "!" + entryName);
             else if ((isJar || isAar || isZip || isWar) && entryName.endsWith(".xml")) {
                 // We only handle .xml entries inside JAR archives here.
                 // APK archives may contain binary XML and need decoding.

@@ -159,7 +159,7 @@ mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?to, ?type, DEFAULT_BREADCRUMB), ?c
 
 // Create context for entry point parameters
 mainAnalysis.configuration.RecordContextRequest(?ctx, ValueIdMacro(?to, ?ctype, DEFAULT_BREADCRUMB), ?to) :-
-  EntryPointMethod(?meth),
+  mainAnalysis.EntryPointMethod(?meth),
   FormalParam(_, ?meth, ?to),
   mainAnalysis.ReachableContext(?ctx, ?meth),
   Var_Type(?to, ?type),
@@ -170,7 +170,7 @@ mainAnalysis.configuration.RecordContextRequest(?ctx, ValueIdMacro(?to, ?ctype, 
 BaseToRetTaintTransferMethod(?dtoMeth),
 TaintedValueIntroduced(?declaringType, ?to, ?ctype, "default", ValueIdMacro(?to, ?ctype, DEFAULT_BREADCRUMB)),
 mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?to, ?ctype, DEFAULT_BREADCRUMB), ?ctx, ?to) :-
-  EntryPointMethod(?meth),
+  mainAnalysis.EntryPointMethod(?meth),
   Method_DeclaringType(?meth, ?declaringType),
   FormalParam(_, ?meth, ?to),
   mainAnalysis.ReachableContext(?ctx, ?meth),

@@ -3,6 +3,14 @@ isType(?t) :- isPrimitiveType(?t) ; isReferenceType(?t).
 isReferenceType(?t) :-
   isNullType(?t) ; isArrayType(?t) ; isClassType(?t) ; isInterfaceType(?t) ; isAnnotation(?t).
 
+// A class type that is / is not abstract. Use these instead of joining
+// isClassType with (!)ClassModifier("abstract", ...).
+.decl ConcreteClassType(?t:ClassType)
+ConcreteClassType(?t) :- isClassType(?t), !ClassModifier("abstract", ?t).
+
+.decl AbstractClassType(?t:ClassType)
+AbstractClassType(?t) :- isClassType(?t), ClassModifier("abstract", ?t).
+
 isHeapAllocation(?h) :-
   isNormalHeap(?h) ; isStringConstant(?h) ; isClassHeap(?h) ; isMethodHandleConstant(?h) ; isMethodTypeConstant(?h).
 
@@ -1098,10 +1106,6 @@ ApplicationAllocation(?heap) :-
   Instruction_Method(?insn, ?method),
   ApplicationMethod(?method),
   AssignHeapAllocation_Heap(?insn, ?heap).
-
-ConcreteClass(?class) :-
-  isClassType(?class),
-  !ClassModifier("abstract", ?class).
 
 #if defined(JRE3) || defined (JRE4) || defined(JRE5) || defined(JRE6)
 MockHeapConsMacro(?heap, ?type) :-

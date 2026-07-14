@@ -630,17 +630,12 @@ VarPointsTo(?hctx, ?value, ?ctx, ?formal) :-
  .plan 1:(2,1,3,4)
 #endif // X_CONTEXT_REMOVER
 
-FormalOfForcedReachableContext(?ctx, ?formal, ?formalType) :-
-  ForcedReachableAndroidContext(?ctx, ?meth),
-  FormalParam(_, ?meth, ?formal),
-  Var_Type(?formal, ?formalType).
-
 // Attempt at a policy that yields a reasonable compromise between
 // precision and completeness: ask for real objects of a most-refined
 // subclass, or of identical type to the declared one.
 .decl _NotMostRefinedType(?type:ReferenceType)
 _NotMostRefinedType(?type) :-
-  ConcreteClass(?type),
+  ConcreteClassType(?type),
   basic.SubtypeOf(?other, ?type),
   ?other != ?type.
 
@@ -890,7 +885,7 @@ VarPointsTo(?hctx, ?baseValue, ?ctx, ?this) :-
 /**
  * Contribute to the global summary relation
 **/
-ApplicationEntryPoint(?meth) :-
+EntryPointMethod(?meth) :-
   ForcedReachableAndroidContext(_, ?meth),
   ApplicationMethod(?meth).
 

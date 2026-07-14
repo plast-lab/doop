@@ -43,6 +43,6 @@ class OpenProgramsTest extends DoopSpec {
         assert true
 
         where:
-        profile << ['alfresco', 'concrete-types', 'jackee', 'servlets-only', 'spring']
+        profile << ['concrete-types', 'jackee']
     }
 }

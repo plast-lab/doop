@@ -1,0 +1,37 @@
+// ==========================================================================
+// jackee component: component-scan.dl
+// @ComponentScan model: ScanRoot + ComponentScanned.
+// Depends on: framework-beans
+// ==========================================================================
+// ==========================================================================
+// @ComponentScan modelling (diagnostic first -- no gating yet).
+// A @Component is a bean only if it is actually scanned: under a @ComponentScan
+// basePackage (or the config class's own package) and not filtered out. We extract
+// scan roots heuristically (annotation values that look like packages, not class names
+// or classpath: resources -- the AnnotationElement facts flatten all annotations'
+// values together, so this is a heuristic) and report which application stereotype
+// classes fall outside every scan root, i.e. what gating would exclude. Examine that
+// set before trusting it: excluding a real bean would unmock it.
+// ==========================================================================
+.decl ComponentScanConfig(?class:ClassType)
+ComponentScanConfig(?class) :- Type_Annotation(?class, "org.springframework.context.annotation.ComponentScan").
+ComponentScanConfig(?class) :- Type_Annotation(?class, "org.springframework.boot.autoconfigure.SpringBootApplication").
+
+.decl ScanRoot(?pkg:symbol)
+ScanRoot(?pkg) :-
+  ComponentScanConfig(?class),
+  AnnotationElement("type", ?class, _, _, "-", ?pkg, _),
+  !isType(?pkg),
+  !match("classpath:.*", ?pkg),
+  match("[a-z][a-zA-Z0-9]*([.][a-z][a-zA-Z0-9]*)+", ?pkg).
+
+.decl ComponentScanned(?class:ClassType)
+ComponentScanned(?class) :-
+  StereotypeAnnotatedClass(?class),
+  ScanRoot(?pkg),
+  ?plen = strlen(?pkg),
+  substr(?class, 0, ?plen) = ?pkg,
+  substr(?class, ?plen, 1) = ".".
+
+.decl AnyScanRoot()
+AnyScanRoot() :- ScanRoot(_).

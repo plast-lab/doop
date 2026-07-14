@@ -1,14 +1,9 @@
 
-#ifndef DISABLE_POINTS_TO
-BOUND_VAR_POINTS_TO(?hctx, ?argArray, ?ctx, ?args),
-ArrayIndexPointsTo(?hctx, ?argArrayContent, ?hctx, ?argArray) :-
-   isImmutableHContext(?hctx),
-   basic.MainMethodDeclaration(?mainMethod),
-   ReachableContext(?ctx, ?mainMethod),
-   FormalParam(0, ?mainMethod, ?args),
-   MainMethodArgArray(?argArray),
-   MainMethodArgArrayContent(?argArrayContent).
-#endif // DISABLE_POINTS_TO
+// The main method's String[] args are mocked by the central mocking layer
+// (souffle-logic/main/mocking/): main is an EntryPointMethod, its String[]
+// parameter gets an array mock, and that array's cells point at a shared String
+// mock. The old dedicated MainMethodArgArray/Content block was removed to avoid
+// minting a second args array for the main method.
 
 /**
  *

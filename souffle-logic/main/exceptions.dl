@@ -46,7 +46,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?param) :-
   basic.ExceptionHandler_InRange(?handler, ?insn),
   ExceptionHandler_Type(?handler, ?handlerType),
   basic.SubtypeOf(?valueType, ?handlerType),
-  ConcreteClass(?valueType), // filtering null_type
+  ConcreteClassType(?valueType), // filtering null_type
   ExceptionHandler_FormalParam(?handler, ?param),
   !basic.ExceptionHandler_Impossible(?valueType, ?handler, ?insn).
 //// See previous rule

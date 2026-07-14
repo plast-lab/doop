@@ -1,0 +1,164 @@
+// ==========================================================================
+// jackee component: di-methods.dl
+// Constructor/setter/@Bean parameter injection: DIConstructor/DIMethod/DIParam/DependencyInjectedMethod.
+// Depends on: di-resolver, framework-annotations
+// ==========================================================================
+/**
+ * Bridge: feed framework-injected field contents into field loads.
+ *
+ * The DI rules above assert directly into mainAnalysis.InstanceFieldPointsTo,
+ * because framework injection has no backing bytecode store. In the default
+ * (non-featherweight, non-HeapDL) configuration the active instance-load path
+ * (context-sensitivity.dl) pairs a LoadInstanceField with a matching
+ * StoreInstanceField *instruction* via HeapInterproceduralAssign; it never
+ * consults InstanceFieldPointsTo. The direct
+ *   LoadHeapInstanceField |><| InstanceFieldPointsTo -> VarPointsTo
+ * rule that would propagate an asserted field value is gated behind
+ * FEATHERWEIGHT_ANALYSIS / HeapDLS and is commented out otherwise. Without
+ * this bridge, a load `x = base.injectedField` never observes the injected
+ * mock, so injected beans stay invisible to the call graph.
+ *
+ * We scope the join to mock values (Value_isMock, stamped by
+ * mainAnalysis_MockValueConsMacro on every mock we create) so it applies only
+ * to asserted field-points-to and not to ordinary heap stores, which the
+ * store-driven path already handles.
+ *
+ * Efficiency: InstanceFieldPointsTo is one of the largest relations (millions
+ * of tuples), but only a tiny fraction (~0.4%) hold a mock value. We therefore
+ * materialize that subset first in MockInstanceFieldPointsTo, then drive the
+ * load-join from it. This guarantees the small relation is the driver across
+ * all of Souffle's semi-naive delta versions, instead of relying on the
+ * scheduler to push the Value_isMock filter ahead of the
+ * InstanceFieldPointsTo |><| LoadHeapInstanceField join (the join upstream
+ * commented out as "much slower for large analyses").
+ **/
+// The mock-field-load bridge (MockInstanceFieldPointsTo -> VarPointsTo via
+// LoadHeapInstanceField) was moved to the central mocking layer, since it is
+// generic: it makes any asserted mock field-points-to visible to field loads.
+
+/**
+ * Method-level dependency injection: constructor and setter injection via
+ * @Autowired / @Inject / @Resource. Unlike field injection, the mock bean
+ * must flow into VarPointsTo for the formal parameter, not InstanceFieldPointsTo.
+ *
+ * Each pattern has a precise rule (bean id matches the parameter's simple name)
+ * and a subtype fallback, mirroring the field-level rules above.
+ **/
+.decl InjectionAnnotatedMethod(?method:Method)
+
+InjectionAnnotatedMethod(?method) :-
+  (Method_Annotation(?method, "org.springframework.beans.factory.annotation.Autowired");
+   Method_Annotation(?method, "javax.inject.Inject");
+   Method_Annotation(?method, "jakarta.inject.Inject");
+   Method_Annotation(?method, "javax.ejb.EJB");
+   Method_Annotation(?method, "jakarta.ejb.EJB")).
+
+.decl ResourceAnnotatedMethod(?method:Method)
+
+ResourceAnnotatedMethod(?method) :-
+  (Method_Annotation(?method, "javax.annotation.Resource");
+   Method_Annotation(?method, "jakarta.annotation.Resource")).
+
+// A DI-receiving constructor is either explicitly @Autowired/@Inject, or is
+// the ctor of a Spring-managed class (has a MockObject) -- covering the
+// idiomatic Spring 4.3+ implicit-injection pattern.
+.decl DIConstructor(?method:Method)
+
+DIConstructor(?method) :-
+  Method_SimpleName(?method, "<init>"),
+  Method_DeclaringType(?method, ?class),
+  MockObject(_, ?class).
+
+DIConstructor(?method) :-
+  InjectionAnnotatedMethod(?method),
+  Method_SimpleName(?method, "<init>").
+
+.decl DIMethod(?method:Method)
+
+DIMethod(?method) :-
+  (DIConstructor(?method);
+   InjectionAnnotatedMethod(?method)),
+  !ResourceAnnotatedMethod(?method).
+
+// Constructor / setter / @Bean parameters are injection points too: each emits the
+// same Descriptor and reads the same resolver above -- no separate ladder. A
+// parameter carries no @Qualifier here (""): reading a parameter annotation's value
+// needs the parameter AnnotationElement key layout, which is not established in this
+// tree; the by-name tiebreak (bean id == the param's simple name, matched via
+// DefaultBeanId) covers the common convention that a ctor param is named after its
+// bean, and parameter @Qualifier is left as a follow-up.
+.decl DIParam(?param:Var, ?type:Type)
+DIParam(?param, ?type) :-
+  DIMethod(?method),
+  FormalParam(_, ?method, ?param),
+  Var_Type(?param, ?type),
+  isReferenceType(?type).
+
+Descriptor(?type, ?name, "") :-
+  DIParam(?param, ?type),
+  Var_SimpleName(?param, ?name).
+
+.decl DIParamResolved(?param:Var, ?beanMock:Value)
+DIParamResolved(?param, ?beanMock) :-
+  DIParam(?param, ?type),
+  Var_SimpleName(?param, ?name),
+  DescResolved(?type, ?name, "", ?beanMock).
+
+mainAnalysis.VarPointsTo(?hctx, ?beanMock, ?ctx, ?param) :-
+  DIParamResolved(?param, ?beanMock),
+  mainAnalysis.isImmutableHContext(?hctx),
+  mainAnalysis.isImmutableContext(?ctx).
+
+PreciselyMockedVar(?param) :- DIParamResolved(?param, _).
+
+// precise @Resource on ctor/setter: match the parameter's simple name to a
+// BeanResource entry (also supports Collection-typed injection). Mark the site.
+// The subtype fallback was removed (central covers it).
+mainAnalysis.VarPointsTo(?hctx, ?mockResourceValue, ?ctx, ?param),
+PreciselyMockedVar(?param) :-
+  ResourceAnnotatedMethod(?method),
+  FormalParam(_, ?method, ?param),
+  Var_SimpleName(?param, ?paramName),
+  Var_Type(?param, ?paramType),
+  BeanResource(?paramName, ?resourceClass, ?mockResourceValue),
+  basic.SubtypeOf(?resourceClass, ?paramType),
+  mainAnalysis.isImmutableHContext(?hctx),
+  mainAnalysis.isImmutableContext(?ctx).
+
+// Flow the bean mock into the @Bean method's return variable. Keyed on
+// BeanMethod_Id so @Bean(name=...) overrides are honoured (the existing
+// DependencyInjectedMethod return-value rule further below would only cover
+// the default-id case, since it keys on Method_SimpleName).
+mainAnalysis.VarPointsTo(?immHctx, ?beanMockObject, ?ctx, ?return) :-
+  BeanMethod_Id(?method, ?beanId),
+  mainAnalysis.ReachableContext(?ctx, ?method),
+  ReturnVar(?return, ?method),
+  ConcreteBean_Id(?beanClass, ?beanId),
+  MockObject(?beanMockObject, ?beanClass),
+  mainAnalysis.isImmutableHContext(?immHctx).
+
+// @Bean method parameters are DI-injected by Spring, same as ctor/setter.
+DIMethod(?method) :-
+  BeanMethod(?method),
+  !ResourceAnnotatedMethod(?method).
+
+.decl DependencyInjectedMethod(?method:Method)
+
+DependencyInjectedMethod(?method) :-
+  Method_Annotation(?method, ?annotation),
+  (match("org[.]aspectj[.]lang[.]annotation[.].*", ?annotation);
+   match("javax[.]persistence[.].*", ?annotation);
+   match("javax[.]annotation[.].*", ?annotation);
+   match("javax[.]inject[.].*", ?annotation);
+   match("jakarta[.]persistence[.].*", ?annotation);
+   match("jakarta[.]annotation[.].*", ?annotation);
+   match("jakarta[.]inject[.].*", ?annotation)).
+
+mainAnalysis.VarPointsTo(?immHctx, ?beanMockObject, ?ctx, ?return) :-
+  DependencyInjectedMethod(?method),
+  mainAnalysis.ReachableContext(?ctx, ?method),
+  ReturnVar(?return, ?method),
+  Method_SimpleName(?method, ?simplename),
+  ConcreteBean_Id(?beanClass, ?simplename),
+  MockObject(?beanMockObject, ?beanClass),
+  mainAnalysis.isImmutableHContext(?immHctx).

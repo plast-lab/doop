@@ -125,6 +125,17 @@ AAR_EntryPoint(?method) :-
 RealCallGraphEdge(?invo, ?method) :-
   mainAnalysis.AnyCallGraphEdge(?invo, ?method),
   !MockInvocation(?invo).
+
+// Application concrete methods reached through a real (non-mock) call edge --
+// the "genuine reachability" signal for open programs (defined once here; every
+// open-programs profile used to redeclare this identically).
+.decl DeepReachableApplicationMethod(?method:Method)
+.output DeepReachableApplicationMethod
+DeepReachableApplicationMethod(?method) :-
+  mainAnalysis.Reachable(?method),
+  Stats_Simple_ApplicationConcreteMethod(?method),
+  RealCallGraphEdge(_, ?method).
+NewMetricMacro("25.9", "app methods reachable via real call edge", DeepReachableApplicationMethod(_)).
 #endif // OPEN_PROGRAMS
 
 /***************************************************
@@ -273,6 +284,34 @@ NewMetricMacro("25.0", "app reachable casts that may fail", Stats_Simple_Applica
 NewMetricMacro("25.5", "app reachable methods", Stats_Simple_Application_ReachableMethod(_)).
 NewMetricMacro("25.75", "app concrete methods", Stats_Simple_ApplicationConcreteMethod(_)).
 
+// --- Reachable-class helper (distinct declaring types of reachable methods) ---
+.decl Stats_Simple_ReachableClass(?type:Type)
+Stats_Simple_ReachableClass(?type) :-
+  mainAnalysis.Reachable(?method),
+  Method_DeclaringType(?method, ?type).
+
+// --- Derived recall / precision + whole-program size metrics ---
+NewMetricMacro("11.6", "reachable classes", Stats_Simple_ReachableClass(_)).
+NewMetricMacro("26.0", "objects (values)", mainAnalysis.Value_Type(_, _)).
+Stats_Metrics("1.9", "avg points-to set size (x100)", ?avg) :-
+  ?vpt = count : { mainAnalysis.VarPointsTo(_, _, _, _) },
+  ?rv  = count : { Stats_Simple_InsensReachableVar(_) },
+  ?rv > 0, ?avg = (100 * ?vpt) / ?rv.
+// Application-scoped variant: average points-to set size over reachable
+// application vars only (reachable var that is an ApplicationVar).
+.decl Stats_Simple_Application_InsensReachableVar(?var:Var)
+Stats_Simple_Application_InsensReachableVar(?var) :-
+  Stats_Simple_InsensReachableVar(?var),
+  ApplicationVar(?var).
+Stats_Metrics("1.95", "avg app points-to set size (x100)", ?avg) :-
+  ?vpt = count : { Stats_Simple_Application_InsensVarPointsTo(_, _) },
+  ?rv  = count : { Stats_Simple_Application_InsensReachableVar(_) },
+  ?rv > 0, ?avg = (100 * ?vpt) / ?rv.
+Stats_Metrics("25.8", "app method coverage (%)", ?pct) :-
+  ?t  = count : { Stats_Simple_ApplicationConcreteMethod(_) },
+  ?nr = count : { Stats_Simple_NonReachableApplicationConcreteMethod(_) },
+  ?t > 0, ?pct = (100 * (?t - ?nr)) / ?t.
+
 //NewMetricMacro("50.0", "call sites that did (not) get refined", SiteToRefine(_)).
 //NewMetricMacro("51.0", "allocation sites that did (not) get refined", ValueToRefine(_)).
 
@@ -379,23 +418,16 @@ NewMetricMacro("45.0", "total leaks", Stats_Simple_LeakingTaintedInformation(_, 
  * Open Programs
  ***************************************************/
 
+// Open-world entry-point roots the mock layer seeds.
+NewMetricMacro("60.5", "entry point methods", mainAnalysis.EntryPointMethod(_)).
+
+// One central mock-object metric across the board (all mocks, all sources).
 NewMetricMacro("61.0", "mock objects", MockObject(_, _)).
-NewMetricMacro("61.1", "mock objects for receivers", MockObjFromOpenProgramEntryPointReceiver(_)).
-NewMetricMacro("61.2", "mock objects for arg", MockObjFromOpenProgramEntryPointArg(_)).
-NewMetricMacro("61.6", "forced-reachable formals that could not be mocked", UnmockableFormalOfForcedReachableContext(_, _)).
-
-#ifdef OPEN_PROGRAMS
-//Stats_Simple_ReachableFromOpenProgramEntryPoint(?method) :-
-//  MockReachableContext(_, ?method).
-
-//NewMetricMacro("60.0", "Entry Points", OpenProgramEntryPoint(_)).
-
-NewMetricMacro("61.3", "mock objects for fields", MockObjFromField(_)).
-NewMetricMacro("61.4", "mock objects for arrays", MockObjFromArray(_)).
-NewMetricMacro("61.5", "mock objects for formals", MockObjFromFormal(_)).
-//NewMetricMacro("62.0", "Methods Reachable from open entry points (SENS)", MockReachableContext(_,_)).
-//NewMetricMacro("62.5", "Methods Reachable from open entry points (INS)", Stats_Simple_ReachableFromOpenProgramEntryPoint(_)).
-#endif // OPEN_PROGRAMS
+NewMetricMacro("61.7", "unmockable types", UnmockableType(_)).
+NewMetricMacro("61.8", "precisely-mocked fields", PreciselyMockedField(_)).
+.decl Stats_Simple_ImpreciseMockFieldSlot(?mock:Value, ?field:Field)
+Stats_Simple_ImpreciseMockFieldSlot(?mock, ?field) :- MockFieldFanout(?mock, ?field, _, ?n), ?n > 1.
+NewMetricMacro("61.9", "imprecise mock field slots (fan-out > 1)", Stats_Simple_ImpreciseMockFieldSlot(_, _)).
 
 #ifdef SPECIAL_CONTEXT_SENSITIVITY_METHODS
 

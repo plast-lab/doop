@@ -1,0 +1,124 @@
+// ==========================================================================
+// jackee component: entry-point-producers.dl
+// Application entry-point producers: DI methods, framework callbacks, serialization.
+// Depends on: framework-annotations, di-methods
+// ==========================================================================
+// ==========================================================================
+// application entry point producers
+// ==========================================================================
+
+// Setter-style DI methods become entry points so their formal params flow.
+// Constructors of Spring-managed classes are already entry points via the
+// MockObject -> <init> rule below.
+mainAnalysis.EntryPointMethod(?method) :-
+  ApplicationMethod(?method),
+  (InjectionAnnotatedMethod(?method);
+   ResourceAnnotatedMethod(?method)),
+  Method_DeclaringType(?method, ?class),
+  ApplicationClass(?class).
+
+// Removed: the "class has a method named init()" rule. `init` is an extremely
+// common method name (CmsUUID, CmsSqlManager, A_CmsHtmlConverter, ...), so the
+// rule turned ~69 arbitrary utilities/managers into entry-point classes with
+// all methods exercised as roots. Genuine init callbacks are caught precisely
+// elsewhere: javax.servlet init(ServletConfig) via the Servlet rules,
+// InitializingBean.afterPropertiesSet / XML init-method via their own rules.
+mainAnalysis.EntryPointMethod(?method) :-
+  ApplicationMethod(?method),
+   MockObject(_, ?type),
+   Method_DeclaringType(?method, ?type),
+   Method_SimpleName(?method, "<init>").
+
+/**
+ *  For every entry point class we make its methods entry points
+ **/
+mainAnalysis.EntryPointMethod(?method) :-
+  ApplicationMethod(?method),
+  EntryPointClass(?type),
+  Method_DeclaringType(?method, ?type).
+  
+/**
+ * Classes extending TagSupport handled .tld files
+ * TLD (tag library descriptors) are XML files that extend JSPs with custom tags
+ **/
+mainAnalysis.EntryPointMethod(?method) :-
+  ApplicationMethod(?method),
+  ApplicationClass(?type),
+  (basic.SubtypeOf(?type, "javax.servlet.jsp.tagext.TagSupport");
+   basic.SubtypeOf(?type, "jakarta.servlet.jsp.tagext.TagSupport")),
+  Method_DeclaringType(?method, ?type).
+
+DependencyInjectedMethod(?method),
+mainAnalysis.EntryPointMethod(?method) :-
+  ApplicationMethod(?method),
+   ApplicationClass(?class),
+   Method_DeclaringType(?method, ?class),
+   DependencyInjectedMethod(?method).
+
+// Framework-invoked methods: JAX-RS, Spring MVC mappings, lifecycle/event/async
+// callbacks, exception handlers, and message-driven listeners. PostConstruct/PreDestroy
+// are already caught via the javax.annotation.* match in DependencyInjectedMethod above.
+mainAnalysis.EntryPointMethod(?method) :-
+  FrameworkCallbackAnnotation(?cbAnn),
+  Method_Annotation(?method, ?cbAnn),
+  ApplicationMethod(?method),
+  Method_DeclaringType(?method, ?class),
+  ApplicationClass(?class).
+
+// CDI event listeners: a method is invoked when any of its parameters carries
+// @Observes and an event of matching type is published.
+mainAnalysis.EntryPointMethod(?method) :-
+  ApplicationMethod(?method),
+  ApplicationClass(?class),
+  Method_DeclaringType(?method, ?class),
+  (Param_Annotation(?method, _, "javax.enterprise.event.Observes");
+   Param_Annotation(?method, _, "jakarta.enterprise.event.Observes")).
+
+mainAnalysis.EntryPointMethod(?method) :-
+  ApplicationMethod(?method),
+  (XMLNodeAttribute(?XMLFile, ?nodeId, _, "init-method", "init-method", ?simpleName);
+   XMLNodeAttribute(?XMLFile, ?nodeId, _, "destroy-method", "destroy-method", ?simpleName)),
+  Method_SimpleName(?method, ?simpleName),
+  Method_DeclaringType(?method, ?class),
+  XMLNodeAttribute(?XMLFile, ?nodeId, _, "class", "class", ?class).
+
+mainAnalysis.EntryPointMethod(?method) :-
+  ApplicationMethod(?method),
+  basic.SubtypeOf(?class, "org.springframework.beans.factory.InitializingBean"),
+  Method_DeclaringType(?method, ?class),
+  Method_SimpleName(?method, "afterPropertiesSet").
+
+mainAnalysis.EntryPointMethod(?method) :-
+  ApplicationMethod(?method),
+  Method_DeclaringType(?method, ?class),
+  ?class = "com.icegreen.greenmail.util.GreenMail".
+
+// Java serialization callbacks: reflectively invoked by the JVM's serialization
+// machinery on classes implementing Serializable / Externalizable. Restricted
+// to ApplicationClass because essentially every JDK and framework value type
+// extends Serializable, and we don't want their callbacks as entry points.
+mainAnalysis.EntryPointMethod(?method) :-
+  ApplicationMethod(?method),
+  ApplicationClass(?class),
+  basic.SubtypeOf(?class, "java.io.Serializable"),
+  Method_DeclaringType(?method, ?class),
+  (Method_SimpleName(?method, "readObject");
+   Method_SimpleName(?method, "writeObject");
+   Method_SimpleName(?method, "readObjectNoData");
+   Method_SimpleName(?method, "readResolve");
+   Method_SimpleName(?method, "writeReplace")).
+
+mainAnalysis.EntryPointMethod(?method) :-
+  ApplicationMethod(?method),
+  ApplicationClass(?class),
+  basic.SubtypeOf(?class, "java.io.Externalizable"),
+  Method_DeclaringType(?method, ?class),
+  (Method_SimpleName(?method, "readExternal");
+   Method_SimpleName(?method, "writeExternal")).
+
+mainAnalysis.EntryPointMethod(?method) :-
+  ApplicationMethod(?method),
+    ApplicationClass(?class),
+    Method_DeclaringType(?method, ?class),
+    (Method_Annotation(?method, "org.apache.struts2.convention.annotation.Action");
+     Method_Annotation(?method, "org.apache.struts2.convention.annotation.Result")).

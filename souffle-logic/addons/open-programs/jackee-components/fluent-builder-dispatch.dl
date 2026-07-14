@@ -3,7 +3,7 @@
  * ---------------------------------------------------------------------------
  *
  * Some applications put their business logic inside lambdas handed to a fluent
- * builder that invokes them at a terminal operation, e.g. openkoda's Flow:
+ * builder that invokes them at a terminal operation, e.g. a Flow-style builder:
  *
  *     Flow.init(...).then(m -> service.doX(m)).thenSet(...).execute();
  *
@@ -13,19 +13,19 @@
  * calls -- stays cold. This is the dominant cold driver on Flow-style apps
  * (services have 0 callers because their only caller is a cold Flow lambda).
  *
- * This is the one COMPLETENESS-for-PRECISION trade in the open-program rules:
+ * This is the one completeness-for-precision trade in the open-program rules:
  * we over-approximate "a lambda handed to a fluent builder is invoked". We keep
- * the blast radius tight with a STRUCTURAL discriminator -- an APPLICATION type
+ * the blast radius tight with a structural discriminator -- an application type
  * with >= 3 self-returning methods taking a functional-interface argument --
  * which matches Flow / FrontendMappingFieldDefinition without naming them, and
- * deliberately EXCLUDES library fluent pipelines (Stream/Flux/Mono/
+ * deliberately excludes library fluent pipelines (Stream/Flux/Mono/
  * CompletableFuture) that the base analysis already models and that would
  * explode reachability.
  *
  * Stratification: identifying the invoked lambda needs VarPointsTo (the lambda
- * value flowing to the builder call), so this file NEVER mints a MockObject from
+ * value flowing to the builder call), so this file never mints a MockObject from
  * that body -- it only drives ReachableContext and binds the callback's captured
- * receiver to the enclosing class's EXISTING mock (reuse), exactly like the
+ * receiver to the enclosing class's existing mock (reuse), exactly like the
  * ThisVar receiver-binding in rules-jackee.dl. No new mock -> no !BeanResource
  * cyclic negation.
  *
@@ -57,7 +57,7 @@ FluentBuilderType(?t) :-
 
 // The implementing method of a lambda handed as an argument to a (reached)
 // fluent-builder method. VarPointsTo-dependent -> drives ReachableContext /
-// receiver binding ONLY, never a mock mint.
+// receiver binding only, never a mock mint.
 .decl FluentBuilderInvokedLambda(?implMethod:Method, ?enclosing:Type)
 FluentBuilderInvokedLambda(?implMethod, ?enclosing) :-
   FluentBuilderMethod(?bt, ?bm),

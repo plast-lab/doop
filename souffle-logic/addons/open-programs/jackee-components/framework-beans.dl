@@ -1,0 +1,102 @@
+// ==========================================================================
+// jackee component: framework-beans.dl
+// FrameworkInstantiatedType (stereotype beans), ThisAlias, ctor/setter field precision, name-suffix fallback.
+// Depends on: framework-annotations
+// ==========================================================================
+// Framework-instantiated types: Spring/CDI beans (@Component/@Service/... and
+// @Bean-produced), plus entry-point classes (controllers, auth beans, listeners,
+// interceptors, validators). The container creates these by calling their
+// constructor, so the constructor is an entry point. The central mocking layer
+// then mocks the constructor's receiver -- the bean instance -- and that same
+// mock serves wherever the bean's type is injected. jackee creates no mock
+// objects itself; the bean mock is a normal receiver mock.
+.decl FrameworkInstantiatedType(?type:Type)
+
+FrameworkInstantiatedType(?type) :-
+  isClassType(?type),
+  mainAnalysis.ApplicationConcreteType(?type),
+  Type_Annotation(?type, ?moAnn),
+  MockObjectTypeAnnotation(?moAnn).
+
+FrameworkInstantiatedType(?type) :-
+  isClassType(?type),
+  (isConcreteBean(?type);
+   AuthenticationProviderBean(?type);
+   AuthenticationFilterBean(?type);
+   AuthenticationEntryPoint(?type);
+   ApplicationListener(?type);
+   MVCInterceptorBean(?type);
+   Validator(?type);
+   PossibleEntryPointClass(?type)).
+
+mainAnalysis.EntryPointMethod(?ctor) :-
+  FrameworkInstantiatedType(?type),
+  Method_DeclaringType(?ctor, ?type),
+  Method_SimpleName(?ctor, "<init>"),
+  ApplicationMethod(?ctor).
+
+// The receiver of a method and its immediate local copies. Soot emits `this#_0 = @this`
+// at method entry and writes fields through the local copy (this#_0), whereas ThisVar
+// reports @this -- so joining ThisVar directly against a field store's base var never
+// unifies. ThisAlias bridges both, so `store base is this` joins work.
+.decl ThisAlias(?method:Method, ?var:Var)
+ThisAlias(?method, ?this) :- ThisVar(?method, ?this).
+ThisAlias(?method, ?copy) :- ThisVar(?method, ?this), AssignLocal(?this, ?copy, ?method).
+
+// Container-authoritative field precision (constructor + setter injection). A field written from a source guaranteed to
+// carry a value -- a formal parameter (resolved precisely by DI, or generically
+// mocked by the central layer as a fallback) or a fresh allocation (new) -- is
+// precise when the enclosing method is one the container actually runs: the
+// constructor (constructor injection), or an @Autowired/@Inject setter/method,
+// which Spring invokes during populateBean after the constructor (setter
+// injection). Both stores are authoritative, so we suppress generic synthesis for
+// the field to keep it precise without ever leaving it unmocked (the source is
+// always populated) -- the two invariants. A field written from anything else (a
+// method return, another field load) is not suppressed, so central synthesis
+// remains its backstop.
+//
+// DIMethod = bean constructors + @Autowired/@Inject setters/methods -- exactly the
+// methods the container invokes with resolved beans, so exactly the stores that
+// are authoritative. (A no-arg constructor / field-less setter sets nothing, so it
+// suppresses nothing; such beans fall through to DI then synthesis automatically.)
+// Excludes @Inject/@Autowired/@Resource fields (owned by the field-injection rules,
+// which run in the same populateBean step and would overwrite any default) and
+// SerializedType data classes (populated reflectively, not via ctor/setter).
+PreciselyMockedField(?field) :-
+  FrameworkInstantiatedType(?type),
+  !SerializedType(?type),
+  DIMethod(?method),
+  Method_DeclaringType(?method, ?type),
+  ThisAlias(?method, ?this),
+  StoreInstanceField(?from, ?this, ?field, ?method),
+  FormalParam(_, ?method, ?from),
+  !InjectionAnnotatedField(?field),
+  !ResourceAnnotatedField(?field).
+
+PreciselyMockedField(?field) :-
+  FrameworkInstantiatedType(?type),
+  !SerializedType(?type),
+  DIMethod(?method),
+  Method_DeclaringType(?method, ?type),
+  ThisAlias(?method, ?this),
+  StoreInstanceField(?from, ?this, ?field, ?method),
+  AssignHeapAllocation(_, ?from, ?method),
+  !InjectionAnnotatedField(?field),
+  !ResourceAnnotatedField(?field).
+
+.decl PossibleEntryPointClass(?type:Type)
+
+// Name-suffix fallback for non-Spring apps. Deliberately excludes ".*Bean":
+// it matched data-transfer beans (e.g. CmsGalleryDataBean, CmsResourceInfoBean)
+// whose every method then became a fabricated entry-point root -- those are
+// data classes, handled correctly (accessors only) by serialization-accessors.
+// The remaining suffixes are entry-point-shaped; real servlets/listeners are
+// also caught structurally (HttpServlet/Filter/ApplicationListener subtypes and
+// the SPI library-interface discriminator), so these are a thin fallback for
+// unannotated POJO controllers/handlers.
+PossibleEntryPointClass(?type) :-
+   !isSpringApplication(1),
+   ApplicationClass(?type),
+   (match(".*Controller", ?type);
+    match(".*Listener", ?type);
+    match(".*Servlet", ?type)).

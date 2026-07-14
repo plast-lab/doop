@@ -1,0 +1,112 @@
+// ==========================================================================
+// jackee component: per-instance-mocking.dl
+// Per-instance mocking for multi-definition XML beans: RefinedXMLClass/XMLBeanMock/RefTargetMock/RefinedBeanFieldWire.
+// Depends on: xml-beans, component-scan, property-placeholder, mocking-core (RefinedClass seam)
+// ==========================================================================
+// ==========================================================================
+// per-instance mocking for multi-definition XML beans (see RefinedClass in
+// souffle-logic/main/mocking/mocking-core.dl).
+//
+// A class declared as >=2 XML <bean>s with different <property> wiring, mocked once
+// per class, merges all the beans' field values (fan-out). We refine such a class into
+// one mock per bean-id, each wired from its own <property><ref>, and mark it RefinedClass
+// so the central policy skips the single per-class blob; the per-instance mocks fully
+// replace it (registered for the class and every supertype). Conservative guard: only
+// application classes with >=2 defs in one file and no stereotype annotation, so their
+// instances are entirely XML-declared.
+// ==========================================================================
+.decl XMLBeanDef(?beanId:symbol, ?class:ClassType, ?file:symbol, ?node:symbol)
+XMLBeanDef(?beanId, ?class, ?file, ?node) :-
+  XMLNodeAttribute(?file, ?node, _, "id", "id", ?beanId),
+  XMLNodeAttribute(?file, ?node, _, "class", "class", ?class),
+  isClassType(?class).
+
+.decl StereotypeAnnotatedClass(?class:ClassType)
+StereotypeAnnotatedClass(?class) :-
+  Type_Annotation(?class, ?ann),
+  BeanStereotypeAnnotation(?ann).
+
+.decl XMLClassFileDefs(?class:ClassType, ?file:symbol, ?n:number)
+XMLClassFileDefs(?class, ?file, ?n) :-
+  XMLBeanDef(_, ?class, ?file, _),
+  ?n = count : { XMLBeanDef(_, ?class, ?file, _) }.
+
+.decl RefinedXMLClass(?class:ClassType)
+RefinedXMLClass(?class) :-
+  XMLClassFileDefs(?class, _, ?n), ?n >= 2,
+  ApplicationClass(?class),
+  // XML-exclusive = its instances are entirely XML-declared. A plain non-stereotype class
+  // qualifies; a @Component qualifies too IF it is provably out of component-scan scope
+  // (so scan registers no extra instance) -- but only when we actually know the scan roots,
+  // else fall back to excluding all stereotypes.
+  ( !StereotypeAnnotatedClass(?class)
+  ; ( AnyScanRoot(), !ComponentScanned(?class) ) ).
+
+RefinedClass(?class) :- RefinedXMLClass(?class).
+
+// One mock value per bean-id of a refined class.
+.decl XMLBeanMock(?beanId:symbol, ?class:ClassType, ?value:Value)
+XMLBeanMock(?beanId, ?class, ?value) :-
+  XMLBeanDef(?beanId, ?class, _, _),
+  RefinedXMLClass(?class),
+  ?value = cat("<<XMLBean ", cat(?beanId, cat(" ", cat(?class, ">>")))).
+
+// Register each per-instance mock into the shared mock seams, standing in for its class
+// and every supertype (so by-type consumers find it) -- exactly what the blob did.
+MockObjectForType(?value, ?type),
+MockObject(?value, ?class),
+mainAnalysis_MockValueConsMacro(?value, ?class),
+mainAnalysis.Value_DeclaringType(?value, ?class) :-
+  XMLBeanMock(_, ?class, ?value),
+  basic.SubtypeOf(?class, ?type).
+
+// The mock a <ref bean=?refBeanId> resolves to: the ref's per-instance mock if the ref
+// is itself refined, else the ref class's per-class mock.
+.decl RefTargetMock(?refBeanId:symbol, ?value:Value)
+RefTargetMock(?refBeanId, ?value) :- XMLBeanMock(?refBeanId, _, ?value).
+RefTargetMock(?refBeanId, ?value) :-
+  ConcreteBean_Id(?refClass, ?refBeanId),
+  !RefinedXMLClass(?refClass),
+  MockObject(?value, ?refClass).
+
+// ---- Spring ${property} placeholder resolution in bean refs ----
+// Wire each per-instance mock's <property name=F> <ref bean=R> to R's mock.
+.decl RefinedBeanFieldWire(?baseValue:Value, ?field:Field, ?refValue:Value)
+RefinedBeanFieldWire(?baseValue, ?field, ?refValue) :-
+  XMLBeanDef(?beanId, ?class, ?file, ?beanNode),
+  RefinedXMLClass(?class),
+  XMLBeanMock(?beanId, ?class, ?baseValue),
+  XMLNode(?file, ?propNode, ?beanNode, _, "property", _),
+  XMLNodeAttribute(?file, ?propNode, _, "name", "name", ?fieldName),
+  Field_DeclaringType(?field, ?class),
+  Field_SimpleName(?field, ?fieldName),
+  XMLNode(?file, ?refNode, ?propNode, _, "ref", _),
+  XMLNodeAttribute(?file, ?refNode, _, "bean", "bean", ?refBeanId),
+  RefTargetMock(?refBeanId, ?refValue).
+
+mainAnalysis.InstanceFieldPointsTo(?hctx, ?refValue, ?field, ?bhctx, ?baseValue) :-
+  RefinedBeanFieldWire(?baseValue, ?field, ?refValue),
+  mainAnalysis.isImmutableHContext(?hctx),
+  mainAnalysis.isImmutableHContext(?bhctx).
+PreciselyMockedField(?field) :- RefinedBeanFieldWire(_, ?field, _).
+
+// Fallback: a refined mock's <property> whose ref does not resolve (e.g. a
+// ${placeholder}-selected bean) would leave that precise field empty (central skips
+// precise fields). Wire it generically so the per-instance mock is never left with an
+// unmocked DI slot -- the same value the per-class blob would have carried.
+.decl RefinedBeanFieldWired(?baseValue:Value, ?field:Field)
+RefinedBeanFieldWired(?baseValue, ?field) :- RefinedBeanFieldWire(?baseValue, ?field, _).
+mainAnalysis.InstanceFieldPointsTo(?hctx, ?genericValue, ?field, ?bhctx, ?baseValue) :-
+  XMLBeanDef(?beanId, ?class, ?file, ?beanNode),
+  RefinedXMLClass(?class),
+  XMLBeanMock(?beanId, ?class, ?baseValue),
+  XMLNode(?file, ?propNode, ?beanNode, _, "property", _),
+  XMLNodeAttribute(?file, ?propNode, _, "name", "name", ?fieldName),
+  Field_DeclaringType(?field, ?class),
+  Field_SimpleName(?field, ?fieldName),
+  !RefinedBeanFieldWired(?baseValue, ?field),
+  Field_Type(?field, ?fieldType),
+  isReferenceType(?fieldType),
+  MockObjectForType(?genericValue, ?fieldType),
+  mainAnalysis.isImmutableHContext(?hctx),
+  mainAnalysis.isImmutableHContext(?bhctx).

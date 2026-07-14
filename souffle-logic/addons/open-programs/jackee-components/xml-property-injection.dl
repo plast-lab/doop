@@ -1,0 +1,23 @@
+// ==========================================================================
+// jackee component: xml-property-injection.dl
+// XMLIFPTDI: wire XML <property ref> beans into fields.
+// Depends on: xml-beans
+// ==========================================================================
+/**
+ *  XML driven dependency injection
+ **/
+.decl XMLIFPTDI(?hctx:mainAnalysis.configuration.HContext, ?mo:Value, ?fld:Field, ?bhctx:mainAnalysis.configuration.HContext, ?bval:Value)
+
+// Property injection from XML specification
+XMLIFPTDI(?hctx, ?mockObject, ?injectedField, ?basehctx, ?basevalue),
+mainAnalysis.InstanceFieldPointsTo(?hctx, ?mockObject, ?injectedField, ?basehctx, ?basevalue) :-
+  mainAnalysis.Value_Type(?basevalue, ?decltype),
+  Field_DeclaringType(?injectedField, ?decltype),
+  BeanFieldInjection(?decltype, ?injectedField, ?mockObject),
+  !RefinedXMLClass(?decltype),     // refined classes use the per-instance wiring below
+  mainAnalysis.isImmutableHContext(?basehctx),
+  mainAnalysis.isImmutableHContext(?hctx).
+
+// Static site mark for XML-injected fields.
+PreciselyMockedField(?injectedField) :-
+  BeanFieldInjection(_, ?injectedField, _).

@@ -1,0 +1,42 @@
+// ==========================================================================
+// jackee component: property-placeholder.dl
+// Spring ${property} resolution: PropertyValue (from Properties facts) + ResolvedRef.
+// Depends on: base Doop Properties relation
+// ==========================================================================
+// Resolves a Spring ${property} placeholder embedded in an XML bean ref. Given
+//
+//     # application.properties
+//     storage.backend=local
+//     <!-- context.xml -->
+//     <property name="store"><ref bean="${storage.backend}Store"/></property>
+//
+// the ref "${storage.backend}Store" resolves to bean-id "localStore" (<value> + suffix).
+// The placeholder has no inline default, so Spring requires the property to be set
+// externally (application.properties / env); bytecode does not carry it, so PropertyValue
+// is a deployment input, sourced from the fact generator below.
+.decl PropertyValue(?key:symbol, ?value:symbol)
+// Sourced from the fact generator: Properties(path, key, value) is emitted for every
+// .properties file in the input (JavaFactWriter). We take base (root-level) properties
+// files -- those whose archive entry has no subdirectory (path "...jar!name", no '/' after
+// the '!') -- as the authoritative default, so per-profile overrides (e.g. an entry under
+// "profiles/prod/...") don't multiply the value. Honoring the active Spring profile could
+// refine this further (same caveat as @Profile); with an unknown profile the base/default
+// value is the honest pick.
+PropertyValue(?key, ?value) :-
+  Properties(?path, ?key, ?value),
+  match(".*![^/]*", ?path).
+
+// A raw ref that begins with "${key}" resolves to <value> + the literal suffix.
+.decl ResolvedRef(?rawRef:symbol, ?beanId:symbol)
+ResolvedRef(?rawRef, ?beanId) :-
+  ( XMLNodeAttribute(_, _, _, "bean", "bean", ?rawRef)
+  ; XMLNodeAttribute(_, _, _, "ref", "ref", ?rawRef) ),
+  PropertyValue(?key, ?value),
+  ?prefix = cat("${", cat(?key, "}")),
+  substr(?rawRef, 0, strlen(?prefix)) = ?prefix,
+  ?beanId = cat(?value, substr(?rawRef, strlen(?prefix), strlen(?rawRef) - strlen(?prefix))).
+
+// A placeholder ref resolves to the mock of its substituted concrete bean-id.
+RefTargetMock(?rawRef, ?value) :-
+  ResolvedRef(?rawRef, ?beanId),
+  RefTargetMock(?beanId, ?value).

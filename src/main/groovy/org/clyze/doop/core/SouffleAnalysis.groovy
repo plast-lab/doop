@@ -155,6 +155,15 @@ class SouffleAnalysis extends DoopAnalysis {
 		cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/basic/basic.dl")
 		cpp.includeAtEnd("$analysis", "${Doop.souffleAnalysesPath}/${getBaseName(analysis.name)}/analysis.dl")
 
+		// Central open-world mock-object layer, included for ALL analyses (not just
+		// open programs): it mocks receivers/arguments/fields/arrays for every
+		// EntryPointMethod -- the main method's args, JUnit/keep roots, and any
+		// open-programs entry points. Representative policy is the default.
+		if (options.SOUND_MOCKING.value)
+			cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/main/mocking/mocking-all-concrete-subtypes.dl")
+		else
+			cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/main/mocking/mocking-representative-subtypes.dl")
+
 		if (options.INFORMATION_FLOW.value) {
 			String infoflowDir = "${Doop.souffleLogicPath}/addons/information-flow"
 			if (options.ANALYSIS.value == 'data-flow')

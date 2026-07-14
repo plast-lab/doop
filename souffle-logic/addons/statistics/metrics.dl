@@ -104,7 +104,7 @@ SDKMethodDirectlyReachableFromSDK(?sdkMethod) :-
     ReachableSDKClass(?sdkClass).
 
 
-Metrics_AppEntryPoint(?m) :- mainAnalysis.ApplicationEntryPoint(?m).
+Metrics_AppEntryPoint(?m) :- mainAnalysis.EntryPointMethod(?m).
 
 .decl _Metrics_InvoTargets(?invo:MethodInvocation, ?toMethod:Method)
 

@@ -1,0 +1,77 @@
+// ==========================================================================
+// jackee component: entry-point-classification.dl
+// Servlet-API + REST entry-point class detection.
+// Depends on: framework-annotations, common-helpers
+// ==========================================================================
+// ==========================================================================
+// servlet-API entry-point detection
+// ==========================================================================
+// A concrete application class that implements/extends any servlet-API component
+// type is an entry-point class: all of its application methods become entry
+// points (previously only the specific lifecycle method signatures, via the
+// now-removed PossibleOpenProgramEntryPoint relation).
+.decl ServletApiType(?type:symbol)
+ServletApiType("jakarta.servlet.GenericServlet").
+ServletApiType("javax.servlet.GenericServlet").
+ServletApiType("jakarta.servlet.http.HttpServlet").
+ServletApiType("javax.servlet.http.HttpServlet").
+ServletApiType("jakarta.servlet.Filter").
+ServletApiType("javax.servlet.Filter").
+ServletApiType("jakarta.servlet.http.HttpFilter").
+ServletApiType("javax.servlet.http.HttpFilter").
+ServletApiType("jakarta.servlet.ServletContextListener").
+ServletApiType("javax.servlet.ServletContextListener").
+ServletApiType("jakarta.servlet.ServletContainerInitializer").
+ServletApiType("javax.servlet.ServletContainerInitializer").
+ServletApiType("jakarta.servlet.AsyncListener").
+ServletApiType("javax.servlet.AsyncListener").
+ServletApiType("jakarta.servlet.ReadListener").
+ServletApiType("javax.servlet.ReadListener").
+ServletApiType("jakarta.servlet.WriteListener").
+ServletApiType("javax.servlet.WriteListener").
+ServletApiType("jakarta.servlet.ServletRequestListener").
+ServletApiType("javax.servlet.ServletRequestListener").
+ServletApiType("jakarta.servlet.ServletRequestAttributeListener").
+ServletApiType("javax.servlet.ServletRequestAttributeListener").
+ServletApiType("jakarta.servlet.ServletContextAttributeListener").
+ServletApiType("javax.servlet.ServletContextAttributeListener").
+ServletApiType("jakarta.servlet.http.HttpUpgradeHandler").
+ServletApiType("javax.servlet.http.HttpUpgradeHandler").
+ServletApiType("jakarta.servlet.http.HttpSessionListener").
+ServletApiType("javax.servlet.http.HttpSessionListener").
+ServletApiType("jakarta.servlet.http.HttpSessionActivationListener").
+ServletApiType("javax.servlet.http.HttpSessionActivationListener").
+ServletApiType("jakarta.servlet.http.HttpSessionAttributeListener").
+ServletApiType("javax.servlet.http.HttpSessionAttributeListener").
+ServletApiType("jakarta.servlet.http.HttpSessionBindingListener").
+ServletApiType("javax.servlet.http.HttpSessionBindingListener").
+ServletApiType("jakarta.servlet.http.HttpSessionIdListener").
+ServletApiType("javax.servlet.http.HttpSessionIdListener").
+
+EntryPointClass(?class) :-
+  mainAnalysis.ApplicationConcreteType(?class),
+  AllConcreteImplementations(?class, ?servletApiType),
+  ServletApiType(?servletApiType).
+
+// ==========================================================================
+// entry-point classification & mock-object creation
+// ==========================================================================
+// A class with a servlet-typed formal parameter is a servlet entry-point class.
+// (HttpServlet/Filter/Listener subtypes are already covered by the ServletApiType
+// rule above.)
+EntryPointClass(?class) :-
+  Method_DeclaringType(?method, ?class),
+  mainAnalysis.ApplicationConcreteType(?class),
+  FormalParam(_, ?method, ?param),
+  Var_Type(?param, ?paramType),
+  mainAnalysis.ServletParamType(?paramType).
+
+EntryPointClass(?class) :-
+  mainAnalysis.ApplicationConcreteType(?class),
+  match(".*rest.*Resource", ?class).
+
+// Generic argument mocking (the all-subtypes "main policy" and the
+// representative "fallback") was removed: the central mocking layer
+// (souffle-logic/main/mocking/) now mocks the arguments of every
+// EntryPointMethod by type. jackee only performs precise, DI-resolved
+// wiring below, marking each site it resolves so the central layer yields it.

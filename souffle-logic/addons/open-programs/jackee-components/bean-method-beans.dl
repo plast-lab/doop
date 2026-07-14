@@ -1,0 +1,104 @@
+// ==========================================================================
+// jackee component: bean-method-beans.dl
+// @Bean/@Produces methods -> ConcreteBean_Id (allocation-based) + EntryPointClass.
+// Depends on: profile, common-helpers
+// ==========================================================================
+/**
+ * Java-based bean configuration: @Bean methods in @Configuration (or @Component)
+ * classes. Each @Bean method is invoked by Spring; its return value is registered
+ * as a bean and becomes discoverable via @Autowired resolution. The bean id is
+ * the method's simple name, or the @Bean(name=...) / @Bean(value=...) override.
+ *
+ * The method's formal parameters are DI targets (extending step's DIMethod).
+ * For return-value modelling, we mock the concrete type(s) assignable to the
+ * declared return type, register each under the bean id, and bind the mock to
+ * the method's return variable.
+ **/
+.decl BeanMethod(?method:Method)
+
+BeanMethod(?method) :-
+  (Method_Annotation(?method, "org.springframework.context.annotation.Bean");
+   Method_Annotation(?method, "javax.enterprise.inject.Produces");
+   Method_Annotation(?method, "jakarta.enterprise.inject.Produces")).
+
+.decl BeanMethod_Id(?method:Method, ?beanId:symbol)
+
+// @Bean(name="...") or @Bean(value="...") explicit override.
+BeanMethod_Id(?method, ?beanId) :-
+  BeanMethod(?method),
+  (AnnotationElement("method", ?method, "0", "0.0", "name",  ?beanId, _);
+   AnnotationElement("method", ?method, "0", "0.0", "value", ?beanId, _)).
+
+// Default: the method's simple name, when no override is present.
+BeanMethod_Id(?method, ?methodName) :-
+  BeanMethod(?method),
+  Method_SimpleName(?method, ?methodName),
+  !AnnotationElement("method", ?method, "0", "0.0", "name",  _, _),
+  !AnnotationElement("method", ?method, "0", "0.0", "value", _, _).
+// @Bean return-value modelling: register the bean id -> concrete type. The
+// produced concrete type is thereby a bean (isConcreteBean), hence a
+// FrameworkInstantiatedType above, so its constructor becomes an entry point and
+// the central layer mocks it. jackee creates no mock object itself.
+// A @Bean method's id binds to the concrete type(s) it produces, taken from what the
+// method actually instantiates in its body (its `new`s that are subtypes of the
+// declared return type) -- for any return type (concrete, abstract, or interface):
+//
+//     interface Store {}
+//     class LocalStore implements Store {}   class S3Store implements Store {}
+//     @Bean Store store() { return new LocalStore(); }   // id "store" -> {LocalStore}
+//
+// This avoids two imprecisions:
+//  (a) an interface/abstract-returning method must not register every impl of the return
+//      type, only what it news -- above "store" is LocalStore only, not also S3Store, so
+//      an @Qualifier("store") injection point is not polluted with the unrelated S3Store;
+//  (b) a concrete-returning method that news a subtype registers that subtype, not the
+//      (possibly never-instantiated) declared type.
+.decl BeanMethodAllocatesReturnImpl(?method:Method)
+BeanMethodAllocatesReturnImpl(?method),
+ConcreteBean_Id(?concreteType, ?beanId) :-
+  BeanMethodEffective(?method, ?beanId),
+  Method_ReturnType(?method, ?returnType),
+  AssignHeapAllocation(?heap, _, ?method),
+  HeapAllocation_Type(?heap, ?concreteType),
+  ConcreteClassType(?concreteType),
+  basic.SubtypeOf(?concreteType, ?returnType).
+
+// Fallbacks for a @Bean method that does not directly allocate a return-subtype (it
+// delegates to a factory / returns a field or an injected value), so we never lose the
+// bean: concrete return -> the declared type itself; abstract/interface return -> every
+// application concrete impl.
+ConcreteBean_Id(?returnType, ?beanId) :-
+  BeanMethodEffective(?method, ?beanId),
+  Method_ReturnType(?method, ?returnType),
+  ConcreteClassType(?returnType),
+  !BeanMethodAllocatesReturnImpl(?method).
+
+ConcreteBean_Id(?concreteType, ?beanId) :-
+  BeanMethodEffective(?method, ?beanId),
+  Method_ReturnType(?method, ?returnType),
+  (isInterfaceType(?returnType);
+   AbstractClassType(?returnType)),
+  !BeanMethodAllocatesReturnImpl(?method),
+  mainAnalysis.AllApplicationConcreteImplementations(?concreteType, ?returnType).
+
+// Fallback: no application concrete impl exists (pure framework interface),
+// a representative non-application concrete impl.
+ConcreteBean_Id(?concreteType, ?beanId) :-
+  BeanMethodEffective(?method, ?beanId),
+  Method_ReturnType(?method, ?returnType),
+  AbstractOrInterfaceTypeHasNoApplicationConcreteImplementations(?returnType),
+  NonApplicationConcreteImplementationRepresentative(?concreteType, ?returnType).
+
+.decl EntryPointClass(?type: Type)
+
+EntryPointClass(?type) :-
+  mainAnalysis.ApplicationConcreteType(?type),
+  ((Type_Annotation(?type, ?epAnn), EntryPointClassAnnotation(?epAnn));
+   AuthenticationProviderBean(?type);
+   AuthenticationFilterBean(?type);
+   AuthenticationEntryPoint(?type);
+   ApplicationListener(?type);
+   MVCInterceptorBean(?type);
+   Validator(?type);
+   match(".*_jsp", ?type);
+   PossibleEntryPointClass(?type)).

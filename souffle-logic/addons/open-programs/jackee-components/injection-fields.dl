@@ -1,0 +1,27 @@
+// ==========================================================================
+// jackee component: injection-fields.dl
+// @Autowired/@Inject/@Resource field annotation tables.
+// Depends on: none
+// ==========================================================================
+// ==========================================================================
+// reachability, argument mocking & dependency injection
+// ==========================================================================
+// Generic reachability (ReachableContext for every EntryPointMethod) and
+// the bridge-method argument copy were removed: the central mocking layer makes
+// every EntryPointMethod reachable and mocks its arguments (bridge methods
+// included) by type.
+
+.decl InjectionAnnotatedField(?field:Field)
+
+InjectionAnnotatedField(?injectedField) :-
+  (Field_Annotation(?injectedField, "org.springframework.beans.factory.annotation.Autowired");
+   Field_Annotation(?injectedField, "javax.inject.Inject");
+   Field_Annotation(?injectedField, "jakarta.inject.Inject");
+   Field_Annotation(?injectedField, "javax.ejb.EJB");
+   Field_Annotation(?injectedField, "jakarta.ejb.EJB")).
+
+// A field carrying @Resource, in either the javax or jakarta namespace.
+.decl ResourceAnnotatedField(?field:Field)
+ResourceAnnotatedField(?field) :-
+  (Field_Annotation(?field, "javax.annotation.Resource");
+   Field_Annotation(?field, "jakarta.annotation.Resource")).

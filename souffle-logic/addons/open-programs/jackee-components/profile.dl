@@ -1,0 +1,73 @@
+// ==========================================================================
+// jackee component: profile.dl
+// @Profile modelling (ActiveProfile default, BeanMethodEffective, ProfileGatedType).
+// Depends on: bean-method-beans (BeanMethod), framework-annotations
+// ==========================================================================
+// ==========================================================================
+// @Profile modelling -- gate @Bean registration on the active profile set.
+// ==========================================================================
+// @Profile({"a","b"}) on a @Configuration class or a @Bean method registers its
+// bean(s) only when profile a or b is active; @Profile("!x") only when x is not
+// active. The active set is a deployment choice (spring.profiles.active) invisible
+// statically, so we model Spring's implicit "default" profile. A bean id whose @Bean
+// definitions are all profile-gated-out still keeps them (so we never drop a bean) --
+// soundness fallback via BeanIdHasActiveBean.
+.decl ProfileToken(?element:symbol, ?token:symbol)  // element = @Configuration type or @Bean method
+ProfileToken(?type, ?token) :-
+  Type_Annotation(?type, "org.springframework.context.annotation.Profile"),
+  AnnotationElement("type", ?type, _, _, "-", ?token, _),
+  !match(".*[.].*", ?token).
+ProfileToken(?method, ?token) :-
+  Method_Annotation(?method, "org.springframework.context.annotation.Profile"),
+  AnnotationElement("method", ?method, _, _, "-", ?token, _),
+  !match(".*[.].*", ?token).
+
+.decl ProfileRequire(?element:symbol, ?profile:symbol)
+.decl ProfileExclude(?element:symbol, ?profile:symbol)
+ProfileExclude(?e, ?p) :- ProfileToken(?e, ?token), substr(?token, 0, 1) = "!", ?p = substr(?token, 1, strlen(?token) - 1).
+ProfileRequire(?e, ?token) :- ProfileToken(?e, ?token), substr(?token, 0, 1) != "!".
+
+// The active profile set: Spring's implicit "default" (extend here to model a specific
+// deployment / a --active-profiles flag).
+.decl ActiveProfile(?profile:symbol)
+ActiveProfile("default").
+
+.decl HasProfileRequire(?element:symbol)
+HasProfileRequire(?e) :- ProfileRequire(?e, _).
+.decl SomeRequiredProfileActive(?element:symbol)
+SomeRequiredProfileActive(?e) :- ProfileRequire(?e, ?p), ActiveProfile(?p).
+
+// Profile-inactive: requires profiles none of which is active, or excludes an active one.
+.decl ProfileInactive(?element:symbol)
+ProfileInactive(?e) :- HasProfileRequire(?e), !SomeRequiredProfileActive(?e).
+ProfileInactive(?e) :- ProfileExclude(?e, ?p), ActiveProfile(?p).
+
+// A @Bean method is profile-inactive if it OR its declaring @Configuration is inactive.
+.decl BeanMethodProfileInactive(?method:Method)
+BeanMethodProfileInactive(?method) :- BeanMethod(?method), ProfileInactive(?method).
+BeanMethodProfileInactive(?method) :- BeanMethod(?method), Method_DeclaringType(?method, ?class), ProfileInactive(?class).
+
+// A bean id backed by at least one profile-active @Bean definition.
+.decl BeanIdHasActiveBean(?beanId:symbol)
+BeanIdHasActiveBean(?beanId) :- BeanMethod_Id(?method, ?beanId), !BeanMethodProfileInactive(?method).
+
+// The @Bean methods that effectively register beans: profile-active, or (fallback) the
+// only definitions for an id that would otherwise have none. The ConcreteBean_Id rules
+// below quantify over this instead of raw BeanMethod_Id.
+.decl BeanMethodEffective(?method:Method, ?beanId:symbol)
+BeanMethodEffective(?method, ?beanId) :-
+  BeanMethod_Id(?method, ?beanId),
+  (!BeanMethodProfileInactive(?method) ; !BeanIdHasActiveBean(?beanId)).
+
+// For mock-quality reclassification: concrete types produced by a @Profile-gated @Bean
+// method are deployment alternatives. A DI-leak whose values are all such types is
+// sound profile-ambiguity, not a resolver bug.
+.decl ProfileGatedBeanMethod(?method:Method)
+ProfileGatedBeanMethod(?method) :- BeanMethod(?method), HasProfileRequire(?method).
+ProfileGatedBeanMethod(?method) :- BeanMethod(?method), Method_DeclaringType(?method, ?class), HasProfileRequire(?class).
+.decl ProfileGatedType(?concreteType:Type)
+ProfileGatedType(?ct) :-
+  ProfileGatedBeanMethod(?method),
+  AssignHeapAllocation(?heap, _, ?method),
+  HeapAllocation_Type(?heap, ?ct),
+  isClassType(?ct).

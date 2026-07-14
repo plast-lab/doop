@@ -1,0 +1,206 @@
+// ==========================================================================
+// jackee component: di-resolver.dl
+// Spring DependencyDescriptor resolver: ContainerBean/BeanId/Descriptor/DescResolved/TypeCandidate/DIFieldResolved.
+// Depends on: xml-beans, framework-beans, injection-fields
+// ==========================================================================
+// ==========================================================================
+// spring-style dependency resolution  (type-primary; tie-broken by
+// @Qualifier > @Primary > name -- exactly Spring's doResolveDependency order)
+// ==========================================================================
+// @Autowired/@Inject resolve BY type first: collect every container bean
+// assignable to the injection point's declared type. If exactly one matches,
+// inject it (the name is irrelevant). Only when several match do we disambiguate
+// -- @Qualifier/@Named, then @Primary, then by-name (bean id == field/param
+// name). Zero-candidate or still-ambiguous sites are not marked, so the central
+// layer generically mocks the declared type: nothing is ever left unmocked.
+// (@Resource stays name-primary in its own rules; XML and collection injection
+// are unchanged.)
+
+// A container-managed bean: a concrete type Spring instantiates, with its mock.
+.decl ContainerBean(?beanType:ClassType, ?beanMock:Value)
+ContainerBean(?beanType, ?beanMock) :-
+  ConcreteBean_Id(?beanType, _),
+  MockObject(?beanMock, ?beanType).
+ContainerBean(?beanType, ?beanMock) :-
+  FrameworkInstantiatedType(?beanType),
+  MockObject(?beanMock, ?beanType).
+
+// @Primary beans: class-level @Primary, or a @Primary @Bean method's bean type.
+.decl PrimaryBean(?beanType:ClassType)
+PrimaryBean(?beanType) :-
+  Type_Annotation(?beanType, "org.springframework.context.annotation.Primary").
+PrimaryBean(?beanType) :-
+  BeanMethod_Id(?method, ?beanId),
+  Method_Annotation(?method, "org.springframework.context.annotation.Primary"),
+  ConcreteBean_Id(?beanType, ?beanId).
+
+// -------- Bean names, including Spring's default id ------------------------
+// An unnamed @Component/@Service bean's id is Introspector.decapitalize of its
+// simple name (StripeGateway -> stripeGateway), which is what @Qualifier/@Named
+// values and by-name injection are compared against. Souffle 2.1 has no case
+// builtins, so we lowercase the first char via a 26-entry table and reproduce
+// decapitalize exactly, including its "leave unchanged when the first two chars
+// are both uppercase" rule (URLParser -> URLParser).
+.decl LowerFirst(?upper:symbol, ?lower:symbol)
+LowerFirst("A","a"). LowerFirst("B","b"). LowerFirst("C","c"). LowerFirst("D","d").
+LowerFirst("E","e"). LowerFirst("F","f"). LowerFirst("G","g"). LowerFirst("H","h").
+LowerFirst("I","i"). LowerFirst("J","j"). LowerFirst("K","k"). LowerFirst("L","l").
+LowerFirst("M","m"). LowerFirst("N","n"). LowerFirst("O","o"). LowerFirst("P","p").
+LowerFirst("Q","q"). LowerFirst("R","r"). LowerFirst("S","s"). LowerFirst("T","t").
+LowerFirst("U","u"). LowerFirst("V","v"). LowerFirst("W","w"). LowerFirst("X","x").
+LowerFirst("Y","y"). LowerFirst("Z","z").
+
+.decl BeanSimpleName(?type:ClassType, ?simple:symbol)
+BeanSimpleName(?type, ?simple) :-
+  ContainerBean(?type, _),
+  mainAnalysis.LastDot(?type, ?pos),
+  ?simple = substr(?type, ?pos + 1, strlen(?type) - ?pos - 1).
+
+.decl DefaultBeanId(?type:ClassType, ?id:symbol)
+// first two chars uppercase -> unchanged.
+DefaultBeanId(?type, ?simple) :-
+  BeanSimpleName(?type, ?simple),
+  strlen(?simple) > 1,
+  LowerFirst(substr(?simple, 0, 1), _),
+  LowerFirst(substr(?simple, 1, 1), _).
+// first char uppercase, second not (or length 1) -> lowercase the first char.
+DefaultBeanId(?type, ?id) :-
+  BeanSimpleName(?type, ?simple),
+  LowerFirst(substr(?simple, 0, 1), ?lo),
+  ( strlen(?simple) = 1 ; !LowerFirst(substr(?simple, 1, 1), _) ),
+  ?id = cat(?lo, substr(?simple, 1, strlen(?simple) - 1)).
+// first char not uppercase -> unchanged.
+DefaultBeanId(?type, ?simple) :-
+  BeanSimpleName(?type, ?simple),
+  !LowerFirst(substr(?simple, 0, 1), _).
+
+// Every way a bean can be referred to by name: explicit id or the default id.
+.decl BeanId(?type:ClassType, ?id:symbol)
+BeanId(?type, ?id) :- ConcreteBean_Id(?type, ?id).
+BeanId(?type, ?id) :- DefaultBeanId(?type, ?id).
+
+// -------------------------- field injection -------------------------------
+.decl DIField(?field:Field, ?type:Type)
+DIField(?field, ?type) :-
+  InjectionAnnotatedField(?field),
+  !ResourceAnnotatedField(?field),
+  Field_Type(?field, ?type).
+
+// @Qualifier/@Named value on the field, if present.
+.decl DIFieldQualifier(?field:Field, ?q:symbol)
+DIFieldQualifier(?field, ?q) :-
+  ( Field_Annotation(?field, "org.springframework.beans.factory.annotation.Qualifier")
+  ; Field_Annotation(?field, "javax.inject.Named")
+  ; Field_Annotation(?field, "jakarta.inject.Named") ),
+  AnnotationElement("field", ?field, _, _, "value", ?q, _).
+
+// ==========================================================================
+// the resolver -- Spring's DependencyDescriptor / doResolveDependency, once.
+// A field, a constructor parameter and a setter parameter are all just injection
+// points; Spring resolves each the same way over a descriptor (required type,
+// injection-point name, @Qualifier value). Fields and params below each emit a
+// Descriptor; this single resolver handles them all; each kind differs only in
+// how the resolved bean is wired back (InstanceFieldPointsTo vs VarPointsTo).
+// ==========================================================================
+
+// Types that appear at some injection point -- bounds the candidate search.
+.decl InjectionType(?type:Type)
+InjectionType(?type) :- DIField(_, ?type).
+InjectionType(?type) :- DIParam(_, ?type).
+
+// Container beans assignable to an injection type (Spring's by-type candidate set).
+.decl TypeCandidate(?type:Type, ?beanType:ClassType, ?beanMock:Value)
+TypeCandidate(?type, ?beanType, ?beanMock) :-
+  InjectionType(?type),
+  ContainerBean(?beanType, ?beanMock),
+  basic.SubtypeOf(?beanType, ?type).
+
+.decl TypeCandidateType(?type:Type, ?beanType:ClassType)
+TypeCandidateType(?type, ?beanType) :- TypeCandidate(?type, ?beanType, _).
+
+.decl TypeCandidateCount(?type:Type, ?n:number)
+TypeCandidateCount(?type, ?n) :-
+  InjectionType(?type),
+  ?n = count : TypeCandidateType(?type, _).
+
+.decl TypeHasPrimaryCandidate(?type:Type)
+TypeHasPrimaryCandidate(?type) :- TypeCandidate(?type, ?beanType, _), PrimaryBean(?beanType).
+
+// The descriptor Spring resolves: required type, injection-point name, and the
+// @Qualifier/@Named value ("" when absent). Fields and parameters both emit these.
+.decl Descriptor(?type:Type, ?name:symbol, ?qual:symbol)
+
+// Resolution, in Spring's order: @Qualifier > single candidate > @Primary > name.
+.decl DescResolvedByQualifier(?type:Type, ?qual:symbol, ?beanMock:Value)
+DescResolvedByQualifier(?type, ?qual, ?beanMock) :-
+  Descriptor(?type, _, ?qual), ?qual != "",
+  TypeCandidate(?type, ?beanType, ?beanMock),
+  BeanId(?beanType, ?qual).
+
+.decl DescResolved(?type:Type, ?name:symbol, ?qual:symbol, ?beanMock:Value)
+// (a) @Qualifier/@Named names the bean.
+DescResolved(?type, ?name, ?qual, ?beanMock) :-
+  Descriptor(?type, ?name, ?qual),
+  DescResolvedByQualifier(?type, ?qual, ?beanMock).
+// (b) no qualifier match, exactly one candidate -> pure type match (name irrelevant).
+DescResolved(?type, ?name, ?qual, ?beanMock) :-
+  Descriptor(?type, ?name, ?qual),
+  !DescResolvedByQualifier(?type, ?qual, _),
+  TypeCandidateCount(?type, 1),
+  !XMLBeanMock(?name, _, _),      // if the name is a refined bean-id, (d') resolves it per-instance
+  TypeCandidate(?type, _, ?beanMock).
+// (c) several candidates -> @Primary.
+DescResolved(?type, ?name, ?qual, ?beanMock) :-
+  Descriptor(?type, ?name, ?qual),
+  !DescResolvedByQualifier(?type, ?qual, _),
+  TypeCandidateCount(?type, ?n), ?n > 1,
+  TypeCandidate(?type, ?beanType, ?beanMock),
+  PrimaryBean(?beanType).
+// (d) several candidates, no @Primary -> by-name (bean id == injection-point name).
+DescResolved(?type, ?name, ?qual, ?beanMock) :-
+  Descriptor(?type, ?name, ?qual),
+  !DescResolvedByQualifier(?type, ?qual, _),
+  TypeCandidateCount(?type, ?n), ?n > 1,
+  !TypeHasPrimaryCandidate(?type),
+  !XMLBeanMock(?name, _, _),      // if the name is a refined bean-id, (d') resolves it per-instance
+  TypeCandidate(?type, ?beanType, ?beanMock),
+  BeanId(?beanType, ?name).
+// (d') by-name to a specific refined bean instance: when the injection-point name is
+// itself the bean-id of a refined class, resolve to that exact per-instance mock (not
+// every instance of the class), provided it is assignable to the required type.
+DescResolved(?type, ?name, ?qual, ?beanMock) :-
+  Descriptor(?type, ?name, ?qual),
+  !DescResolvedByQualifier(?type, ?qual, _),
+  XMLBeanMock(?name, ?beanType, ?beanMock),
+  basic.SubtypeOf(?beanType, ?type).
+
+// ---- Fields emit a descriptor, then read the resolution back ----
+.decl FieldQual(?field:Field, ?qual:symbol)
+FieldQual(?field, ?q) :- DIFieldQualifier(?field, ?q).
+FieldQual(?field, "") :- DIField(?field, _), !DIFieldQualifier(?field, _).
+
+Descriptor(?type, ?name, ?qual) :-
+  DIField(?field, ?type),
+  Field_SimpleName(?field, ?name),
+  FieldQual(?field, ?qual).
+
+.decl DIFieldResolved(?field:Field, ?beanMock:Value)
+DIFieldResolved(?field, ?beanMock) :-
+  DIField(?field, ?type),
+  Field_SimpleName(?field, ?name),
+  FieldQual(?field, ?qual),
+  DescResolved(?type, ?name, ?qual, ?beanMock).
+
+// Wire the resolved bean into every instance of the field's declaring type (or a
+// subtype -- inherited @Autowired fields), and mark the field so the central
+// layer yields it. The mark is purely static (over DIFieldResolved), so the
+// central negation stratifies.
+mainAnalysis.InstanceFieldPointsTo(?hctx, ?beanMock, ?field, ?basehctx, ?basevalue) :-
+  DIFieldResolved(?field, ?beanMock),
+  Field_DeclaringType(?field, ?declType),
+  mainAnalysis.Value_Type(?basevalue, ?baseType),
+  basic.SubtypeOf(?baseType, ?declType),
+  mainAnalysis.isImmutableHContext(?basehctx),
+  mainAnalysis.isImmutableHContext(?hctx).
+
+PreciselyMockedField(?field) :- DIFieldResolved(?field, _).

@@ -16,7 +16,7 @@
  *   Model the framework contract directly. For any type whose properties are
  *   (de)serialized, treat its accessors as exercised entry points and give the
  *   type a receiver mock. Combined with the existing open-program rules this
- *   makes the accessors reachable (ExercisedEntryPointMethod -> EntryPointMethod
+ *   makes the accessors reachable (EntryPointMethod
  *   -> ReachableContext), binds their receiver `this` (the ThisVar rule in
  *   rules-jackee.dl), and resolves `this.field` reads/writes inside accessor
  *   bodies (the injected-field load bridge in rules-jackee.dl).
@@ -31,7 +31,7 @@
  *
  *   It relies on the following predicates already declared by the surrounding
  *   analysis / rules-jackee.dl:
- *     ExercisedEntryPointMethod, MockObject, mainAnalysis.ApplicationConcreteType,
+ *     EntryPointMethod, MockObject, mainAnalysis.ApplicationConcreteType,
  *     mainAnalysis.AllApplicationConcreteImplementations, and the standard
  *     schema relations (Method_DeclaringType, Method_SimpleName, Method_Arity,
  *     Method_ReturnType, Method_Annotation, Type_Annotation, Param_Annotation,
@@ -76,11 +76,11 @@ SerializedType(?type) :-
 //      templating layer (Thymeleaf/Freemarker) reads their getters, none of
 //      which the static call graph executes. @MappedSuperclass bases (e.g.
 //      Person, BaseEntity) must be matched directly because their inherited
-//      accessors are *declared* on the base type, so the ExercisedEntryPointMethod
+//      accessors are *declared* on the base type, so the EntryPointMethod
 //      rule (which keys on Method_DeclaringType) needs the base in SerializedType.
 //      Both the javax (Java EE) and jakarta (Jakarta EE 9+) namespaces.
-// Gate on ApplicationClass, NOT ApplicationConcreteType: @MappedSuperclass bases
-// (e.g. BaseModel/BaseEntity/Person) are ABSTRACT, so the concrete gate silently
+// Gate on ApplicationClass, not ApplicationConcreteType: @MappedSuperclass bases
+// (e.g. BaseModel/BaseEntity/Person) are abstract, so the concrete gate silently
 // excluded them -- yet their accessors are declared on the base and must be
 // matched directly (the inherited copies on subclasses key on the base's
 // Method_DeclaringType). @Entity/@Embeddable are concrete anyway, so this is a
@@ -99,7 +99,7 @@ SerializedType(?type) :-
 //      to entities reflectively (constructor + setters) and reads getters for
 //      insert/update parameter binding -- none of which the static call graph
 //      executes. This is the MyBatis analogue of the JPA @Entity case (a2):
-//      apps on MyBatis-Plus (e.g. pybbs) carry no javax/jakarta.persistence
+//      MyBatis-Plus entities carry no javax/jakarta.persistence
 //      annotations, so (a2) recovers nothing for them. Entities are marked by
 //      @TableName on the class and/or @TableId / @TableField on fields;
 //      class-level @TableName is optional (the table name is inferred from the
@@ -114,7 +114,7 @@ SerializedType(?type) :-
   (Field_Annotation(?field, "com.baomidou.mybatisplus.annotation.TableId");
    Field_Annotation(?field, "com.baomidou.mybatisplus.annotation.TableField")).
 
-// (a4) Convention-only MyBatis entities: a MyBatis-Plus entity may carry NO
+// (a4) Convention-only MyBatis entities: a MyBatis-Plus entity may carry no
 //      annotations at all (table/columns inferred from names), so (a3) misses
 //      it. Such entities are still the type parameter T of an app mapper that
 //      extends BaseMapper<T>, but generics are erased (Generic*.facts empty) and
@@ -122,7 +122,7 @@ SerializedType(?type) :-
 //      cast-recovery signal is available. The reliable structural link is the
 //      MyBatis-Plus naming convention <Entity>Mapper <-> <Entity>.
 //
-//      Type-SimpleName.facts is emitted by fact-gen but NOT imported by the base
+//      Type-SimpleName.facts is emitted by fact-gen but not imported by the base
 //      analysis, so load it here.
 .decl TypeSimpleName(?type:Type, ?simpleName:symbol)
 .input TypeSimpleName(IO="file", filename="Type-SimpleName.facts", delimiter="\t")
@@ -146,7 +146,7 @@ SerializedType(?entity) :-
 // (b) Jackson request deserialization: @RequestBody parameter types of reached
 //     entry-point methods.
 SerializedType(?type) :-
-  ExercisedEntryPointMethod(_, ?method),
+  mainAnalysis.EntryPointMethod(?method),
   FormalParam(?i, ?method, ?param),
   Param_Annotation(?method, ?i, "org.springframework.web.bind.annotation.RequestBody"),
   Var_Type(?param, ?type),
@@ -163,7 +163,7 @@ SerializedType(?type) :-
 //      into SerializedType, so only accessors are exercised -- it never
 //      fabricates roots for business logic.
 SerializedType(?type) :-
-  ExercisedEntryPointMethod(_, ?method),
+  mainAnalysis.EntryPointMethod(?method),
   (Method_Annotation(?method, "org.springframework.web.bind.annotation.RequestMapping");
    Method_Annotation(?method, "org.springframework.web.bind.annotation.GetMapping");
    Method_Annotation(?method, "org.springframework.web.bind.annotation.PostMapping");
@@ -177,7 +177,8 @@ SerializedType(?type) :-
 // (c) Jackson response serialization: return types of @ResponseBody methods or
 //     methods declared in @RestController classes.
 SerializedType(?type) :-
-  ExercisedEntryPointMethod(?cls, ?method),
+  mainAnalysis.EntryPointMethod(?method),
+  Method_DeclaringType(?method, ?cls),
   (Method_Annotation(?method, "org.springframework.web.bind.annotation.ResponseBody");
    Type_Annotation(?cls, "org.springframework.web.bind.annotation.RestController")),
   Method_ReturnType(?method, ?type),
@@ -210,7 +211,7 @@ SerializedType(?concrete) :-
 //     descriptor, status/result holder) that frameworks populate and read
 //     reflectively -- Jackson import/export, config binding -- with no
 //     application call site, so its accessors stay cold even under the most
-//     permissive analysis. Marking it SerializedType exercises ONLY its
+//     permissive analysis. Marking it SerializedType exercises only its
 //     accessors (cheap; never fabricates a business-logic root, unlike the
 //     name-based PossibleEntryPointClass we removed). Structural and
 //     framework-agnostic; the high accessor share excludes genuine logic classes
@@ -246,7 +247,8 @@ PropertyAccessor(?method) :-
 
 // Accessors of serialized types become exercised entry points (reachable, and
 // via the ThisVar rule in rules-jackee.dl receiver-bound).
-ExercisedEntryPointMethod(?type, ?method) :-
+mainAnalysis.EntryPointMethod(?method) :-
+  ApplicationMethod(?method),
   SerializedType(?type),
   Method_DeclaringType(?method, ?type),
   PropertyAccessor(?method).
@@ -256,6 +258,5 @@ ExercisedEntryPointMethod(?type, ?method) :-
 mainAnalysis_MockValueConsMacro(?mockObj, ?type),
 MockObject(?mockObj, ?type) :-
   SerializedType(?type),
-  isClassType(?type),
-  !ClassModifier("abstract", ?type),
+  ConcreteClassType(?type),
   ?mockObj = MOCK_OBJECT_OF_TYPE(?type).

@@ -33,7 +33,6 @@
 
 // Important class subsets
 
-.decl ConcreteClass(?ref:ClassType)
 .decl MainClass(?class:ClassType)
 
 // Common type selectors
@@ -525,6 +524,4 @@
 .decl MockObject(?value:Value, ?class:ReferenceType)
 .output MockObject
 .decl MockObjFromOpenProgramEntryPointReceiver(?value:Value)
-.decl ExercisedEntryPointMethod(?class:Type, ?method:Method)
 .decl MockObjFromOpenProgramEntryPointArg(?value:Value)
-.decl UnmockableFormalOfForcedReachableContext(?formal:Var, ?formalType:Type)

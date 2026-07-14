@@ -1,0 +1,24 @@
+// ==========================================================================
+// jackee component: asserted-field-suppression.dl
+// JackeeAssertedField: suppress bytecode stores into jackee-asserted fields.
+// Depends on: di-resolver, per-instance-mocking, xml-beans
+// ==========================================================================
+// A field whose mock value jackee asserts directly (XML property injection, per-instance
+// XML wiring, or @Autowired resolution) -- as opposed to a field whose value flows from a
+// ctor/setter store (see the "1b" field-precision rules). For an asserted field the
+// bytecode store into it is redundant pollution:
+//
+//     class Service { private Cache cache; public void setCache(Cache c){ this.cache=c; } }
+//     <property name="cache" ref="realCache"/>   <!-- Spring calls setCache(...) -->
+//
+// In the open-world model setCache is a mock site, so its parameter `c` points at every
+// Cache impl; the store `this.cache = c` would then smear all of them onto the field, on
+// top of the one precise value we asserted from the ref. (A null-init store in <init> is
+// likewise dead.) Suppress such stores so only the asserted value survives.
+.decl JackeeAssertedField(?field:Field)
+JackeeAssertedField(?field) :- BeanFieldInjection(_, ?field, _).
+JackeeAssertedField(?field) :- RefinedBeanFieldWire(_, ?field, _).
+JackeeAssertedField(?field) :- DIFieldResolved(?field, _).
+mainAnalysis.SuppressedInstanceFieldStore(?field, ?method) :-
+  JackeeAssertedField(?field),
+  StoreInstanceField(_, _, ?field, ?method).

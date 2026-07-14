@@ -125,8 +125,15 @@ LoadHeapInstanceField(?ctx, ?to, ?sig, ?basehctx, ?basevalue) :-
   LoadInstanceField(?base, ?sig, ?to, _),
   VarPointsTo(?basehctx, ?basevalue, ?ctx, ?base).
 
+// Open-world hook: a precision layer (open-programs/jackee) may suppress a
+// specific instance-field store that is provably DEAD -- e.g. a constructor
+// writing an @Autowired/@Resource field that Spring field injection overwrites
+// in populateBean afterwards. Empty by default => no effect on normal analyses.
+.decl SuppressedInstanceFieldStore(?signature:Field, ?inmethod:Method)
+
 StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from) :-
-  StoreInstanceField(?from, ?base, ?signature, _),
+  StoreInstanceField(?from, ?base, ?signature, ?inmethod),
+  !SuppressedInstanceFieldStore(?signature, ?inmethod),
   VarPointsTo(?basehctx, ?basevalue, ?ctx, ?base).
 
 #if !defined(FEATHERWEIGHT_ANALYSIS) && !defined(DISABLE_POINTS_TO)
