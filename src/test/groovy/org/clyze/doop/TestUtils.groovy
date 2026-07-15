@@ -39,6 +39,30 @@ class TestUtils {
 		assert Files.size((new File("${analysis.database}/${relation}.csv")).toPath()) == 0
 	}
 
+	/**
+	 * Count lines in a raw input-fact (.facts) file that contain a substring.
+	 * Used to assert over fact-generation output (e.g. after a --facts-only run).
+	 */
+	static int factsGrepCount(Analysis analysis, String relation, String needle) {
+		File f = new File("${analysis.database}/${relation}.facts")
+		if (!f.exists()) return 0
+		int c = 0
+		forEachLineIn(f.path, { String line -> if (line.contains(needle)) c++ })
+		return c
+	}
+
+	// Assert that relation.facts contains at least one line with the substring.
+	static void factsContain(Analysis analysis, String relation, String needle) {
+		log("factsContain('${relation}') ~ '${needle}'")
+		assert factsGrepCount(analysis, relation, needle) > 0
+	}
+
+	// Assert that relation.facts contains no line with the substring.
+	static void factsMissing(Analysis analysis, String relation, String needle) {
+		log("factsMissing('${relation}') !~ '${needle}'")
+		assert factsGrepCount(analysis, relation, needle) == 0
+	}
+
 	static void metricIsApprox(Analysis analysis, String metric, long expectedVal) {
 		log("metricIsApprox(${metric}) = ${expectedVal}")
 		long actualVal = -1
