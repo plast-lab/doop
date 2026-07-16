@@ -469,6 +469,10 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             params += ["--generate-jimple"]
         }
 
+        if (options.ALSO_RESOLVE.value) {
+            alsoResolve(params, options.ALSO_RESOLVE.value as Collection<String>)
+        }
+
         File missingClasses = null
         if (options.THOROUGH_FACT_GEN.value) {
             missingClasses = File.createTempFile("fact-gen-missing-classes", ".tmp")

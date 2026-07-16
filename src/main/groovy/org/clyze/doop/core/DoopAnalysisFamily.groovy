@@ -1087,6 +1087,16 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Ignore 'wrong static-ness' errors in Soot.",
 					forCacheID: true
 			),
+			new AnalysisOption<List<String>>(
+					id: "ALSO_RESOLVE",
+					name: "also-resolve",
+					group: GROUP_FACTS,
+					description: "Force resolution of class(es) by Soot.",
+					value: [],
+					multipleValues: true,
+					argName: "CLASS",
+					forCacheID: true
+			),
 			new BooleanAnalysisOption(
 					id: "THOROUGH_FACT_GEN",
 					name: "thorough-fact-gen",

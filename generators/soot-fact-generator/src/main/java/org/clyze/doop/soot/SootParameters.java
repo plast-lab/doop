@@ -93,6 +93,7 @@ public class SootParameters extends Parameters {
         System.err.println("  -l <archive>                          Find library classes in <archive>.");
         System.err.println("  -ld <archive>                         Find dependency classes in <archive>.");
         System.err.println("  -lsystem                              Find classes in default system classes.");
+        System.err.println("  --also-resolve <class>                Force resolution of class that may not be found automatically.");
         System.err.println("  --facts-subset <subset>               Produce facts only for a subset of the given classes " + Arrays.asList(Parameters.FactsSubSet.values()) + ".");
         System.err.println("  --failOnMissingClasses <file>         Terminate if classes are missing (and record them to <file>).");
         System.err.println("  --legacy-android-processing           Enable legacy Android XML processing.");
