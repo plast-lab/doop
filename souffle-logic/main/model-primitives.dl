@@ -3,46 +3,57 @@
  * ========================
  *
  * A points-to analysis only tracks reference Values, so primitive-typed
- * variables (int, long, boolean, ...) never appear in VarPointsTo: there is no
- * object to record, and value-level information about primitives is simply
- * absent. This module extends the allocation-site abstraction to primitives so
- * that a slice of that information becomes available, WITHOUT any arithmetic,
- * numeric domain, or path sensitivity.
+ * variables (int, long, boolean, ...) never appear in VarPointsTo. This module
+ * extends the allocation-site abstraction to primitives so a slice of that
+ * information becomes available, WITHOUT any arithmetic, numeric domain, or path
+ * sensitivity.
  *
- * The idea: every site that *produces* a primitive mints ONE synthetic mock
+ * The idea: every site that *produces* a primitive mints a synthetic mock
  * object, typed as the boxed wrapper of that primitive (int -> java.lang.Integer,
  * boolean -> java.lang.Boolean, ...). The primitive is "autoboxed" into a real
- * reference object. The existing, type-agnostic flow rules (AssignLocal,
- * parameter passing, field load/store, returns) then carry these objects through
- * VarPointsTo with no further changes, exactly as they do for real heap objects.
+ * reference object, and the existing type-agnostic flow rules carry it through
+ * VarPointsTo like any other Value. Because it carries a reference type, it
+ * participates in virtual dispatch (intValue(), equals(), ...) and in type-based
+ * library modeling. What it does NOT carry is numeric meaning: an arithmetic or
+ * conversion result is a fresh, opaque object with no relation to its operands,
+ * no value range, and no way to distinguish array indices or prune branches.
+ * That imprecision is deliberate and remains sound for points-to/reachability.
  *
- * Because the object carries a real reference type, it participates in virtual
- * dispatch (intValue(), equals(), ...) and in type-based library modeling. What
- * it does NOT carry is any numeric meaning: an arithmetic result is a fresh,
- * opaque object with no relation to its operands, no value range, and no way to
- * distinguish array indices or prune branches. That imprecision is deliberate
- * and remains sound for points-to and reachability.
+ * Producing sites -- each mints a wrapper-typed mock (one per site; constants
+ * merged per literal), all under the single immutable heap context, since
+ * primitives are pervasive and their objects must stay bounded:
+ *   (1)  primitive formals of OPEN-WORLD ROOTS (entry / forced-reachable)
+ *   (2)  arithmetic results (binop / unop)
+ *   (3)  numeric constants, + (3b) sub-int constants (boolean/byte/char/short,
+ *        which are stored as int constants in bytecode)
+ *   (5)  primitive conversions (an AssignCast to a primitive target type)
  *
- * Design choices, each deliberately cheap:
- *   - What is a primitive value?  A mock object typed as the boxed wrapper, so
- *     it has a reference type and flows like any other Value.
- *   - How many objects?           One per producing site. Numeric constants are
- *     keyed by the constant, so equal literals merge to a single object
- *     program-wide; parameters and arithmetic results are per-site.
- *   - What context?               Context-insensitive (isImmutableHContext).
- *     Primitives are pervasive, so a primitive object is never split across heap
- *     contexts; the single immutable heap context keeps their number bounded.
+ * Interprocedural / heap propagation. The core copy rules do not type-check, so
+ * a wrapper-typed object flows freely along plain assignments, returns, and
+ * field load/store. But some edges DO type-check and reject the object, because
+ * the wrapper is not a subtype of the primitive (Integer </: int):
+ *   (4)  parameter passing   -- re-admits actual -> formal
+ *   (6)  array-element store  -- re-admits the element into ArrayIndexPointsTo
+ *   (numeric casts are not flowed through at all; rule (5) mints a fresh object)
+ * Rule (4) is also why rule (1) is scoped to roots: an internally-called method
+ * now receives its formals from the caller's real object via (4), so only roots
+ * -- whose callers are outside the program and supply no actuals -- still need a
+ * direct seed.
+ *
+ * KNOWN BOUNDARY: primitives arriving from the UNMODELED world are still not
+ * seeded -- primitive fields / array elements of mocked objects, and primitive
+ * return values of unanalyzed methods (the open-world mocking layer is
+ * reference-only). Closing that is a separate extension.
  *
  * Off by default. Enable with --enable-model-primitives, which defines the
  * MODEL_PRIMITIVES preprocessor macro that gates the #include of this file in
  * main/main.dl.
  *
- * Type note: a mock object's Value_Type is the wrapper (java.lang.Integer) while
- * the primitive var's Var_Type is the primitive (int); these are not
- * subtype-related. The core propagation rules do not type-check, so they carry
- * the object regardless. Rule (1) below relies on this: it seeds each formal
- * DIRECTLY under its reachable context rather than through actual->formal flow,
- * so the primitive/wrapper mismatch can never cause the object to be filtered.
+ * Type note: a mock's Value_Type is the wrapper while the var's Var_Type is the
+ * primitive; these are not subtype-related. Seeding rules place the object
+ * DIRECTLY into VarPointsTo (never through a type-checked edge) so the mismatch
+ * cannot filter it; rules (4)/(6) re-admit it at the type-checked edges by
+ * matching the wrapper to the boxing of the expected primitive type.
  */
 
 #ifndef DISABLE_POINTS_TO
@@ -53,16 +64,28 @@
 #define PRIM_PARAM_OBJ(formal) cat("<prim-param ", cat(formal, ">"))
 #define PRIM_ARITH_OBJ(insn)   cat("<prim-arith ", cat(insn, ">"))
 #define PRIM_CONST_OBJ(const)  cat("<prim-const ", cat(const, ">"))
+#define PRIM_CONV_OBJ(to)      cat("<prim-conv ", cat(to, ">"))
 
 // ---------------------------------------------------------------------------
-// (1) Autoboxed parameters: give every primitive formal a mock object.
+// (1) Autoboxed parameters for OPEN-WORLD ROOT methods: give the primitive
+// formals of entry points / forced-reachable roots a mock object.
+//
+// Scoped to roots (EntryPointMethod / ForcedReachable) because their callers
+// are OUTSIDE the program and supply no actuals -- exactly the methods whose
+// primitive formals would otherwise never receive a value. Internally-called
+// methods now get their formals via rule (4)'s actual->formal flow instead of a
+// fresh self-seed, so a formal that already receives the caller's real object is
+// not also polluted with a redundant placeholder.
 //
 // Seeded at the definition site (not via actual->formal flow) so the
 // primitive/wrapper type mismatch cannot cause the object to be filtered out.
+// The root filters are positive, so this stays stratified (a negation on "has a
+// caller" would not: CallGraphEdge lives in the points-to fixpoint).
 // ---------------------------------------------------------------------------
 MockValueConsMacro(?value, ?boxedType),
 BOUND_VAR_POINTS_TO(?hctx, ?value, ?ctx, ?formal) :-
   FormalParam(_, ?method, ?formal),
+  ( EntryPointMethod(?method) ; ForcedReachable(?method) ),
   Var_Type(?formal, ?primType),
   PrimitiveType_Boxed(?primType, ?boxedType),
   ReachableContext(?ctx, ?method),
@@ -108,5 +131,106 @@ BOUND_VAR_POINTS_TO(?hctx, ?value, ?ctx, ?to) :-
   ReachableContext(?ctx, ?method),
   isImmutableHContext(?hctx),
   ?value = PRIM_CONST_OBJ(?const).
+
+// ---------------------------------------------------------------------------
+// (3b) Sub-int constants: boolean/byte/char/short values are stored as int
+// constants in bytecode, so rule (3)'s exact NumConstantRaw(?const, VarType)
+// match misses them -- e.g. a boolean assigned iconst 0/1, as produced by a
+// comparison (args.length > 0). Seed by the VAR's declared type instead. The
+// !NumConstantRaw guard fires only where rule (3) did not, so there is no
+// overlap; the object is keyed by (const, wrapper) so a boolean 1 and an int 1
+// stay distinct, mono-typed objects.
+// ---------------------------------------------------------------------------
+MockValueConsMacro(?value, ?boxedType),
+BOUND_VAR_POINTS_TO(?hctx, ?value, ?ctx, ?to) :-
+  AssignNumConstant_Id(?insn, ?const),
+  Instruction_Method(?insn, ?method),
+  AssignInstruction_To(?insn, ?to),
+  Var_Type(?to, ?primType),
+  !NumConstantRaw(?const, ?primType),
+  PrimitiveType_Boxed(?primType, ?boxedType),
+  ReachableContext(?ctx, ?method),
+  isImmutableHContext(?hctx),
+  ?value = PRIM_CONST_OBJ(cat(?const, cat(":", ?boxedType))).
+
+// ---------------------------------------------------------------------------
+// (5) Primitive conversions: (long)x, (double)x, (byte)i, ... An AssignCast
+// whose TARGET type is primitive is a value-producing site that rules (2)/(3)
+// miss (neither a binop/unop nor a numeric constant). Seed the target like an
+// arithmetic result: a fresh opaque object, typed as the boxed wrapper of the
+// target primitive, keyed by the (SSA-unique) target var. No numeric conversion
+// is performed.
+// ---------------------------------------------------------------------------
+.decl PrimitiveConversionSite(?to:Var, ?method:Method, ?boxedType:Type)
+PrimitiveConversionSite(?to, ?method, ?boxedType) :-
+  AssignCast(?primType, _, ?to, ?method),
+  PrimitiveType_Boxed(?primType, ?boxedType).
+
+MockValueConsMacro(?value, ?boxedType),
+BOUND_VAR_POINTS_TO(?hctx, ?value, ?ctx, ?to) :-
+  PrimitiveConversionSite(?to, ?method, ?boxedType),
+  ReachableContext(?ctx, ?method),
+  isImmutableHContext(?hctx),
+  ?value = PRIM_CONV_OBJ(?to).
+
+// ---------------------------------------------------------------------------
+// (4) Interprocedural primitive argument flow: carry a primitive ACTUAL's mock
+// object to the callee's primitive FORMAL.
+//
+// The stock argument rule (context-sensitivity.dl) drops these objects: it
+// demands basic.SubtypeOf(Value_Type, formalType) -- and Integer is NOT a
+// subtype of int -- plus, in one INFORMATION_FLOW variant, isHeapAllocation,
+// which a mock value also fails. Rule (1) papers over that at the definition
+// site by seeding every primitive formal with a FRESH object, but the caller's
+// object never actually reaches the callee, so primitive object identity does
+// not survive parameter passing.
+//
+// Here we accept the value across the argument edge exactly when its (wrapper)
+// Value_Type is the boxing of the formal's primitive type -- i.e. an Integer
+// mock IS a valid int argument. The check is exact (PrimitiveType_Boxed is the
+// 8-row primitive->wrapper table), so no cross-primitive-type leakage: an
+// Integer mock will not flow into a long formal. Widening (int->long at a call)
+// is handled upstream, where the i2l conversion re-mints a Long via rule (2).
+// ---------------------------------------------------------------------------
+#ifdef INFORMATION_FLOW
+BOUND_VAR_POINTS_TO(?hctx, ?value, ?toCtx, ?to) :-
+  OptArgVarPointsTo(?hctx, ?value, ?fromCtx, ?from),
+  OptArgAssign(?toCtx, ?to, ?fromCtx, ?from, ?allowedType),
+  Value_Type(?value, ?wrapper),
+  PrimitiveType_Boxed(?allowedType, ?wrapper),
+  Var_DeclaringMethod(?to, ?meth),
+  !SanitizationMethod(?meth).
+ .plan 1:(2,1,3,4,5), 2:(3,1,2,4,5)
+#else
+BOUND_VAR_POINTS_TO(?hctx, ?value, ?toCtx, ?to) :-
+  OptArgVarPointsTo(?hctx, ?value, ?fromCtx, ?from),
+  OptArgAssign(?toCtx, ?to, ?fromCtx, ?from, ?allowedType),
+  Value_Type(?value, ?wrapper),
+  PrimitiveType_Boxed(?allowedType, ?wrapper).
+ .plan 1:(2,1,3,4), 2:(3,1,2,4)
+#endif // INFORMATION_FLOW
+
+// ---------------------------------------------------------------------------
+// (6) Primitive array-element store: int[] / long[] / ... element stores drop
+// the wrapper-typed prim mock, because the stock rule requires
+// SupertypeOf(componentType, Value_Type) and int is not a supertype of Integer
+// (the documented KNOWN LIMITATION in tests/116). Accept the value when the
+// array's component type is primitive and the value's wrapper type is its
+// boxing -- the array analogue of rule (4). The LOAD side needs no change: it
+// checks Var_Type(?to) against the component type, and int-var <- int-component
+// already passes, with the value copied from ArrayIndexPointsTo unfiltered.
+// ---------------------------------------------------------------------------
+ArrayIndexPointsTo(?hctx, ?value, ?basehctx, ?basevalue) :-
+  OptStoreIntoArray(?hctx, ?value, ?basehctx, ?basevalue),
+  NotSpecialObject(?value),
+  NotEmptyArrayValue(?basevalue),
+  Value_Type(?value, ?valuetype),
+  Value_Type(?basevalue, ?basevaluetype),
+  ComponentType(?basevaluetype, ?componenttype),
+  PrimitiveType_Boxed(?componenttype, ?valuetype).
+ .plan 1:(2,1,3,4,5,6,7),
+       2:(3,1,2,4,5,6,7),
+       3:(4,1,2,3,5,6,7),
+       4:(5,1,2,3,4,6,7)
 
 #endif // DISABLE_POINTS_TO
