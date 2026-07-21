@@ -283,3 +283,124 @@ VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
   ReachableContext(?ctx, ?inmethod),
   isImmutableHContext(?hctx),
   AssignReturnValue(?invocation, ?return).
+
+// ═══════════════════════════════════════════════════════════════════════════════════
+// PROTOTYPE (uncommitted): PRECISE consumer for "modern reflection" entries from the
+// updated Play-Out agent (-Dtamiflex.modernReflection=true): MethodHandles.Lookup
+// find*/unreflect* method & constructor targets. Mirrors the reified-Method + Invoke
+// pattern (Tamiflex_ReifiedMethod / Tamiflex_Invoke): the log supplies the target
+// IDENTITY, and Doop's own points-to bridges RESOLUTION -> INVOCATION, so we recover the
+// real call edge, caller CONTEXT, RECEIVER, ARGUMENTS and RETURN at the MethodHandle
+// .invoke site — not just coarse reachability.
+//
+// PRECISION: precise for DIRECT handles (find*/unreflect* whose result is invoked
+// directly). Combinator-built handles (bindTo/insertArguments/filterArguments/asType/…)
+// shift the invoke-time argument list off the target's parameters and are NOT modelled
+// (they simply produce no edge here). Modern entries arrive in the RAW
+// _Tamiflex_ReflectionData relation with class token "MethodHandles" (import.dl drops
+// them — that token has no _Tamiflex_ToDoopFormat mapping), so we read them raw.
+
+// (1) Tie a resolved target to the find*/unreflect* invocation that made its handle,
+//     via the log's container (inClass.inMethod)+line matched to a real Lookup call.
+.decl Tamiflex_ModernResolve(?target:symbol, ?invocation:MethodInvocation)
+Tamiflex_ModernResolve(?target, ?invocation) :-
+  _Tamiflex_ReflectionData("MethodHandles", _, ?target, ?inClass, ?inMethod, ?line),
+  isMethod(?target),
+  isClassType(?inClass),
+  Method_SimpleName(?inM, ?inMethod),
+  Method_DeclaringType(?inM, ?inClass),
+  Instruction_Method(?invocation, ?inM),
+  MethodInvocation_Line(?invocation, ?line),
+  MethodInvocation_Method(?invocation, ?lookupSig),
+  Method_DeclaringType(?lookupSig, "java.lang.invoke.MethodHandles$Lookup").
+
+// (2) Reify a MethodHandle heap value carrying the target; point the find* return var to
+//     it so Doop's points-to flows the handle to wherever it is invoked.
+.decl Tamiflex_ReifiedMH(?target:symbol, ?value:symbol)
+MockValueConsMacro(cat(cat("<(TamiflexMH) ", ?target), ">"), "java.lang.invoke.MethodHandle"),
+Tamiflex_ReifiedMH(?target, cat(cat("<(TamiflexMH) ", ?target), ">")) :-
+  Tamiflex_ModernResolve(?target, _).
+
+VarPointsTo(?hctx, ?value, ?ctx, ?ret) :-
+  Tamiflex_ModernResolve(?target, ?invocation),
+  Tamiflex_ReifiedMH(?target, ?value),
+  AssignReturnValue(?invocation, ?ret),
+  Instruction_Method(?invocation, ?inm),
+  ReachableContext(?ctx, ?inm),
+  isImmutableHContext(?hctx).
+
+// (3) At MethodHandle.invoke/invokeExact (signature-polymorphic -> match by name), if the
+//     base points to a reified handle, the carried target is the callee.
+.decl Tamiflex_MHInvokeTarget(?callerCtx:configuration.Context, ?invocation:MethodInvocation, ?target:symbol)
+Tamiflex_MHInvokeTarget(?callerCtx, ?invocation, ?target) :-
+  VirtualMethodInvocation(?invocation, ?sig, ?inmethod),
+  contains("java.lang.invoke.MethodHandle:", ?sig),
+  ( contains(" invoke(", ?sig) ; contains(" invokeExact(", ?sig) ),
+  ReachableContext(?callerCtx, ?inmethod),
+  VirtualMethodInvocation_Base(?invocation, ?base),
+  VarPointsTo(_, ?value, ?callerCtx, ?base),
+  Tamiflex_ReifiedMH(?target, ?value).
+
+// (3a) instance method target: edge + bind `this` from the invoke's ActualParam(0)
+TamiflexCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?target),
+VarPointsTo(?hctx, ?recvVal, ?calleeCtx, ?this) :-
+  Tamiflex_MHInvokeTarget(?callerCtx, ?invocation, ?target),
+  ! Method_Modifier("static", ?target),
+  ! Method_SimpleName(?target, "<init>"),
+  ThisVar(?target, ?this),
+  ActualParam(0, ?invocation, ?recvActual),
+  VarPointsTo(?hctx, ?recvVal, ?callerCtx, ?recvActual),
+  isImmutableContext(?calleeCtx).
+
+// instance method args: FormalParam(i) <- ActualParam(i+1)  (arg 0 is the receiver)
+OptInterproceduralAssign(?calleeCtx, ?formal, ?callerCtx, ?actual) :-
+  Tamiflex_MHInvokeTarget(?callerCtx, ?invocation, ?target),
+  ! Method_Modifier("static", ?target),
+  ! Method_SimpleName(?target, "<init>"),
+  FormalParam(?i, ?target, ?formal),
+  ?j = ?i + 1,
+  ActualParam(?j, ?invocation, ?actual),
+  isImmutableContext(?calleeCtx).
+
+// (3b) static method target: edge + args FormalParam(i) <- ActualParam(i)
+TamiflexCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?target) :-
+  Tamiflex_MHInvokeTarget(?callerCtx, ?invocation, ?target),
+  Method_Modifier("static", ?target),
+  isImmutableContext(?calleeCtx).
+
+OptInterproceduralAssign(?calleeCtx, ?formal, ?callerCtx, ?actual) :-
+  Tamiflex_MHInvokeTarget(?callerCtx, ?invocation, ?target),
+  Method_Modifier("static", ?target),
+  FormalParam(?i, ?target, ?formal),
+  ActualParam(?i, ?invocation, ?actual),
+  isImmutableContext(?calleeCtx).
+
+// (3a/3b) return: invoke result var <- target ReturnVar (non-constructor)
+OptInterproceduralAssign(?callerCtx, ?result, ?calleeCtx, ?retVar) :-
+  Tamiflex_MHInvokeTarget(?callerCtx, ?invocation, ?target),
+  ! Method_SimpleName(?target, "<init>"),
+  AssignReturnValue(?invocation, ?result),
+  ReturnVar(?retVar, ?target),
+  isImmutableContext(?calleeCtx).
+
+// (3c) constructor target: allocate the declaring type, run the ctor, and route the new
+//      object both to the ctor's `this` and to the invoke's result var.
+MockValueConsMacro(cat(cat("<(TamiflexMH-new) ", ?invocation), ">"), ?type),
+TamiflexCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?target),
+VarPointsTo(?hctx, cat(cat("<(TamiflexMH-new) ", ?invocation), ">"), ?calleeCtx, ?this),
+VarPointsTo(?hctx, cat(cat("<(TamiflexMH-new) ", ?invocation), ">"), ?callerCtx, ?result) :-
+  Tamiflex_MHInvokeTarget(?callerCtx, ?invocation, ?target),
+  Method_SimpleName(?target, "<init>"),
+  Method_DeclaringType(?target, ?type),
+  ThisVar(?target, ?this),
+  AssignReturnValue(?invocation, ?result),
+  isImmutableContext(?calleeCtx),
+  isImmutableHContext(?hctx).
+
+// constructor args: FormalParam(i) <- ActualParam(i)
+OptInterproceduralAssign(?calleeCtx, ?formal, ?callerCtx, ?actual) :-
+  Tamiflex_MHInvokeTarget(?callerCtx, ?invocation, ?target),
+  Method_SimpleName(?target, "<init>"),
+  FormalParam(?i, ?target, ?formal),
+  ActualParam(?i, ?invocation, ?actual),
+  isImmutableContext(?calleeCtx).
