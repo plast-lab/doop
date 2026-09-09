@@ -151,17 +151,21 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		}
 
 		log.debug "Created new analysis"
-		if (options.X_LB3.value)
+		if (options.X_LB3.value) {
 			return new LB3Analysis(options, context, commandsEnv)
-		else {
-			if (options.PYTHON.value) {
-				return new SoufflePythonAnalysis(options, context, commandsEnv)
-			} else if (options.USER_DEFINED_PARTITIONS.value) {
-				return new SoufflePartitionedAnalysis(options, context, commandsEnv)
-			} else {
-				return new SouffleAnalysis(options, context, commandsEnv)
-			}
 		}
+		if (options.PYTHON.value) {
+			return new SoufflePythonAnalysis(options, context, commandsEnv)
+		}
+		if (options.USER_DEFINED_PARTITIONS.value) {
+			return new SoufflePartitionedAnalysis(options, context, commandsEnv)
+		}
+		if (options.X_FLOWLOG.value) {
+			checkFlowLog(options)
+			return new FlowLogAnalysis(options, context, commandsEnv)
+		}
+		return new SouffleAnalysis2(options, context, commandsEnv)
+
 	}
 
 	/**
@@ -504,6 +508,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
 		// Cached facts and profiling are compatible: profiling
 		// commands are added to the .dat file during fact generation.
+		// TODO(saiko): Remove
 		if (options.VIA_DDLOG.value && options.CACHE.value && options.SOUFFLE_PROFILE.value) {
 			throw new RuntimeException("ERROR: Options --" + options.CACHE.name + " and --" + options.SOUFFLE_PROFILE.name + " are not compatible when running via the DDlog converter.")
 		}
@@ -779,6 +784,19 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 	}
 
 	/**
+	 * Verifies the correctness of the FlowLog related options
+	 */
+	protected void checkFlowLog(Map<String, AnalysisOption<?>> options) {
+		def flowLog = options.X_FLOWLOG
+		def flowLogDir = FileOps.findDirOrThrow(flowLog.value as String, "The ${flowLog.id} value is invalid: ${flowLog.value}")
+
+		def flowLogCompiler = flowLogDir.absolutePath + "/target/release/flowlog-compiler"
+		FileOps.findFileOrThrow(flowLogCompiler, "The flowlog_compiler path is invalid: $flowLogCompiler")
+		options.FLOWLOG_COMPILER.value = flowLogCompiler
+		options.FLOWLOG_ENGINE.value = true
+	}
+
+	/**
 	 * Initializes the external commands environment of the given analysis, by:
 	 * <ul>
 	 *     <li>adding the LD_LIBRARY_PATH option to the current environment
@@ -811,6 +829,29 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
 			def ldLibraryPath = options.LD_LIBRARY_PATH.value
 			env.LD_LIBRARY_PATH = "${lbHome}/lib/cpp:${ldLibraryPath ?: ""}" as String
+		}
+
+		if (options.X_FLOWLOG.value) {
+			// Add cargo in the path, so that the flowlog compiler gets its rust env
+			String cargoHome = options.FLOWLOG_CARGO_HOME.value as String
+			if (!cargoHome) {
+				cargoHome = "${System.getProperty('user.home')}/.cargo".toString()
+			}
+			File cargoHomeDir = FileOps.findDirOrThrow(cargoHome, "FlowLog requires a valid CARGO_HOME, the one defined is invalid: ${cargoHome}")
+			File cargoBinDir = FileOps.findDirOrThrow(new File(cargoHomeDir, "bin"), "FlowLog requires a valid CARGO_HOME, the one defined is invalid: ${cargoHome}")
+			File cargoExecutable = new File(cargoBinDir, "cargo")
+			if (!cargoExecutable.canExecute()) {
+				throw DoopErrorCodeException.error35("FlowLog requires a valid CARGO_HOME, the one defined is invalid: ${cargoHome}")
+			}
+			String path = env.PATH
+			env.PATH = "${cargoBinDir.canonicalPath}:${path ?: ""}" as String
+
+			// Set the CARGO_TARGET_DIR, so that cargo dependencies are cached.
+			// This does not work since the flowlog-compiler hard-codes the target dir
+			// TODO(flowlog-team)?
+			// File cargoTargetDir = new File("${Doop.doopCache}/flowlog-analyses/cargo")
+			// cargoTargetDir.mkdirs()
+			// env.CARGO_TARGET_DIR = cargoTargetDir.canonicalPath
 		}
 
 		return env

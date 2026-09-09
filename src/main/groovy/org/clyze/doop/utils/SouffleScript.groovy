@@ -74,7 +74,8 @@ class SouffleScript {
 	File compile(File origScriptFile, File factsDir, File outDir,
                  SouffleOptions options) {
 
-		setScriptFileViaCPP(origScriptFile, outDir)
+		// setScriptFileViaCPP(origScriptFile, outDir)
+		this.scriptFile = origScriptFile
 
 		if (options.useFunctors) {
 			detectFunctors(outDir)
@@ -229,7 +230,8 @@ class SouffleScript {
     def interpretScript(File origScriptFile, File outDir, File factsDir,
                         SouffleOptions options) {
 
-		setScriptFileViaCPP(origScriptFile, outDir)
+		// setScriptFileViaCPP(origScriptFile, outDir)
+		this.scriptFile = origScriptFile
 
 	    def db = new File(outDir, "database")
 
