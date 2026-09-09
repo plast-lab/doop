@@ -788,6 +788,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Use the functor for incremental output in Souffle.",
 					forPreprocessor: true
 			),
+ 			//TODO(saiko): Remove
 			new BooleanAnalysisOption(
 					id: "VIA_DDLOG",
 					name: "Xvia-ddlog",
@@ -945,6 +946,40 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Use legacy LB engine."
 			),
 			/* End LogicBlox related options */
+
+			/* Start FlowLog related options */
+			new AnalysisOption<String>(
+					id: "X_FLOWLOG",
+					name: "Xvia-flowlog",
+					group: GROUP_EXPERIMENTAL,
+					description: "Use the flowlog engine for running souffle logic (under development).",
+					argName: "PATH_TO_FLOWLOG_COMPILER",
+					argInputType: InputType.MISC
+			),
+			new AnalysisOption<String>(
+					id: "FLOWLOG_COMPILER", //the value is set based on the X_FLOWLOG option
+					group: GROUP_ENGINE,
+					cli: false
+			),
+			new BooleanAnalysisOption(
+					id: "FLOWLOG_ENGINE", //the value is set based on the X_FLOWLOG option
+					group: GROUP_ENGINE,
+					cli: false,
+					forPreprocessor: true
+			),
+			new AnalysisOption<String>(
+					id: "FLOWLOG_CARGO_HOME",
+					group: GROUP_ENGINE,
+					cli: false,
+					value: System.getenv("CARGO_HOME") //TODO: Introduce a config
+			),
+			new IntegerAnalysisOption(
+					id: "FLOWLOG_WORKERS",
+					group: GROUP_ENGINE,
+					cli: false,
+					value: 4 //TODO: Introduce a config
+			),
+			/* End FlowLog related options */
 
 			/* Start non-standard flags */
 			new AnalysisOption<String>(

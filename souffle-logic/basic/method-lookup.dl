@@ -63,11 +63,36 @@ _MethodLookup_ClassResolution(?simplename, ?descriptor, ?type, ?method) :-
     Method_DeclaringType(?method, ?supertype),
     isClassType(?supertype).
 
+#ifdef FLOWLOG_ENGINE
+// FlowLog port of the Souffle witness aggregate in the #else branch below.
+// FlowLog aggregates in the rule HEAD, grouping by the non-aggregate head
+// arguments, and has no `?x = min ?y : { ... }` inner-body form. The aggregate is
+// therefore lifted into a helper relation keyed by its free variables
+// (?simplename, ?descriptor, ?type) -- ?method is the column aggregated over --
+// and joined back in below.
+//
+// Semantics-preserving: _MethodLookup_WithLen is self-recursive through
+// DirectSuperclass/DirectSuperinterface but does not depend on
+// _MethodLookup_ClosestInterface, so it is fully computed in an earlier stratum.
+// The helper is derived for every (?simplename, ?descriptor, ?type), not only for
+// those in _MethodLookup_MoreThanOne; the join below restores the original scope.
+.decl _MethodLookup_MinLen(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:ReferenceType, ?minLen:number)
+
+_MethodLookup_MinLen(?simplename, ?descriptor, ?type, min(?len)) :-
+    _MethodLookup_WithLen(?simplename, ?descriptor, ?type, _, ?len).
+
+_MethodLookup_ClosestInterface(?simplename, ?descriptor, ?type, ?method) :-
+    _MethodLookup_MoreThanOne(?simplename, ?descriptor, ?type),
+    _MethodLookup_MinLen(?simplename, ?descriptor, ?type, ?minLen),
+    _MethodLookup_WithLen(?simplename, ?descriptor, ?type, ?method, ?minLen),
+    !_MethodLookup_ClassResolution(?simplename, ?descriptor, ?type, _).
+#else
 _MethodLookup_ClosestInterface(?simplename, ?descriptor, ?type, ?method) :-
     _MethodLookup_MoreThanOne(?simplename, ?descriptor, ?type),
     ?minLen = min ?len : { _MethodLookup_WithLen(?simplename, ?descriptor, ?type, _, ?len) },
     _MethodLookup_WithLen(?simplename, ?descriptor, ?type, ?method, ?minLen),
     !_MethodLookup_ClassResolution(?simplename, ?descriptor, ?type, _).
+#endif // FLOWLOG_ENGINE
 
 _MethodLookup_MultiClosestInterfaces(?simplename, ?descriptor, ?type) :-
     _MethodLookup_ClosestInterface(?simplename, ?descriptor, ?type, ?method1),
