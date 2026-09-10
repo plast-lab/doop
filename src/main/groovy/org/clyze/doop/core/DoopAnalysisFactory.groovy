@@ -788,10 +788,13 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 	 */
 	protected void checkFlowLog(Map<String, AnalysisOption<?>> options) {
 		def flowLog = options.X_FLOWLOG
-		def flowLogDir = FileOps.findDirOrThrow(flowLog.value as String, "The ${flowLog.id} value is invalid: ${flowLog.value}")
+		File flowLogDir = FileOps.findDirOrThrow(flowLog.value as String, "The ${flowLog.id} value is invalid: ${flowLog.value}")
 
-		def flowLogCompiler = flowLogDir.absolutePath + "/target/release/flowlog-compiler"
-		FileOps.findFileOrThrow(flowLogCompiler, "The flowlog_compiler path is invalid: $flowLogCompiler")
+		String flowLogCompiler = flowLogDir.absolutePath + "/flowlog-compiler"
+		File flowLogCompilerExecutable = FileOps.findFileOrThrow(flowLogCompiler, "Cannot locate the flowlog-compiler in: $flowLogCompiler")
+		if (!flowLogCompilerExecutable.canExecute()) {
+			throw DoopErrorCodeException.error35("The located flowlog-compiler is not executable: $flowLogCompiler")
+		}
 		options.FLOWLOG_COMPILER.value = flowLogCompiler
 		options.FLOWLOG_ENGINE.value = true
 	}

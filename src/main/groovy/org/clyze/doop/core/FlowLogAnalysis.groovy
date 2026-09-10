@@ -6,6 +6,8 @@ import groovy.util.logging.Log4j
 import org.clyze.doop.utils.FlowLogTransformer
 import org.clyze.utils.Helper
 
+import static org.apache.commons.io.FileUtils.sizeOfDirectory
+
 @CompileStatic
 @InheritConstructors
 @Log4j
@@ -72,6 +74,9 @@ class FlowLogAnalysis extends SouffleCompatibleAnalysis {
 		}
 		log.debug "Analysis execution time (sec): $executionTime"
 		runtimeMetricsFile.append("analysis execution time (sec)\t${executionTime}\n")
+
+		int dbSize = (sizeOfDirectory(database) / 1024).intValue()
+		runtimeMetricsFile.append("disk footprint (KB)\t${dbSize}\n")
 	}
 
 }
