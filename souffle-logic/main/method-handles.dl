@@ -307,7 +307,8 @@ MethodHandleCGE_Arg(?callerCtx, ?calleeCtx, ?actual, ?formal, ?actualType, ?form
   !Method_Modifier("static", ?method),
   ActualParam(?idx, ?invo, ?actual),
   ?idx > 0,
-  FormalParam(?idx - 1, ?method, ?formal),
+  ?formalIdx = ?idx - 1,
+  FormalParam(?formalIdx, ?method, ?formal),
   Var_Type(?actual, ?actualType),
   Var_Type(?formal, ?formalType).
 // Pass arguments to static methods.
@@ -897,7 +898,8 @@ LambdaArg(?calleeCtx, ?formal, ?formalType, ?actual, ?invokedynamic) :-
   Params_ReceiverShiftRight(?lambda, ?implMethod, ?shiftK, ?shiftN),
   LambdaObject(?invokedynamic, ?lambda, _, ?K, ?implMethod, _),
   ActualParam(?idx, ?i, ?actual),
-  FormalParam(?K - ?shiftK + ?idx - ?shiftN, ?implMethod, ?formal),
+  ?formalIdx = ?K - ?shiftK + ?idx - ?shiftN,
+  FormalParam(?formalIdx, ?implMethod, ?formal),
   Var_Type(?formal, ?formalType).
 
 #ifndef DISABLE_POINTS_TO

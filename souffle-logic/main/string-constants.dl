@@ -102,9 +102,14 @@ RepresentativesToPickFrom(?heapRepr, ?heap) :-
 
 .decl MinRepresentativeHeapToPickFromOrdinal(?minHeapReprOrd:number, ?heap:HeapAllocation)
 
+#ifdef FLOWLOG_ENGINE
+MinRepresentativeHeapToPickFromOrdinal(min(ord(?heapRepr)), ?heap) :-
+  RepresentativesToPickFrom(?heapRepr, ?heap).
+#else
 MinRepresentativeHeapToPickFromOrdinal(?minHeapReprOrd, ?heap) :-
   RepresentativesToPickFrom(_, ?heap),
   ?minHeapReprOrd = min ord(?heapRepr): RepresentativesToPickFrom(?heapRepr, ?heap).
+#endif //FLOWLOG_ENGINE
 
 HeapAllocation_Merge(?heap, ?mergeHeap) :-
   isHeapAllocation(?mergeHeap),
@@ -663,9 +668,14 @@ MethodAndTypeToHeap(?heap, ?heaptype, ?meth) :-
 
 .decl AllocationsPerMethodAndType(?type:Type, ?meth:Method, ?n:number)
 
+#ifdef FLOWLOG_ENGINE
+AllocationsPerMethodAndType(?type, ?meth, count(?heap)) :-
+  MethodAndTypeToHeap(?heap, ?type, ?meth).
+#else
 AllocationsPerMethodAndType(?type, ?meth, ?n) :-
   MethodAndTypeToHeap(_, ?type, ?meth),
   ?n = count : MethodAndTypeToHeap(_, ?type, ?meth).
+#endif //FLOWLOG_ENGINE
 
 .decl AllocationShouldBeMergedPerMethod(?heaptype:Type, ?meth:Method)
 
@@ -683,9 +693,14 @@ MethodAndTypeToMergedHeap(?heap, ?heaptype, ?meth) :-
 .decl MinHeapOrdinalPerMethodAndType(?ord:number, ?type:Type, ?meth:Method)
 .decl MethodAndTypeToRepresentative(?type:Type, ?meth:Method, ?reprHeap:HeapAllocation)
 
+#ifdef FLOWLOG_ENGINE
+MinHeapOrdinalPerMethodAndType(min(ord(?heap)), ?type, ?meth) :-
+  MethodAndTypeToMergedHeap(?heap, ?type, ?meth).
+#else
 MinHeapOrdinalPerMethodAndType(?minHeapOrd, ?type, ?meth) :-
   MethodAndTypeToMergedHeap(_, ?type, ?meth),
   ?minHeapOrd = min ord(?heap): MethodAndTypeToMergedHeap(?heap, ?type, ?meth).
+#endif //FLOWLOG_ENGINE
 
 MethodAndTypeToRepresentative(?type, ?meth, ?representativeHeap) :-
   isHeapAllocation(?representativeHeap),
@@ -707,9 +722,14 @@ ClassAndTypeToHeap(?heap, ?heaptype, ?class) :-
   MethodAndTypeToHeap(?heap, ?heaptype, ?meth),
   Method_DeclaringType(?meth, ?class).
 
+#ifdef FLOWLOG_ENGINE
+AllocationsPerClassAndType(?type, ?class, count(?heap)) :-
+  ClassAndTypeToHeap(?heap, ?type, ?class).
+#else
 AllocationsPerClassAndType(?type, ?class, ?n) :-
   ClassAndTypeToHeap(_, ?type, ?class),
   ?n = count : ClassAndTypeToHeap(_, ?type, ?class).
+#endif //FLOWLOG_ENGINE
 
 // This is explicitly set for types that want it.
 .decl AllocationShouldBeMergedPerClass(?heaptype:Type, ?class:Type)
@@ -723,9 +743,14 @@ ClassAndTypeToMergedHeap(?heap, ?heaptype, ?class) :-
 .decl MinHeapOrdinalPerClassAndType(?minHeapOrd:number, ?type:Type, ?class:Type)
 .decl ClassAndTypeToRepresentative(?type:Type, ?class:Type, ?reprHeap:HeapAllocation)
 
+#ifdef FLOWLOG_ENGINE
+MinHeapOrdinalPerClassAndType(min(ord(?heap)), ?type, ?class) :-
+  ClassAndTypeToMergedHeap(?heap, ?type, ?class).
+#else
 MinHeapOrdinalPerClassAndType(?minHeapOrd, ?type, ?class) :-
   ClassAndTypeToMergedHeap(_, ?type, ?class),
   ?minHeapOrd = min ord(?heap): ClassAndTypeToMergedHeap(?heap, ?type, ?class).
+#endif //FLOWLOG_ENGINE
 
 ClassAndTypeToRepresentative(?type, ?class, ?representativeHeap) :-
   isHeapAllocation(?representativeHeap),
@@ -747,9 +772,13 @@ PackageAndTypeToHeap(?heap, ?heaptype, ?packageName) :-
   ClassAndTypeToHeap(?heap, ?heaptype, ?class),
   Class_PackageHack(?class, ?packageName).
 
-AllocationsPerPackageAndType(?type, ?packageName, ?n) :-
-  PackageAndTypeToHeap(_, ?type, ?packageName),
-  ?n = count : PackageAndTypeToHeap(_, ?type, ?packageName).
+#ifdef FLOWLOG_ENGINE
+AllocationsPerPackageAndType(?type, ?packageName, count(?heap)) :-
+  PackageAndTypeToHeap(?heap, ?type, ?packageName).
+#else
+AllocationsPerPackageAndType(?type, ?packageName, count(?heap)) :-
+  PackageAndTypeToHeap(?heap, ?type, ?packageName).
+#endif //FLOWLOG_ENGINE
 
 // This is explicitly set for types that want it.
 .decl AllocationShouldBeMergedPerPackage(?heaptype:Type, ?packageName:symbol)
@@ -763,9 +792,14 @@ PackageAndTypeToMergedHeap(?heap, ?heaptype, ?packageName) :-
 .decl MinHeapOrdinalPerPackageAndType(?minHeapOrd:number, ?type:Type, ?packageName:symbol)
 .decl PackageAndTypeToRepresentative(?type:Type, ?packageName:symbol, ?representativeHeap:HeapAllocation)
 
+#ifdef FLOWLOG_ENGINE
+MinHeapOrdinalPerPackageAndType(min(ord(?heap)), ?type, ?packageName) :-
+  PackageAndTypeToMergedHeap(?heap, ?type, ?packageName).
+#else
 MinHeapOrdinalPerPackageAndType(?minHeapOrd, ?type, ?packageName) :-
   PackageAndTypeToMergedHeap(_, ?type, ?packageName),
   ?minHeapOrd = min ord(?heap): PackageAndTypeToMergedHeap(?heap, ?type, ?packageName).
+#endif // FLOWLOG_ENGINE
 
 PackageAndTypeToRepresentative(?type, ?packageName, ?representativeHeap) :-
   isHeapAllocation(?representativeHeap),
@@ -784,9 +818,14 @@ HeapRepresentative(?representativeHeap, ?heap) :-
 TypeToHeap(?heap, ?heaptype) :-
   ClassAndTypeToHeap(?heap, ?heaptype, _).
 
+#ifdef FLOWLOG_ENGINE
+AllocationsPerType(?type, count(?heap)) :-
+  TypeToHeap(?heap, ?type).
+#else
 AllocationsPerType(?type, ?n) :-
   TypeToHeap(_, ?type),
   ?n = count : TypeToHeap(_, ?type).
+#endif //FLOWLOG_ENGINE
 
 // This is explicitly set for types that want it.
 .decl AllocationShouldBeMergedGlobally(?heaptype:Type)
@@ -800,9 +839,14 @@ TypeToMergedHeap(?heap, ?heaptype) :-
 .decl MinHeapOrdinalPerType(?minHeapOrd:number, ?type:Type)
 .decl TypeToRepresentative(?type:Type, ?representativeHeap:HeapAllocation)
 
+#ifdef FLOWLOG_ENGINE
+MinHeapOrdinalPerType(min(ord(?heap)), ?type) :-
+  TypeToMergedHeap(?heap, ?type).
+#else
 MinHeapOrdinalPerType(?minHeapOrd, ?type) :-
   TypeToMergedHeap(_, ?type),
   ?minHeapOrd = min ord(?heap): TypeToMergedHeap(?heap, ?type).
+#endif // FLOWLOG_ENGINE
 
 TypeToRepresentative(?type, ?representativeHeap) :-
   isHeapAllocation(?representativeHeap),
@@ -975,9 +1019,14 @@ ExceptionTypeToHeap(?heap, ?heaptype) :-
 
 .decl ExceptionHeapTypeRepresentativeOrdinal(?type:Type, ?reprHeapOrd:number)
 
+#ifdef FLOWLOG_ENGINE
+ExceptionHeapTypeRepresentativeOrdinal(?type, min(ord(?heap))) :-
+  ExceptionTypeToHeap(?heap, ?type).
+#else
 ExceptionHeapTypeRepresentativeOrdinal(?type, ?representativeHeapOrd) :-
   ExceptionTypeToHeap(_, ?type),
   ?representativeHeapOrd = min ord(?heap) : ExceptionTypeToHeap(?heap, ?type).
+#endif // FLOWLOG_ENGINE
 
 #ifndef NO_MERGES
 HeapRepresentative(?representativeHeap, ?heap) :-
@@ -1106,9 +1155,15 @@ Suffix(?type, ?type, ?suffixLen) :-
 
 .decl MinimalSuffixLen(?type:Type, ?suffixLen:number)
 
+#ifdef FLOWLOG_ENGINE
+MinimalSuffixLen(?type, min(?len)) :-
+  isType(?type),
+  Suffix(?type, _, ?len).
+#else
 MinimalSuffixLen(?type, ?suffixLen) :-
   isType(?type),
   ?suffixLen = min ?len : Suffix(?type, _, ?len).
+#endif // FLOWLOG_ENGINE
 
 // Computes the suffix after the last dot of a type name.
 .decl MinimalSuffix(?type:Type, ?suffix:symbol)

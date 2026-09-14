@@ -30,9 +30,39 @@ MockFieldValue(?mock, ?field, ?value) :-
 // Fan-out of each slot (n = 0 -> empty; n = 1 -> precise; n > 1 -> imprecise).
 // This single small relation captures BOTH invariants (completeness + precision).
 .decl MockFieldFanout(?mock:Value, ?field:Field, ?fieldType:Type, ?n:number)
+#ifdef FLOWLOG_ENGINE
+// Souffle's count emits n = 0 for a slot with no values,
+// whereas head aggregation cannot produce a group with no witness tuples.
+// The non-empty counts come from a helper and the zero
+// rows are restored explicitly by negation.
+//
+// The count lives in a helper, not in a MockFieldFanout rule, because
+// flowlog-compiler 0.5.0 fails to build (Rust type mismatch) when a relation is
+// defined by both a head-aggregation rule and a plain rule.
+// The more "natural" definition would be:
+
+// non-empty slots: head aggregation
+// MockFieldFanout(?mock, ?field, ?fieldType, count(?value)) :-
+//  MockFieldSlot(?mock, ?field, ?fieldType),
+//  MockFieldValue(?mock, ?field, ?value).
+// empty slots: the zero rows Souffle's count emits
+// MockFieldFanout(?mock, ?field, ?fieldType, 0) :-
+//    MockFieldSlot(?mock, ?field, ?fieldType),
+//    !MockFieldValue(?mock, ?field, _).
+.decl _MockFieldValueCount(?mock:Value, ?field:Field, ?n:number)
+_MockFieldValueCount(?mock, ?field, count(?value)) :-
+MockFieldValue(?mock, ?field, ?value).
+MockFieldFanout(?mock, ?field, ?fieldType, ?n) :-
+  MockFieldSlot(?mock, ?field, ?fieldType),
+  _MockFieldValueCount(?mock, ?field, ?n).
+MockFieldFanout(?mock, ?field, ?fieldType, 0) :-
+  MockFieldSlot(?mock, ?field, ?fieldType),
+  !MockFieldValue(?mock, ?field, _).
+#else
 MockFieldFanout(?mock, ?field, ?fieldType, ?n) :-
   MockFieldSlot(?mock, ?field, ?fieldType),
   ?n = count : { MockFieldValue(?mock, ?field, _) }.
+#endif // FLOWLOG_ENGINE
 .output MockFieldFanout
 .output MockFieldValue
 

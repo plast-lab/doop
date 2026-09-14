@@ -9,9 +9,14 @@
 #include "mocking-core.dl"
 
 .decl RepresentativeImplOrd(?type:ReferenceType, ?classOrd:number)
+#ifdef FLOWLOG_ENGINE
+RepresentativeImplOrd(?type, min(ord(?c))) :-
+  EligibleConcreteImpl(?c, ?type).
+#else
 RepresentativeImplOrd(?type, ?classOrd) :-
   EligibleConcreteImpl(_, ?type),
   ?classOrd = min ord(?c) : { EligibleConcreteImpl(?c, ?type) }.
+#endif // FLOWLOG_ENGINE
 
 MOCK_OBJECT_FOR_TYPE(?value, ?class, ?type) :-
   MockSiteType(?type),
