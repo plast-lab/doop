@@ -55,8 +55,12 @@ class FlowLogAnalysis extends SouffleCompatibleAnalysis {
 		String compilationCommand = compilationCommandParts.join(' ')
 		log.debug "Compilation command ${compilationCommand}"
 
+		File outFile = new File(outDir, "flowlog-compile.log")
+		outFile.createNewFile()
 		long executionTime = Helper.timing {
-			executor.enableMonitor(monitorInterval, monitorClosure).execute(compilationCommandParts).disableMonitor()
+			executor.executeWithRedirectedOutput(compilationCommandParts, outFile) {
+				log.debug it
+			}
 		}
 		log.debug "Analysis compilation time (sec): $executionTime"
 		runtimeMetricsFile.append("analysis compilation time (sec)\t${executionTime}\n")
@@ -72,8 +76,14 @@ class FlowLogAnalysis extends SouffleCompatibleAnalysis {
 		String executionCommand = executionCommandParts.join(' ')
 		log.debug "Execution command ${executionCommand}"
 
+		File outFile = new File(outDir, "flowlog-run.log")
+		outFile.createNewFile()
 		long executionTime = Helper.timing {
-			executor.enableMonitor(monitorInterval, monitorClosure).execute(executionCommandParts).disableMonitor()
+			executor.enableMonitor(monitorInterval, monitorClosure)
+					.executeWithRedirectedOutput(executionCommandParts, outFile) {
+						log.debug it
+					}
+					.disableMonitor()
 		}
 		log.debug "Analysis execution time (sec): $executionTime"
 		runtimeMetricsFile.append("analysis execution time (sec)\t${executionTime}\n")
