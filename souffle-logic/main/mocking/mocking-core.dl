@@ -118,6 +118,14 @@ MOCK_OBJECT_FOR_TYPE(?value, ?type, ?type) :-
 
 //   Serializable/Comparable/Cloneable are interfaces: one min-ord concrete impl.
 .decl UniversalRepOrd(?type:ReferenceType, ?classOrd:number)
+#ifdef FLOWLOG_ENGINE
+UniversalRepOrd(?type, min(ord(?c))) :-
+  MockSiteType(?type),
+  UniversalType(?type),
+  ( isInterfaceType(?type) ; AbstractClassType(?type) ),
+  ConcreteClassType(?c),
+  basic.SubtypeOf(?c, ?type).
+#else
 UniversalRepOrd(?type, ?classOrd) :-
   MockSiteType(?type),
   UniversalType(?type),
@@ -125,6 +133,8 @@ UniversalRepOrd(?type, ?classOrd) :-
   ?classOrd = min ord(?c) : {
     ConcreteClassType(?c), basic.SubtypeOf(?c, ?type)
   }.
+#endif // FLOWLOG_ENGINE
+
 MOCK_OBJECT_FOR_TYPE(?value, ?class, ?type) :-
   UniversalRepOrd(?type, ?classOrd),
   isClassType(?class),
@@ -156,6 +166,16 @@ MOCK_OBJECT_FOR_TYPE(?value, ?type, ?type) :-
 // field, whose only implementations live in the library. Types WITH an
 // application implementation go through the policy instead.
 .decl LibraryRepOrd(?type:ReferenceType, ?classOrd:number)
+#ifdef FLOWLOG_ENGINE
+LibraryRepOrd(?type, min(ord(?c))) :-
+  MockSiteType(?type),
+  !UniversalType(?type),
+  !CollectionOrMapType(?type),
+  !TypeHasAppConcreteImpl(?type),
+  ( isInterfaceType(?type) ; AbstractClassType(?type) ),
+  ConcreteClassType(?c),
+  basic.SubtypeOf(?c, ?type).
+#else
 LibraryRepOrd(?type, ?classOrd) :-
   MockSiteType(?type),
   !UniversalType(?type),
@@ -165,6 +185,8 @@ LibraryRepOrd(?type, ?classOrd) :-
   ?classOrd = min ord(?c) : {
     ConcreteClassType(?c), basic.SubtypeOf(?c, ?type)
   }.
+#endif //FLOWLOG_ENGINE
+
 MOCK_OBJECT_FOR_TYPE(?value, ?class, ?type) :-
   LibraryRepOrd(?type, ?classOrd),
   isClassType(?class),
@@ -309,6 +331,18 @@ mainAnalysis.ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?arrayValue) :-
   MockObjectForType(?value, ?componentType),
   mainAnalysis.isImmutableHContext(?hctx).
 
+#ifdef FLOWLOG_ENGINE
+// FlowLog checks the attribute types of a top-level .decl before it expands
+// components, so mainAnalysis.configuration.HContext is not yet defined when
+// MockInstanceFieldPointsTo would be declared. The helper only exists to make the
+// mock subset lead the join in Souffle; FlowLog joins in body order, so placing
+// the Value_isMock filter right after InstanceFieldPointsTo has the same effect
+// without declaring a relation that must name the context type.
+mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
+  mainAnalysis.InstanceFieldPointsTo(?hctx, ?value, ?sig, ?basehctx, ?basevalue),
+  mainAnalysis.Value_isMock(?value),
+  mainAnalysis.LoadHeapInstanceField(?ctx, ?to, ?sig, ?basehctx, ?basevalue).
+#else
 // Bridge: make asserted mock field-points-to visible to field loads. The
 // default analysis pairs a load `x = base.field` with a matching store
 // *instruction* and never consults InstanceFieldPointsTo, so without this bridge
@@ -323,6 +357,7 @@ MockInstanceFieldPointsTo(?hctx, ?value, ?sig, ?basehctx, ?basevalue) :-
 mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
   MockInstanceFieldPointsTo(?hctx, ?value, ?sig, ?basehctx, ?basevalue),
   mainAnalysis.LoadHeapInstanceField(?ctx, ?to, ?sig, ?basehctx, ?basevalue).
+#endif //FLOWLOG_ENGINE
 
 // ===========================================================================
 // DIAGNOSTIC: types that need a mock but got none -- an interface/abstract type

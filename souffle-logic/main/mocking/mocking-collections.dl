@@ -141,12 +141,26 @@ CollectionOrMapType(?t) :-
 // The single container to mock a site with: the lowest-rank seedable container
 // that is genuinely a subtype of the site type.
 .decl CollectionContainer(?type:ReferenceType, ?container:ClassType)
+#ifdef FLOWLOG_ENGINE
+.decl _CollectionBestRank(?type:ReferenceType, ?best:number)
+_CollectionBestRank(?type, min(?r)) :-
+  ContainerRank(?c2, ?r),
+  basic.SubtypeOf(?c2, ?type).
+
+CollectionContainer(?type, ?container) :-
+  MockSiteType(?type),
+  !UniversalType(?type),
+  _CollectionBestRank(?type, ?best),
+  ContainerRank(?container, ?best),
+  basic.SubtypeOf(?container, ?type).
+#else
 CollectionContainer(?type, ?container) :-
   MockSiteType(?type),
   !UniversalType(?type),
   ?best = min ?r : { ContainerRank(?c2, ?r), basic.SubtypeOf(?c2, ?type) },
   ContainerRank(?container, ?best),
   basic.SubtypeOf(?container, ?type).
+#endif // FLOWLOG_ENGINE
 
 // One shared container mock per class stands in for every site it fits.
 MOCK_OBJECT_FOR_TYPE(?container, ?containerClass, ?type) :-
