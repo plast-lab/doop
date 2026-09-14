@@ -776,8 +776,9 @@ PackageAndTypeToHeap(?heap, ?heaptype, ?packageName) :-
 AllocationsPerPackageAndType(?type, ?packageName, count(?heap)) :-
   PackageAndTypeToHeap(?heap, ?type, ?packageName).
 #else
-AllocationsPerPackageAndType(?type, ?packageName, count(?heap)) :-
-  PackageAndTypeToHeap(?heap, ?type, ?packageName).
+AllocationsPerPackageAndType(?type, ?packageName, ?n) :-
+  PackageAndTypeToHeap(_, ?type, ?packageName),
+  ?n = count : PackageAndTypeToHeap(_, ?type, ?packageName).
 #endif //FLOWLOG_ENGINE
 
 // This is explicitly set for types that want it.
