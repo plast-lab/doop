@@ -37,7 +37,10 @@ class FlowLogAnalysis extends SouffleCompatibleAnalysis {
 		File flowLogBuildDir = new File(outDir, "flowlog_build")
 		flowLogBuildDir.mkdirs()
 
-		FlowLogTransformer.stripVarPrefixes(analysisFile, analysisFile)
+		new FlowLogTransformer(analysisFile)
+				.stripVarPrefixes()
+				.dropPlanDirectives()
+				.writeTo(analysisFile)
 		File db = new File(outDir, 'database')
 		List<String> compilationCommandParts = List.of(
 				options.FLOWLOG_COMPILER.value as String,
