@@ -1,3 +1,150 @@
+// ===========================================================================
+// Statistics metrics, in two dialects.
+//
+// A metric is just "how many tuples does relation R hold?", written once per
+// metric in statistics-simple.dl as
+//
+//   NewMetricMacro("8.0", "call graph edges (INS)", CallGraphEdge(_, _)).
+//
+// Souffle counts that directly, in the #else branch at the bottom. FlowLog
+// cannot, for four reasons. Every extra relation in the FLOWLOG_ENGINE branch
+// works around exactly one of them.
+//
+// 1. WHERE THE COUNTING HAPPENS.
+//    Souffle counts inside the rule body ("c = count : { ... }"). FlowLog has
+//    no such form: it counts in the rule HEAD, and whatever the rule body
+//    matches is what gets counted. So the rule must be turned inside out.
+//
+// 2. WHAT GETS COUNTED -- and why a Groovy transformer is involved.
+//    Souffle counts ROWS. FlowLog's count(x) counts DISTINCT VALUES of x, so
+//    counting a single column undercounts whenever that column repeats. We
+//    must count the whole row as a tuple: count((v1, v2)). That means naming
+//    every column, which means knowing how many columns there are -- and the
+//    column count is only visible inside "R(_, _)", which the C preprocessor
+//    cannot look into.
+//    That is why the per-metric rules are NOT written here. The macro below
+//    expands to the Souffle form for BOTH engines, and
+//    FlowLogTransformer (rewriteStatsMetrics) in Doop's Groovy sources rewrites
+//    it afterwards. It runs on the PREPROCESSED program, where every #ifdef has
+//    already been resolved, turning each expanded rule
+//
+//      Stats_Metrics(o, m, c) :- c = count : { R(_, _) }.
+//    into
+//      .decl _MAgg_3(c:number)
+//      _MAgg_3(count((v1, v2))) :- R(v1, v2).
+//      _MetricCount(o, m, c) :- _MAgg_3(c).
+//      MetricDecl(o, m).
+//
+//    Keep the _MetricCount and MetricDecl names and their column shapes below in
+//    step with that code: they are a contract between this file and the
+//    transformer. Why the aggregate lands in a relation of its own is point 3.
+//
+// 3. WHY THE AGGREGATE GETS A RELATION OF ITS OWN.
+//    Every metric could share one relation -- grouping them by the width of the
+//    counted tuple needs only eight, however many metrics there are. That does
+//    not work: see the KNOWN FLOWLOG DEFECT note below, which records the design
+//    in full. Giving each metric a private _MAgg_<n> leaves one aggregate rule
+//    per relation, and so nothing for FlowLog to merge. _MetricCount then
+//    collects them all, so the "zero" rule of point 4 has a single relation to
+//    negate.
+//
+// 4. WHY MetricDecl EXISTS.
+//    Counting in the head yields nothing at all for an empty relation, while
+//    Souffle yields a row with 0. Those rows matter: ten of the 28 metrics in
+//    a types-only run are 0. MetricDecl records that a metric EXISTS,
+//    independently of whether it has any data. The transformer emits one entry
+//    per rule it rewrites, and since the #ifdefs were already resolved by then,
+//    the registry automatically holds exactly the enabled metrics -- no guard is
+//    duplicated anywhere.
+//
+// KNOWN FLOWLOG DEFECT (0.6.0): grouping by ARITY does not work.
+//
+// The obvious design is one relation per counted-tuple WIDTH rather than per
+// metric: _M1 takes the count of every 1-column metric, _M2 every 2-column one,
+// and so on, which needs only eight relations however many metrics there are.
+// It was implemented and removed. Recorded here in full so it can be restored
+// once FlowLog is fixed, at which point the transformer goes back to emitting a
+// single _Mn rule per metric and drops the per-metric .decl:
+//
+//   .decl _M0(order:symbol, msg:symbol, c:number)
+//   .decl _M1(order:symbol, msg:symbol, c:number)
+//   .decl _M2(order:symbol, msg:symbol, c:number)
+//   .decl _M3(order:symbol, msg:symbol, c:number)
+//   .decl _M4(order:symbol, msg:symbol, c:number)
+//   .decl _M5(order:symbol, msg:symbol, c:number)
+//   .decl _M6(order:symbol, msg:symbol, c:number)
+//   .decl _M7(order:symbol, msg:symbol, c:number)
+//
+//   _MetricCount(?order, ?msg, ?c) :- _M0(?order, ?msg, ?c).
+//   _MetricCount(?order, ?msg, ?c) :- _M1(?order, ?msg, ?c).
+//   _MetricCount(?order, ?msg, ?c) :- _M2(?order, ?msg, ?c).
+//   _MetricCount(?order, ?msg, ?c) :- _M3(?order, ?msg, ?c).
+//   _MetricCount(?order, ?msg, ?c) :- _M4(?order, ?msg, ?c).
+//   _MetricCount(?order, ?msg, ?c) :- _M5(?order, ?msg, ?c).
+//   _MetricCount(?order, ?msg, ?c) :- _M6(?order, ?msg, ?c).
+//   _MetricCount(?order, ?msg, ?c) :- _M7(?order, ?msg, ?c).
+//
+// with the transformer emitting, per metric, one rule of the form
+//
+//   _M2("8.0", "call graph edges (INS)", count((v1, v2))) :- R(v1, v2).
+//
+// That is valid Datalog and FlowLog's frontend accepts it -- parsing, type
+// checking, component inlining, planning and code generation all succeed -- but
+// the generated Rust does not compile:
+//
+//   error[E0271]: type mismatch resolving
+//                 `<[...; 1] as IntoIterator>::Item == Collection<'_, (), ...>`
+//       --> src/main.rs:7462:57
+//        | rel_258__m1.concatenate([t_4300590026083410787.clone()]),
+//        |             ----------- expected `i32`, found `Spur`
+//
+// Cause, read off the generated crate: FlowLog emits an "accumulate, dedup,
+// reduce" block for a head-aggregation relation once per stratum in which one of
+// that relation's rules appears, and every block shadows the same binding,
+// feeding the previous reduce's OUTPUT into the next accumulation. A types-only
+// run with 31 metrics produces 12 such blocks for _M1, 5 for _M4, 3 for _M2 and
+// 2 for _M3. The first reduce changes the element type from
+// (order, msg, countedValue) to (order, msg, i32), so every later concatenate of
+// a raw rule body is ill-typed. When all the rules for one relation fall in a
+// single stratum only one block is emitted and the same shape compiles, which is
+// why small examples do not reproduce it.
+//
+// Hence the per-metric relation of point 3: one aggregate rule per relation
+// leaves nothing to merge. Both forms were run on the full types-only program;
+// the per-arity form fails as above, the per-metric form compiles and produces
+// all 34 metric rows.
+//
+// statistics-simple.dl itself is deliberately left untouched by all of this.
+// It stays the Souffle baseline that FlowLog results are compared against.
+//
+// If FlowLog ever gains body aggregates, or a row-based count that works for
+// any width, this whole branch can be deleted and the #else kept as-is.
+// ===========================================================================
+
+// The macro itself is the same for both engines: FlowLogTransformer needs this
+// exact expansion as its input, and keeping one definition means the Souffle
+// baseline cannot drift from what FlowLog is derived from.
 #define NewMetricMacro(order, msg, body) \
   Stats_Metrics(order, msg, c) :- \
     c = count : { body }
+
+#ifdef FLOWLOG_ENGINE
+
+// Everything below replaces what Souffle does implicitly. The per-metric rules
+// are not here; the transformer rewrites each expanded rule above into its own
+// _MAgg_<n> aggregate relation, a rule copying that into _MetricCount, and a
+// MetricDecl entry.
+
+// The metrics that exist in this configuration. One fact per expanded rule, so
+// it holds exactly the metrics their surrounding #ifdefs left enabled.
+.decl MetricDecl(order:symbol, msg:symbol)
+
+// Every metric's count, copied here from its own _MAgg_<n> by the transformer.
+.decl _MetricCount(order:symbol, msg:symbol, c:number)
+
+// A metric that matched something reports its count; one that matched nothing
+// still reports 0, as Souffle would (see reason 4).
+Stats_Metrics(?order, ?msg, ?c) :- _MetricCount(?order, ?msg, ?c).
+Stats_Metrics(?order, ?msg, 0) :- MetricDecl(?order, ?msg), !_MetricCount(?order, ?msg, _).
+
+#endif // FLOWLOG_ENGINE

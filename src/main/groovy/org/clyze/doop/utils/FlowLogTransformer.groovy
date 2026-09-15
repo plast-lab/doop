@@ -2,6 +2,9 @@ package org.clyze.doop.utils
 
 import groovy.transform.CompileStatic
 
+import java.util.regex.Matcher
+import java.util.regex.Pattern
+
 /**
  * Rewrites Souffle-flavored Datalog (as produced by Doop's preprocessor) into a
  * dialect the FlowLog engine accepts. Each transformation is a standalone pass
@@ -21,6 +24,32 @@ import groovy.transform.CompileStatic
  * join order is a performance hint that cannot change a program's results, the
  * safe course is to drop the directives altogether and let FlowLog join the
  * body in source order.
+ *
+ * Transformation #3: statistics metrics. souffle-logic/addons/statistics/macros.dl
+ * expands each metric into a Souffle body aggregate that FlowLog cannot express:
+ *
+ * <pre>Stats_Metrics("8.0", "call graph edges (INS)", c) :- c = count : { R(_, _) }.</pre>
+ *
+ * FlowLog aggregates in the rule head, and its count() counts DISTINCT VALUES
+ * rather than rows, so the whole row has to be counted as a tuple -- which
+ * requires naming every column, and therefore knowing the column count. That
+ * count is visible only inside the atom, where the C preprocessor cannot reach,
+ * which is why the rewrite happens here rather than in the macro. Running on the
+ * preprocessed program also means every #ifdef around a metric has already been
+ * resolved, so no guard is duplicated. The rule above becomes:
+ *
+ * <pre>.decl _MAgg_3(c:number)
+ * _MAgg_3(count((v1, v2))) :- R(v1, v2).
+ * _MetricCount("8.0", "call graph edges (INS)", c) :- _MAgg_3(c).
+ * MetricDecl("8.0", "call graph edges (INS)").</pre>
+ *
+ * Each metric gets an aggregate relation to itself: sharing one relation between
+ * metrics trips a FlowLog code-generation defect, recorded in macros.dl. The
+ * MetricDecl registry, _MetricCount and the rules assembling Stats_Metrics from
+ * them live in macros.dl, under its FLOWLOG_ENGINE branch; the _MetricCount and
+ * MetricDecl names are a contract between this pass and that file.
+ * A metric rule that does not match the expected shape is an error rather than
+ * a silent pass-through, so a change to the macro cannot quietly drop metrics.
  *
  * Both rewrites are lexically aware: text inside a string literal or a comment
  * is preserved verbatim (e.g. cat(?x, "?") keeps its "?" argument, and a
@@ -61,6 +90,12 @@ class FlowLogTransformer {
 	/** Applies the .plan removal to the held text. Returns this, for chaining. */
 	FlowLogTransformer dropPlanDirectives() {
 		text = dropPlanDirectives(text)
+		return this
+	}
+
+	/** Rewrites the Souffle statistics metrics into FlowLog form. Returns this, for chaining. */
+	FlowLogTransformer rewriteStatsMetrics() {
+		text = rewriteStatsMetrics(text)
 		return this
 	}
 
@@ -127,6 +162,178 @@ class FlowLogTransformer {
 			}
 		}
 		return out.toString()
+	}
+
+	/**
+	 * Rewrites every expanded statistics metric in a .dl source text into the
+	 * head-aggregation form FlowLog accepts. A source with no metrics (an analysis
+	 * run with --stats none) is returned unchanged.
+	 *
+	 * <p>Postcondition: no Souffle body aggregate survives. A rule that writes
+	 * Stats_Metrics directly instead of going through NewMetricMacro is not rewritten,
+	 * and is reported here rather than left for the FlowLog compiler to reject.
+	 *
+	 * @throws IllegalStateException if a Stats_Metrics counting rule is not in the
+	 *         shape macros.dl produces, or if any Souffle body aggregate remains --
+	 *         better a build failure than a metric silently lost.
+	 */
+	static String rewriteStatsMetrics(String source) {
+		String[] lines = source.split('\n', -1)
+		StringBuilder out = new StringBuilder(source.length() + 1024)
+		int metricIndex = 0
+		for (int i = 0; i < lines.length; i++) {
+			if (i > 0) out.append('\n')
+			String line = lines[i]
+			Matcher m = METRIC_RULE.matcher(line)
+			if (m.matches()) {
+				metricIndex++
+				out.append(metricRule(metricIndex, m.group(1), m.group(2), m.group(3), m.group(4), m.group(5), line))
+			} else {
+				if (line.contains(STATS_METRICS) && line.contains('count')) {
+					throw new IllegalStateException(
+							"FlowLogTransformer: Stats_Metrics rule not in the shape macros.dl produces, " +
+							"cannot rewrite for FlowLog: " + line.trim())
+				}
+				out.append(line)
+			}
+		}
+		String rewritten = out.toString()
+		assertNoSouffleAggregates(rewritten)
+		return rewritten
+	}
+
+	private static final String STATS_METRICS = 'Stats_Metrics('
+
+	/**
+	 * A Souffle body aggregate: {@code = <agg> [expr] :}. FlowLog has no such form,
+	 * so none may survive this pass.
+	 */
+	private static final Pattern SOUFFLE_BODY_AGGREGATE = ~/=\s*(count|min|max|sum|mean|avg)\b[^:\n]*:/
+
+	/**
+	 * Statement-level backstop for the line-level check above. A metric rule written
+	 * directly rather than through NewMetricMacro spreads its aggregates over several
+	 * lines, so no single line carries both markers and the line check cannot see it.
+	 * Sweeping the rewritten text catches those, and any other Souffle aggregate that
+	 * was never ported, with a message naming the line instead of leaving the FlowLog
+	 * compiler to fail on generated code.
+	 */
+	private static void assertNoSouffleAggregates(String source) {
+		Matcher m = SOUFFLE_BODY_AGGREGATE.matcher(blankLiteralsAndComments(source))
+		if (!m.find()) return
+		int lineNo = 1
+		for (int i = 0; i < m.start(); i++) {
+			if (source.charAt(i) == ('\n' as char)) lineNo++
+		}
+		int from = source.lastIndexOf('\n' as String, m.start()) + 1
+		int to = source.indexOf('\n' as String, m.start())
+		String line = (to < 0 ? source.substring(from) : source.substring(from, to)).trim()
+		throw new IllegalStateException(
+				"FlowLogTransformer: Souffle body aggregate survives at line ${lineNo}, which FlowLog cannot " +
+				"parse: ${line} -- a rule writing Stats_Metrics directly does not go through NewMetricMacro and " +
+				"is therefore not rewritten. Guard it with #ifdef FLOWLOG_ENGINE; see the note at the top of " +
+				"souffle-logic/addons/statistics/statistics-simple.dl and the rationale in macros.dl.")
+	}
+
+	/**
+	 * A copy of {@code source} with the inside of string literals and comments blanked
+	 * out, so a scan cannot match text that is not code. Offsets and line breaks are
+	 * preserved so positions still refer to the original.
+	 */
+	private static String blankLiteralsAndComments(String source) {
+		StringBuilder out = new StringBuilder(source)
+		int i = 0
+		int n = source.length()
+		char space = ' ' as char
+		while (i < n) {
+			char c = source.charAt(i)
+			if (c == ('"' as char)) {
+				i++
+				while (i < n) {
+					char d = source.charAt(i)
+					if (d == ('"' as char)) { i++; break }
+					if (d != ('\n' as char)) out.setCharAt(i, space)
+					if (d == ('\\' as char) && i + 1 < n) {
+						if (source.charAt(i + 1) != ('\n' as char)) out.setCharAt(i + 1, space)
+						i += 2
+						continue
+					}
+					i++
+				}
+			} else if (c == ('/' as char) && i + 1 < n && source.charAt(i + 1) == ('/' as char)) {
+				while (i < n && source.charAt(i) != ('\n' as char)) { out.setCharAt(i, space); i++ }
+			} else if (c == ('/' as char) && i + 1 < n && source.charAt(i + 1) == ('*' as char)) {
+				out.setCharAt(i, space); out.setCharAt(i + 1, space)
+				i += 2
+				while (i < n) {
+					if (source.charAt(i) == ('*' as char) && i + 1 < n && source.charAt(i + 1) == ('/' as char)) {
+						out.setCharAt(i, space); out.setCharAt(i + 1, space)
+						i += 2
+						break
+					}
+					if (source.charAt(i) != ('\n' as char)) out.setCharAt(i, space)
+					i++
+				}
+			} else {
+				i++
+			}
+		}
+		return out.toString()
+	}
+
+	/**
+	 * One expanded metric: {@code Stats_Metrics(<order>, <msg>, c) :- c = count : { R(_, ...) }.}
+	 * The groups are the leading indent, the two quoted literals, the relation name
+	 * and the raw argument list.
+	 */
+	private static final Pattern METRIC_RULE = ~/^(\s*)Stats_Metrics\(\s*("(?:[^"\\]|\\.)*")\s*,\s*("(?:[^"\\]|\\.)*")\s*,\s*c\s*\)\s*:-\s*c\s*=\s*count\s*:\s*\{\s*([A-Za-z_][A-Za-z0-9_.]*)\s*\(([^)]*)\)\s*}\s*\.\s*$/
+
+	/**
+	 * Builds the FlowLog rules for one metric: a private aggregate relation holding a
+	 * single rule, a plain rule copying its value into _MetricCount, and the registry
+	 * entry. The aggregate gets a relation to itself deliberately -- see the KNOWN
+	 * FLOWLOG DEFECT note in souffle-logic/addons/statistics/macros.dl.
+	 */
+	private static String metricRule(int index, String indent, String order, String msg,
+	                                 String relation, String args, String original) {
+		int arity = metricArity(args, original)
+		String agg = "_MAgg_${index}"
+		String head
+		if (arity == 0) {
+			// A nullary relation holds no columns to count: it is present or it is not.
+			head = "${indent}${agg}(1) :- ${relation}()."
+		} else {
+			StringBuilder vars = new StringBuilder()
+			for (int i = 1; i <= arity; i++) {
+				if (i > 1) vars.append(', ')
+				vars.append('v').append(i)
+			}
+			String varList = vars.toString()
+			// One column is already unique per row, so it needs no tuple wrapper; more
+			// than one does, because FlowLog's count() counts distinct values of its
+			// argument.
+			String counted = arity == 1 ? varList : "(${varList})"
+			head = "${indent}${agg}(count(${counted})) :- ${relation}(${varList})."
+		}
+		return "${indent}.decl ${agg}(c:number)\n" +
+				head + "\n" +
+				"${indent}_MetricCount(${order}, ${msg}, c) :- ${agg}(c).\n" +
+				"${indent}MetricDecl(${order}, ${msg})."
+	}
+
+	/** Number of columns in a metric body, which macros.dl guarantees are all {@code _}. */
+	private static int metricArity(String args, String original) {
+		String trimmed = args.trim()
+		if (trimmed.isEmpty()) return 0
+		String[] parts = trimmed.split(',', -1)
+		for (String part : parts) {
+			if (part.trim() != '_') {
+				throw new IllegalStateException(
+						"FlowLogTransformer: metric body argument is not '_', so the row cannot be " +
+						"counted as a tuple: " + original.trim())
+			}
+		}
+		return parts.length
 	}
 
 	private static final String PLAN_KEYWORD = '.plan'

@@ -1,5 +1,32 @@
 #include "statistics-output.dl"
 #include "statistics-simple-declarations.dl"
+// ---------------------------------------------------------------------------
+// Adding a metric
+//
+// Use NewMetricMacro. It needs nothing extra to work on both engines: for
+// FlowLog, FlowLogTransformer rewrites the expanded rule into the _Mn counting
+// rule and MetricDecl entry that macros.dl declares. That file explains why the
+// FlowLog form has to look so different.
+//
+// A rule written DIRECTLY as `Stats_Metrics(...) :- ...` does NOT go through the
+// macro, so nothing rewrites it. Souffle's body aggregate (`c = count : { ... }`)
+// is not valid FlowLog, so guard any such rule:
+//
+//   #ifdef FLOWLOG_ENGINE
+//     ... FlowLog form: no body aggregates ...
+//   #else
+//     ... the rule exactly as Souffle wants it ...
+//   #endif
+//
+// In the FlowLog branch, reuse counts that already exist rather than aggregating
+// again: _MetricCount(order, msg, c) holds the count of every metric defined
+// through the macro, so a derived metric is usually just a join plus arithmetic.
+// Note FlowLog folds arithmetic strictly left to right -- parenthesise.
+//
+// Forgetting the guard is not silent: the transformer fails the build with the
+// offending line. The three rules further down ("1.9", "1.95", "25.8") are
+// exactly this case and are still unguarded.
+// ---------------------------------------------------------------------------
 #include "macros.dl"
 
 /***************************************************
@@ -152,9 +179,14 @@ Stats_Simple_Application_ReachableVirtualMethodInvocation(?invocation) :-
   Instruction_Method(?invocation, ?method),
   isVirtualMethodInvocation_Insn(?invocation).
 
+#ifdef FLOWLOG_ENGINE
+Stats_Simple_VirtualTargets(?from, count(?c)) :-
+  Stats_Simple_VirtualCallGraphEdge(?from, ?c).
+#else
 Stats_Simple_VirtualTargets(?from, ?c) :-
   Stats_Simple_VirtualCallGraphEdge(?from, _),
   ?c = count : Stats_Simple_VirtualCallGraphEdge(?from, _).
+#endif
 
 Stats_Simple_PolymorphicCallSite(?from) :-
   Stats_Simple_VirtualTargets(?from, ?size),
@@ -293,24 +325,77 @@ Stats_Simple_ReachableClass(?type) :-
 // --- Derived recall / precision + whole-program size metrics ---
 NewMetricMacro("11.6", "reachable classes", Stats_Simple_ReachableClass(_)).
 NewMetricMacro("26.0", "objects (values)", mainAnalysis.Value_Type(_, _)).
+
+// "1.9", "avg points-to set size (x100)"
+#ifdef FLOWLOG_ENGINE
+.decl _CountVarPointsTo(?c:number)
+_CountVarPointsTo(count((?hctx, ?value, ?ctx, ?var))) :-
+  mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?var).
+.decl _CountReachableVar(?c:number)
+_CountReachableVar(count(?var)) :-
+  Stats_Simple_InsensReachableVar(?var).
+Stats_Metrics("1.9", "avg points-to set size (x100)", ?avg) :-
+  _CountVarPointsTo(?vpt),
+  _CountReachableVar(?rv),
+  ?rv > 0, ?avg = (100 * ?vpt) / ?rv.
+Stats_Metrics("1.9", "avg points-to set size (x100)", 0) :-
+  _CountReachableVar(?rv),
+  ?rv > 0, !_CountVarPointsTo(_).
+#else
 Stats_Metrics("1.9", "avg points-to set size (x100)", ?avg) :-
   ?vpt = count : { mainAnalysis.VarPointsTo(_, _, _, _) },
   ?rv  = count : { Stats_Simple_InsensReachableVar(_) },
   ?rv > 0, ?avg = (100 * ?vpt) / ?rv.
+#endif // FLOWLOG_ENGINE
+
 // Application-scoped variant: average points-to set size over reachable
 // application vars only (reachable var that is an ApplicationVar).
 .decl Stats_Simple_Application_InsensReachableVar(?var:Var)
 Stats_Simple_Application_InsensReachableVar(?var) :-
   Stats_Simple_InsensReachableVar(?var),
   ApplicationVar(?var).
+#ifdef FLOWLOG_ENGINE
+.decl _CountAppVarPointsTo(?c:number)
+_CountAppVarPointsTo(count((?value, ?var))) :-
+  Stats_Simple_Application_InsensVarPointsTo(?value, ?var).
+.decl _CountAppReachableVar(?c:number)
+_CountAppReachableVar(count(?var)) :-
+  Stats_Simple_Application_InsensReachableVar(?var).
+Stats_Metrics("1.95", "avg app points-to set size (x100)", ?avg) :-
+  _CountAppVarPointsTo(?vpt),
+  _CountAppReachableVar(?rv),
+  ?rv > 0, ?avg = (100 * ?vpt) / ?rv.
+Stats_Metrics("1.95", "avg app points-to set size (x100)", 0) :-
+  _CountAppReachableVar(?rv),
+  ?rv > 0, !_CountAppVarPointsTo(_).
+#else
 Stats_Metrics("1.95", "avg app points-to set size (x100)", ?avg) :-
   ?vpt = count : { Stats_Simple_Application_InsensVarPointsTo(_, _) },
   ?rv  = count : { Stats_Simple_Application_InsensReachableVar(_) },
   ?rv > 0, ?avg = (100 * ?vpt) / ?rv.
+#endif // FLOWLOG_ENGINE
+
+// "25.8", "app method coverage (%)"
+#ifdef FLOWLOG_ENGINE
+.decl _CountAppConcreteMethod(?c:number)
+_CountAppConcreteMethod(count(?method)) :-
+  Stats_Simple_ApplicationConcreteMethod(?method).
+.decl _CountNonReachableAppConcreteMethod(?c:number)
+_CountNonReachableAppConcreteMethod(count(?method)) :-
+  Stats_Simple_NonReachableApplicationConcreteMethod(?method).
+Stats_Metrics("25.8", "app method coverage (%)", ?pct) :-
+  _CountAppConcreteMethod(?t),
+  _CountNonReachableAppConcreteMethod(?nr),
+  ?t > 0, ?pct = (100 * (?t - ?nr)) / ?t.
+Stats_Metrics("25.8", "app method coverage (%)", 100) :-
+  _CountAppConcreteMethod(?t),
+  ?t > 0, !_CountNonReachableAppConcreteMethod(_).
+#else
 Stats_Metrics("25.8", "app method coverage (%)", ?pct) :-
   ?t  = count : { Stats_Simple_ApplicationConcreteMethod(_) },
   ?nr = count : { Stats_Simple_NonReachableApplicationConcreteMethod(_) },
   ?t > 0, ?pct = (100 * (?t - ?nr)) / ?t.
+#endif // FLOWLOG_ENGINE
 
 //NewMetricMacro("50.0", "call sites that did (not) get refined", SiteToRefine(_)).
 //NewMetricMacro("51.0", "allocation sites that did (not) get refined", ValueToRefine(_)).
