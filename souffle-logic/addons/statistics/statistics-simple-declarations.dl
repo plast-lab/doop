@@ -16,13 +16,33 @@ OUTPUT_STATS(Stats_Simple_AssignedVariable)
 .decl Stats_Simple_Application_InsensVarPointsTo(?value:Value, ?var:Var)
 OUTPUT_STATS(Stats_Simple_Application_InsensVarPointsTo)
 
+// FlowLog resolves the attribute types of a top-level .decl before it expands
+// components, so a component-qualified type such as
+// mainAnalysis.configuration.HContext is not yet registered at this point and the
+// declaration is rejected. Substituting the primitive the type resolves to keeps
+// these relations, and every rule and metric that uses them, working: FlowLog
+// treats a type alias as the type it aliases, and every configuration FlowLog can
+// currently run declares Context and HContext as symbol. The context-sensitive
+// configurations declare them as records, which FlowLog does not support at all,
+// so those analyses are blocked on something larger than this.
+//
+// The same substitution is needed at three more declarations below. It reverts
+// once FlowLog resolves top-level declaration types after component inlining.
+#ifdef FLOWLOG_ENGINE
+.decl Stats_Simple_Application_VarPointsTo(?hctx:symbol, ?value:Value, ?ctx:symbol, ?var:Var)
+#else
 .decl Stats_Simple_Application_VarPointsTo(?hctx:mainAnalysis.configuration.HContext, ?value:Value, ?ctx:mainAnalysis.configuration.Context, ?var:Var)
+#endif // FLOWLOG_ENGINE
 OUTPUT_STATS(Stats_Simple_Application_VarPointsTo)
 
 .decl Stats_Simple_InsensReachableVar(?var:Var)
 OUTPUT_STATS(Stats_Simple_InsensReachableVar)
 
+#ifdef FLOWLOG_ENGINE
+.decl Stats_Simple_ReachableVar(?ctx:symbol, ?var:Var)
+#else
 .decl Stats_Simple_ReachableVar(?ctx:mainAnalysis.configuration.Context, ?var:Var)
+#endif // FLOWLOG_ENGINE
 OUTPUT_STATS(Stats_Simple_ReachableVar)
 
 /***************************************************
@@ -35,7 +55,11 @@ OUTPUT_STATS(Stats_Simple_InsensArrayIndexPointsTo)
 .decl Stats_Simple_Application_InsensArrayIndexPointsTo(?value:Value, ?basevalue:Value)
 OUTPUT_STATS(Stats_Simple_Application_InsensArrayIndexPointsTo)
 
+#ifdef FLOWLOG_ENGINE
+.decl Stats_Simple_Application_ArrayIndexPointsTo(?hctx:symbol, ?value:Value, ?basehctx:symbol, ?basevalue:Value)
+#else
 .decl Stats_Simple_Application_ArrayIndexPointsTo(?hctx:mainAnalysis.configuration.HContext, ?value:Value, ?basehctx:mainAnalysis.configuration.HContext, ?basevalue:Value)
+#endif // FLOWLOG_ENGINE
 OUTPUT_STATS(Stats_Simple_Application_ArrayIndexPointsTo)
 
 #ifndef DISABLE_POINTS_TO
@@ -75,7 +99,11 @@ OUTPUT_STATS(Stats_Simple_VirtualCallGraphEdge)
 .decl Stats_Simple_InsensReachableApplicationMethod(?method:Method)
 OUTPUT_STATS(Stats_Simple_InsensReachableApplicationMethod)
 
+#ifdef FLOWLOG_ENGINE
+.decl Stats_Simple_ReachableApplicationMethod(?ctx:symbol, ?method:Method)
+#else
 .decl Stats_Simple_ReachableApplicationMethod(?ctx:mainAnalysis.configuration.Context, ?method:Method)
+#endif // FLOWLOG_ENGINE
 OUTPUT_STATS(Stats_Simple_ReachableApplicationMethod)
 
 .decl Stats_Simple_ApplicationConcreteMethod(?method:Method)
