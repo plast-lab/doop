@@ -1,11 +1,77 @@
 #include "statistics-declarations.dl"
 
+// Souffle's body aggregate ("?n = count : R(...)") has no FlowLog equivalent:
+// FlowLog counts in the rule HEAD, grouping by the head's non-aggregate
+// arguments. Every aggregate in this file is therefore guarded, with the Souffle
+// rule kept verbatim in the #else so the Souffle build is unchanged.
+//
+// Two things bite when rewriting one.
+//
+// FlowLog's count(x) counts DISTINCT VALUES of x, where Souffle counts rows. So
+// whatever the Souffle witness left as "_" has to be named and counted as a
+// whole tuple -- count((?hctx, ?value)), not count(?value) -- otherwise repeated
+// values collapse into one and the count comes out too low.
+//
+// A head aggregation produces a group only where a witness tuple exists. A rule
+// whose guard matches more keys than the witness therefore loses the zero rows
+// Souffle would report, and the zero case has to be written out by hand.
+//
+// Most rules here simply collapse: the guard atom IS the witness, so it is
+// dropped and the count moves into the head. Stats_VarCount,
+// Stats_InsensValueVarCount, Stats_InsensBaseVarCount, Stats_InsensVarCount,
+// Stats_ArrayCount, Stats_InsensValueArrayCount,
+// Stats_InsensBaseValueArrayCount, Stats_InsensArrayCount, Stats_FieldCount,
+// Stats_InsensValueFieldCount, Stats_InsensBaseValueFieldCount,
+// Stats_InsensFieldCount and Stats_MethodContextCount are all of this kind.
+//
+// Method_NumberOfContexts collapses too, but keeps its guard: the guard binds
+// only the group key, and Reachable is derived from ReachableContext, so a
+// reachable method always has at least one context and no zero row is lost.
+//
+// Method_VPTCountPerMethodVariable needs the three-part shape described below,
+// for the other reason: its guard Var_DeclaringMethod covers far more vars than
+// VarPointsTo does -- on avrora 1.85M of 1.86M declared vars point to nothing --
+// so Souffle reports a zero for each of them and FlowLog would drop them all.
+
+// The _StatsSeed relation and fact is needed to work-around a FlowLog limitation.
+//
+// When a rule counts a whole relation, with nothing else in the body, under
+// FlowLog, it needs three parts instead of one, for two separate reasons.
+//
+// First, the count has to move into the rule head, and a head aggregation
+// produces nothing at all when the counted relation is empty -- where Souffle
+// still reports 0. Those zero rows are real here: with points-to disabled,
+// Stats_ArrayCount is empty and Souffle reports Stats_Arrays(0). So the zero
+// case is written out explicitly, as a second rule with a negation.
+//
+// Second, that zero rule cannot live in the same relation as the aggregate.
+// A relation fed by both an aggregate rule and a plain rule makes FlowLog emit
+// Rust that does not compile (rustc E0271: the reduce changes the column type,
+// and the plain rule's tuple no longer matches). See the KNOWN FLOWLOG DEFECT
+// note in macros.dl. So the aggregate gets a private _Agg_<name> relation of its
+// own, and <name> is then fed by two ordinary rules.
+//
+// _StatsSeed exists only to give the zero rule a positive atom; FlowLog rejects
+// a rule whose body is nothing but a negation.
+//
+// Stats_Vars, Stats_InsensVars, Stats_Arrays, Stats_InsensArrays, Stats_Fields,
+// Stats_InsensFields, Stats_Methods all fall into this case.
+
+
+#ifdef FLOWLOG_ENGINE
+.decl _StatsSeed(?x:number)
+_StatsSeed(0).
+#endif // FLOWLOG_ENGINE
+
+
 /****************************************************************
  * Heaps and Values
  ***************************************************************/
 
+// NOTE: START NOT USED
 //Stats_ReflectiveHeap(?heap) :-
 //  ReflectiveHeapAllocation(_, _, ?heap).
+// NOTE: END NOT USED
 
 Stats_ApplicationHeap(?heap) :-
   ApplicationMethod(?method),
@@ -15,6 +81,7 @@ Stats_ApplicationHeap(?heap) :-
   ApplicationMethod(?method),
   mainAnalysis.AssignContextInsensitiveHeapAllocation(?heap, _, ?method).
 
+// NOTE: START NOT USED
 //Stats_ApplicationHeap(?heap) :-
 //  ApplicationMethod(?method),
 //  Instruction_Method(?instr, ?method),
@@ -52,88 +119,163 @@ Stats_ApplicationHeap(?heap) :-
 //  Var_DeclaringMethod(?var, ?method),
 //  Stats_ThrowableValuesOnMethodBoundaries(?hctx, ?value, ?ctx, ?var),
 //  Value_Type(?value, ?valuetype).
+// NOTE: END NOT USED
 
 /****************************************************************
  * Vars
  ***************************************************************/
 
 // Count how many objects, a var points to (context-sensitive)
+#ifdef FLOWLOG_ENGINE
+Stats_VarCount(?ctx, ?var, count((?hctx, ?value))) :-
+  mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?var).
+#else
 Stats_VarCount(?ctx, ?var, ?n) :-
  mainAnalysis.VarPointsTo(_, _, ?ctx, ?var),
  ?n = count : mainAnalysis.VarPointsTo(_, _, ?ctx, ?var).
+#endif // FLOWLOG_ENGINE
 
 // Count how many objects, a var points to (value context-insensitive)
 Stats_InsensValueVarPointsTo(?value, ?ctx, ?var) :-
   mainAnalysis.VarPointsTo(_, ?value, ?ctx, ?var).
 
+#ifdef FLOWLOG_ENGINE
+Stats_InsensValueVarCount(?ctx, ?var, count(?value)) :-
+  Stats_InsensValueVarPointsTo(?value, ?ctx, ?var).
+#else
 Stats_InsensValueVarCount(?ctx, ?var, ?n) :-
   Stats_InsensValueVarPointsTo(_, ?ctx, ?var),
   ?n = count : Stats_InsensValueVarPointsTo(_, ?ctx, ?var).
+#endif // FLOWLOG_ENGINE
 
 // Count how many objects, a var points to (base context-insensitive)
 Stats_InsensBaseVarPointsTo(?hctx, ?value, ?var) :-
   mainAnalysis.VarPointsTo(?hctx, ?value, _, ?var).
 
+#ifdef FLOWLOG_ENGINE
+Stats_InsensBaseVarCount(?var, count((?hctx, ?value))) :-
+  Stats_InsensBaseVarPointsTo(?hctx, ?value, ?var).
+#else
 Stats_InsensBaseVarCount(?var, ?n) :-
   Stats_InsensBaseVarPointsTo(_, _, ?var),
   ?n = count : Stats_InsensBaseVarPointsTo(_, _, ?var).
+#endif // FLOWLOG_ENGINE
 
 // Count how many objects, a var points to (value+base context-insensitive)
+#ifdef FLOWLOG_ENGINE
+Stats_InsensVarCount(?var, count(?value)) :-
+  Stats_Simple_InsensVarPointsTo(?value, ?var).
+#else
 Stats_InsensVarCount(?var, ?n) :-
   Stats_Simple_InsensVarPointsTo(_, ?var),
   ?n = count : Stats_Simple_InsensVarPointsTo(_, ?var).
+#endif // FLOWLOG_ENGINE
 
 // NOTE: The same applies for Stats_InsensValueVarCount
+#ifdef FLOWLOG_ENGINE
+.decl _Agg_Stats_Vars(?n:number)
+_Agg_Stats_Vars(count((?ctx, ?var, ?n))) :-
+  Stats_VarCount(?ctx, ?var, ?n).
+Stats_Vars(?n) :- _Agg_Stats_Vars(?n).
+Stats_Vars(0) :- _StatsSeed(_), !_Agg_Stats_Vars(_).
+#else
 Stats_Vars(?n) :-
   ?n = count : Stats_VarCount(_, _, _).
+#endif // FLOWLOG_ENGINE
 
 // NOTE: The same applies for Stats_InsensBaseVarCount
+#ifdef FLOWLOG_ENGINE
+.decl _Agg_Stats_InsensVars(?n:number)
+_Agg_Stats_InsensVars(count((?var, ?n))) :-
+  Stats_InsensVarCount(?var, ?n).
+Stats_InsensVars(?n) :- _Agg_Stats_InsensVars(?n).
+Stats_InsensVars(0) :- _StatsSeed(_), !_Agg_Stats_InsensVars(_).
+#else
 Stats_InsensVars(?n) :-
   ?n = count : Stats_InsensVarCount(_, _).
+#endif // FLOWLOG_ENGINE
 
+// NOTE: START NOT USED
 //Stats_InsensVarPointsToNonThrowable(?value, ?var),
 //Stats_VarPointsToNonThrowable(?hctx, ?value, ?ctx, ?var) :-
 //  Value_Type(?value, ?valuetype),
 //  VarPointsTo(?hctx, ?value, ?ctx, ?var),
 //  !SupertypeOf("java.lang.Throwable", ?valuetype).
+// NOTE: END NOT USED
 
 /****************************************************************
  * Arrays
  ***************************************************************/
 
 // Count how many objects, an array points to (context-sensitive)
+#ifdef FLOWLOG_ENGINE
+Stats_ArrayCount(?basehctx, ?basevalue, count((?hctx, ?value))) :-
+  mainAnalysis.ArrayIndexPointsTo(?hctx, ?value, ?basehctx, ?basevalue).
+#else
 Stats_ArrayCount(?basehctx, ?basevalue, ?n) :-
   mainAnalysis.ArrayIndexPointsTo(_, _, ?basehctx, ?basevalue),
   ?n = count : mainAnalysis.ArrayIndexPointsTo(_, _, ?basehctx, ?basevalue).
+#endif // FLOWLOG_ENGINE
 
 // Count how many objects, an array points to (value context-insensitive)
 Stats_InsensValueArrayIndexPointsTo(?value, ?basehctx, ?basevalue) :-
   mainAnalysis.ArrayIndexPointsTo(_, ?value, ?basehctx, ?basevalue).
 
+#ifdef FLOWLOG_ENGINE
+Stats_InsensValueArrayCount(?basehctx, ?basevalue, count(?value)) :-
+  Stats_InsensValueArrayIndexPointsTo(?value, ?basehctx, ?basevalue).
+#else
 Stats_InsensValueArrayCount(?basehctx, ?basevalue, ?n) :-
   Stats_InsensValueArrayIndexPointsTo(_, ?basehctx, ?basevalue),
   ?n = count : Stats_InsensValueArrayIndexPointsTo(_, ?basehctx, ?basevalue).
+#endif // FLOWLOG_ENGINE
 
 // Count how many objects, an array points to (basevalue context-insensitive)
 Stats_InsensBaseValueArrayIndexPointsTo(?hctx, ?value, ?basevalue) :-
   mainAnalysis.ArrayIndexPointsTo(?hctx, ?value, _, ?basevalue).
 
+#ifdef FLOWLOG_ENGINE
+Stats_InsensBaseValueArrayCount(?basevalue, count((?hctx, ?value))) :-
+  Stats_InsensBaseValueArrayIndexPointsTo(?hctx, ?value, ?basevalue).
+#else
 Stats_InsensBaseValueArrayCount(?basevalue, ?n) :-
   Stats_InsensBaseValueArrayIndexPointsTo(_, _, ?basevalue),
   ?n = count : Stats_InsensBaseValueArrayIndexPointsTo(_, _, ?basevalue).
+#endif // FLOWLOG_ENGINE
 
 // Count how many objects, an array points to (value+basevalue context-insensitive)
+#ifdef FLOWLOG_ENGINE
+Stats_InsensArrayCount(?basevalue, count(?value)) :-
+  Stats_Simple_InsensArrayIndexPointsTo(?value, ?basevalue).
+#else
 Stats_InsensArrayCount(?basevalue, ?n) :-
   Stats_Simple_InsensArrayIndexPointsTo(_, ?basevalue),
   ?n = count : Stats_Simple_InsensArrayIndexPointsTo(_, ?basevalue).
+#endif // FLOWLOG_ENGINE
 
 // NOTE: The same applies for Stats_InsensValueArrayCount
+#ifdef FLOWLOG_ENGINE
+.decl _Agg_Stats_Arrays(?n:number)
+_Agg_Stats_Arrays(count((?basehctx, ?basevalue, ?n))) :-
+  Stats_ArrayCount(?basehctx, ?basevalue, ?n).
+Stats_Arrays(?n) :- _Agg_Stats_Arrays(?n).
+Stats_Arrays(0) :- _StatsSeed(_), !_Agg_Stats_Arrays(_).
+#else
 Stats_Arrays(?n) :-
   ?n = count : Stats_ArrayCount(_, _, _).
+#endif // FLOWLOG_ENGINE
 
 // NOTE: The same applies for Stats_InsensBaseValueArrayCount
+#ifdef FLOWLOG_ENGINE
+.decl _Agg_Stats_InsensArrays(?n:number)
+_Agg_Stats_InsensArrays(count((?basevalue, ?n))) :-
+  Stats_InsensArrayCount(?basevalue, ?n).
+Stats_InsensArrays(?n) :- _Agg_Stats_InsensArrays(?n).
+Stats_InsensArrays(0) :- _StatsSeed(_), !_Agg_Stats_InsensArrays(_).
+#else
 Stats_InsensArrays(?n) :-
   ?n = count : Stats_InsensArrayCount(_, _).
+#endif // FLOWLOG_ENGINE
 
 #ifndef DISABLE_POINTS_TO
 
@@ -142,39 +284,76 @@ Stats_InsensArrays(?n) :-
  ***************************************************************/
 
 // Count how many objects, a field points to (context-sensitive)
+#ifdef FLOWLOG_ENGINE
+Stats_FieldCount(?sig, ?basehctx, ?basevalue, count((?hctx, ?value))) :-
+  mainAnalysis.InstanceFieldPointsTo(?hctx, ?value, ?sig, ?basehctx, ?basevalue).
+#else
 Stats_FieldCount(?sig, ?basehctx, ?basevalue, ?n) :-
   mainAnalysis.InstanceFieldPointsTo(_, _, ?sig, ?basehctx, ?basevalue),
   ?n = count : mainAnalysis.InstanceFieldPointsTo(_, _, ?sig, ?basehctx, ?basevalue).
+#endif // FLOWLOG_ENGINE
 
 // Count how many objects, a field points to (value context-insensitive)
 Stats_InsensValueInstanceFieldPointsTo(?value, ?sig, ?basehctx, ?basevalue) :-
   mainAnalysis.InstanceFieldPointsTo(_, ?value, ?sig, ?basehctx, ?basevalue).
 
+#ifdef FLOWLOG_ENGINE
+Stats_InsensValueFieldCount(?sig, ?basehctx, ?basevalue, count(?value)) :-
+  Stats_InsensValueInstanceFieldPointsTo(?value, ?sig, ?basehctx, ?basevalue).
+#else
 Stats_InsensValueFieldCount(?sig, ?basehctx, ?basevalue, ?n) :-
   Stats_InsensValueInstanceFieldPointsTo(_, ?sig, ?basehctx, ?basevalue),
   ?n = count : Stats_InsensValueInstanceFieldPointsTo(_, ?sig, ?basehctx, ?basevalue).
+#endif // FLOWLOG_ENGINE
 
 // Count how many objects, a field points to (basevalue context-insensitive)
 Stats_InsensBaseValueInstanceFieldPointsTo(?hctx, ?value, ?sig, ?basevalue) :-
   mainAnalysis.InstanceFieldPointsTo(?hctx, ?value, ?sig, _, ?basevalue).
 
+#ifdef FLOWLOG_ENGINE
+Stats_InsensBaseValueFieldCount(?sig, ?basevalue, count((?hctx, ?value))) :-
+  Stats_InsensBaseValueInstanceFieldPointsTo(?hctx, ?value, ?sig, ?basevalue).
+#else
 Stats_InsensBaseValueFieldCount(?sig, ?basevalue, ?n) :-
   Stats_InsensBaseValueInstanceFieldPointsTo(_, _, ?sig, ?basevalue),
   ?n = count : Stats_InsensBaseValueInstanceFieldPointsTo(_, _, ?sig, ?basevalue).
+#endif // FLOWLOG_ENGINE
 
 // Count how many objects, a field points to (value+basevalue context-insensitive)
+#ifdef FLOWLOG_ENGINE
+Stats_InsensFieldCount(?sig, ?basevalue, count(?value)) :-
+  Stats_Simple_InsensInstanceFieldPointsTo(?value, ?sig, ?basevalue).
+#else
 Stats_InsensFieldCount(?sig, ?basevalue, ?n) :-
   Stats_Simple_InsensInstanceFieldPointsTo(_, ?sig, ?basevalue),
   ?n = count : Stats_Simple_InsensInstanceFieldPointsTo(_, ?sig, ?basevalue).
+#endif // FLOWLOG_ENGINE
 
 // NOTE: The same applies for Stats_InsensValueFieldCount
+#ifdef FLOWLOG_ENGINE
+.decl _Agg_Stats_Fields(?n:number)
+_Agg_Stats_Fields(count((?sig, ?basehctx, ?basevalue, ?n))) :-
+  Stats_FieldCount(?sig, ?basehctx, ?basevalue, ?n).
+Stats_Fields(?n) :- _Agg_Stats_Fields(?n).
+Stats_Fields(0) :- _StatsSeed(_), !_Agg_Stats_Fields(_).
+#else
 Stats_Fields(?n) :-
   ?n = count : Stats_FieldCount(_, _, _, _).
+#endif // FLOWLOG_ENGINE
 
 // NOTE: The same applies for Stats_InsensBaseFieldCount
+#ifdef FLOWLOG_ENGINE
+.decl _Agg_Stats_InsensFields(?n:number)
+_Agg_Stats_InsensFields(count((?sig, ?basevalue, ?n))) :-
+  Stats_InsensFieldCount(?sig, ?basevalue, ?n).
+Stats_InsensFields(?n) :- _Agg_Stats_InsensFields(?n).
+Stats_InsensFields(0) :- _StatsSeed(_), !_Agg_Stats_InsensFields(_).
+#else
 Stats_InsensFields(?n) :-
   ?n = count : Stats_InsensFieldCount(_, _, _).
+#endif // FLOWLOG_ENGINE
 
+// NOTE: START NOT USED
 //Stats_InsensInstanceFieldPointsToNonThrowable(?value, ?sig, ?basevalue),
 //Stats_InstanceFieldPointsToNonThrowable(?hctx, ?value, ?sig, ?basehctx, ?basevalue) :-
 //  Value_Type(?value, ?valuetype),
@@ -194,6 +373,7 @@ Stats_InsensFields(?n) :-
 //  Value_Type(?value, ?valuetype),
 //  !SupertypeOf("java.lang.Throwable", ?valuetype),
 //  !SupertypeOf("java.lang.Throwable", ?basevaluetype).
+// NOTE: END NOT USED
 
 #endif // DISABLE_POINTS_TO
 
@@ -202,21 +382,78 @@ Stats_InsensFields(?n) :-
  ***************************************************/
 
 // Count how many contexts, a reachable method appears with
+#ifdef FLOWLOG_ENGINE
+Stats_MethodContextCount(?method, count(?ctx)) :-
+  mainAnalysis.ReachableContext(?ctx, ?method).
+#else
 Stats_MethodContextCount(?method, ?n) :-
   mainAnalysis.ReachableContext(_, ?method),
   ?n = count : mainAnalysis.ReachableContext(_, ?method).
+#endif // FLOWLOG_ENGINE
 
+#ifdef FLOWLOG_ENGINE
+.decl _Agg_Stats_Methods(?n:number)
+_Agg_Stats_Methods(count(?method)) :-
+  mainAnalysis.Reachable(?method).
+Stats_Methods(?n) :- _Agg_Stats_Methods(?n).
+Stats_Methods(0) :- _StatsSeed(_), !_Agg_Stats_Methods(_).
+#else
 Stats_Methods(?n) :-
   ?n = count : mainAnalysis.Reachable(_).
+#endif // FLOWLOG_ENGINE
 
+#ifdef FLOWLOG_ENGINE
+Method_NumberOfContexts(?method, count(?ctx)) :-
+  mainAnalysis.Reachable(?method),
+  mainAnalysis.ReachableContext(?ctx, ?method).
+#else
 Method_NumberOfContexts(?method, ?n) :-
   mainAnalysis.Reachable(?method),
   ?n =  count : {mainAnalysis.ReachableContext(_, ?method)}.
+#endif // FLOWLOG_ENGINE
 
+#ifdef FLOWLOG_ENGINE
+.decl _Agg_Method_VPTCountPerMethodVariable(?method:Method, ?var:Var, ?n:number)
+_Agg_Method_VPTCountPerMethodVariable(?method, ?var, count((?hctx, ?value, ?ctx))) :-
+  Var_DeclaringMethod(?var, ?method),
+  mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?var).
+Method_VPTCountPerMethodVariable(?method, ?var, ?n) :-
+  _Agg_Method_VPTCountPerMethodVariable(?method, ?var, ?n).
+Method_VPTCountPerMethodVariable(?method, ?var, 0) :-
+  Var_DeclaringMethod(?var, ?method),
+  !_Agg_Method_VPTCountPerMethodVariable(?method, ?var, _).
+#else
 Method_VPTCountPerMethodVariable(?method, ?var, Y) :-
   Var_DeclaringMethod(?var, ?method),
   Y =  count : {mainAnalysis.VarPointsTo(_, _, _, ?var)}.
+#endif // FLOWLOG_ENGINE
 
+// NOTE: FlowLog's sum(x) adds up the DISTINCT values of x, where Souffle adds up
+// one value per witness row, so summing the per-variable counts would collapse
+// every variable of a method that shares a points-to set size with another --
+// and most share 0. There is no tuple form to fall back on, as there is for
+// count: sum of a tuple is rejected outright. The sum is not needed though. The
+// total is just how many points-to facts the method's variables have between
+// them, which the join below counts directly, so the two branches agree.
+//
+// NOTE: The branches reach the same number by different routes. Souffle sums
+// Method_VPTCountPerMethodVariable; FlowLog recomputes from Var_DeclaringMethod
+// and VarPointsTo. Change how the per-variable counts are derived and the two
+// will drift apart silently -- keep this rule in step with that one.
+#ifdef FLOWLOG_ENGINE
+.decl _Agg_Method_TotalVPT(?method:Method, ?n:number)
+_Agg_Method_TotalVPT(?method, count((?var, ?hctx, ?value, ?ctx))) :-
+  mainAnalysis.Reachable(?method),
+  Var_DeclaringMethod(?var, ?method),
+  mainAnalysis.VarPointsTo(?hctx, ?value, ?ctx, ?var).
+Method_TotalVPT(?method, ?n) :-
+  _Agg_Method_TotalVPT(?method, ?n).
+// Covers both Souffle zero cases: a method whose variables all count zero, and
+// a method with no variables at all.
+Method_TotalVPT(?method, 0) :-
+  mainAnalysis.Reachable(?method),
+  !_Agg_Method_TotalVPT(?method, _).
+#else
 Method_TotalVPT(?method, Y) :-
   mainAnalysis.Reachable(?method),
   Y = sum ?n : {Method_VPTCountPerMethodVariable(?method, _, ?n)}.
@@ -224,7 +461,9 @@ Method_TotalVPT(?method, Y) :-
 Method_TotalVPT(?method, 0) :-
   mainAnalysis.Reachable(?method),
   !Var_DeclaringMethod(_, ?method).
+#endif // FLOWLOG_ENGINE
 
+// NOTE: START NOT USED
 //// Count how many local vars, a reachable method has
 //Stats_InsensVarInReachableMethod(?var, ?method),
 //Stats_VarInReachableMethod(?var, ?ctx, ?method) :-
@@ -248,11 +487,13 @@ Method_TotalVPT(?method, 0) :-
 //Stats_ReachableNativeMethod(?method) :-
 //  Reachable(?method),
 //  Method_Modifier("native", ?method).
+// NOTE: END NOT USED
 
 /****************************************************************
  * Dominance
  ***************************************************************/
 
+// NOTE: START NOT USED
 //Stats_Dominance_VarPointsTo_Var(?var, ?count) :-
 //  VarPointsTo(_, _, _, ?var),
 //  ?count = count : VarPointsTo(_, _, _, ?var).
@@ -292,11 +533,13 @@ Method_TotalVPT(?method, 0) :-
 //Stats_Dominance_InstanceFieldPointsTo_IdObject(?hctx, ?value, ?count) :-
 //  InstanceFieldPointsTo(?hctx, ?value, _, _, _),
 //  ?count = count : InstanceFieldPointsTo(?hctx, ?value, _, _, _).
+// NOTE: END NOT USED
 
 /***************************************************
  * Call graph edges
  ***************************************************/
 
+// NOTE: START NOT USED
 //Stats_InsensCallGraphEdgesFromSize(?from, ?size) :-
 //  Stats_Simple_InsensCallGraphEdge(?from, _),
 //  ?size = count : Stats_Simple_InsensCallGraphEdge(?from, _).
@@ -304,6 +547,7 @@ Method_TotalVPT(?method, 0) :-
 //Stats_InsensCallGraphEdgesToSize(?to, ?size) :-
 //  Stats_Simple_InsensCallGraphEdge(_, ?to),
 //  ?size = count : Stats_Simple_InsensCallGraphEdge(_, ?to).
+// NOTE: END NOT USED
 
 /***************************************************
  * Exceptions
@@ -315,19 +559,24 @@ Method_TotalVPT(?method, 0) :-
 Stats_InsensValueThrowPointsTo(?value, ?ctx, ?method) :-
   mainAnalysis.ThrowPointsTo(_, ?value, ?ctx, ?method).
 
+// NOTE: START NOT USED
 //Stats_InsensValueThrowPointsToSize(?ctx, ?method, ?size) :-
 //  Stats_InsensValueThrowPointsTo(_, ?ctx, ?method),
 //  ?size = count : Stats_InsensValueThrowPointsTo(_, ?ctx, ?method).
+// NOTE: END NOT USED
 
 Stats_InsensThrowPointsTo(?value, ?method) :-
   Stats_InsensValueThrowPointsTo(?value, _, ?method).
 
+// NOTE: START NOT USED
 //Stats_InsensThrowPointsToSize(?method, ?size)
 //  Stats_InsensThrowPointsTo(_, ?method),
 //  ?size = count : Stats_InsensThrowPointsTo(_, ?method).
+// NOTE: END NOT USED
 
 #endif // DISABLE_POINTS_TO
 
+// NOTE: START NOT USED
 //Stats_ReachableExceptionHandler(?handler) :-
 //  Reachable(?method),
 //  ExceptionHandler_Method(?handler, ?method).
@@ -367,11 +616,13 @@ Stats_InsensThrowPointsTo(?value, ?method) :-
 //// NOTE: The same applies for Stats_InsensMethodThrowsPerMethodCount
 //Stats_InsensThrowMethods(?n) :-
 //  ?n = count : Stats_InsensThrowsPerMethodCount(_, _).
+// NOTE: END NOT USED
 
 /***************************************************
  * Prepare sorting of predicates
  ***************************************************/
 
+// NOTE: START NOT USED
 //VarsRank(?r), VarsRank_Id(?r_?n) -> uint[32](?n).
 //lang_physical_capacity[`VarsRank] = 8388608.
 //VarsRankNr(?r) <- uint32_range(1, Stats_Vars[], 1, ?r).
@@ -421,3 +672,4 @@ Stats_InsensThrowPointsTo(?value, ?method) :-
 //lang_physical_capacity[`InsensMethodVarsRank] = 8388608.
 //InsensMethodVarsRankNr(?r) <- uint32_range(1, Stats_InsensMethodsWithVars[], 1, ?r).
 //+InsensMethodVarsRank(?r) <- +InsensMethodVarsRankNr(?r).
+// NOTE: END NOT USED
