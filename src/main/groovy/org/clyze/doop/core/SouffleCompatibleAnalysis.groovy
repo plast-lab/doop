@@ -178,8 +178,7 @@ abstract class SouffleCompatibleAnalysis extends DoopAnalysis {
 		cpp.includeAtEnd("$analysis", "${statsPath}/statistics-simple.dl")
 
 		if (options.X_STATS_FULL.value || options.X_STATS_DEFAULT.value) {
-			// temp
-			if (options.FLOWLOG_ENGINE.value == false) cpp.includeAtEnd("$analysis", "${statsPath}/statistics.dl")
+			cpp.includeAtEnd("$analysis", "${statsPath}/statistics.dl")
 		}
 	}
 

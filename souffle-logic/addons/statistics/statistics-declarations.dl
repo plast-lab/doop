@@ -1,5 +1,24 @@
 #include "statistics-output.dl"
 
+// FlowLog resolves the attribute types of a top-level .decl before it expands
+// components, so a component-qualified type such as
+// mainAnalysis.configuration.Context is not registered yet at this point and the
+// declaration is rejected. Naming the primitive the type resolves to keeps the
+// relation, and every rule using it, working: FlowLog treats a type alias as the
+// type it aliases, and every configuration it can currently run declares Context
+// and HContext as symbol. The context-sensitive configurations declare them as
+// records, which FlowLog does not support at all, so those analyses are blocked
+// on something larger than this. All of it reverts once FlowLog resolves
+// top-level declaration types after component inlining.
+//
+// Guarded below: Stats_VarCount, Stats_InsensValueVarPointsTo,
+// Stats_InsensValueVarCount, Stats_InsensBaseVarPointsTo, Stats_ArrayCount,
+// Stats_InsensValueArrayIndexPointsTo, Stats_InsensValueArrayCount,
+// Stats_InsensBaseValueArrayIndexPointsTo, Stats_FieldCount,
+// Stats_InsensValueInstanceFieldPointsTo, Stats_InsensValueFieldCount,
+// Stats_InsensBaseValueInstanceFieldPointsTo and
+// Stats_InsensValueThrowPointsTo.
+
 /****************************************************************
  * Heaps and Values
  ***************************************************************/
@@ -51,17 +70,33 @@ OUTPUT_STATS(Stats_ApplicationHeap)
  ***************************************************************/
 
 // Count how many objects, a var points to (context-sensitive)
+#ifdef FLOWLOG_ENGINE
+.decl Stats_VarCount(?ctx:symbol, ?var:Var, ?n:number)
+#else
 .decl Stats_VarCount(?ctx:mainAnalysis.configuration.Context, ?var:Var, ?n:number)
+#endif // FLOWLOG_ENGINE
 OUTPUT_STATS(Stats_VarCount)
 
+#ifdef FLOWLOG_ENGINE
+.decl Stats_InsensValueVarPointsTo(?value:Value, ?ctx:symbol, ?var:Var)
+#else
 .decl Stats_InsensValueVarPointsTo(?value:Value, ?ctx:mainAnalysis.configuration.Context, ?var:Var)
+#endif // FLOWLOG_ENGINE
 OUTPUT_STATS(Stats_InsensValueVarPointsTo)
 
 // Count how many objects, a var points to (value context-insensitive)
+#ifdef FLOWLOG_ENGINE
+.decl Stats_InsensValueVarCount(?ctx:symbol, ?var:Var, ?n:number)
+#else
 .decl Stats_InsensValueVarCount(?ctx:mainAnalysis.configuration.Context, ?var:Var, ?n:number)
+#endif // FLOWLOG_ENGINE
 OUTPUT_STATS(Stats_InsensValueVarCount)
 
+#ifdef FLOWLOG_ENGINE
+.decl Stats_InsensBaseVarPointsTo(?hctx:symbol, ?value:Value, ?var:Var)
+#else
 .decl Stats_InsensBaseVarPointsTo(?hctx:mainAnalysis.configuration.HContext, ?value:Value, ?var:Var)
+#endif // FLOWLOG_ENGINE
 OUTPUT_STATS(Stats_InsensBaseVarPointsTo)
 
 // Count how many objects, a var points to (base context-insensitive)
@@ -91,17 +126,33 @@ OUTPUT_STATS(Stats_InsensVars)
  ***************************************************************/
 
 // Count how many objects, an array points to (context-sensitive)
+#ifdef FLOWLOG_ENGINE
+.decl Stats_ArrayCount(?basehctx:symbol, ?basevalue:Value, ?n:number)
+#else
 .decl Stats_ArrayCount(?basehctx:mainAnalysis.configuration.HContext, ?basevalue:Value, ?n:number)
+#endif // FLOWLOG_ENGINE
 OUTPUT_STATS(Stats_ArrayCount)
 
+#ifdef FLOWLOG_ENGINE
+.decl Stats_InsensValueArrayIndexPointsTo(?value:Value, ?basehctx:symbol, ?basevalue:Value)
+#else
 .decl Stats_InsensValueArrayIndexPointsTo(?value:Value, ?basehctx:mainAnalysis.configuration.HContext, ?basevalue:Value)
+#endif // FLOWLOG_ENGINE
 OUTPUT_STATS(Stats_InsensValueArrayIndexPointsTo)
 
 // Count how many objects, an array points to (value context-insensitive)
+#ifdef FLOWLOG_ENGINE
+.decl Stats_InsensValueArrayCount(?basehctx:symbol, ?basevalue:Value, ?n:number)
+#else
 .decl Stats_InsensValueArrayCount(?basehctx:mainAnalysis.configuration.HContext, ?basevalue:Value, ?n:number)
+#endif // FLOWLOG_ENGINE
 OUTPUT_STATS(Stats_InsensValueArrayCount)
 
+#ifdef FLOWLOG_ENGINE
+.decl Stats_InsensBaseValueArrayIndexPointsTo(?hctx:symbol, ?value:Value, ?basevalue:Value)
+#else
 .decl Stats_InsensBaseValueArrayIndexPointsTo(?hctx:mainAnalysis.configuration.HContext, ?value:Value, ?basevalue:Value)
+#endif // FLOWLOG_ENGINE
 OUTPUT_STATS(Stats_InsensBaseValueArrayIndexPointsTo)
 
 // Count how many objects, an array points to (basevalue context-insensitive)
@@ -127,17 +178,33 @@ OUTPUT_STATS(Stats_InsensArrays)
  ***************************************************************/
 
 // Count how many objects, a field points to (context-sensitive)
+#ifdef FLOWLOG_ENGINE
+.decl Stats_FieldCount(?sig:Field, ?basehctx:symbol, ?basevalue:Value, ?n:number)
+#else
 .decl Stats_FieldCount(?sig:Field, ?basehctx:mainAnalysis.configuration.HContext, ?basevalue:Value, ?n:number)
+#endif // FLOWLOG_ENGINE
 OUTPUT_STATS(Stats_FieldCount)
 
+#ifdef FLOWLOG_ENGINE
+.decl Stats_InsensValueInstanceFieldPointsTo(?value:Value, ?sig:Field, ?basehctx:symbol, ?basevalue:Value)
+#else
 .decl Stats_InsensValueInstanceFieldPointsTo(?value:Value, ?sig:Field, ?basehctx:mainAnalysis.configuration.HContext, ?basevalue:Value)
+#endif // FLOWLOG_ENGINE
 OUTPUT_STATS(Stats_InsensValueInstanceFieldPointsTo)
 
 // Count how many objects, a field points to (value context-insensitive)
+#ifdef FLOWLOG_ENGINE
+.decl Stats_InsensValueFieldCount(?sig:Field, ?basehctx:symbol, ?basevalue:Value, ?n:number)
+#else
 .decl Stats_InsensValueFieldCount(?sig:Field, ?basehctx:mainAnalysis.configuration.HContext, ?basevalue:Value, ?n:number)
+#endif // FLOWLOG_ENGINE
 OUTPUT_STATS(Stats_InsensValueFieldCount)
 
+#ifdef FLOWLOG_ENGINE
+.decl Stats_InsensBaseValueInstanceFieldPointsTo(?hctx:symbol, ?value:Value, ?sig:Field, ?basevalue:Value)
+#else
 .decl Stats_InsensBaseValueInstanceFieldPointsTo(?hctx:mainAnalysis.configuration.HContext, ?value:Value, ?sig:Field, ?basevalue:Value)
+#endif // FLOWLOG_ENGINE
 OUTPUT_STATS(Stats_InsensBaseValueInstanceFieldPointsTo)
 
 // Count how many objects, a field points to (basevalue context-insensitive)
@@ -268,7 +335,11 @@ OUTPUT_STATS(Method_TotalVPT)
 
 #ifndef DISABLE_POINTS_TO
 
+#ifdef FLOWLOG_ENGINE
+.decl Stats_InsensValueThrowPointsTo(?value:Value, ?ctx:symbol, ?method:Method)
+#else
 .decl Stats_InsensValueThrowPointsTo(?value:Value, ?ctx:mainAnalysis.configuration.Context, ?method:Method)
+#endif // FLOWLOG_ENGINE
 OUTPUT_STATS(Stats_InsensValueThrowPointsTo)
 
 //.decl Stats_InsensValueThrowPointsToSize(?ctx:mainAnalysis.configuration.Context, ?method:Method, ?size:number)

@@ -51,9 +51,10 @@ import java.util.regex.Pattern
  * A metric rule that does not match the expected shape is an error rather than
  * a silent pass-through, so a change to the macro cannot quietly drop metrics.
  *
- * Both rewrites are lexically aware: text inside a string literal or a comment
- * is preserved verbatim (e.g. cat(?x, "?") keeps its "?" argument, and a
- * commented-out "// .plan 1:(2,1)" is left alone).
+ * All three rewrites are lexically aware: text inside a string literal or a
+ * comment is preserved verbatim (e.g. cat(?x, "?") keeps its "?" argument, a
+ * commented-out "// .plan 1:(2,1)" is left alone, and an aggregate written out
+ * inside a string is not mistaken for code).
  *
  * An instance holds the source text of one file and applies the passes to it in
  * the order requested, each returning the transformer so they can be chained;
@@ -64,6 +65,7 @@ import java.util.regex.Pattern
  * new FlowLogTransformer(analysisFile)
  *         .stripVarPrefixes()
  *         .dropPlanDirectives()
+ *         .rewriteStatsMetrics()
  *         .writeTo(analysisFile)
  * </pre>
  *
@@ -169,13 +171,14 @@ class FlowLogTransformer {
 	 * head-aggregation form FlowLog accepts. A source with no metrics (an analysis
 	 * run with --stats none) is returned unchanged.
 	 *
-	 * <p>Postcondition: no Souffle body aggregate survives. A rule that writes
-	 * Stats_Metrics directly instead of going through NewMetricMacro is not rewritten,
-	 * and is reported here rather than left for the FlowLog compiler to reject.
+	 * <p>Postcondition: no Souffle body aggregate survives anywhere in the program.
+	 * Only metrics written with NewMetricMacro are rewritten here; any other aggregate
+	 * has to be ported by hand, and is reported rather than left for the FlowLog
+	 * compiler to reject against generated code.
 	 *
 	 * @throws IllegalStateException if a Stats_Metrics counting rule is not in the
 	 *         shape macros.dl produces, or if any Souffle body aggregate remains --
-	 *         better a build failure than a metric silently lost.
+	 *         better a build failure than logic silently lost.
 	 */
 	static String rewriteStatsMetrics(String source) {
 		String[] lines = source.split('\n', -1)
@@ -230,9 +233,10 @@ class FlowLogTransformer {
 		String line = (to < 0 ? source.substring(from) : source.substring(from, to)).trim()
 		throw new IllegalStateException(
 				"FlowLogTransformer: Souffle body aggregate survives at line ${lineNo}, which FlowLog cannot " +
-				"parse: ${line} -- a rule writing Stats_Metrics directly does not go through NewMetricMacro and " +
-				"is therefore not rewritten. Guard it with #ifdef FLOWLOG_ENGINE; see the note at the top of " +
-				"souffle-logic/addons/statistics/statistics-simple.dl and the rationale in macros.dl.")
+				"parse: ${line} -- FlowLog has no body aggregate form, so the rule has to be ported to head " +
+				"aggregation under #ifdef FLOWLOG_ENGINE, keeping the Souffle form in the #else. Metrics written " +
+				"with NewMetricMacro are rewritten automatically by this pass; every other aggregate is ported by " +
+				"hand. See souffle-logic/addons/statistics/macros.dl for what the ported shapes look like.")
 	}
 
 	/**

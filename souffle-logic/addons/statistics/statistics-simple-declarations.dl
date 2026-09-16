@@ -1,6 +1,21 @@
 /***************************************************
  * Variables
  ***************************************************/
+
+// FlowLog resolves the attribute types of a top-level .decl before it expands
+// components, so a component-qualified type such as
+// mainAnalysis.configuration.HContext is not yet registered at this point and the
+// declaration is rejected. Substituting the primitive the type resolves to keeps
+// these relations, and every rule and metric that uses them, working: FlowLog
+// treats a type alias as the type it aliases, and every configuration FlowLog can
+// currently run declares Context and HContext as symbol. The context-sensitive
+// configurations declare them as records, which FlowLog does not support at all,
+// so those analyses are blocked on something larger than this.
+//
+// Stats_Simple_Application_VarPointsTo, Stats_Simple_ReachableVar,
+// Stats_Simple_Application_ArrayIndexPointsTo, Stats_Simple_ReachableApplicationMethod
+// fall into this case.
+
 // .decl Stats_Simple_JavaUtilInsensVarPointsTo(?value:Value, ?var:Var)
 // OUTPUT_STATS_DEFAULT(Stats_Simple_JavaUtilInsensVarPointsTo)
 
@@ -16,18 +31,6 @@ OUTPUT_STATS(Stats_Simple_AssignedVariable)
 .decl Stats_Simple_Application_InsensVarPointsTo(?value:Value, ?var:Var)
 OUTPUT_STATS(Stats_Simple_Application_InsensVarPointsTo)
 
-// FlowLog resolves the attribute types of a top-level .decl before it expands
-// components, so a component-qualified type such as
-// mainAnalysis.configuration.HContext is not yet registered at this point and the
-// declaration is rejected. Substituting the primitive the type resolves to keeps
-// these relations, and every rule and metric that uses them, working: FlowLog
-// treats a type alias as the type it aliases, and every configuration FlowLog can
-// currently run declares Context and HContext as symbol. The context-sensitive
-// configurations declare them as records, which FlowLog does not support at all,
-// so those analyses are blocked on something larger than this.
-//
-// The same substitution is needed at three more declarations below. It reverts
-// once FlowLog resolves top-level declaration types after component inlining.
 #ifdef FLOWLOG_ENGINE
 .decl Stats_Simple_Application_VarPointsTo(?hctx:symbol, ?value:Value, ?ctx:symbol, ?var:Var)
 #else
