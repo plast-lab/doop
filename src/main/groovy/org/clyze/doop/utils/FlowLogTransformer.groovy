@@ -51,7 +51,15 @@ import java.util.regex.Pattern
  * A metric rule that does not match the expected shape is an error rather than
  * a silent pass-through, so a change to the macro cannot quietly drop metrics.
  *
- * All three rewrites are lexically aware: text inside a string literal or a
+ * Transformation #4: inline declarations. Souffle lets a .decl carry an "inline"
+ * qualifier, telling it to expand the relation at its use sites rather than
+ * materialise it. FlowLog's grammar has no such qualifier and rejects the
+ * declaration outright. Like a join order, it is an evaluation directive that
+ * cannot change what a program computes, so the qualifier is simply dropped and
+ * FlowLog materialises the relation instead -- which may cost memory on a large
+ * one, but cannot change the result.
+ *
+ * All four rewrites are lexically aware: text inside a string literal or a
  * comment is preserved verbatim (e.g. cat(?x, "?") keeps its "?" argument, a
  * commented-out "// .plan 1:(2,1)" is left alone, and an aggregate written out
  * inside a string is not mistaken for code).
@@ -66,6 +74,7 @@ import java.util.regex.Pattern
  *         .stripVarPrefixes()
  *         .dropPlanDirectives()
  *         .rewriteStatsMetrics()
+ *         .dropInlineQualifiers()
  *         .writeTo(analysisFile)
  * </pre>
  *
@@ -98,6 +107,12 @@ class FlowLogTransformer {
 	/** Rewrites the Souffle statistics metrics into FlowLog form. Returns this, for chaining. */
 	FlowLogTransformer rewriteStatsMetrics() {
 		text = rewriteStatsMetrics(text)
+		return this
+	}
+
+	/** Drops the Souffle "inline" qualifier from declarations. Returns this, for chaining. */
+	FlowLogTransformer dropInlineQualifiers() {
+		text = dropInlineQualifiers(text)
 		return this
 	}
 
@@ -165,6 +180,33 @@ class FlowLogTransformer {
 		}
 		return out.toString()
 	}
+
+	/**
+	 * Removes the Souffle "inline" qualifier from every declaration in a .dl source
+	 * text, leaving the declaration itself untouched. A source with no such
+	 * qualifier is returned unchanged.
+	 */
+	static String dropInlineQualifiers(String source) {
+		String[] lines = source.split('\n', -1)
+		StringBuilder out = new StringBuilder(source.length())
+		for (int i = 0; i < lines.length; i++) {
+			if (i > 0) out.append('\n')
+			Matcher m = INLINE_DECL.matcher(lines[i])
+			if (m.matches()) {
+				out.append(m.group(1))
+				if (m.group(2) != null) out.append(' ').append(m.group(2))
+			} else {
+				out.append(lines[i])
+			}
+		}
+		return out.toString()
+	}
+
+	/**
+	 * A declaration carrying the "inline" qualifier. Group 1 is the declaration
+	 * without it; any trailing comment is kept.
+	 */
+	private static final Pattern INLINE_DECL = ~/^(\s*\.decl\s+[^\/]*\))\s+inline\s*(\/\/.*)?$/
 
 	/**
 	 * Rewrites every expanded statistics metric in a .dl source text into the

@@ -40,6 +40,7 @@ class FlowLogAnalysis extends SouffleCompatibleAnalysis {
 		new FlowLogTransformer(analysisFile)
 				.stripVarPrefixes()
 				.dropPlanDirectives()
+				.dropInlineQualifiers()
 				.rewriteStatsMetrics()
 				.writeTo(analysisFile)
 		File db = new File(outDir, 'database')
