@@ -13,7 +13,8 @@
 // so those analyses are blocked on something larger than this.
 //
 // Stats_Simple_Application_VarPointsTo, Stats_Simple_ReachableVar,
-// Stats_Simple_Application_ArrayIndexPointsTo, Stats_Simple_ReachableApplicationMethod
+// Stats_Simple_Application_ArrayIndexPointsTo, Stats_Simple_ReachableApplicationMethod,
+// Stats_Simple_Application_InstanceFieldPointsTo
 // fall into this case.
 
 // .decl Stats_Simple_JavaUtilInsensVarPointsTo(?value:Value, ?var:Var)
@@ -80,7 +81,11 @@ OUTPUT_STATS(Stats_Simple_InsensStaticFieldPointsTo)
 .decl Stats_Simple_Application_InsensInstanceFieldPointsTo(?value:Value, ?sig:Field, ?basevalue:Value)
 OUTPUT_STATS(Stats_Simple_Application_InsensInstanceFieldPointsTo)
 
+#ifdef FLOWLOG_ENGINE
+.decl Stats_Simple_Application_InstanceFieldPointsTo(?hctx:symbol, ?value:Value, ?sig:Field, ?basehctx:symbol, ?basevalue:Value)
+#else
 .decl Stats_Simple_Application_InstanceFieldPointsTo(?hctx:mainAnalysis.configuration.HContext, ?value:Value, ?sig:Field, ?basehctx:mainAnalysis.configuration.HContext, ?basevalue:Value)
+#endif // FLOWLOG_ENGINE
 OUTPUT_STATS(Stats_Simple_Application_InstanceFieldPointsTo)
 
 #endif // DISABLE_POINTS_TO
