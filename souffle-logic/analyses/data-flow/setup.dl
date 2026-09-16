@@ -159,36 +159,36 @@ RET(stmt) :- isReturnVoid_Insn(stmt).
 RET(stmt), FORMAL_RET(stmt, var) :- ReturnNonvoid_Var(stmt, var).
 
 
-.decl __OperatorAt(stmt: Instruction, op: symbol)
-.input __OperatorAt(filename="OperatorAt.facts")
-.decl __Operand_ValidStr(stmt: Instruction, pos: number, oper: symbol)
+.decl _OperatorAt2(stmt: Instruction, op: symbol)
+.input _OperatorAt2(filename="OperatorAt.facts")
+.decl _Operand_ValidStr(stmt: Instruction, pos: number, oper: symbol)
 
 OPERAND_VAR(stmt, pos, oper) :- AssignOper_From(stmt, pos, oper).
 OPERAND_VAR(stmt, pos, oper) :- If_Var(stmt, pos, oper).
 
-__Operand_ValidStr(stmt, pos, str) :-
+_Operand_ValidStr(stmt, pos, str) :-
 	AssignOper_FromConstant(stmt, pos, str),
 	strlen(str) <= 10, str != "#Infinity", str != "#-Infinity", str != "#InfinityF".
-__Operand_ValidStr(stmt, pos, str) :-
+_Operand_ValidStr(stmt, pos, str) :-
 	If_Constant(stmt, pos, str),
 	strlen(str) <= 10, str != "#Infinity", str != "#-Infinity", str != "#InfinityF".
 
-OPERAND_NUM(stmt, pos, oper) :- __Operand_ValidStr(stmt, pos, str), oper = to_number(str).
+OPERAND_NUM(stmt, pos, oper) :- _Operand_ValidStr(stmt, pos, str), oper = to_number(str).
 
 UNOP(stmt, to, op) :-
 	isAssignUnop_Insn(stmt),
 	AssignInstruction_To(stmt, to),
-	__OperatorAt(stmt, op).
+	_OperatorAt2(stmt, op).
 
 BINOP(stmt, to, op) :-
 	isAssignBinop_Insn(stmt),
 	AssignInstruction_To(stmt, to),
-	__OperatorAt(stmt, op).
+	_OperatorAt2(stmt, op).
 
 IF(stmt, op, label) :-
 	isIf_Insn(stmt),
 	If_Target(stmt, label),
-	__OperatorAt(stmt, op).
+	_OperatorAt2(stmt, op).
 
 GOTO(stmt, label) :-
 	Goto_Target(stmt, label).
