@@ -689,7 +689,8 @@ MethodVarArgs(?method, ?idx, ?formal, ?type) :-
 BOUND_VAR_POINTS_TO(?hctx, ?val, ?calleeCtx, ?formal) :-
   InvokedynamicBootCallGraphEdge(_, ?invokedynamic, ?calleeCtx, ?bootMethod),
   !Method_Modifier("varargs", ?bootMethod),
-  FormalParam(?idx + 3, ?bootMethod, ?formal),
+  ?formalIdx = ?idx + 3,
+  FormalParam(?formalIdx, ?bootMethod, ?formal),
   BootstrapParam(?idx, ?invokedynamic, ?actual),
   VarPointsTo(?hctx, ?val, _, ?actual).
 #endif // DISABLE_POINTS_TO
@@ -956,7 +957,8 @@ BOUND_VAR_POINTS_TO(?hctx, ?val, ?calleeCtx, ?formal) :-
   LambdaObject(?invokedynamic, ?lambda, _, ?K, ?implMethod, _),
   LambdaCaptured(?invokedynamic, ?val, ?idx, ?hctx),
   ?idx + ?shiftK <= ?K,
-  FormalParam(?idx - ?shiftK, ?implMethod, ?formal),
+  ?formalIdx = ?idx - ?shiftK,
+  FormalParam(?formalIdx, ?implMethod, ?formal),
   Value_Type(?val, ?valType),
   Var_Type(?formal, ?formalType),
   basic.SubtypeOf(?valType, ?formalType).
