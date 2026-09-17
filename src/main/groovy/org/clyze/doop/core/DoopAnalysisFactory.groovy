@@ -848,13 +848,6 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 			}
 			String path = env.PATH
 			env.PATH = "${cargoBinDir.canonicalPath}:${path ?: ""}" as String
-
-			// Set the CARGO_TARGET_DIR, so that cargo dependencies are cached.
-			// This does not work since the flowlog-compiler hard-codes the target dir
-			// TODO(flowlog-team)?
-			// File cargoTargetDir = new File("${Doop.doopCache}/flowlog-analyses/cargo")
-			// cargoTargetDir.mkdirs()
-			// env.CARGO_TARGET_DIR = cargoTargetDir.canonicalPath
 		}
 
 		return env
