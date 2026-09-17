@@ -4,6 +4,7 @@ import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 import groovy.util.logging.Log4j
 import org.clyze.doop.utils.FlowLogTransformer
+import org.clyze.utils.CheckSum
 import org.clyze.utils.Helper
 
 import static org.apache.commons.io.FileUtils.sizeOfDirectory
@@ -19,7 +20,7 @@ class FlowLogAnalysis extends SouffleCompatibleAnalysis {
 		long monitorInterval = (options.X_MONITORING_INTERVAL.value as long) * 1000
 
 		log.info "[Task COMPILE...]"
-		File flowLogBinary = compileAnalysisFile(analysisFile, runtimeMetricsFile, monitorInterval)
+		File flowLogBinary = compileAnalysisFile(analysisFile, runtimeMetricsFile)
 		log.debug("Compiled flowlog binary: ${flowLogBinary.canonicalPath}")
 		log.info "[Task COMPILE Done]"
 
@@ -30,9 +31,21 @@ class FlowLogAnalysis extends SouffleCompatibleAnalysis {
 
 	}
 
-	protected File compileAnalysisFile(File analysisFile, File runtimeMetricsFile, long monitorInterval) {
-		String flowLogBinaryName = "flowlog_" + getName() + "_" + getId()
-		File flowLogBinary = new File(outDir, flowLogBinaryName)
+	protected File compileAnalysisFile(File analysisFile, File runtimeMetricsFile) {
+
+		String checksum = calcAnalysisFileChecksum(analysisFile)
+		String flowLogBinaryName = getName() + "_" + checksum
+		File flowLogBinaryDir = determineGeneratedBinaryTargetDir()
+		File flowLogBinary = new File(flowLogBinaryDir, flowLogBinaryName)
+
+		if (flowLogBinary.exists()) {
+			// retrieve the file from the cache
+			log.debug "Analysis compilation time (sec): 0"
+			runtimeMetricsFile.append("analysis compilation time (sec)\t0\n")
+			return flowLogBinary
+		}
+
+		File cargoTargetDir = determineCargoTargetDir()
 
 		File flowLogBuildDir = new File(outDir, "flowlog_build")
 		flowLogBuildDir.mkdirs()
@@ -43,6 +56,7 @@ class FlowLogAnalysis extends SouffleCompatibleAnalysis {
 				.dropInlineQualifiers()
 				.rewriteStatsMetrics()
 				.writeTo(analysisFile)
+
 		File db = new File(outDir, 'database')
 		List<String> compilationCommandParts = List.of(
 				options.FLOWLOG_COMPILER.value as String,
@@ -50,6 +64,7 @@ class FlowLogAnalysis extends SouffleCompatibleAnalysis {
 				"-D", db.canonicalPath,
 				"-o", flowLogBinary.canonicalPath,
 				"-B", flowLogBuildDir.canonicalPath,
+				"-T", cargoTargetDir.canonicalPath,
 				"--str-intern",
 				//"--check"
 				analysisFile.canonicalPath
@@ -69,9 +84,29 @@ class FlowLogAnalysis extends SouffleCompatibleAnalysis {
 		return flowLogBinary
 	}
 
+	protected String calcAnalysisFileChecksum(File analysisFile) {
+		return CheckSum.checksum(analysisFile, DoopAnalysisFactory.HASH_ALGO)
+	}
+
+	protected File determineCargoTargetDir() {
+		File cargoTargetDir = new File("${Doop.doopCache}/flowlog-analyses/cargo")
+		cargoTargetDir.mkdirs()
+		return cargoTargetDir
+	}
+
+	protected File determineGeneratedBinaryTargetDir() {
+		File dir = new File("${Doop.doopCache}/flowlog-analyses/bin")
+		dir.mkdirs()
+		return dir
+	}
+
 	protected void invokeFlowLogBinary(File fileLogBinary, File runtimeMetricsFile, long monitorInterval, int workers) {
+		File db = new File(outDir, 'database')
+
 		List<String> executionCommandParts = List.of(
 				fileLogBinary.canonicalPath,
+				"-F", factsDir.canonicalPath,
+				"-D", db.canonicalPath,
 				"-w", workers.toString()
 		)
 
