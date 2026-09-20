@@ -975,9 +975,11 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			),
 			new IntegerAnalysisOption(
 					id: "FLOWLOG_WORKERS",
-					group: GROUP_ENGINE,
-					cli: false,
-					value: 4 //TODO: Introduce a config
+					name: "Xflowlog-workers",
+					group: GROUP_EXPERIMENTAL,
+					description: "Specify number of FlowLog workers to run (default: ${DEFAULT_JOBS}).",
+					argName: "NUMBER",
+					value: DEFAULT_JOBS //TODO: Introduce a config
 			),
 			/* End FlowLog related options */
 
