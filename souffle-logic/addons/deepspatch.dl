@@ -1,0 +1,205 @@
+// ============================================================================
+// deepspatch.dl -- deep dispatch through Java service-provider registries.
+//
+// Resolves the reflective dispatch created by java.util.ServiceLoader (and
+// API-compatible reimplementations): a call `ServiceLoader.load(I.class)`
+// returns providers whose concrete classes are named in META-INF/services/I and
+// are instantiated reflectively. A static call graph loses every provider, and
+// with it everything downstream of a loaded service.
+//
+// This module binds the registered providers into the analysis so that calling
+// provider methods dispatches to the real provider bodies. It is FULLY AUTOMATIC:
+// it consumes the ServiceProvider(iface, provider) facts that fact generation emits
+// from META-INF/services entries (BasicJavaSupport.writeServiceProviders) -- there
+// are NO hand-authored registry or seed facts.
+//
+// Two complementary tiers, both gated on the service interface actually being used
+// (MockSiteType), so nothing is seeded blindly:
+//   1. COARSE (dispatch): register each provider mock as a stand-in for the service
+//      INTERFACE type, so the program's own `iface.m()` call sites dispatch to every
+//      registered provider -- independent of HOW the loader is invoked (works for
+//      string-keyed finders that no call-site pattern can match). Adds no entry
+//      points. This is the workhorse.
+//   2. PRECISE (call site): at a REACHED ServiceLoader.load / Service.providers call
+//      whose Class argument reifies the interface, bind the loader RESULT (Iterable
+//      or Iterator) to the providers, so `for (s : loader) s.m()` also dispatches.
+//
+// Reflection-independent: the requested interface is recovered from the base
+// fact ClassHeap_InstanceType (the type reified by an `I.class` literal), which
+// fact generation always emits -- NOT from the reflection-gated ReifiedClass
+// relation. So this fires on a plain analysis with no reflection flag. (It still
+// only handles a *literal* Class argument; a Class.forName(...) result flowing to
+// the load call would need reflection's string modelling.)
+//
+// Included at top level after the mocking layer (like spring-data-repo), so it
+// uses the mainAnalysis.* component-qualified relations. It is preprocessed
+// standalone (CPreprocessor.includeAtEnd), so it #includes the macro header it
+// needs; ReifiedClass is component-internal, hence mainAnalysis.ReifiedClass.
+// Guarded to analyses that instantiate mainAnalysis (SouffleAnalysis).
+// ============================================================================
+#include "../commonMacros.dl"
+
+// Concrete, instantiable providers (drop abstract / interface registrations,
+// which cannot be the run-time provider object).
+.decl DispatchableProvider(?iface:symbol, ?provider:ReferenceType)
+DispatchableProvider(?iface, ?provider) :-
+  ServiceProvider(?iface, ?provider),
+  isClassType(?provider),
+  !ClassModifier("abstract", ?provider).
+
+// --- COARSE TIER: register each provider as an implementation of the SPI -----
+// The precise call-site binding below only fires at a matched ServiceLoader.load
+// / Service.providers call with a Class-literal argument. Real SPI loading is
+// often string-keyed and routed through custom finders (javax.xml FactoryFinder,
+// per-project ObjectFactory.newInstance(String), Class.forName(name)) that no
+// call-site pattern can match -- so no LOAD-SITE binding is possible there.
+//
+// But we do NOT need the load site: the point of an SPI is that the program then
+// USES the loaded object THROUGH the service interface (`Renderer r = ...; r.m()`).
+// Reaching r.m() is a DISPATCH problem, not an entry-point problem -- seeding the
+// provider's constructor as a root makes the ctor reachable but never reaches m().
+// So instead we make each registered provider mock a valid stand-in for the
+// service INTERFACE type: MockObjectForType(providerMock, iface). Wherever the
+// interface is mocked (its fields, parameters, receivers -- the central wiring in
+// mocking-core section 5), the provider mock is now among the values, so the
+// program's own `iface.m()` call sites dispatch to the provider's m(). This adds
+// NO entry points and mocks NO uncalled methods' arguments; it reaches exactly the
+// SPI methods the program invokes. It also overrides the representative-subtypes
+// policy's "one impl per interface" choice for these specific registered providers
+// (the whole reason the registry is needed: name ALL the providers, not just one).
+// Gated on the interface actually being used (MockSiteType).
+MockObjectForType(?mock, ?iface) :-
+  DispatchableProvider(?iface, ?provider),
+  MockSiteType(?iface),
+  ProviderMockValue(?provider, ?mock).
+
+// Service-loader factory methods: load(Class[,ClassLoader]) whose result iterates
+// the providers of the requested interface. The standard JDK loader, plus
+// API-compatible reimplementations that honour the META-INF/services contract.
+// Extend this relation to teach deepspatch a new loader implementation.
+.decl ServiceLoadMethod(?method:Method)
+// (a) The standard JDK ServiceLoader entry points (public platform API -- these are
+// standard signatures, NOT benchmark-specific class names).
+ServiceLoadMethod("<java.util.ServiceLoader: java.util.ServiceLoader load(java.lang.Class)>").
+ServiceLoadMethod("<java.util.ServiceLoader: java.util.ServiceLoader load(java.lang.Class,java.lang.ClassLoader)>").
+ServiceLoadMethod("<java.util.ServiceLoader: java.util.ServiceLoader loadInstalled(java.lang.Class)>").
+
+// (b) GENERAL detection of ServiceLoader REIMPLEMENTATIONS -- no hardcoded class
+// names. Many programs (especially ones predating java.util.ServiceLoader, Java 6)
+// ship their own loader that follows the same contract: read the resource path
+// "META-INF/services/<interface>" and reflectively instantiate the listed classes.
+// Any method that (i) uses a "META-INF/services/..." string constant in its body and
+// (ii) takes a java.lang.Class as its first parameter is such a loader for that Class
+// -- structurally identified, so it generalizes to any reimplementation. Methods that
+// instead take a String class-name (e.g. a FactoryFinder/ObjectFactory) are NOT matched
+// here; those are string-keyed and covered by the coarse tier above.
+ServiceLoadMethod(?method) :-
+  AssignHeapAllocation(?heap, _, ?method),
+  isStringConstant(?heap),
+  match("META-INF/services/.*", ?heap),
+  FormalParam(0, ?method, ?param),
+  Var_Type(?param, "java.lang.Class").
+
+// The result type is an Iterable whose iteration yields providers; iterating it
+// (`for (S s : loader)`) compiles to loader.iterator().next(). We model these
+// returns with an ArrayList container below.
+.decl ServiceLoaderIterableReturn(?t:Type)
+ServiceLoaderIterableReturn("java.util.ServiceLoader").
+ServiceLoaderIterableReturn("java.lang.Iterable").
+
+// A reached service-load call: recover the requested interface from the Class
+// argument's points-to set and capture the result variable and its static type.
+// The interface is read off the base fact ClassHeap_InstanceType -- the type that
+// the argument's `I.class` heap value reifies -- so no reflection support is
+// needed (the class heap flows to the argument through ordinary points-to).
+.decl ServiceLoadCall(?ctx:mainAnalysis.configuration.Context, ?ret:Var, ?iface:ReferenceType, ?retType:Type)
+ServiceLoadCall(?ctx, ?ret, ?iface, ?retType) :-
+  ServiceLoadMethod(?method),
+  mainAnalysis.ReachableContext(?ctx, ?inMethod),
+  Instruction_Method(?invo, ?inMethod),
+  MethodInvocation_Method(?invo, ?method),
+  ActualParam(0, ?invo, ?clsArg),
+  mainAnalysis.VarPointsTo(_, ?clsVal, ?ctx, ?clsArg),
+  ClassHeap_InstanceType(?clsVal, ?iface),
+  AssignReturnValue(?invo, ?ret),
+  Var_Type(?ret, ?retType).
+
+// Canonical per-provider mock value, held in a helper relation so the macro calls
+// below get a plain variable (nesting MOCK_OBJECT_OF_TYPE inside MOCK_OBJECT_FOR_TYPE
+// does not expand cleanly under the C preprocessor).
+// UNCONDITIONAL over registered providers -- this is the sound model, not waste: a
+// class listed in META-INF/services/I IS instantiated by its loader at run time,
+// whether or not the analysis has independently observed the interface being used.
+// Materializing the mock (and, via the always-on ctor-mocking, running its ctors)
+// mirrors that guaranteed instantiation. (An earlier attempt to gate this on
+// MockSiteType(iface) regressed recall by ~10pp: the unconditional minting also
+// bootstraps the MockSiteType closure, so gating it starved the coarse tier below.)
+.decl ProviderMockValue(?provider:ReferenceType, ?mock:Value)
+ProviderMockValue(?provider, cat(?provider, "::MockObject")) :-
+  DispatchableProvider(_, ?provider).
+
+// Mint the provider mock into the global mock registries (MockObject /
+// MockObjectForType are the top-level registries read by the rest of the
+// analysis; mainAnalysis_MockValueConsMacro registers the value's type). Uses
+// the canonical per-type mock value, shared with any other layer that mocks the
+// same type. Expanded manually instead of the MOCK_OBJECT_FOR_TYPE macro, which
+// is defined in mocking-core.dl and not visible when this file is preprocessed
+// standalone.
+MockObjectForType(?mock, ?provider),
+MockObject(?mock, ?provider),
+mainAnalysis_MockValueConsMacro(?mock, ?provider) :-
+  ProviderMockValue(?provider, ?mock).
+
+// Bind the loader result as a container of the providers. The loader (Iterable)
+// is modelled as an ArrayList whose backing array holds the provider mocks, so
+// `for (S s : loader) s.m()` -- i.e. loader.iterator().next().m() -- dispatches
+// to each provider's m(). Mirrors the Spring-Data repository List model.
+mainAnalysis_MockValueConsMacro(?list, "java.util.ArrayList"),
+mainAnalysis_MockValueConsMacro(?arr, "java.lang.Object[]"),
+mainAnalysis.VarPointsTo(?h, ?list, ?ctx, ?ret),
+mainAnalysis.InstanceFieldPointsTo(?h, ?arr, ?edField, ?h, ?list),
+mainAnalysis.ArrayIndexPointsTo(?h, ?mock, ?h, ?arr) :-
+  ServiceLoadCall(?ctx, ?ret, ?iface, ?retType),
+  ServiceLoaderIterableReturn(?retType),
+  DispatchableProvider(?iface, ?provider),
+  ProviderMockValue(?provider, ?mock),
+  Field_DeclaringType(?edField, "java.util.ArrayList"),
+  Field_SimpleName(?edField, "elementData"),
+  ?list = cat("<service-loader-list ", cat(?iface, ">")),
+  ?arr  = cat("<service-loader-arr ", cat(?iface, ">")),
+  mainAnalysis.isImmutableHContext(?h).
+
+// --- Iterator-returning loaders (a reimplementation whose load method returns a
+//     bare java.util.Iterator over the providers) ------------------------------
+// These return a bare java.util.Iterator, so there is no iterator() hop to route
+// through a container. We bind the returned iterator to a synthetic per-interface
+// iterator value, then model next() on it to yield each provider mock directly.
+.decl ServiceLoaderIteratorReturn(?t:Type)
+ServiceLoaderIteratorReturn("java.util.Iterator").
+
+// The returned var points to a synthetic service-iterator value for ?iface.
+.decl ServiceIteratorValue(?itVal:Value, ?iface:ReferenceType)
+ServiceIteratorValue(?itVal, ?iface) :-
+  ServiceLoadCall(_, _, ?iface, ?retType),
+  ServiceLoaderIteratorReturn(?retType),
+  ?itVal = cat("<service-iterator ", cat(?iface, ">")).
+
+mainAnalysis_MockValueConsMacro(?itVal, ?retType),
+mainAnalysis.VarPointsTo(?h, ?itVal, ?ctx, ?ret) :-
+  ServiceLoadCall(?ctx, ?ret, ?iface, ?retType),
+  ServiceLoaderIteratorReturn(?retType),
+  ServiceIteratorValue(?itVal, ?iface),
+  mainAnalysis.isImmutableHContext(?h).
+
+// next() called on (anything aliasing) the service iterator returns the providers.
+// Iterator.next() is abstract, so ordinary dispatch produces no edge/value; we
+// supply the result directly.
+mainAnalysis.VarPointsTo(?h, ?mock, ?callerCtx, ?to) :-
+  ServiceIteratorValue(?itVal, ?iface),
+  DispatchableProvider(?iface, ?provider),
+  ProviderMockValue(?provider, ?mock),
+  mainAnalysis.VarPointsTo(_, ?itVal, ?callerCtx, ?base),
+  VirtualMethodInvocation_Base(?invo, ?base),
+  VirtualMethodInvocation_SimpleName(?invo, "next"),
+  AssignReturnValue(?invo, ?to),
+  mainAnalysis.isImmutableHContext(?h).
