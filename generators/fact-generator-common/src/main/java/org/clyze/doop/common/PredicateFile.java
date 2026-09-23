@@ -109,6 +109,7 @@ public enum PredicateFile
     RETURN("Return"),
     RETURN_VOID("ReturnVoid"),
     SENSITIVE_LAYOUT_CONTROL("SensitiveLayoutControl"),
+    SERVICE_PROVIDER("ServiceProvider"),
     SERVICE("Service"),
     SPECIAL_METHOD_INV("SpecialMethodInvocation"),
     STATEMENT_TYPE("StatementType"),

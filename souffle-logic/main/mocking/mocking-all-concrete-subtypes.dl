@@ -13,3 +13,17 @@ MOCK_OBJECT_FOR_TYPE(?value, ?class, ?type) :-
   EligibleConcreteImpl(?class, ?type),
   !RefinedClass(?class),            // refined classes are represented per-instance (jackee)
   ?value = MOCK_OBJECT_OF_TYPE(?class).
+
+// Constructor-mocking (sound-mocking only): every mocked object runs ALL of its
+// class's constructors -- a mock stands in for a real, constructed instance, so its
+// constructors execute. Making each constructor a mock site (a) makes its body
+// reachable, (b) binds its `this` to the mock (via the receiver wiring in
+// mocking-core section 5), and (c) binds its reference parameters to mocks. Real
+// constructor field stores then populate fields precisely (subject to the core
+// SuppressedInstanceFieldStore list); generic field-mocking remains the fallback.
+// NB: gated to --sound-mocking on purpose -- the induced closure is too expensive
+// for the default representative policy (it blew up jackee/framework-scale solves).
+MockSiteMethod(?ctor) :-
+  MockedObject(_, ?class),
+  Method_SimpleName(?ctor, "<init>"),
+  Method_DeclaringType(?ctor, ?class).

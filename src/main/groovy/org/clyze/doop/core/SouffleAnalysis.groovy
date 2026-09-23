@@ -176,6 +176,12 @@ class SouffleAnalysis extends DoopAnalysis {
 				cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/main/mocking/mocking-all-concrete-subtypes.dl")
 			else
 				cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/main/mocking/mocking-representative-subtypes.dl")
+
+			// Deep dispatch through Java service-provider registries (ServiceLoader /
+			// META-INF/services). Consumes the ServiceProvider facts emitted by fact
+			// generation and binds loaded services to their registered providers.
+			// After the mocking layer: it uses the mock-minting macros and mainAnalysis.*.
+			cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/addons/deepspatch.dl")
 		}
 
 		if (options.INFORMATION_FLOW.value) {

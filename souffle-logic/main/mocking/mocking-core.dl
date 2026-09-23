@@ -182,6 +182,13 @@ MockedObject(?value, ?class) :-
   MockObjectForType(?value, _),
   MockObject(?value, ?class).
 
+// (Constructor-mocking -- running every mocked object's constructors -- lives in
+// mocking-all-concrete-subtypes.dl, i.e. it is enabled ONLY under --sound-mocking.
+// It is deliberately NOT in this shared core: on a large framework program the
+// closure it induces (every mocked type's ctor -> its callees -> their mocks ...)
+// blows up solve time, so it must not affect the default representative policy that
+// jackee and other open-programs analyses rely on.)
+
 // The mock sites grow from the seed types by following mocked objects' fields
 // and array elements.
 .decl MockSiteType(?type:ReferenceType)
