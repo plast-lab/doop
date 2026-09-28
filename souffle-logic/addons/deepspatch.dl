@@ -112,7 +112,11 @@ ServiceLoaderIterableReturn("java.lang.Iterable").
 // The interface is read off the base fact ClassHeap_InstanceType -- the type that
 // the argument's `I.class` heap value reifies -- so no reflection support is
 // needed (the class heap flows to the argument through ordinary points-to).
+#ifdef FLOWLOG_ENGINE
+.decl ServiceLoadCall(?ctx:symbol, ?ret:Var, ?iface:ReferenceType, ?retType:Type)
+#else
 .decl ServiceLoadCall(?ctx:mainAnalysis.configuration.Context, ?ret:Var, ?iface:ReferenceType, ?retType:Type)
+#endif // FLOWLOG_ENGINE
 ServiceLoadCall(?ctx, ?ret, ?iface, ?retType) :-
   ServiceLoadMethod(?method),
   mainAnalysis.ReachableContext(?ctx, ?inMethod),

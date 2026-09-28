@@ -57,6 +57,39 @@ BeanSimpleName(?type, ?simple) :-
   ?simple = substr(?type, ?pos + 1, strlen(?type) - ?pos - 1).
 
 .decl DefaultBeanId(?type:ClassType, ?id:symbol)
+// NOTE: Flowlog allows no call in an atom argument, and a variable bound by an
+// assignment cannot appear in a negated atom either, so the two character tests
+// are lifted into relations that bind through a positive atom instead.
+#ifdef FLOWLOG_ENGINE
+.decl FirstCharUpper(?simple:symbol, ?lower:symbol)
+FirstCharUpper(?simple, ?lower) :-
+  BeanSimpleName(_, ?simple),
+  ?firstChar = substr(?simple, 0, 1),
+  LowerFirst(?firstChar, ?lower).
+
+.decl SecondCharUpper(?simple:symbol)
+SecondCharUpper(?simple) :-
+  BeanSimpleName(_, ?simple),
+  ?secondChar = substr(?simple, 1, 1),
+  LowerFirst(?secondChar, _).
+
+// first two chars uppercase -> unchanged.
+DefaultBeanId(?type, ?simple) :-
+  BeanSimpleName(?type, ?simple),
+  strlen(?simple) > 1,
+  FirstCharUpper(?simple, _),
+  SecondCharUpper(?simple).
+// first char uppercase, second not (or length 1) -> lowercase the first char.
+DefaultBeanId(?type, ?id) :-
+  BeanSimpleName(?type, ?simple),
+  FirstCharUpper(?simple, ?lo),
+  ( strlen(?simple) = 1 ; !SecondCharUpper(?simple) ),
+  ?id = cat(?lo, substr(?simple, 1, strlen(?simple) - 1)).
+// first char not uppercase -> unchanged.
+DefaultBeanId(?type, ?simple) :-
+  BeanSimpleName(?type, ?simple),
+  !FirstCharUpper(?simple, _).
+#else
 // first two chars uppercase -> unchanged.
 DefaultBeanId(?type, ?simple) :-
   BeanSimpleName(?type, ?simple),
@@ -73,6 +106,7 @@ DefaultBeanId(?type, ?id) :-
 DefaultBeanId(?type, ?simple) :-
   BeanSimpleName(?type, ?simple),
   !LowerFirst(substr(?simple, 0, 1), _).
+#endif // FLOWLOG_ENGINE
 
 // Every way a bean can be referred to by name: explicit id or the default id.
 .decl BeanId(?type:ClassType, ?id:symbol)
@@ -119,9 +153,23 @@ TypeCandidate(?type, ?beanType, ?beanMock) :-
 TypeCandidateType(?type, ?beanType) :- TypeCandidate(?type, ?beanType, _).
 
 .decl TypeCandidateCount(?type:Type, ?n:number)
+// NOTE: count over an empty group yields 0 in Souffle but no row in Flowlog, so
+// the zero case is restored explicitly to keep the two relations equal.
+#ifdef FLOWLOG_ENGINE
+.decl _TypeCandidateTypeCount(?type:Type, ?n:number)
+_TypeCandidateTypeCount(?type, count(?beanType)) :- TypeCandidateType(?type, ?beanType).
+
+TypeCandidateCount(?type, ?n) :-
+  InjectionType(?type),
+  _TypeCandidateTypeCount(?type, ?n).
+TypeCandidateCount(?type, 0) :-
+  InjectionType(?type),
+  !_TypeCandidateTypeCount(?type, _).
+#else
 TypeCandidateCount(?type, ?n) :-
   InjectionType(?type),
   ?n = count : TypeCandidateType(?type, _).
+#endif // FLOWLOG_ENGINE
 
 .decl TypeHasPrimaryCandidate(?type:Type)
 TypeHasPrimaryCandidate(?type) :- TypeCandidate(?type, ?beanType, _), PrimaryBean(?beanType).

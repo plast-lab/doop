@@ -27,9 +27,17 @@ StereotypeAnnotatedClass(?class) :-
   BeanStereotypeAnnotation(?ann).
 
 .decl XMLClassFileDefs(?class:ClassType, ?file:symbol, ?n:number)
+// NOTE: Souffle counts witness tuples, Flowlog counts distinct values, so both
+// witness variables are counted as one tuple; counting either alone would
+// undercount two defs that share a bean id or a node.
+#ifdef FLOWLOG_ENGINE
+XMLClassFileDefs(?class, ?file, count((?beanId, ?node))) :-
+  XMLBeanDef(?beanId, ?class, ?file, ?node).
+#else
 XMLClassFileDefs(?class, ?file, ?n) :-
   XMLBeanDef(_, ?class, ?file, _),
   ?n = count : { XMLBeanDef(_, ?class, ?file, _) }.
+#endif // FLOWLOG_ENGINE
 
 .decl RefinedXMLClass(?class:ClassType)
 RefinedXMLClass(?class) :-

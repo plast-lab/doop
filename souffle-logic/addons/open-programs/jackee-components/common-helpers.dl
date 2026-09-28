@@ -58,9 +58,17 @@ NonApplicationConcreteImplementations(?class, ?staticType) :-
     ConcreteClassType(?class),
     basic.SubtypeOf(?class, ?staticType).
 
+// NOTE: min is idempotent, so counting distinct values matches Souffle's witness
+// tuples; but ord() is the engine's own intern key, so the elected representative
+// may differ between the two engines.
+#ifdef FLOWLOG_ENGINE
+NonApplicationConcreteImplementationsOrd(min(ord(?allConcreteImplementations)), ?staticType) :-
+    NonApplicationConcreteImplementations(?allConcreteImplementations, ?staticType).
+#else
 NonApplicationConcreteImplementationsOrd(?classOrd, ?staticType) :-
     NonApplicationConcreteImplementations(_, ?staticType),
     ?classOrd = min ord(?allConcreteImplementations): NonApplicationConcreteImplementations(?allConcreteImplementations, ?staticType).
+#endif // FLOWLOG_ENGINE
 
 NonApplicationConcreteImplementationRepresentative(?class, ?staticType) :-
     NonApplicationConcreteImplementationsOrd(?classOrd, ?staticType),

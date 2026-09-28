@@ -50,10 +50,22 @@ FluentBuilderMethod(?t, ?m) :-
 
 // A fluent functional builder: an application type with >= 3 such methods.
 .decl FluentBuilderType(?t:Type)
+// NOTE: Flowlog's aggregate is computed for all types,
+// not just ApplicationClass
+#ifdef FLOWLOG_ENGINE
+.decl _FluentBuilderMethodCount(?t:Type, ?n:number)
+_FluentBuilderMethodCount(?t, count(?m)) :- FluentBuilderMethod(?t, ?m).
+
+FluentBuilderType(?t) :-
+  ApplicationClass(?t),
+  _FluentBuilderMethodCount(?t, ?n),
+  ?n >= 3.
+#else
 FluentBuilderType(?t) :-
   ApplicationClass(?t),
   ?n = count : { FluentBuilderMethod(?t, _) },
   ?n >= 3.
+#endif // FLOWLOG_ENGINE
 
 // The implementing method of a lambda handed as an argument to a (reached)
 // fluent-builder method. VarPointsTo-dependent -> drives ReachableContext /

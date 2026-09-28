@@ -6,7 +6,15 @@
 /**
  *  XML driven dependency injection
  **/
+// NOTE: Flowlog resolves the attribute types of a top-level .decl before it
+// expands components, so mainAnalysis.configuration.HContext is not registered
+// yet and the declaration is rejected. The primitive it resolves to is
+// substituted instead.
+#ifdef FLOWLOG_ENGINE
+.decl XMLIFPTDI(?hctx:symbol, ?mo:Value, ?fld:Field, ?bhctx:symbol, ?bval:Value)
+#else
 .decl XMLIFPTDI(?hctx:mainAnalysis.configuration.HContext, ?mo:Value, ?fld:Field, ?bhctx:mainAnalysis.configuration.HContext, ?bval:Value)
+#endif // FLOWLOG_ENGINE
 
 // Property injection from XML specification
 XMLIFPTDI(?hctx, ?mockObject, ?injectedField, ?basehctx, ?basevalue),

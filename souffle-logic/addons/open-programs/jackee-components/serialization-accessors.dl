@@ -223,6 +223,23 @@ DeclaredAccessor(?type, ?m) :-
   (match("get[A-Z].*", ?name); match("set[A-Z].*", ?name); match("is[A-Z].*", ?name)).
 
 .decl DataCarrierType(?type:Type)
+// NOTE: Flowlog's aggregates are computed for all types,
+// not just ApplicationConcreteType ∧ isClassType
+#ifdef FLOWLOG_ENGINE
+.decl _DeclaredAccessorCount(?type:Type, ?n:number)
+_DeclaredAccessorCount(?type, count(?m)) :- DeclaredAccessor(?type, ?m).
+
+.decl _DeclaredMethodCount(?type:Type, ?n:number)
+_DeclaredMethodCount(?type, count(?m)) :- Method_DeclaringType(?m, ?type).
+
+DataCarrierType(?type) :-
+  mainAnalysis.ApplicationConcreteType(?type),
+  isClassType(?type),
+  _DeclaredAccessorCount(?type, ?acc),
+  ?acc >= 6,
+  _DeclaredMethodCount(?type, ?tot),
+  ?acc * 10 >= ?tot * 5.
+#else
 DataCarrierType(?type) :-
   mainAnalysis.ApplicationConcreteType(?type),
   isClassType(?type),
@@ -230,6 +247,7 @@ DataCarrierType(?type) :-
   ?acc >= 6,
   ?tot = count : { Method_DeclaringType(_, ?type) },
   ?acc * 10 >= ?tot * 5.
+#endif // FLOWLOG_ENGINE
 
 SerializedType(?type) :- DataCarrierType(?type).
 

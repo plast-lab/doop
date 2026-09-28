@@ -62,11 +62,25 @@ SpiInterface(?iface) :-
   isInterfaceType(?iface),
   !ApplicationClass(?iface),
   !match("java[.].*", ?iface).
+// NOTE: Flowlog's aggregate is computed for all interfaces,
+// not just isInterfaceType ∧ ApplicationClass
+#ifdef FLOWLOG_ENGINE
+.decl _AppConcreteImplCount(?iface:Type, ?n:number)
+_AppConcreteImplCount(?iface, count(?impl)) :-
+  mainAnalysis.AllApplicationConcreteImplementations(?impl, ?iface).
+
+SpiInterface(?iface) :-
+  isInterfaceType(?iface),
+  ApplicationClass(?iface),
+  _AppConcreteImplCount(?iface, ?n),
+  ?n >= 2.
+#else
 SpiInterface(?iface) :-
   isInterfaceType(?iface),
   ApplicationClass(?iface),
   ?n = count : { mainAnalysis.AllApplicationConcreteImplementations(_, ?iface) },
   ?n >= 2.
+#endif // FLOWLOG_ENGINE
 
 // A concrete application implementation of an SPI interface.
 .decl SpiProviderType(?type:Type, ?iface:Type)
