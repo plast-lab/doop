@@ -51,7 +51,6 @@ class FlowLogAnalysis extends SouffleCompatibleAnalysis {
 		flowLogBuildDir.mkdirs()
 
 		new FlowLogTransformer(analysisFile)
-				.stripVarPrefixes()
 				.dropPlanDirectives()
 				.dropInlineQualifiers()
 				.rewriteStatsMetrics()

@@ -49,15 +49,30 @@
 //    negate.
 //
 // 4. WHY MetricDecl EXISTS.
-//    Counting in the head yields nothing at all for an empty relation, while
-//    Souffle yields a row with 0. Those rows matter: ten of the 28 metrics in
-//    a types-only run are 0. MetricDecl records that a metric EXISTS,
-//    independently of whether it has any data. The transformer emits one entry
-//    per rule it rewrites, and since the #ifdefs were already resolved by then,
-//    the registry automatically holds exactly the enabled metrics -- no guard is
-//    duplicated anywhere.
+//    A metric whose relation is empty must still report 0, as Souffle does;
+//    those rows matter, since ten of the 28 metrics in a types-only run are 0.
+//    MetricDecl records that a metric EXISTS, independently of whether it has
+//    any data. The transformer emits one entry per rule it rewrites, and since
+//    the #ifdefs were already resolved by then, the registry automatically holds
+//    exactly the enabled metrics -- no guard is duplicated anywhere.
 //
-// KNOWN FLOWLOG DEFECT (0.6.0): grouping by ARITY does not work.
+//    Since FlowLog 0.7.0 a head count over an empty relation yields 0 by itself
+//    (upstream #360), so for the counted metrics the zero rule below is now
+//    redundant. It is still REQUIRED for a NULLARY metric body, e.g.
+//
+//      NewMetricMacro("26.10", "obfuscation (boolean)", mainAnalysis.ObfuscationOn())
+//
+//    which has no column to count, so the transformer emits a plain
+//    "_MAgg_<n>(1) :- R()." -- not an aggregate, and therefore not covered by
+//    #360. With R empty that rule derives nothing and the metric would silently
+//    disappear instead of reporting 0. Pushing the zero into the aggregate
+//    relation itself ("_MAgg_<n>(0) :- !R().") is not an option either: a body
+//    of one negated nullary atom is an internal compiler error in 0.7.0
+//    ("optimizer needs at least two core atoms"). So MetricDecl and the zero
+//    rule stay until a nullary body can report 0 on its own.
+//
+// KNOWN FLOWLOG DEFECT (0.6.0; re-tested, still present in 0.7.0): grouping by
+// ARITY does not work.
 //
 // The obvious design is one relation per counted-tuple WIDTH rather than per
 // metric: _M1 takes the count of every 1-column metric, _M2 every 2-column one,

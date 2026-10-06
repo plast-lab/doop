@@ -36,10 +36,11 @@ MockFieldValue(?mock, ?field, ?value) :-
 // The non-empty counts come from a helper and the zero
 // rows are restored explicitly by negation.
 //
-// The count lives in a helper, not in a MockFieldFanout rule, because
-// flowlog-compiler 0.5.0 fails to build (Rust type mismatch) when a relation is
-// defined by both a head-aggregation rule and a plain rule.
-// The more "natural" definition would be:
+// The count lives in a helper, not in a MockFieldFanout rule, because a relation
+// defined by BOTH a head-aggregation rule and any non-aggregation rule or fact
+// fails to build (Rust E0271). Confirmed on flowlog-compiler 0.5.0 and re-tested
+// on 0.7.0. Two aggregation rules are fine, and two plain rules are fine; only
+// the mix fails. The more "natural" definition would be:
 
 // non-empty slots: head aggregation
 // MockFieldFanout(?mock, ?field, ?fieldType, count(?value)) :-

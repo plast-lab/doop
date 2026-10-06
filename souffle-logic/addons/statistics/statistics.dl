@@ -33,35 +33,29 @@
 // VarPointsTo does -- on avrora 1.85M of 1.86M declared vars point to nothing --
 // so Souffle reports a zero for each of them and FlowLog would drop them all.
 
-// The _StatsSeed relation and fact is needed to work-around a FlowLog limitation.
+// Counting a whole relation, with nothing else in the body, is a single rule:
 //
-// When a rule counts a whole relation, with nothing else in the body, under
-// FlowLog, it needs three parts instead of one, for two separate reasons.
+//   Stats_Vars(count((?ctx, ?var, ?n))) :- Stats_VarCount(?ctx, ?var, ?n).
 //
-// First, the count has to move into the rule head, and a head aggregation
-// produces nothing at all when the counted relation is empty -- where Souffle
-// still reports 0. Those zero rows are real here: with points-to disabled,
-// Stats_ArrayCount is empty and Souffle reports Stats_Arrays(0). So the zero
-// case is written out explicitly, as a second rule with a negation.
+// A head count over an EMPTY relation yields 0 by itself since flowlog-compiler
+// 0.7.0 (upstream #360), which is what Souffle's body aggregate reports too --
+// and those zero rows are real here: with points-to disabled Stats_ArrayCount is
+// empty and both engines must report Stats_Arrays(0).
 //
-// Second, that zero rule cannot live in the same relation as the aggregate.
-// A relation fed by both an aggregate rule and a plain rule makes FlowLog emit
-// Rust that does not compile (rustc E0271: the reduce changes the column type,
-// and the plain rule's tuple no longer matches). See the KNOWN FLOWLOG DEFECT
-// note in macros.dl. So the aggregate gets a private _Agg_<name> relation of its
-// own, and <name> is then fed by two ordinary rules.
-//
-// _StatsSeed exists only to give the zero rule a positive atom; FlowLog rejects
-// a rule whose body is nothing but a negation.
+// Up to 0.6.0 this needed three parts: the aggregate in a private _Agg_<name>
+// relation, a rule copying it across, and an explicit zero rule fed by a
+// _StatsSeed fact (FlowLog rejects a body that is nothing but a negation). The
+// aggregate needed a relation of its own because one fed by both an aggregate
+// rule and a plain rule emits Rust that does not compile -- see the KNOWN FLOWLOG
+// DEFECT note in macros.dl, which still applies to any such mix.
 //
 // Stats_Vars, Stats_InsensVars, Stats_Arrays, Stats_InsensArrays, Stats_Fields,
-// Stats_InsensFields, Stats_Methods all fall into this case.
-
-
-#ifdef FLOWLOG_ENGINE
-.decl _StatsSeed(?x:number)
-_StatsSeed(0).
-#endif // FLOWLOG_ENGINE
+// Stats_InsensFields and Stats_Methods are all now single rules.
+//
+// The GROUPED case is different and unchanged: a head aggregation still yields no
+// group where the witness relation has none, so a rule whose guard matches more
+// keys than its witness must still write the zero case out by hand. That is why
+// Method_VPTCountPerMethodVariable keeps the three-part shape.
 
 
 /****************************************************************
@@ -173,11 +167,8 @@ Stats_InsensVarCount(?var, ?n) :-
 
 // NOTE: The same applies for Stats_InsensValueVarCount
 #ifdef FLOWLOG_ENGINE
-.decl _Agg_Stats_Vars(?n:number)
-_Agg_Stats_Vars(count((?ctx, ?var, ?n))) :-
+Stats_Vars(count((?ctx, ?var, ?n))) :-
   Stats_VarCount(?ctx, ?var, ?n).
-Stats_Vars(?n) :- _Agg_Stats_Vars(?n).
-Stats_Vars(0) :- _StatsSeed(_), !_Agg_Stats_Vars(_).
 #else
 Stats_Vars(?n) :-
   ?n = count : Stats_VarCount(_, _, _).
@@ -185,11 +176,8 @@ Stats_Vars(?n) :-
 
 // NOTE: The same applies for Stats_InsensBaseVarCount
 #ifdef FLOWLOG_ENGINE
-.decl _Agg_Stats_InsensVars(?n:number)
-_Agg_Stats_InsensVars(count((?var, ?n))) :-
+Stats_InsensVars(count((?var, ?n))) :-
   Stats_InsensVarCount(?var, ?n).
-Stats_InsensVars(?n) :- _Agg_Stats_InsensVars(?n).
-Stats_InsensVars(0) :- _StatsSeed(_), !_Agg_Stats_InsensVars(_).
 #else
 Stats_InsensVars(?n) :-
   ?n = count : Stats_InsensVarCount(_, _).
@@ -255,11 +243,8 @@ Stats_InsensArrayCount(?basevalue, ?n) :-
 
 // NOTE: The same applies for Stats_InsensValueArrayCount
 #ifdef FLOWLOG_ENGINE
-.decl _Agg_Stats_Arrays(?n:number)
-_Agg_Stats_Arrays(count((?basehctx, ?basevalue, ?n))) :-
+Stats_Arrays(count((?basehctx, ?basevalue, ?n))) :-
   Stats_ArrayCount(?basehctx, ?basevalue, ?n).
-Stats_Arrays(?n) :- _Agg_Stats_Arrays(?n).
-Stats_Arrays(0) :- _StatsSeed(_), !_Agg_Stats_Arrays(_).
 #else
 Stats_Arrays(?n) :-
   ?n = count : Stats_ArrayCount(_, _, _).
@@ -267,11 +252,8 @@ Stats_Arrays(?n) :-
 
 // NOTE: The same applies for Stats_InsensBaseValueArrayCount
 #ifdef FLOWLOG_ENGINE
-.decl _Agg_Stats_InsensArrays(?n:number)
-_Agg_Stats_InsensArrays(count((?basevalue, ?n))) :-
+Stats_InsensArrays(count((?basevalue, ?n))) :-
   Stats_InsensArrayCount(?basevalue, ?n).
-Stats_InsensArrays(?n) :- _Agg_Stats_InsensArrays(?n).
-Stats_InsensArrays(0) :- _StatsSeed(_), !_Agg_Stats_InsensArrays(_).
 #else
 Stats_InsensArrays(?n) :-
   ?n = count : Stats_InsensArrayCount(_, _).
@@ -331,11 +313,8 @@ Stats_InsensFieldCount(?sig, ?basevalue, ?n) :-
 
 // NOTE: The same applies for Stats_InsensValueFieldCount
 #ifdef FLOWLOG_ENGINE
-.decl _Agg_Stats_Fields(?n:number)
-_Agg_Stats_Fields(count((?sig, ?basehctx, ?basevalue, ?n))) :-
+Stats_Fields(count((?sig, ?basehctx, ?basevalue, ?n))) :-
   Stats_FieldCount(?sig, ?basehctx, ?basevalue, ?n).
-Stats_Fields(?n) :- _Agg_Stats_Fields(?n).
-Stats_Fields(0) :- _StatsSeed(_), !_Agg_Stats_Fields(_).
 #else
 Stats_Fields(?n) :-
   ?n = count : Stats_FieldCount(_, _, _, _).
@@ -343,11 +322,8 @@ Stats_Fields(?n) :-
 
 // NOTE: The same applies for Stats_InsensBaseFieldCount
 #ifdef FLOWLOG_ENGINE
-.decl _Agg_Stats_InsensFields(?n:number)
-_Agg_Stats_InsensFields(count((?sig, ?basevalue, ?n))) :-
+Stats_InsensFields(count((?sig, ?basevalue, ?n))) :-
   Stats_InsensFieldCount(?sig, ?basevalue, ?n).
-Stats_InsensFields(?n) :- _Agg_Stats_InsensFields(?n).
-Stats_InsensFields(0) :- _StatsSeed(_), !_Agg_Stats_InsensFields(_).
 #else
 Stats_InsensFields(?n) :-
   ?n = count : Stats_InsensFieldCount(_, _, _).
@@ -392,11 +368,8 @@ Stats_MethodContextCount(?method, ?n) :-
 #endif // FLOWLOG_ENGINE
 
 #ifdef FLOWLOG_ENGINE
-.decl _Agg_Stats_Methods(?n:number)
-_Agg_Stats_Methods(count(?method)) :-
+Stats_Methods(count(?method)) :-
   mainAnalysis.Reachable(?method).
-Stats_Methods(?n) :- _Agg_Stats_Methods(?n).
-Stats_Methods(0) :- _StatsSeed(_), !_Agg_Stats_Methods(_).
 #else
 Stats_Methods(?n) :-
   ?n = count : mainAnalysis.Reachable(_).

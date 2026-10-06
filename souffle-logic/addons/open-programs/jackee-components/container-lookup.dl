@@ -24,15 +24,7 @@
  */
 
 // ---- 1. Container-lookup call sites in reachable application code ----
-// NOTE: Flowlog resolves the attribute types of a top-level .decl before it
-// expands components, so mainAnalysis.configuration.Context is not registered
-// yet and the declaration is rejected. The primitive it resolves to is
-// substituted instead; this file has no .comp, so all three decls are top-level.
-#ifdef FLOWLOG_ENGINE
-.decl ContainerLookupInvocation(?ctx:symbol, ?invo:MethodInvocation)
-#else
 .decl ContainerLookupInvocation(?ctx:mainAnalysis.configuration.Context, ?invo:MethodInvocation)
-#endif // FLOWLOG_ENGINE
 
 ContainerLookupInvocation(?ctx, ?invo) :-
   mainAnalysis.ReachableContext(?ctx, ?method),
@@ -45,11 +37,7 @@ ContainerLookupInvocation(?ctx, ?invo) :-
   basic.SubtypeOf(?baseType, "org.springframework.beans.factory.BeanFactory").
 
 // ---- 2. Which concrete bean class(es) does the lookup yield? ----
-#ifdef FLOWLOG_ENGINE
-.decl ContainerLookupYields(?ctx:symbol, ?invo:MethodInvocation, ?beanClass:ClassType)
-#else
 .decl ContainerLookupYields(?ctx:mainAnalysis.configuration.Context, ?invo:MethodInvocation, ?beanClass:ClassType)
-#endif // FLOWLOG_ENGINE
 
 // (a) getBean(Class) / getBeansOfType(Class): the actual argument points to a
 //     class constant (Foo.class). ClassHeap_InstanceType maps that heap value to
@@ -88,11 +76,7 @@ mainAnalysis.VarPointsTo(?immHctx, ?beanMock, ?ctx, ?ret) :-
 // seed its internal table/$Node/value chain with each yielded bean mock so the
 // application's map.values()/get(code) -> module.foo() dispatches to the impl.
 // Mirrors the XML BeanMap collection-content modeling in rules-jackee.dl.
-#ifdef FLOWLOG_ENGINE
-.decl GetBeansOfTypeMap(?ctx:symbol, ?invo:MethodInvocation, ?mapValue:Value)
-#else
 .decl GetBeansOfTypeMap(?ctx:mainAnalysis.configuration.Context, ?invo:MethodInvocation, ?mapValue:Value)
-#endif // FLOWLOG_ENGINE
 
 mainAnalysis_MockValueConsMacro(?mapValue, "java.util.HashMap"),
 mainAnalysis.VarPointsTo(?immHctx, ?mapValue, ?ctx, ?ret),

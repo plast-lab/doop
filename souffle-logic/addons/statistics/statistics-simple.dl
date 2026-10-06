@@ -4,9 +4,10 @@
 // Adding a metric
 //
 // Use NewMetricMacro. It needs nothing extra to work on both engines: for
-// FlowLog, FlowLogTransformer rewrites the expanded rule into the _Mn counting
-// rule and MetricDecl entry that macros.dl declares. That file explains why the
-// FlowLog form has to look so different.
+// FlowLog, FlowLogTransformer rewrites the expanded rule into a private
+// _MAgg_<n> aggregate relation plus the _MetricCount and MetricDecl entries that
+// macros.dl declares. That file explains why the FlowLog form has to look so
+// different.
 //
 // A rule written DIRECTLY as `Stats_Metrics(...) :- ...` does NOT go through the
 // macro, so nothing rewrites it. Souffle's body aggregate (`c = count : { ... }`)
@@ -21,7 +22,6 @@
 // In the FlowLog branch, reuse counts that already exist rather than aggregating
 // again: _MetricCount(order, msg, c) holds the count of every metric defined
 // through the macro, so a derived metric is usually just a join plus arithmetic.
-// Note FlowLog folds arithmetic strictly left to right -- parenthesise.
 //
 // Forgetting the guard is not silent: the transformer fails the build with the
 // offending line. The three rules further down ("1.9", "1.95", "25.8") are

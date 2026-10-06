@@ -10,12 +10,7 @@ import java.util.regex.Pattern
  * dialect the FlowLog engine accepts. Each transformation is a standalone pass
  * over the source text; more are expected to be chained here.
  *
- * Transformation #1: variable names. Doop follows the LogicBlox convention of
- * prefixing every logic variable with '?' (e.g. "?method"), which Souffle
- * tolerates but FlowLog does not. The '?' is dropped from every identifier,
- * leaving the rest of the name untouched, so "?method" becomes "method".
- *
- * Transformation #2: .plan directives. FlowLog's grammar accepts a single
+ * Transformation #1: .plan directives. FlowLog's grammar accepts a single
  * permutation per directive, whereas Souffle allows one per semi-naive version
  * ("<code>.plan 1:(2,1,3), 2:(3,2,1)</code>"); the multi-version form Doop uses
  * in ~40 places is a hard parse error. FlowLog also discards the version prefix
@@ -25,7 +20,7 @@ import java.util.regex.Pattern
  * safe course is to drop the directives altogether and let FlowLog join the
  * body in source order.
  *
- * Transformation #3: statistics metrics. souffle-logic/addons/statistics/macros.dl
+ * Transformation #2: statistics metrics. souffle-logic/addons/statistics/macros.dl
  * expands each metric into a Souffle body aggregate that FlowLog cannot express:
  *
  * <pre>Stats_Metrics("8.0", "call graph edges (INS)", c) :- c = count : { R(_, _) }.</pre>
@@ -51,7 +46,7 @@ import java.util.regex.Pattern
  * A metric rule that does not match the expected shape is an error rather than
  * a silent pass-through, so a change to the macro cannot quietly drop metrics.
  *
- * Transformation #4: inline declarations. Souffle lets a .decl carry an "inline"
+ * Transformation #3: inline declarations. Souffle lets a .decl carry an "inline"
  * qualifier, telling it to expand the relation at its use sites rather than
  * materialise it. FlowLog's grammar has no such qualifier and rejects the
  * declaration outright. Like a join order, it is an evaluation directive that
@@ -59,10 +54,11 @@ import java.util.regex.Pattern
  * FlowLog materialises the relation instead -- which may cost memory on a large
  * one, but cannot change the result.
  *
- * All four rewrites are lexically aware: text inside a string literal or a
- * comment is preserved verbatim (e.g. cat(?x, "?") keeps its "?" argument, a
- * commented-out "// .plan 1:(2,1)" is left alone, and an aggregate written out
- * inside a string is not mistaken for code).
+ * All three rewrites are lexically aware: text inside a string literal or a
+ * comment is preserved verbatim (a commented-out "// .plan 1:(2,1)" is left
+ * alone, an "inline" inside a string or a trailing comment is not mistaken for
+ * the qualifier, and an aggregate written out inside a string is not mistaken
+ * for code).
  *
  * An instance holds the source text of one file and applies the passes to it in
  * the order requested, each returning the transformer so they can be chained;
@@ -71,10 +67,9 @@ import java.util.regex.Pattern
  *
  * <pre>
  * new FlowLogTransformer(analysisFile)
- *         .stripVarPrefixes()
  *         .dropPlanDirectives()
- *         .rewriteStatsMetrics()
  *         .dropInlineQualifiers()
+ *         .rewriteStatsMetrics()
  *         .writeTo(analysisFile)
  * </pre>
  *
@@ -90,12 +85,6 @@ class FlowLogTransformer {
 	/** Starts a pipeline over the contents of {@code inFile}, which is read immediately. */
 	FlowLogTransformer(File inFile) {
 		this.text = inFile.text
-	}
-
-	/** Applies the '?'-prefix strip to the held text. Returns this, for chaining. */
-	FlowLogTransformer stripVarPrefixes() {
-		text = stripVarPrefixes(text)
-		return this
 	}
 
 	/** Applies the .plan removal to the held text. Returns this, for chaining. */
@@ -119,30 +108,6 @@ class FlowLogTransformer {
 	/** Ends the pipeline, writing the transformed text to {@code outFile}. */
 	void writeTo(File outFile) {
 		outFile.text = text
-	}
-
-	/** Strips the '?' prefix from all identifiers in a single .dl source text. */
-	static String stripVarPrefixes(String source) {
-		StringBuilder out = new StringBuilder(source.length())
-		int i = 0
-		int n = source.length()
-		while (i < n) {
-			char c = source.charAt(i)
-			if (c == ('"' as char)) {
-				i = copyStringLiteral(source, i, out)
-			} else if (c == ('/' as char) && i + 1 < n && source.charAt(i + 1) == ('/' as char)) {
-				i = copyLineComment(source, i, out)
-			} else if (c == ('/' as char) && i + 1 < n && source.charAt(i + 1) == ('*' as char)) {
-				i = copyBlockComment(source, i, out)
-			} else if (c == ('?' as char) && i + 1 < n && isIdentifierStart(source.charAt(i + 1))) {
-				// Drop the '?' -- the identifier that follows is copied as-is.
-				i++
-			} else {
-				out.append(c)
-				i++
-			}
-		}
-		return out.toString()
 	}
 
 	/**
