@@ -181,7 +181,9 @@ class SouffleAnalysis extends DoopAnalysis {
 			// META-INF/services). Consumes the ServiceProvider facts emitted by fact
 			// generation and binds loaded services to their registered providers.
 			// After the mocking layer: it uses the mock-minting macros and mainAnalysis.*.
-			cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/addons/deepspatch.dl")
+			// Off by default (baseline); --deepspatch enables it for the generic layer.
+			if (options.DEEPSPATCH.value)
+				cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/addons/deepspatch.dl")
 		}
 
 		if (options.INFORMATION_FLOW.value) {

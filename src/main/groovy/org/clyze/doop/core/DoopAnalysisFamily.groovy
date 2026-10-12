@@ -680,6 +680,11 @@ class DoopAnalysisFamily implements AnalysisFamily {
 						description: "Open programs: mock EVERY concrete subtype of a mocked type (sound/complete) instead of a single representative subtype (default).",
 				),
 			new BooleanAnalysisOption(
+					id: "DEEPSPATCH",
+					name: "deepspatch",
+					description: "Generic reflective-factory handling: bind ServiceLoader/META-INF/services (+spring.factories) providers from auto-generated ServiceProvider facts. Off by default (baseline); enable for the generic layer.",
+			),
+			new BooleanAnalysisOption(
 					id: "GENERATE_OPTIMIZATION_DIRECTIVES",
 					name: "gen-opt-directives",
 					description: "Generate additional relations for code optimization uses.",
