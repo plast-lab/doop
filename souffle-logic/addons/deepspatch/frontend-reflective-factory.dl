@@ -1,0 +1,117 @@
+// ============================================================================
+// deepspatch/frontend-reflective-factory.dl -- the reflective-factory front-end.
+//
+// For factories that hand out objects whose concrete class is chosen at run time
+// from a name->class registry and instantiated reflectively
+// (`(Action) actions.getObjectOfClass(name)` over `addClass("sim", SimAction.class)`,
+// pmd rules named in XML, JAXP *Factory.newInstance). Doop sees the
+// registrations but not what the factory returns, so everything behind the
+// product drops out.
+//
+// The front-end describes each factory and the concrete classes it can produce;
+// deepspatch/dispatch-backend.dl does the rest, exactly as for service providers:
+// products stand in for the factory's return type wherever it is mocked (coarse),
+// and every reached call to a factory receives its products in the caller's
+// context (precise). The factory's own body is not involved, so a library or
+// platform factory is handled like an application one.
+//
+// Inputs (tab-separated, each optional; fact generation creates them empty, and
+// --Xextra-facts <file> appends to the one with the same name):
+//   ReflectiveFactoryMethod.facts             <factory>                type-driven tier
+//   ReflectiveFactoryRegistry.facts           <registry label>         data-driven tier:
+//   MemberOfReflectiveFactoryRegistry.facts   <registry>  <concrete>     what a registry holds
+//   FactoryReadsRegistry.facts                <factory>   <registry>     which factory reads it
+// Factories are Doop method signatures (`<pkg.C: pkg.R name(args)>`), classes are
+// fully qualified names, registries are free-form labels.
+//
+// No input -> no products -> the front-end adds nothing.
+// ============================================================================
+
+.decl ReflectiveFactoryRegistry(?registry:symbol)
+.input ReflectiveFactoryRegistry(filename="ReflectiveFactoryRegistry.facts")
+
+.decl MemberOfReflectiveFactoryRegistry(?registry:symbol, ?concrete:symbol)
+.input MemberOfReflectiveFactoryRegistry(filename="MemberOfReflectiveFactoryRegistry.facts")
+
+.decl FactoryReadsRegistry(?factory:symbol, ?registry:symbol)
+.input FactoryReadsRegistry(filename="FactoryReadsRegistry.facts")
+
+.decl ReflectiveFactoryMethod(?factory:symbol)
+.input ReflectiveFactoryMethod(filename="ReflectiveFactoryMethod.facts")
+
+// --- What each factory can produce --------------------------------------------
+.decl ReflectiveFactoryProduces(?factory:symbol, ?producedType:symbol)
+
+// Data-driven tier: a factory draws from a declared registry whose members are
+// the concrete classes it can produce. Precise; use it when the registry
+// registers a subset of the return type's subtypes (e.g. pmd's active ruleset).
+ReflectiveFactoryProduces(?factory, ?concrete) :-
+  FactoryReadsRegistry(?factory, ?registry),
+  ReflectiveFactoryRegistry(?registry),
+  MemberOfReflectiveFactoryRegistry(?registry, ?concrete).
+
+// A factory has a precise produced set when it reads a registry with members.
+// Depends only on input relations, so the negation below is stratified.
+.decl HasDataDrivenMembers(?factory:symbol)
+HasDataDrivenMembers(?factory) :-
+  FactoryReadsRegistry(?factory, ?registry),
+  MemberOfReflectiveFactoryRegistry(?registry, _).
+
+// Type-driven tier (fallback per factory): every concrete APPLICATION subtype of
+// the factory's declared return type. Exact iff the registry is type-complete
+// (registers every concrete subtype, e.g. avrora's Defaults); over-approximates
+// otherwise. Data-driven members, when present, win.
+// ApplicationClass comes from --regex, which must cover the analysed subject, or
+// this tier produces nothing.
+ReflectiveFactoryProduces(?factory, ?concrete) :-
+  ReflectiveFactoryMethod(?factory),
+  !HasDataDrivenMembers(?factory),
+  Method_ReturnType(?factory, ?retType),
+  basic.SubtypeOf(?concrete, ?retType),
+  ApplicationClass(?concrete).
+
+// --- To the back-end ----------------------------------------------------------
+// Registry key = the factory; service type = its declared return type. Only
+// concrete classes can be the run-time product.
+DispatchProduct(?factory, ?retType, ?concrete) :-
+  ReflectiveFactoryProduces(?factory, ?concrete),
+  Method_ReturnType(?factory, ?retType),
+  isClassType(?concrete),
+  !ClassModifier("abstract", ?concrete).
+
+// Run each product's no-arg constructor. A reflective factory instantiates its
+// product with Class.newInstance() / getDeclaredConstructor().newInstance(),
+// i.e. the no-arg constructor, so running it models what the runtime does.
+// Making the ctor a mock site makes its body reachable with `this` bound to the
+// product mock (mocking-core section 5), so its field stores populate the
+// product's fields with real objects instead of leaving them to field-mocking's
+// one-representative guess. Only reflective-factory products (joining
+// ReflectiveFactoryProduces excludes ServiceLoader providers, which keep the
+// central policy: ctors only under --sound-mocking), and only the no-arg ctor;
+// a product without one gets none run.
+MockSiteMethod(?ctor) :-
+  DispatchProduct(?factory, _, ?concrete),
+  ReflectiveFactoryProduces(?factory, ?concrete),
+  Method_DeclaringType(?ctor, ?concrete),
+  Method_SimpleName(?ctor, "<init>"),
+  Method_Arity(?ctor, 0).
+
+.decl ReflectiveFactoryKey(?factory:Method)
+ReflectiveFactoryKey(?factory) :- DispatchProduct(?factory, _, _), isMethod(?factory).
+
+// Every reached call to a factory: by declared target (also covers a factory
+// whose body is not analysed) and by resolved call-graph edge (a virtual call
+// through a supertype's signature).
+DispatchCall(?ctx, ?ret, ?factory, ?retType) :-
+  ReflectiveFactoryKey(?factory),
+  MethodInvocation_Method(?invo, ?factory),
+  Instruction_Method(?invo, ?inMethod),
+  mainAnalysis.ReachableContext(?ctx, ?inMethod),
+  AssignReturnValue(?invo, ?ret),
+  Var_Type(?ret, ?retType).
+
+DispatchCall(?ctx, ?ret, ?factory, ?retType) :-
+  ReflectiveFactoryKey(?factory),
+  mainAnalysis.CallGraphEdge(?ctx, ?invo, _, ?factory),
+  AssignReturnValue(?invo, ?ret),
+  Var_Type(?ret, ?retType).
