@@ -682,7 +682,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "DEEPSPATCH",
 					name: "deepspatch",
-					description: "Generic reflective-factory handling: bind ServiceLoader/META-INF/services (+spring.factories) providers from auto-generated ServiceProvider facts. Off by default (baseline); enable for the generic layer.",
+					description: "Deep dispatch through reflectively populated registries: bind ServiceLoader/META-INF/services (+spring.factories) providers from auto-generated ServiceProvider facts, and reflective-factory products from optional ReflectiveFactoryMethod / ReflectiveFactoryRegistry / MemberOfReflectiveFactoryRegistry / FactoryReadsRegistry facts (pass with --Xextra-facts). Off by default.",
 			),
 			new BooleanAnalysisOption(
 					id: "GENERATE_OPTIMIZATION_DIRECTIVES",
