@@ -293,20 +293,27 @@ Stats_Simple_ReachableClass(?type) :-
 // --- Derived recall / precision + whole-program size metrics ---
 NewMetricMacro("11.6", "reachable classes", Stats_Simple_ReachableClass(_)).
 NewMetricMacro("26.0", "objects (values)", mainAnalysis.Value_Type(_, _)).
-Stats_Metrics("1.9", "avg points-to set size (x100)", ?avg) :-
-  ?vpt = count : { mainAnalysis.VarPointsTo(_, _, _, _) },
-  ?rv  = count : { Stats_Simple_InsensReachableVar(_) },
-  ?rv > 0, ?avg = (100 * ?vpt) / ?rv.
-// Application-scoped variant: average points-to set size over reachable
-// application vars only (reachable var that is an ApplicationVar).
+
+// Float-typed averages (overflow-safe). The (100 * ?vpt) form above overflows the
+// 32-bit `number` domain once ?vpt > 21,474,836 (100 * that > 2^31-1), silently
+// wrapping to a negative/garbage value. Here the division is done in double
+// precision, so no multiply is needed and it cannot overflow. NOTE: use to_float
+// (value conversion), NOT as(_, float), which bit-reinterprets the integer.
+// Denominator for the app-scoped average: reachable application vars.
 .decl Stats_Simple_Application_InsensReachableVar(?var:Var)
 Stats_Simple_Application_InsensReachableVar(?var) :-
   Stats_Simple_InsensReachableVar(?var),
   ApplicationVar(?var).
-Stats_Metrics("1.95", "avg app points-to set size (x100)", ?avg) :-
+.decl Stats_Metrics_Float(?order:symbol, ?msg:symbol, ?value:float)
+.output Stats_Metrics_Float(IO="file",filename="Stats_Metrics_Float.csv",delimiter="\t")
+Stats_Metrics_Float("1.9", "avg points-to set size", ?avg) :-
+  ?vpt = count : { mainAnalysis.VarPointsTo(_, _, _, _) },
+  ?rv  = count : { Stats_Simple_InsensReachableVar(_) },
+  ?rv > 0, ?avg = to_float(?vpt) / to_float(?rv).
+Stats_Metrics_Float("1.95", "avg app points-to set size", ?avg) :-
   ?vpt = count : { Stats_Simple_Application_InsensVarPointsTo(_, _) },
   ?rv  = count : { Stats_Simple_Application_InsensReachableVar(_) },
-  ?rv > 0, ?avg = (100 * ?vpt) / ?rv.
+  ?rv > 0, ?avg = to_float(?vpt) / to_float(?rv).
 Stats_Metrics("25.8", "app method coverage (%)", ?pct) :-
   ?t  = count : { Stats_Simple_ApplicationConcreteMethod(_) },
   ?nr = count : { Stats_Simple_NonReachableApplicationConcreteMethod(_) },
