@@ -280,6 +280,24 @@ mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?invo, ?type, DEFAULT_BREADCRUMB), 
   Instruction_Method(?invo, ?method),
   Method_DeclaringType(?method, ?declaringType).
 
+// Parameter source: taint the FORMAL parameter ?index of ?method directly, in the
+// method's reachable context -- modelling an unmodeled caller (a framework /
+// container) that invokes ?method with attacker-controlled data. This is the
+// entry-point shape (e.g. a request handler whose argument is untrusted) that the
+// return-only source above cannot express. The formal is seeded directly under
+// ReachableContext (not via an actual->formal edge), and the tainted value is
+// keyed by the formal so it is distinct per parameter source. Reference-typed
+// parameters only; a primitive parameter source would need model-primitives.
+TaintedValueIntroduced(?declaringType, ?formal, ?type, ?label, ValueIdMacro(?formal, ?type, DEFAULT_BREADCRUMB)),
+mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?formal, ?type, DEFAULT_BREADCRUMB), ?ctx, ?formal) :-
+  TaintSourceMethodArg(?label, ?index, ?method),
+  FormalParam(?index, ?method, ?formal),
+  mainAnalysis.ReachableContext(?ctx, ?method),
+  mainAnalysis.isImmutableHContext(?hctx),
+  Var_Type(?formal, ?type),
+  isReferenceType(?type),
+  Method_DeclaringType(?method, ?declaringType).
+
 TaintedVarPointsTo(?value, ?ctx, ?var) :-
   TaintedValue(?value),
   mainAnalysis.VarPointsTo(_, ?value, ?ctx, ?var).

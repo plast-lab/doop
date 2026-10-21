@@ -20,6 +20,10 @@
 .decl TaintSourceMethod(?label:InformationLabel, ?method:Method)
 // Declaration of a taint source method, including all methods that override it.
 .decl TaintSourceMethodWithOverrides(?label:InformationLabel, ?method:Method)
+// Parameter source: parameter ?index of ?method is attacker-controlled. Models an
+// unmodeled caller (framework/container) passing tainted data into the method --
+// the entry-point case that return-only sources cannot express.
+.decl TaintSourceMethodArg(?label:InformationLabel, ?index:number, ?method:Method)
 
 .decl LeakingSinkMethod(?lable:InformationLabel, ?method:Method)
 .decl LeakingSinkMethodArg(?label:InformationLabel, ?index:number, ?method:Method)

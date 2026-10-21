@@ -35,11 +35,17 @@ TypeForReturnValue(?type, ?ret, ?invocation) :-
   MethodInvocationInfo(?invocation, ?type, ?ret),
   !VarIsCast(?ret).
 
+// Sources produce taint at ANY REACHABLE call site, symmetric with the sink
+// rules below. The old ApplicationMethod(?inmethod) filter required the source's
+// immediate caller to be app code -- which is directionally WRONG for a source:
+// a library/framework source (e.g. a container reading untrusted input) is called
+// by the library, and its tainted result flows DOWNSTREAM into the app. Requiring
+// the source's caller to be app suppresses exactly those legitimate library
+// sources. Plain reachability is also sound: an over-approximate library source
+// whose taint never reaches a sink produces no finding, only unused taint.
 CallTaintingMethod(?label, ?ctx, ?invocation) :-
   TaintSourceMethod(?label, ?tomethod),
-  MethodInvocationInContext(?ctx, ?invocation, ?tomethod),
-  Instruction_Method(?invocation, ?inmethod),
-  ApplicationMethod(?inmethod).
+  MethodInvocationInContext(?ctx, ?invocation, ?tomethod).
 
 /**
  * Taint transfer through aliasing
@@ -89,17 +95,27 @@ VarIsTaintedFromVarIndex(?base, ?ctx, ?param) :-
 
 /**
  * Sinks and leaks
+ *
+ * Sinks fire at ANY REACHABLE call site of the sink method, not only call sites
+ * whose immediate caller is application code. MethodInvocationInContext is
+ * already derived from mainAnalysis.ReachableContext, so it is inherently
+ * reachability-scoped; using it instead of MethodInvocationInContextInApplication
+ * drops only the extra ApplicationMethod(?fromMethod) filter. This lets a sink
+ * placed on a library-internal method (e.g. a parser/allocator deep inside a
+ * dependency) report when tainted application data reaches it -- the common
+ * real-world case the app-only gate previously suppressed. The transfer-method
+ * and serialization rules deliberately keep the stricter app-only gate.
  */
 LeakingSinkVariable(?label, ?invocation, ?ctx, ?var) :-
   LeakingSinkMethodArg(?label, ?index, ?tomethod),
-  MethodInvocationInContextInApplication(?ctx, ?invocation, ?tomethod),
+  MethodInvocationInContext(?ctx, ?invocation, ?tomethod),
   ActualParam(?index, ?invocation, ?var).
 
 // In case method has no arguments, assume base variable.
 LeakingSinkVariable(?label, ?invocation, ?ctx, ?var) :-
    LeakingSinkMethod(?label, ?tomethod),
    !FormalParam(_, ?tomethod, _),
-   MethodInvocationInContextInApplication(?ctx, ?invocation, ?tomethod),
+   MethodInvocationInContext(?ctx, ?invocation, ?tomethod),
    MethodInvocation_Base(?invocation, ?var).
 
 TaintSourceMethod(?label, ?method) :-
