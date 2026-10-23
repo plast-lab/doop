@@ -410,7 +410,7 @@ NewMetricMacro("41.0", "app tainted flows-to (INS)", Stats_Simple_Application_In
 NewMetricMacro("41.5", "app tainted flows-to (SENS)", Stats_Simple_Application_TaintedVarPointsTo(_, _, _)).
 NewMetricMacro("42.0", "total tainted values", TaintedValue(_)).
 NewMetricMacro("43.0", "original tainted values", Stats_Simple_OriginalTaintedValue(_)).
-NewMetricMacro("44.0", "sink variables (SENS)", LeakingSinkVariable(_, _, _, _)).
+NewMetricMacro("44.0", "sink variables (SENS)", TaintSinkVar(_, _, _, _)).
 NewMetricMacro("45.0", "total leaks", Stats_Simple_LeakingTaintedInformation(_, _)).
 #endif // INFORMATION_FLOW
 

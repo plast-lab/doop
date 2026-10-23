@@ -399,7 +399,7 @@ Server_Metrics("Results threshold", X_SERVER_LOGIC_THRESHOLD).
 .decl Server_LeakingSinkVariable(?label:InformationLabel, ?tomethod:MethodInvocation, ?var:Var)
 .output Server_LeakingSinkVariable
 Server_LeakingSinkVariable(?label, ?tomethod, ?var) :-
-  LeakingSinkVariable(?label, ?tomethod, _, ?var).
+  TaintSinkVar(?label, ?tomethod, _, ?var).
 
 .decl Server_LeakingTaintedInformation(?fromLabel:InformationLabel, ?toLabel:InformationLabel, ?invocation:MethodInvocation, ?value:Value)
 .output Server_LeakingTaintedInformation

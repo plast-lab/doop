@@ -43,7 +43,7 @@ TypeForReturnValue(?type, ?ret, ?invocation) :-
 // the source's caller to be app suppresses exactly those legitimate library
 // sources. Plain reachability is also sound: an over-approximate library source
 // whose taint never reaches a sink produces no finding, only unused taint.
-CallTaintingMethod(?label, ?ctx, ?invocation) :-
+TaintSourceReturnInvocation(?label, ?ctx, ?invocation) :-
   TaintSourceReturn(?label, ?tomethod),
   MethodInvocationInContext(?ctx, ?invocation, ?tomethod).
 
@@ -106,13 +106,13 @@ VarIsTaintedFromVarIndex(?base, ?ctx, ?param) :-
  * real-world case the app-only gate previously suppressed. The transfer-method
  * and serialization rules deliberately keep the stricter app-only gate.
  */
-LeakingSinkVariable(?label, ?invocation, ?ctx, ?var) :-
+TaintSinkVar(?label, ?invocation, ?ctx, ?var) :-
   TaintSinkActualParam(?label, ?index, ?tomethod),
   MethodInvocationInContext(?ctx, ?invocation, ?tomethod),
   ActualParam(?index, ?invocation, ?var).
 
 // Base sink: the receiver variable at each reachable call site.
-LeakingSinkVariable(?label, ?invocation, ?ctx, ?var) :-
+TaintSinkVar(?label, ?invocation, ?ctx, ?var) :-
    TaintSinkBase(?label, ?tomethod),
    MethodInvocationInContext(?ctx, ?invocation, ?tomethod),
    MethodInvocation_Base(?invocation, ?var).

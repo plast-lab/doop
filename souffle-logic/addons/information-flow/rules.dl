@@ -252,18 +252,18 @@ LeakingTaintedInformation(?sourceLabel, ?destLabel, ?ctx, ?invocation, ?source) 
   SourceFromTaintedValue(?value, ?source),
   LabelFromSource(?source, ?sourceLabel),
   TaintedVarPointsTo(?value, ?ctx, ?var),
-  LeakingSinkVariable(?destLabel, ?invocation, ?ctx, ?var).
+  TaintSinkVar(?destLabel, ?invocation, ?ctx, ?var).
 
 LeakingTaintedInformationVars(?fromCtx, ?from, ?toCtx, ?to) :-
   TaintedVarPointsTo(?value, ?toCtx, ?to),
-  LeakingSinkVariable(_, _, ?toCtx, ?to),
+  TaintSinkVar(_, _, ?toCtx, ?to),
   SourceFromTaintedValue(?value, ?from),
   Var_DeclaringMethod(?from, ?meth),
   mainAnalysis.ReachableContext(?fromCtx, ?meth).
 
 LeakingTaintedInformationVars(?fromCtx, ?from, ?toCtx, ?to) :-
   TaintedVarPointsTo(?value, ?toCtx, ?to),
-  LeakingSinkVariable(_, _, ?toCtx, ?to),
+  TaintSinkVar(_, _, ?toCtx, ?to),
   SourceFromTaintedValue(?value, ?source),
   AssignReturnValue(?source, ?from),
   TaintedVarPointsTo(?fromVal, ?fromCtx, ?from),
@@ -274,7 +274,7 @@ LeakingTaintedInformationVars(?fromCtx, ?from, ?toCtx, ?to) :-
  */
 TaintedValueIntroduced(?declaringType, ?invo, ?type, ?label, ValueIdMacro(?invo, ?type, DEFAULT_BREADCRUMB)),
 mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?invo, ?type, DEFAULT_BREADCRUMB), ?ctx, ?to) :-
-  CallTaintingMethod(?label, ?ctx, ?invo),
+  TaintSourceReturnInvocation(?label, ?ctx, ?invo),
   mainAnalysis.isImmutableHContext(?hctx),
   TypeForReturnValue(?type, ?to, ?invo),
   Instruction_Method(?invo, ?method),

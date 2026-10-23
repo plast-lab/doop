@@ -41,7 +41,7 @@
 .decl TaintSinkAnyActualParam(?label:InformationLabel, ?method:Method)
 // Base sink: at every reachable call to ?method, the receiver variable is a sink.
 .decl TaintSinkBase(?label:InformationLabel, ?method:Method)
-.decl LeakingSinkVariable(?label:InformationLabel, ?tomethod:MethodInvocation, ?ctx:CONTEXT, ?var:Var)
+.decl TaintSinkVar(?label:InformationLabel, ?tomethod:MethodInvocation, ?ctx:CONTEXT, ?var:Var)
 // Sanitizer. NOTE: implemented as a points-to BARRIER (main/context-sensitivity.dl,
 // main/model-primitives.dl): no object flows into the method's formals and none
 // flows out of its return. It removes real objects, not just taint.
@@ -73,7 +73,7 @@
 
 .decl MethodInvocationInContext(?ctx:CONTEXT, ?invocation:MethodInvocation, ?tomethod:Method)
 .decl MethodInvocationInContextInApplication(?ctx:CONTEXT, ?invocation:MethodInvocation, ?method:Method)
-.decl CallTaintingMethod(?label:InformationLabel, ?ctx:CONTEXT, ?invocation:MethodInvocation)
+.decl TaintSourceReturnInvocation(?label:InformationLabel, ?ctx:CONTEXT, ?invocation:MethodInvocation)
 .decl ParamTaintTransferredToBase(?param:Var, ?ctx:CONTEXT, ?base:Var)
 .decl ParamTaintTransferredToRet(?type:Type, ?ret:Var, ?ctx:CONTEXT, ?param:Var)
 .decl VarIsTaintedFromVar(?type:Type, ?ctx1:CONTEXT, ?var1:Var, ?ctx2:CONTEXT, ?var2:Var)

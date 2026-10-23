@@ -47,7 +47,7 @@ ParamTaintTransferredToBase(?param, ?ctx, ?base) :-
 
 // Base case: tainting method return value.
 Var_Taint(?to, ?label, ?invocation) :-
-  CallTaintingMethod(?label, _, ?invocation),
+  TaintSourceReturnInvocation(?label, _, ?invocation),
   AssignReturnValue(?invocation, ?to).
 // Recursive case, based on core relation.
 Var_Taint(?b, ?label, ?source) :-
@@ -70,6 +70,6 @@ Var_Taint(?to, ?label, ?source) :-
 // Finally, handle the sinks.
 LeakingTaintedInformation(?sourceLabel, ?destLabel, DUMMY_CONTEXT, ?invocation, ?source) :-
   Var_Taint(?var, ?sourceLabel, ?source),
-  LeakingSinkVariable(?destLabel, ?invocation, _, ?var).
+  TaintSinkVar(?destLabel, ?invocation, _, ?var).
 
 
