@@ -1,27 +1,27 @@
 #include "common-transfer-methods.dl"
 
-TaintSourceMethodPattern("<javax.servlet.ServletRequest: .* get.*[(].*[)]>").
-TaintSourceMethodPattern("<javax.servlet.ServletContext: .* get.*[(].*[)]>").
-TaintSourceMethodPattern("<javax.servlet.ServletConfig: .* get.*[(].*[)]>").
-TaintSourceMethodPattern("<javax.servlet.http.Cookie: .* get.*[(].*[)]>").
-TaintSourceMethodPattern("<javax.servlet.http.HttpServletRequest: .* get.*[(].*[)]>").
-TaintSourceMethodPattern("<javax.servlet.http.HttpSession: .* get.*[(].*[)]>").
-TaintSourceMethodPattern("<javax.servlet.ServletRequest: .* get.*[(].*[)]>").
-TaintSourceMethodPattern("<java.io.BufferedReader: java.lang.String readLine[(][)]>").
-TaintSourceMethodPattern("<java.io.BufferedReader: java.lang.String readLine[(]boolean[)]>").
-TaintSourceMethodPattern("<java.net.URLDecoder: java.lang.String decode[(]java.lang.String,java.lang.String[)]>").
-TaintSourceMethodPattern("<com.oreilly.servlet.MultipartRequest: java.lang.String getParameter[(]java.lang.String[)]>").
-TaintSourceMethodPattern("<javax.servlet.http.HttpServletResponse: java.io.PrintWriter getWriter[(][)]>").
-LeakingSinkMethodPattern(0, "<java.io.Print.*: void println[(].*[)]>").
-LeakingSinkMethodPattern(0, "<java.sql.Statement: .* execute.*[(].*[)]>").
-LeakingSinkMethodPattern(0, "<javax.servlet.http.HttpServletResponse: void sendRedirect[(].*[)]>").
-LeakingSinkMethodPattern(0, "<java.io.File: void <init>[(].*[)]>").
-LeakingSinkMethodPattern(0, "<java.io.File.*er: void <init>[(].*[)]>").
-LeakingSinkMethodPattern(0, "<java.io.File.*Stream: void <init>[(].*[)]>").
-LeakingSinkMethodPattern(0, "<java.sql.Connection: java.sql.PreparedStatement prepareStatement[(].*[)]>").
+TaintSourceReturnPattern("default", "<javax.servlet.ServletRequest: .* get.*[(].*[)]>").
+TaintSourceReturnPattern("default", "<javax.servlet.ServletContext: .* get.*[(].*[)]>").
+TaintSourceReturnPattern("default", "<javax.servlet.ServletConfig: .* get.*[(].*[)]>").
+TaintSourceReturnPattern("default", "<javax.servlet.http.Cookie: .* get.*[(].*[)]>").
+TaintSourceReturnPattern("default", "<javax.servlet.http.HttpServletRequest: .* get.*[(].*[)]>").
+TaintSourceReturnPattern("default", "<javax.servlet.http.HttpSession: .* get.*[(].*[)]>").
+TaintSourceReturnPattern("default", "<javax.servlet.ServletRequest: .* get.*[(].*[)]>").
+TaintSourceReturnPattern("default", "<java.io.BufferedReader: java.lang.String readLine[(][)]>").
+TaintSourceReturnPattern("default", "<java.io.BufferedReader: java.lang.String readLine[(]boolean[)]>").
+TaintSourceReturnPattern("default", "<java.net.URLDecoder: java.lang.String decode[(]java.lang.String,java.lang.String[)]>").
+TaintSourceReturnPattern("default", "<com.oreilly.servlet.MultipartRequest: java.lang.String getParameter[(]java.lang.String[)]>").
+TaintSourceReturnPattern("default", "<javax.servlet.http.HttpServletResponse: java.io.PrintWriter getWriter[(][)]>").
+TaintSinkActualParamPattern("default", 0, "<java.io.Print.*: void println[(].*[)]>").
+TaintSinkActualParamPattern("default", 0, "<java.sql.Statement: .* execute.*[(].*[)]>").
+TaintSinkActualParamPattern("default", 0, "<javax.servlet.http.HttpServletResponse: void sendRedirect[(].*[)]>").
+TaintSinkActualParamPattern("default", 0, "<java.io.File: void <init>[(].*[)]>").
+TaintSinkActualParamPattern("default", 0, "<java.io.File.*er: void <init>[(].*[)]>").
+TaintSinkActualParamPattern("default", 0, "<java.io.File.*Stream: void <init>[(].*[)]>").
+TaintSinkActualParamPattern("default", 0, "<java.sql.Connection: java.sql.PreparedStatement prepareStatement[(].*[)]>").
 
-TaintSourceMethod(?label, ?overriddenMethod) :-
-   TaintSourceMethod(?label, ?method),
+TaintSourceReturn(?label, ?overriddenMethod) :-
+   TaintSourceReturn(?label, ?method),
    Method_DeclaringType(?method, ?superclass),
    Method_SimpleName(?method, ?name),
    Method_Descriptor(?method, ?descriptor),
@@ -31,8 +31,8 @@ TaintSourceMethod(?label, ?overriddenMethod) :-
    Method_SimpleName(?overriddenMethod, ?name),
    Method_Descriptor(?overriddenMethod, ?descriptor).
 
-LeakingSinkMethodArg(?label, ?n, ?overriddenMethod) :-
-   LeakingSinkMethodArg(?label, ?n, ?method),
+TaintSinkActualParam(?label, ?n, ?overriddenMethod) :-
+   TaintSinkActualParam(?label, ?n, ?method),
    Method_DeclaringType(?method, ?superclass),
    Method_SimpleName(?method, ?name),
    Method_Descriptor(?method, ?descriptor),
@@ -43,7 +43,7 @@ LeakingSinkMethodArg(?label, ?n, ?overriddenMethod) :-
    Method_Descriptor(?overriddenMethod, ?descriptor).
 
 
-SanitizationMethod(?method) :-
+TaintSanitizer(?method) :-
   (?method = "<securibench.micro.sanitizers.Sanitizers1: java.lang.String clean(java.lang.String)>" ;
    ?method = "<securibench.micro.sanitizers.Sanitizers2: java.lang.String clean(java.lang.String)>" ;
    ?method = "<java.net.URLEncoder: java.lang.String encode(java.lang.String,java.lang.String)>" ;

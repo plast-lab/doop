@@ -14,12 +14,12 @@
   LabelFromSource(id, label), \
   mainAnalysis.Value_DeclaringType(value, declaringType)
 
-#define TaintSourceMethodPattern(pattern) \
-  TaintSourceMethod("default", method) :- \
+#define TaintSourceReturnPattern(label, pattern) \
+  TaintSourceReturn(label, method) :- \
     isMethod(method), \
     match(pattern, method)
 
-#define LeakingSinkMethodPattern(n, pattern) \
-  LeakingSinkMethodArg("default", n, method) :- \
+#define TaintSinkActualParamPattern(label, n, pattern) \
+  TaintSinkActualParam(label, n, method) :- \
     isMethod(method), \
     match(pattern, method)

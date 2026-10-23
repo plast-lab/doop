@@ -19,8 +19,8 @@ AnyMethodInvocation(?invocation, ?tomethod) :-
 VarUse(?from, ?insn) :-
   AssignOper_From(?insn, _, ?from).
 
-LeakingSinkMethodArg(?label, ?index, ?method) :-
-  LeakingSinkMethod(?label, ?method),
+TaintSinkActualParam(?label, ?index, ?method) :-
+  TaintSinkAnyActualParam(?label, ?method),
   FormalParam(?index, ?method, _).
 
 MethodInvocationInfo(?invocation, ?type, ?ret) :-
@@ -44,7 +44,7 @@ TypeForReturnValue(?type, ?ret, ?invocation) :-
 // sources. Plain reachability is also sound: an over-approximate library source
 // whose taint never reaches a sink produces no finding, only unused taint.
 CallTaintingMethod(?label, ?ctx, ?invocation) :-
-  TaintSourceMethod(?label, ?tomethod),
+  TaintSourceReturn(?label, ?tomethod),
   MethodInvocationInContext(?ctx, ?invocation, ?tomethod).
 
 /**
@@ -52,7 +52,7 @@ CallTaintingMethod(?label, ?ctx, ?invocation) :-
  */
 TaintTransferMethodInvocationInContext(?ctx, ?index, ?invocation) :-
   MethodInvocationInContext(?ctx, ?invocation, ?taintTransferMethod),
-  ParamToBaseTaintTransferMethod(?index, ?taintTransferMethod).
+  TaintTransferActualParamToBase(?index, ?taintTransferMethod).
 
 ParamTaintTransferredToBase(?param, ?ctx, ?base) :-
   TaintTransferMethodInvocationInContext(?ctx, ?index, ?invocation),
@@ -66,7 +66,7 @@ MethodInvocationInContextInApplication(?ctx, ?invocation, ?method) :-
   MethodInvocationInContext(?ctx, ?invocation, ?method).
 
 ParamTaintTransferredToRet(?type, ?ret, ?ctx, ?param) :-
-  ParamToRetTaintTransferMethod(?taintTransferMethod),
+  TaintTransferActualParamToReturn(?taintTransferMethod),
   MethodInvocationInContextInApplication(?ctx, ?invocation, ?taintTransferMethod),
   ActualParam(_, ?invocation, ?param),
   TypeForReturnValue(?type, ?ret, ?invocation).
@@ -76,20 +76,20 @@ ParamTaintTransferredToRet(?type, ?ret, ?ctx, ?param) :-
  */
 VarIsTaintedFromVar(?type, ?ctx, ?param, ?ctx, ?base) :-
    MethodInvocationInContextInApplication(?ctx, ?invocation, ?method),
-   BaseToParamTaintTransferMethod(?method),
+   TaintTransferBaseToActualParam(?method),
    MethodInvocation_Base(?invocation, ?base),
    ActualParam(_, ?invocation, ?param),
    Var_Type(?param, ?type).
 
 VarIsTaintedFromVar(?type, ?ctx, ?ret, ?ctx, ?base) :-
-  BaseToRetTaintTransferMethod(?method),
+  TaintTransferBaseToReturn(?method),
   MethodInvocationInContext(?ctx, ?invocation, ?method),
   MethodInvocation_Base(?invocation, ?base),
   TypeForReturnValue(?type, ?ret, ?invocation).
 
 VarIsTaintedFromVarIndex(?base, ?ctx, ?param) :-
    MethodInvocationInContext(?ctx, ?invocation, ?method),
-   ParamIndexToBaseTaintTransferMethod(?index, ?method),
+   TaintTransferActualParamElementsToBase(?index, ?method),
    MethodInvocation_Base(?invocation, ?base),
    ActualParam(?index, ?invocation, ?param).
 
@@ -107,28 +107,36 @@ VarIsTaintedFromVarIndex(?base, ?ctx, ?param) :-
  * and serialization rules deliberately keep the stricter app-only gate.
  */
 LeakingSinkVariable(?label, ?invocation, ?ctx, ?var) :-
-  LeakingSinkMethodArg(?label, ?index, ?tomethod),
+  TaintSinkActualParam(?label, ?index, ?tomethod),
   MethodInvocationInContext(?ctx, ?invocation, ?tomethod),
   ActualParam(?index, ?invocation, ?var).
 
-// In case method has no arguments, assume base variable.
+// Base sink: the receiver variable at each reachable call site.
 LeakingSinkVariable(?label, ?invocation, ?ctx, ?var) :-
-   LeakingSinkMethod(?label, ?tomethod),
-   !FormalParam(_, ?tomethod, _),
+   TaintSinkBase(?label, ?tomethod),
    MethodInvocationInContext(?ctx, ?invocation, ?tomethod),
    MethodInvocation_Base(?invocation, ?var).
 
-TaintSourceMethod(?label, ?method) :-
-  TaintSourceMethodWithOverrides(?label, ?method).
-TaintSourceMethod(?label, ?overrideMethod) :-
-  TaintSourceMethodWithOverrides(?label, ?method),
+// Default override expansion for every method-keyed source: a source declared on
+// a method is also a source on every method overriding it.
+TaintSourceReturn(?label, ?overrideMethod) :-
+  TaintSourceReturn(?label, ?method),
+  basic.MethodOverridesOther(?overrideMethod, ?method).
+TaintSourceFormalParam(?label, ?index, ?overrideMethod) :-
+  TaintSourceFormalParam(?label, ?index, ?method),
   basic.MethodOverridesOther(?overrideMethod, ?method).
 
-// User-provided taint sources (methods).
-TaintSourceMethod(?label, ?method) :-
+// User-provided taint sources (keep-spec channel: method return values only).
+TaintSourceReturn(?label, ?method) :-
   TaintSpec("TAINT_SOURCE", ?label, ?method),
   isMethod(?method).
-// User-provided taint sinks (methods).
-LeakingSinkMethod(?label, ?method) :-
+// User-provided taint sinks (keep-spec channel). The legacy meaning is kept:
+// a method with parameters sinks every actual, a method without sinks the receiver.
+TaintSinkAnyActualParam(?label, ?method) :-
   TaintSpec("TAINT_SINK", ?label, ?method),
-  isMethod(?method).
+  isMethod(?method),
+  FormalParam(_, ?method, _).
+TaintSinkBase(?label, ?method) :-
+  TaintSpec("TAINT_SINK", ?label, ?method),
+  isMethod(?method),
+  !FormalParam(_, ?method, _).

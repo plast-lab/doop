@@ -16,26 +16,54 @@
 #define CONTEXT mainAnalysis.configuration.Context
 #endif // DISABLE_POINTS_TO
 
-// Declaration of a taint source method.
-.decl TaintSourceMethod(?label:InformationLabel, ?method:Method)
-// Declaration of a taint source method, including all methods that override it.
-.decl TaintSourceMethodWithOverrides(?label:InformationLabel, ?method:Method)
-// Parameter source: parameter ?index of ?method is attacker-controlled. Models an
-// unmodeled caller (framework/container) passing tainted data into the method --
-// the entry-point case that return-only sources cannot express.
-.decl TaintSourceMethodArg(?label:InformationLabel, ?index:number, ?method:Method)
+// Taint sources. Named by the POSITION of the tainted data, after Doop's own fact
+// names (AssignReturnValue, FormalParam): what a call site sees vs. what a method
+// sees from the inside. Every method-keyed source is expanded to all overriding
+// methods by default (core.dl), because a call site matches the RESOLVED target of
+// the call-graph edge, so a source on an interface/abstract method would otherwise
+// fire for nothing.
+//
+// Return source (caller side): at every reachable call to ?method, the variable
+// receiving the result is tainted.
+.decl TaintSourceReturn(?label:InformationLabel, ?method:Method)
+// Formal-parameter source (callee side): formal ?index of ?method is tainted in
+// every context where ?method is reachable, with or without a visible call site.
+// Models an unmodeled caller (framework/container) passing tainted data into the
+// method -- the entry-point shape that return-only sources cannot express.
+.decl TaintSourceFormalParam(?label:InformationLabel, ?index:number, ?method:Method)
 
-.decl LeakingSinkMethod(?lable:InformationLabel, ?method:Method)
-.decl LeakingSinkMethodArg(?label:InformationLabel, ?index:number, ?method:Method)
+// Taint sinks, named by the POSITION of the data that must not be tainted.
+// Actual-parameter sink: at every reachable call to ?method, the actual at ?index
+// is a sink.
+.decl TaintSinkActualParam(?label:InformationLabel, ?index:number, ?method:Method)
+// Convenience: every actual of every reachable call to ?method is a sink
+// (expands to TaintSinkActualParam for each formal index).
+.decl TaintSinkAnyActualParam(?label:InformationLabel, ?method:Method)
+// Base sink: at every reachable call to ?method, the receiver variable is a sink.
+.decl TaintSinkBase(?label:InformationLabel, ?method:Method)
 .decl LeakingSinkVariable(?label:InformationLabel, ?tomethod:MethodInvocation, ?ctx:CONTEXT, ?var:Var)
-.decl SanitizationMethod(?method:Method)
-.decl BaseToRetTaintTransferMethod(?method:Method)
-.decl BaseToParamTaintTransferMethod(?method:Method)
-.decl ParamToBaseTaintTransferMethod(?index:number, ?method:Method)
-.decl ParamIndexToBaseTaintTransferMethod(?index:number, ?method:Method)
-.decl ParamToRetTaintTransferMethod(?method:Method)
-.decl MockBaseToRetTaintTransferMethod(?meth:Method)
-.decl MockParamToRetTaintTransferMethod(?meth:Method)
+// Sanitizer. NOTE: implemented as a points-to BARRIER (main/context-sensitivity.dl,
+// main/model-primitives.dl): no object flows into the method's formals and none
+// flows out of its return. It removes real objects, not just taint.
+.decl TaintSanitizer(?method:Method)
+// Taint transfers through (unanalyzed or summarized) methods, named
+// TaintTransfer<From>To<To> by the positions at the call site.
+// Tainted receiver -> result.
+.decl TaintTransferBaseToReturn(?method:Method)
+// Tainted receiver -> every actual. (App-gated: call site must be in app code.)
+.decl TaintTransferBaseToActualParam(?method:Method)
+// Tainted actual at ?index -> receiver. Fires ONLY when the call's result is
+// unused, and only for heap-allocated receivers.
+.decl TaintTransferActualParamToBase(?index:number, ?method:Method)
+// Tainted ELEMENTS of the array actual at ?index -> receiver.
+.decl TaintTransferActualParamElementsToBase(?index:number, ?method:Method)
+// Any tainted actual -> result. (App-gated.)
+.decl TaintTransferActualParamToReturn(?method:Method)
+// "Mock" variants of the two *ToReturn transfers: not app-gated, and the fresh
+// taint value is typed by the result variable's declared type. Near-duplicates
+// of the plain forms; merge candidates.
+.decl TaintTransferBaseToReturnMock(?meth:Method)
+.decl TaintTransferActualParamToReturnMock(?meth:Method)
 .decl VarIsCast(?var:Var)
 .decl VarUse(?var:Var, ?inst:Instruction)
 .decl LabelFromSource(?source:symbol, ?label:InformationLabel)
