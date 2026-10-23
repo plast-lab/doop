@@ -1,0 +1,110 @@
+// ============================================================================
+// Test queries for the P/Taint source vocabulary
+// (addons/information-flow: TaintSourceReturn, TaintSourceFormalParam, and the
+// default override expansion), driven by tests/117-taint-sources (class Main).
+//
+// Loaded via --extra-logic on top of --information-flow minimal, so it also
+// carries the taint SPEC for the driver. Every check is a FAIL relation that
+// must be EMPTY when the feature works; the Groovy spec asserts each with
+// relationIsEmpty. Checks anchor on the producing / consuming method of each
+// sink argument (stable source signatures), never on invocation numbering.
+// ============================================================================
+
+// ---- the spec for the driver ------------------------------------------------
+TaintSourceReturn("src",   "<Main: java.lang.String untrusted()>").
+TaintSourceReturn("src",   "<Main$Reader: java.lang.String read()>").
+TaintSourceReturn("prim",  "<Main: int untrustedInt()>").
+TaintSourceFormalParam("param", 0, "<Main: void handle(java.lang.String)>").
+TaintSinkActualParam("sink", 0, "<Main: void sink(java.lang.String)>").
+TaintSinkActualParam("sink", 1, "<Main: void sink2(java.lang.String,java.lang.String)>").
+TaintSinkActualParam("sink", 0, "<Main: void sinkInt(int)>").
+
+// ---- shared helpers ---------------------------------------------------------
+
+// Guard against typos in the spec above: every named method must exist.
+.decl Taint_FAIL_SpecUnmatched(?m:symbol)
+.output Taint_FAIL_SpecUnmatched
+Taint_FAIL_SpecUnmatched(?m) :- TaintSourceReturn(_, ?m),         !isMethod(?m).
+Taint_FAIL_SpecUnmatched(?m) :- TaintSourceFormalParam(_, _, ?m), !isMethod(?m).
+Taint_FAIL_SpecUnmatched(?m) :- TaintSinkActualParam(_, _, ?m),   !isMethod(?m).
+
+// A call to a declared sink method, with the actual at the sink index.
+.decl SinkCall(?invo:symbol, ?sinkMethod:symbol, ?actual:symbol)
+SinkCall(?invo, ?m, ?actual) :-
+  TaintSinkActualParam(_, ?idx, ?m),
+  MethodInvocation_Method(?invo, ?m),
+  ActualParam(?idx, ?invo, ?actual).
+
+// The sink actual of ?invo is the result of a call to ?producer (declared target).
+.decl SinkFedBy(?invo:symbol, ?producer:symbol)
+SinkFedBy(?invo, ?producer) :-
+  SinkCall(?invo, _, ?actual),
+  AssignReturnValue(?srcInvo, ?actual),
+  MethodInvocation_Method(?srcInvo, ?producer).
+
+// Debug dump (not asserted): every leak reported.
+.decl TaintTest_Leaks(?from:symbol, ?to:symbol, ?invo:symbol, ?source:symbol)
+.output TaintTest_Leaks
+TaintTest_Leaks(?from, ?to, ?invo, ?source) :-
+  LeakingTaintedInformation(?from, ?to, _, ?invo, ?source).
+
+.decl LeakAt(?from:symbol, ?invo:symbol)
+LeakAt(?from, ?invo) :- TaintTest_Leaks(?from, "sink", ?invo, _).
+
+// ---- return source ------------------------------------------------------------
+// Every sink fed by untrusted() must leak under label "src" (covers sink and the
+// index-1 feed of sink2).
+.decl Taint_FAIL_ReturnSourceMissing(?invo:symbol)
+.output Taint_FAIL_ReturnSourceMissing
+Taint_FAIL_ReturnSourceMissing(?invo) :-
+  SinkFedBy(?invo, "<Main: java.lang.String untrusted()>"),
+  !LeakAt("src", ?invo).
+
+// ---- override expansion (default) ---------------------------------------------
+// The source is declared on Reader.read; the call resolves to FileReader.read.
+.decl Taint_FAIL_OverrideExpansionMissing(?invo:symbol)
+.output Taint_FAIL_OverrideExpansionMissing
+Taint_FAIL_OverrideExpansionMissing(?invo) :-
+  SinkFedBy(?invo, "<Main$Reader: java.lang.String read()>"),
+  !LeakAt("src", ?invo).
+
+// ---- formal-parameter source -----------------------------------------------------
+// The sink call inside handle must leak under label "param", attributed to
+// handle's formal 0 as the source.
+.decl HandleSinkLeaks()
+HandleSinkLeaks() :-
+  SinkCall(?invo, "<Main: void sink(java.lang.String)>", _),
+  Instruction_Method(?invo, "<Main: void handle(java.lang.String)>"),
+  FormalParam(0, "<Main: void handle(java.lang.String)>", ?formal),
+  TaintTest_Leaks("param", "sink", ?invo, ?formal).
+
+.decl Taint_FAIL_FormalParamSourceMissing(?msg:symbol)
+.output Taint_FAIL_FormalParamSourceMissing
+Taint_FAIL_FormalParamSourceMissing("no param-labelled leak at handle's sink call, sourced at its formal 0") :-
+  !HandleSinkLeaks().
+
+// ---- negatives --------------------------------------------------------------------
+// A sink fed by trusted() must not leak: covers sink(trusted()) and
+// sink2(untrusted(), trusted()), whose taint sits at the non-sink index 0.
+// (handle's internal sink is fed by the formal, not by a call, so it is excluded.)
+.decl Taint_FAIL_NonSourceLeaks(?invo:symbol, ?from:symbol)
+.output Taint_FAIL_NonSourceLeaks
+Taint_FAIL_NonSourceLeaks(?invo, ?from) :-
+  SinkFedBy(?invo, "<Main: java.lang.String trusted()>"),
+  LeakAt(?from, ?invo).
+
+// Only the spec's labels may ever appear in a finding.
+.decl Taint_FAIL_UnexpectedLabel(?from:symbol, ?to:symbol)
+.output Taint_FAIL_UnexpectedLabel
+Taint_FAIL_UnexpectedLabel(?from, ?to) :-
+  TaintTest_Leaks(?from, ?to, _, _),
+  ( ?to != "sink" ; (?from != "src", ?from != "param", ?from != "prim") ).
+
+// ---- primitive-typed return source ------------------------------------------
+// An int-typed taint value must survive the actual->formal edge into sinkInt
+// (no model-primitives needed: the value is minted with the primitive type and
+// the edge's subtype check holds reflexively).
+.decl Taint_FAIL_PrimSourceMissing(?invo:symbol)
+.output Taint_FAIL_PrimSourceMissing
+Taint_FAIL_PrimSourceMissing(?invo) :-
+  SinkFedBy(?invo, "<Main: int untrustedInt()>"), !LeakAt("prim", ?invo).
