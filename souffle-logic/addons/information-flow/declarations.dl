@@ -31,6 +31,19 @@
 // Models an unmodeled caller (framework/container) passing tainted data into the
 // method -- the entry-point shape that return-only sources cannot express.
 .decl TaintSourceFormalParam(?label:InformationLabel, ?index:number, ?method:Method)
+// Actual-parameter source (caller side): at every reachable call to ?method, the
+// actual at ?index is tainted -- the call FILLED the object the caller passed in
+// (InputStream.read(byte[]), DatagramSocket.receive(packet)).
+.decl TaintSourceActualParam(?label:InformationLabel, ?index:number, ?method:Method)
+// Base source (caller side): at every reachable call to ?method, the receiver
+// variable is tainted -- the call filled the object it was invoked on. In bytecode
+// a constructor is a void call on the fresh object, so this is how "the constructed
+// object is a source" is said (new Socket(host, port), props.load(in)).
+.decl TaintSourceBase(?label:InformationLabel, ?method:Method)
+// This source (callee side): `this` of ?method is tainted in every context where
+// ?method is reachable -- the receiver was built from untrusted data by an
+// unmodeled caller (a deserialized request object's validate()).
+.decl TaintSourceThis(?label:InformationLabel, ?method:Method)
 
 // Taint sinks, named by the POSITION of the data that must not be tainted.
 // Actual-parameter sink: at every reachable call to ?method, the actual at ?index

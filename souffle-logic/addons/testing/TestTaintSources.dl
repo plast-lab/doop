@@ -18,6 +18,15 @@ TaintSourceFormalParam("param", 0, "<Main: void handle(java.lang.String)>").
 TaintSinkActualParam("sink", 0, "<Main: void sink(java.lang.String)>").
 TaintSinkActualParam("sink", 1, "<Main: void sink2(java.lang.String,java.lang.String)>").
 TaintSinkActualParam("sink", 0, "<Main: void sinkInt(int)>").
+TaintSourceActualParam("arg",  0, "<Main: int read(byte[])>").
+TaintSourceBase("base", "<Main$Props: void load()>").
+TaintSourceBase("ctor", "<Main$Conn: void <init>(java.lang.String)>").
+TaintSourceThis("this", "<Main$Request: void validate()>").
+TaintSinkActualParam("sink", 0, "<Main: void sinkBytes(byte[])>").
+TaintSinkActualParam("sink", 0, "<Main: void sinkObj(java.lang.Object)>").
+TaintSinkActualParam("sink", 0, "<Main: void sinkByte(byte)>").
+TaintSinkActualParam("sink", 0, "<Main: void sinkBytesNeg(byte[])>").
+TaintSinkActualParam("sink", 0, "<Main: void sinkObjNeg(java.lang.Object)>").
 
 // ---- shared helpers ---------------------------------------------------------
 
@@ -27,6 +36,9 @@ TaintSinkActualParam("sink", 0, "<Main: void sinkInt(int)>").
 Taint_FAIL_SpecUnmatched(?m) :- TaintSourceReturn(_, ?m),         !isMethod(?m).
 Taint_FAIL_SpecUnmatched(?m) :- TaintSourceFormalParam(_, _, ?m), !isMethod(?m).
 Taint_FAIL_SpecUnmatched(?m) :- TaintSinkActualParam(_, _, ?m),   !isMethod(?m).
+Taint_FAIL_SpecUnmatched(?m) :- TaintSourceActualParam(_, _, ?m), !isMethod(?m).
+Taint_FAIL_SpecUnmatched(?m) :- TaintSourceBase(_, ?m),           !isMethod(?m).
+Taint_FAIL_SpecUnmatched(?m) :- TaintSourceThis(_, ?m),           !isMethod(?m).
 
 // A call to a declared sink method, with the actual at the sink index.
 .decl SinkCall(?invo:symbol, ?sinkMethod:symbol, ?actual:symbol)
@@ -98,7 +110,9 @@ Taint_FAIL_NonSourceLeaks(?invo, ?from) :-
 .output Taint_FAIL_UnexpectedLabel
 Taint_FAIL_UnexpectedLabel(?from, ?to) :-
   TaintTest_Leaks(?from, ?to, _, _),
-  ( ?to != "sink" ; (?from != "src", ?from != "param", ?from != "prim") ).
+  ( ?to != "sink" ;
+    (?from != "src", ?from != "param", ?from != "prim",
+     ?from != "arg", ?from != "base", ?from != "ctor", ?from != "this") ).
 
 // ---- primitive-typed return source ------------------------------------------
 // An int-typed taint value must survive the actual->formal edge into sinkInt
@@ -108,3 +122,63 @@ Taint_FAIL_UnexpectedLabel(?from, ?to) :-
 .output Taint_FAIL_PrimSourceMissing
 Taint_FAIL_PrimSourceMissing(?invo) :-
   SinkFedBy(?invo, "<Main: int untrustedInt()>"), !LeakAt("prim", ?invo).
+
+// ---- actual-parameter source --------------------------------------------------
+// The sinkBytes call must leak under "arg", sourced at read's actual 0 (source id
+// = <read call site>/actual0).
+.decl Taint_FAIL_ActualParamSourceMissing(?msg:symbol)
+.output Taint_FAIL_ActualParamSourceMissing
+.decl ActualParamSourceLeaks()
+ActualParamSourceLeaks() :-
+  SinkCall(?sinkInvo, "<Main: void sinkBytes(byte[])>", _),
+  MethodInvocation_Method(?readInvo, "<Main: int read(byte[])>"),
+  TaintTest_Leaks("arg", "sink", ?sinkInvo, cat(?readInvo, "/actual0")).
+Taint_FAIL_ActualParamSourceMissing("sinkBytes(buf) did not leak from read(buf)'s actual 0") :-
+  !ActualParamSourceLeaks().
+
+// ---- base source (method and constructor) -----------------------------------------
+.decl BaseSourceLeaks(?label:symbol)
+BaseSourceLeaks("base") :-
+  SinkCall(?sinkInvo, "<Main: void sinkObj(java.lang.Object)>", _),
+  MethodInvocation_Method(?loadInvo, "<Main$Props: void load()>"),
+  TaintTest_Leaks("base", "sink", ?sinkInvo, cat(?loadInvo, "/base")).
+BaseSourceLeaks("ctor") :-
+  SinkCall(?sinkInvo, "<Main: void sinkObj(java.lang.Object)>", _),
+  MethodInvocation_Method(?initInvo, "<Main$Conn: void <init>(java.lang.String)>"),
+  TaintTest_Leaks("ctor", "sink", ?sinkInvo, cat(?initInvo, "/base")).
+
+.decl Taint_FAIL_BaseSourceMissing(?label:symbol)
+.output Taint_FAIL_BaseSourceMissing
+Taint_FAIL_BaseSourceMissing("base") :- !BaseSourceLeaks("base").
+Taint_FAIL_BaseSourceMissing("ctor") :- !BaseSourceLeaks("ctor").
+
+// ---- this source --------------------------------------------------------------------
+.decl ThisSourceLeaks()
+ThisSourceLeaks() :-
+  SinkCall(?invo, "<Main: void sinkObj(java.lang.Object)>", _),
+  Instruction_Method(?invo, "<Main$Request: void validate()>"),
+  ThisVar("<Main$Request: void validate()>", ?this),
+  TaintTest_Leaks("this", "sink", ?invo, ?this).
+
+.decl Taint_FAIL_ThisSourceMissing(?msg:symbol)
+.output Taint_FAIL_ThisSourceMissing
+Taint_FAIL_ThisSourceMissing("sinkObj(this) in validate() did not leak from this") :-
+  !ThisSourceLeaks().
+
+// ---- negatives for the caller-side positions -----------------------------------------
+// The *Neg sinks are fed only by non-source values and must never leak.
+.decl Taint_FAIL_CallerSideNegLeaks(?invo:symbol, ?from:symbol)
+.output Taint_FAIL_CallerSideNegLeaks
+Taint_FAIL_CallerSideNegLeaks(?invo, ?from) :-
+  ( SinkCall(?invo, "<Main: void sinkBytesNeg(byte[])>", _) ;
+    SinkCall(?invo, "<Main: void sinkObjNeg(java.lang.Object)>", _) ),
+  LeakAt(?from, ?invo).
+
+// ---- element of a filled buffer -------------------------------------------------------
+// After read(buf), buf[0] carries taint into sinkByte: the tainted byte[] value
+// in buf feeds the existing tainted-array load rule, which mints a byte-typed
+// value into the loaded element.
+.decl Taint_FAIL_FilledElementMissing(?invo:symbol)
+.output Taint_FAIL_FilledElementMissing
+Taint_FAIL_FilledElementMissing(?invo) :-
+  SinkCall(?invo, "<Main: void sinkByte(byte)>", _), !LeakAt("arg", ?invo).

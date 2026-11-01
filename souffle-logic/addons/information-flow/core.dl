@@ -125,6 +125,15 @@ TaintSourceReturn(?label, ?overrideMethod) :-
 TaintSourceFormalParam(?label, ?index, ?overrideMethod) :-
   TaintSourceFormalParam(?label, ?index, ?method),
   basic.MethodOverridesOther(?overrideMethod, ?method).
+TaintSourceActualParam(?label, ?index, ?overrideMethod) :-
+  TaintSourceActualParam(?label, ?index, ?method),
+  basic.MethodOverridesOther(?overrideMethod, ?method).
+TaintSourceBase(?label, ?overrideMethod) :-
+  TaintSourceBase(?label, ?method),
+  basic.MethodOverridesOther(?overrideMethod, ?method).
+TaintSourceThis(?label, ?overrideMethod) :-
+  TaintSourceThis(?label, ?method),
+  basic.MethodOverridesOther(?overrideMethod, ?method).
 
 // User-provided taint sources (keep-spec channel: method return values only).
 TaintSourceReturn(?label, ?method) :-

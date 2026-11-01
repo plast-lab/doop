@@ -298,6 +298,48 @@ mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?formal, ?type, DEFAULT_BREADCRUMB)
   isReferenceType(?type),
   Method_DeclaringType(?method, ?declaringType).
 
+// Actual-parameter source: at each reachable call site of ?method, taint the
+// ACTUAL at ?index -- the call filled the object the caller passed in. The value
+// is typed by the actual's declared type and keyed by (call site, index) so it
+// never collides with a return source on the same call. Flow-insensitive: the
+// actual is tainted before and after the call alike.
+TaintedValueIntroduced(?declaringType, ?srcId, ?type, ?label, ValueIdMacro(?srcId, ?type, DEFAULT_BREADCRUMB)),
+mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?srcId, ?type, DEFAULT_BREADCRUMB), ?ctx, ?actual) :-
+  TaintSourceActualParam(?label, ?index, ?method),
+  MethodInvocationInContext(?ctx, ?invo, ?method),
+  ActualParam(?index, ?invo, ?actual),
+  ?srcId = cat(cat(?invo, "/actual"), to_string(?index)),
+  Var_Type(?actual, ?type),
+  mainAnalysis.isImmutableHContext(?hctx),
+  Instruction_Method(?invo, ?inMethod),
+  Method_DeclaringType(?inMethod, ?declaringType).
+
+// Base source: at each reachable call site of ?method, taint the RECEIVER
+// variable -- the call filled the object it was invoked on. Constructors
+// (<init>) are the main use: the freshly allocated object is the receiver.
+TaintedValueIntroduced(?declaringType, ?srcId, ?type, ?label, ValueIdMacro(?srcId, ?type, DEFAULT_BREADCRUMB)),
+mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?srcId, ?type, DEFAULT_BREADCRUMB), ?ctx, ?base) :-
+  TaintSourceBase(?label, ?method),
+  MethodInvocationInContext(?ctx, ?invo, ?method),
+  MethodInvocation_Base(?invo, ?base),
+  ?srcId = cat(?invo, "/base"),
+  Var_Type(?base, ?type),
+  mainAnalysis.isImmutableHContext(?hctx),
+  Instruction_Method(?invo, ?inMethod),
+  Method_DeclaringType(?inMethod, ?declaringType).
+
+// This source: taint `this` of ?method directly, in the method's reachable
+// context -- the callee-side twin of the formal-parameter source, for a receiver
+// built from untrusted data by an unmodeled caller.
+TaintedValueIntroduced(?declaringType, ?this, ?type, ?label, ValueIdMacro(?this, ?type, DEFAULT_BREADCRUMB)),
+mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?this, ?type, DEFAULT_BREADCRUMB), ?ctx, ?this) :-
+  TaintSourceThis(?label, ?method),
+  ThisVar(?method, ?this),
+  mainAnalysis.ReachableContext(?ctx, ?method),
+  mainAnalysis.isImmutableHContext(?hctx),
+  Var_Type(?this, ?type),
+  Method_DeclaringType(?method, ?declaringType).
+
 TaintedVarPointsTo(?value, ?ctx, ?var) :-
   TaintedValue(?value),
   mainAnalysis.VarPointsTo(_, ?value, ?ctx, ?var).

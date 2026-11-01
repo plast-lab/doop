@@ -7,7 +7,8 @@ import static org.clyze.doop.TestUtils.*
 
 /**
  * Test the P/Taint source vocabulary (souffle-logic/addons/information-flow):
- * TaintSourceReturn, TaintSourceFormalParam, and the default override expansion.
+ * TaintSourceReturn, TaintSourceFormalParam, TaintSourceActualParam, TaintSourceBase,
+ * TaintSourceThis, and the default override expansion.
  *
  * Drives a context-insensitive analysis of the tests/117-taint-sources driver
  * with --information-flow minimal and the spec + property queries in
@@ -17,7 +18,7 @@ import static org.clyze.doop.TestUtils.*
 class TestTaintSources extends DoopSpec {
 
     @Unroll
-    def "Test 117 (taint sources: return, formal parameter, override expansion)"() {
+    def "Test 117 (taint sources: return, formal/actual parameter, base, this, override expansion)"() {
         when:
         List options = ["--platform", "java_17",
                         "--information-flow", "minimal",
@@ -43,5 +44,15 @@ class TestTaintSources extends DoopSpec {
         relationIsEmpty(analysis, "Taint_FAIL_UnexpectedLabel")
         // A primitive-typed (int) return source reaches a primitive sink.
         relationIsEmpty(analysis, "Taint_FAIL_PrimSourceMissing")
+        // Actual-parameter source: read(buf) taints buf at the call site.
+        relationIsEmpty(analysis, "Taint_FAIL_ActualParamSourceMissing")
+        // ...and an element loaded from the filled buffer is tainted too.
+        relationIsEmpty(analysis, "Taint_FAIL_FilledElementMissing")
+        // Base source: p.load() taints p; new Conn(..) taints the constructed object.
+        relationIsEmpty(analysis, "Taint_FAIL_BaseSourceMissing")
+        // This source: `this` of validate() is tainted on entry.
+        relationIsEmpty(analysis, "Taint_FAIL_ThisSourceMissing")
+        // Negatives: the *Neg sinks, fed only by non-source values, never leak.
+        relationIsEmpty(analysis, "Taint_FAIL_CallerSideNegLeaks")
     }
 }
