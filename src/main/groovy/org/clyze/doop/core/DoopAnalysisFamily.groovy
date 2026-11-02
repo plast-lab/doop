@@ -838,6 +838,13 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Enter high soundness mode for information flow microbenchmarks.",
 					forPreprocessor: true
 			),
+			new BooleanAnalysisOption(
+					id: "INFORMATION_FLOW_DISABLE_TYPE_MOCKS",
+					name: "information-flow-disable-type-mocks",
+					group: GROUP_INFORMATION_FLOW,
+					description: "Keep type taint sources (TaintSourceType) to marking existing objects of the type: do not place mock objects at the type's entry positions (formals, fields and body-less method results declared as the type).",
+					forPreprocessor: true
+			),
 			new AnalysisOption<String>(
 					id: "INFORMATION_FLOW_EXTRA_CONTROLS",
 					name: "information-flow-extra-controls",

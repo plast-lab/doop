@@ -23,6 +23,20 @@
 //   sinkBytes/sinkObj  TaintSinkActualParam 0
 //   sinkBytesNeg/sinkObjNeg  sinks that must NEVER leak (negative controls)
 //   fill(byte[])       not a source (negative control for read)
+//   Main.CONFIG        TaintSourceField       -- static field, never assigned
+//   Settings.name      TaintSourceField       -- instance field, assigned in the ctor
+//   Settings.external  TaintSourceField       -- instance field, never assigned
+//   Settings.data      TaintSourceField       -- holds an app allocation: the
+//                                                array itself must be marked
+//   Settings.safe      not a source (negative control for fields)
+//   Token              TaintSourceType        -- every Token is tainted, wherever
+//                                                allocated; AdminToken is a subtype
+//   Ticket             not a source (negative control for types)
+//   Session            TaintSourceType        -- NEVER allocated: only the mock half
+//                                                (stand-ins at its entry positions:
+//                                                serve's formal, field CURRENT, the
+//                                                result of native openSession())
+//                                                can make a Session reach a sink
 public class Main {
 
     interface Reader { String read(); }
@@ -55,6 +69,29 @@ public class Main {
     static class Request {
         void validate() { sinkObj(this); }                   // LEAK  this source
     }
+
+    // Field sources: the field's contents are tainted, whether or not the
+    // program ever stores into the field.
+    static String CONFIG;                                   // never assigned
+    static class Settings {
+        String name;                                        // assigned in the constructor
+        String external;                                    // never assigned anywhere
+        byte[] data;                                        // assigned an app allocation
+        String safe = "ok";                                 // not a source
+        Settings(String n) { name = n; }
+    }
+
+    // Type sources: every object of the type (or a subtype) is tainted.
+    static class Token { }
+    static class AdminToken extends Token { }
+    static class Ticket { }                                 // not a source
+
+    // Type source, mock half: the program never allocates a Session, so every
+    // Session reaching a sink is a stand-in placed at an entry position of the type.
+    static class Session { }
+    static Session CURRENT;                                 // field declared as Session, never assigned
+    static native Session openSession();                    // body-less: its result comes from outside
+    static void serve(Session s) { sinkObj(s); }            // LEAK inside serve: formal declared as Session
 
     static void sinkBytes(byte[] b)    { System.out.println(b.length); }
     static void sinkObj(Object o)      { System.out.println(o); }
@@ -91,5 +128,23 @@ public class Main {
         sinkObj(c);                      // LEAK
 
         new Request().validate();        // LEAK inside validate (this source)
+
+        sink(CONFIG);                    // LEAK   static field source (no store exists)
+        Settings st = new Settings("n");
+        sink(st.name);                   // LEAK   field source with a constructor store
+        sink(st.external);               // LEAK   field source with no store
+        sink(st.safe);                   // no leak: not a source
+        byte[] data = new byte[2];
+        st.data = data;
+        sinkBytes(data);                 // LEAK   the array is MARKED: this alias never
+                                         //        goes through the field
+
+        sinkObj(new Token());            // LEAK   type source
+        sinkObj(new AdminToken());       // LEAK   subtype of a type source
+        sinkObjNeg(new Ticket());        // no leak: not a source
+
+        serve(null);                     // LEAK inside serve: formal entry position
+        sinkObj(CURRENT);                // LEAK   field entry position (no store exists)
+        sinkObj(openSession());          // LEAK   body-less method result entry position
     }
 }

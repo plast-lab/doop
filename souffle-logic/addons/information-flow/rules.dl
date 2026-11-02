@@ -10,6 +10,26 @@
 
 #ifndef DISABLE_POINTS_TO
 
+Markable(?value) :-
+  mainAnalysis.Value_isHeap(?value),
+  !mainAnalysis.HeapAllocation_Merge(?value, _),
+  !mainAnalysis.HeapAllocation_Merge(_, ?value),
+  !mainAnalysis.Value_Null(?value),
+  // merged representative for reflection strings, not covered by HeapAllocation_Merge
+  ?value != "<<reflection-string-constant>>".
+// Doop's other <<...>> pseudo-heaps (<<main-thread>>, <<main method array>>,
+// <<main method array content>>, the context pseudo-heaps) are per-program
+// singletons, not merges of allocation sites, and stay markable: a source on
+// main(String[]) must be able to mark the argument array.
+
+#ifdef MODEL_PRIMITIVES
+Markable(?value) :-
+  mainAnalysis.Value_isMock(?value),
+  ( substr(?value, 0, 12) = "<prim-param " ;
+    substr(?value, 0, 12) = "<prim-arith " ;
+    substr(?value, 0, 11) = "<prim-conv " ).
+#endif // MODEL_PRIMITIVES
+
 TaintObjTransfer(?fromCtx, ?from, ?toCtx, ?to),
 TaintedVarTaintedFromVar(?toCtx, ?to, ?value, ?type) :-
   VarIsTaintedFromVar(?type, ?toCtx, ?to, ?fromCtx, ?from),
@@ -339,6 +359,118 @@ mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?this, ?type, DEFAULT_BREADCRUMB), 
   mainAnalysis.isImmutableHContext(?hctx),
   Var_Type(?this, ?type),
   Method_DeclaringType(?method, ?declaringType).
+
+// Field source, mock half: one mock per field, named by the field signature and
+// typed by the field's declared type, placed in the field's points-to set. Loads
+// need no rule of their own: the ordinary load rules move it into every variable
+// the field is read into. Placed unconditionally (next to any real contents): "the
+// field is empty" is a negation over a relation this very head extends, and a
+// field assigned in a constructor can still be overwritten from outside.
+// Static field: one tuple.
+TaintedValueIntroduced(?declaringType, ?field, ?type, ?label, ValueIdMacro(?field, ?type, DEFAULT_BREADCRUMB)),
+mainAnalysis.StaticFieldPointsTo(?hctx, ValueIdMacro(?field, ?type, DEFAULT_BREADCRUMB), ?field) :-
+  TaintSourceField(?label, ?field),
+  Field_Modifier("static", ?field),
+  Field_Type(?field, ?type),
+  Field_DeclaringType(?field, ?declaringType),
+  mainAnalysis.isImmutableHContext(?hctx).
+
+// Instance field: one tuple per base object that some reachable load of the
+// field dereferences (the only base objects through which the field is ever read).
+TaintedValueIntroduced(?declaringType, ?field, ?type, ?label, ValueIdMacro(?field, ?type, DEFAULT_BREADCRUMB)),
+mainAnalysis.InstanceFieldPointsTo(?hctx, ValueIdMacro(?field, ?type, DEFAULT_BREADCRUMB), ?field, ?baseHctx, ?baseValue) :-
+  TaintSourceField(?label, ?field),
+  !Field_Modifier("static", ?field),
+  mainAnalysis.LoadHeapInstanceField(_, _, ?field, ?baseHctx, ?baseValue),
+  Field_Type(?field, ?type),
+  Field_DeclaringType(?field, ?declaringType),
+  mainAnalysis.isImmutableHContext(?hctx).
+
+// Field source, mark half: every Markable object the field holds carries the
+// taint itself, so aliases of it that never go through the field are tainted too.
+TaintedValue(?value),
+SourceFromTaintedValue(?value, ?field),
+LabelFromSource(?field, ?label) :-
+  TaintSourceField(?label, ?field),
+  ( mainAnalysis.StaticFieldPointsTo(_, ?value, ?field) ;
+    mainAnalysis.InstanceFieldPointsTo(_, ?value, ?field, _, _) ),
+  Markable(?value).
+
+// Type source, mark half: every Markable object of the type or a subtype carries
+// the taint, with the type as source id. Markable already excludes minted taint
+// stand-ins (not heap values) and shared representatives, so a type source on
+// java.lang.String marks real string allocations but never <<string-constant>>.
+TaintedValue(?value),
+SourceFromTaintedValue(?value, ?type),
+LabelFromSource(?type, ?label) :-
+  TaintSourceType(?label, ?type),
+  basic.SubtypeOf(?valueType, ?type),
+  mainAnalysis.Value_Type(?value, ?valueType),
+  Markable(?value).
+
+#ifndef INFORMATION_FLOW_DISABLE_TYPE_MOCKS
+// Type source, mock half: a stand-in at every ENTRY POSITION of the type, i.e.
+// where a value declared as the type (or a subtype) arrives from code the
+// analysis does not see. These are the positional sources applied by declared
+// type: the stand-in is named by its position (suffix "/type", so it never
+// collides with a positional source on the same position) and typed by the
+// position's declared type, but its source id is the TYPE, like the marks. One
+// stand-in per position however many type sources cover it. Reference types only.
+//
+// Entry position 1: a formal of a reachable method, declared as the type.
+TaintedValueIntroduced(?declaringType, ?type, ?formalType, ?label, ValueIdMacro(cat(?formal, "/type"), ?formalType, DEFAULT_BREADCRUMB)),
+mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(cat(?formal, "/type"), ?formalType, DEFAULT_BREADCRUMB), ?ctx, ?formal) :-
+  TaintSourceType(?label, ?type),
+  basic.SubtypeOf(?formalType, ?type),
+  isReferenceType(?formalType),
+  Var_Type(?formal, ?formalType),
+  FormalParam(_, ?method, ?formal),
+  mainAnalysis.ReachableContext(?ctx, ?method),
+  mainAnalysis.isImmutableHContext(?hctx),
+  Method_DeclaringType(?method, ?declaringType).
+
+// Entry position 2: a field declared as the type. Static: one tuple. Instance:
+// one per base object some reachable load dereferences, as for TaintSourceField.
+TaintedValueIntroduced(?declaringType, ?type, ?fieldType, ?label, ValueIdMacro(cat(?field, "/type"), ?fieldType, DEFAULT_BREADCRUMB)),
+mainAnalysis.StaticFieldPointsTo(?hctx, ValueIdMacro(cat(?field, "/type"), ?fieldType, DEFAULT_BREADCRUMB), ?field) :-
+  TaintSourceType(?label, ?type),
+  basic.SubtypeOf(?fieldType, ?type),
+  isReferenceType(?fieldType),
+  Field_Type(?field, ?fieldType),
+  Field_Modifier("static", ?field),
+  Field_DeclaringType(?field, ?declaringType),
+  mainAnalysis.isImmutableHContext(?hctx).
+
+TaintedValueIntroduced(?declaringType, ?type, ?fieldType, ?label, ValueIdMacro(cat(?field, "/type"), ?fieldType, DEFAULT_BREADCRUMB)),
+mainAnalysis.InstanceFieldPointsTo(?hctx, ValueIdMacro(cat(?field, "/type"), ?fieldType, DEFAULT_BREADCRUMB), ?field, ?baseHctx, ?baseValue) :-
+  TaintSourceType(?label, ?type),
+  basic.SubtypeOf(?fieldType, ?type),
+  isReferenceType(?fieldType),
+  Field_Type(?field, ?fieldType),
+  !Field_Modifier("static", ?field),
+  mainAnalysis.LoadHeapInstanceField(_, _, ?field, ?baseHctx, ?baseValue),
+  Field_DeclaringType(?field, ?declaringType),
+  mainAnalysis.isImmutableHContext(?hctx).
+
+// Entry position 3: the result of a reachable call whose DECLARED target has no
+// body in the facts (native, abstract or interface method, phantom method) and
+// returns the type. The call's declared target, not its resolved callees: when
+// resolution finds a body the stand-in sits next to the real results, when it
+// finds none (an interface with no visible implementation) it is all there is.
+TaintedValueIntroduced(?declaringType, ?type, ?retType, ?label, ValueIdMacro(cat(?invo, "/type"), ?retType, DEFAULT_BREADCRUMB)),
+mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(cat(?invo, "/type"), ?retType, DEFAULT_BREADCRUMB), ?ctx, ?to) :-
+  TaintSourceType(?label, ?type),
+  basic.SubtypeOf(?retType, ?type),
+  isReferenceType(?retType),
+  Method_ReturnType(?method, ?retType),
+  !Instruction_Method(_, ?method),
+  AnyMethodInvocation(?invo, ?method),
+  AssignReturnValue(?invo, ?to),
+  Instruction_Method(?invo, ?inMethod),
+  mainAnalysis.ReachableContext(?ctx, ?inMethod),
+  mainAnalysis.isImmutableHContext(?hctx),
+  Method_DeclaringType(?inMethod, ?declaringType).
+#endif // INFORMATION_FLOW_DISABLE_TYPE_MOCKS
 
 TaintedVarPointsTo(?value, ?ctx, ?var) :-
   TaintedValue(?value),

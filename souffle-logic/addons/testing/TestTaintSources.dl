@@ -1,7 +1,9 @@
 // ============================================================================
-// Test queries for the P/Taint source vocabulary
-// (addons/information-flow: TaintSourceReturn, TaintSourceFormalParam, and the
-// default override expansion), driven by tests/117-taint-sources (class Main).
+// Test queries for the P/Taint source vocabulary (addons/information-flow):
+// TaintSourceReturn, TaintSourceFormalParam, TaintSourceActualParam,
+// TaintSourceBase, TaintSourceThis, TaintSourceField, TaintSourceType (mark and
+// mock halves) and the default override expansion, driven by
+// tests/117-taint-sources (class Main).
 //
 // Loaded via --extra-logic on top of --information-flow minimal, so it also
 // carries the taint SPEC for the driver. Every check is a FAIL relation that
@@ -27,6 +29,12 @@ TaintSinkActualParam("sink", 0, "<Main: void sinkObj(java.lang.Object)>").
 TaintSinkActualParam("sink", 0, "<Main: void sinkByte(byte)>").
 TaintSinkActualParam("sink", 0, "<Main: void sinkBytesNeg(byte[])>").
 TaintSinkActualParam("sink", 0, "<Main: void sinkObjNeg(java.lang.Object)>").
+TaintSourceField("field", "<Main: java.lang.String CONFIG>").
+TaintSourceField("field", "<Main$Settings: java.lang.String name>").
+TaintSourceField("field", "<Main$Settings: java.lang.String external>").
+TaintSourceField("field", "<Main$Settings: byte[] data>").
+TaintSourceType("type", "Main$Token").
+TaintSourceType("type", "Main$Session").
 
 // ---- shared helpers ---------------------------------------------------------
 
@@ -39,6 +47,8 @@ Taint_FAIL_SpecUnmatched(?m) :- TaintSinkActualParam(_, _, ?m),   !isMethod(?m).
 Taint_FAIL_SpecUnmatched(?m) :- TaintSourceActualParam(_, _, ?m), !isMethod(?m).
 Taint_FAIL_SpecUnmatched(?m) :- TaintSourceBase(_, ?m),           !isMethod(?m).
 Taint_FAIL_SpecUnmatched(?m) :- TaintSourceThis(_, ?m),           !isMethod(?m).
+Taint_FAIL_SpecUnmatched(?f) :- TaintSourceField(_, ?f),          !isField(?f).
+Taint_FAIL_SpecUnmatched(?t) :- TaintSourceType(_, ?t),           !isType(?t).
 
 // A call to a declared sink method, with the actual at the sink index.
 .decl SinkCall(?invo:symbol, ?sinkMethod:symbol, ?actual:symbol)
@@ -112,7 +122,8 @@ Taint_FAIL_UnexpectedLabel(?from, ?to) :-
   TaintTest_Leaks(?from, ?to, _, _),
   ( ?to != "sink" ;
     (?from != "src", ?from != "param", ?from != "prim",
-     ?from != "arg", ?from != "base", ?from != "ctor", ?from != "this") ).
+     ?from != "arg", ?from != "base", ?from != "ctor", ?from != "this",
+     ?from != "field", ?from != "type") ).
 
 // ---- primitive-typed return source ------------------------------------------
 // An int-typed taint value must survive the actual->formal edge into sinkInt
@@ -182,3 +193,80 @@ Taint_FAIL_CallerSideNegLeaks(?invo, ?from) :-
 .output Taint_FAIL_FilledElementMissing
 Taint_FAIL_FilledElementMissing(?invo) :-
   SinkCall(?invo, "<Main: void sinkByte(byte)>", _), !LeakAt("arg", ?invo).
+
+// ---- field source -------------------------------------------------------------------
+// Mock half: a sink whose actual is loaded from a source field must leak under
+// "field" with the field signature as the source -- for the static field with no
+// store, the instance field assigned in the constructor, and the instance field
+// never assigned at all.
+.decl SinkFedByField(?invo:symbol, ?field:symbol)
+SinkFedByField(?invo, ?field) :-
+  SinkCall(?invo, _, ?actual),
+  ( LoadStaticField(?field, ?actual, _) ; LoadInstanceField(_, ?field, ?actual, _) ).
+
+.decl Taint_FAIL_FieldSourceMissing(?invo:symbol, ?field:symbol)
+.output Taint_FAIL_FieldSourceMissing
+Taint_FAIL_FieldSourceMissing(?invo, ?field) :-
+  SinkFedByField(?invo, ?field),
+  TaintSourceField(_, ?field),
+  !TaintTest_Leaks("field", "sink", ?invo, ?field).
+
+// Mark half: the array stored into Settings.data is passed to sinkBytes through an
+// alias that never goes through the field, so only a mark on the real array
+// object can produce this leak (the field is never loaded, so the mock cannot).
+.decl FieldMarkLeaks()
+FieldMarkLeaks() :-
+  SinkCall(?invo, "<Main: void sinkBytes(byte[])>", _),
+  TaintTest_Leaks("field", "sink", ?invo, "<Main$Settings: byte[] data>").
+
+.decl Taint_FAIL_FieldMarkMissing(?msg:symbol)
+.output Taint_FAIL_FieldMarkMissing
+Taint_FAIL_FieldMarkMissing("sinkBytes(data) did not leak from the marked contents of Settings.data") :-
+  !FieldMarkLeaks().
+
+// Negative: a sink fed from a non-source field never leaks.
+.decl Taint_FAIL_FieldNegLeaks(?invo:symbol, ?from:symbol)
+.output Taint_FAIL_FieldNegLeaks
+Taint_FAIL_FieldNegLeaks(?invo, ?from) :-
+  SinkFedByField(?invo, "<Main$Settings: java.lang.String safe>"),
+  LeakAt(?from, ?invo).
+
+// ---- type source --------------------------------------------------------------------
+// Every sinkObj call whose actual is a fresh Token or AdminToken allocation must
+// leak under "type" with the type Main$Token as the source (the subtype case
+// checks that the source covers subtypes). Ticket feeds only sinkObjNeg, which
+// Taint_FAIL_CallerSideNegLeaks already requires to never leak.
+.decl SinkFedByAllocOf(?invo:symbol, ?type:symbol)
+SinkFedByAllocOf(?invo, ?type) :-
+  SinkCall(?invo, "<Main: void sinkObj(java.lang.Object)>", ?actual),
+  AssignHeapAllocation(?heap, ?actual, _),
+  HeapAllocation_Type(?heap, ?type).
+
+.decl Taint_FAIL_TypeSourceMissing(?invo:symbol, ?type:symbol)
+.output Taint_FAIL_TypeSourceMissing
+Taint_FAIL_TypeSourceMissing(?invo, ?type) :-
+  SinkFedByAllocOf(?invo, ?type),
+  ( ?type = "Main$Token" ; ?type = "Main$AdminToken" ),
+  !TaintTest_Leaks("type", "sink", ?invo, "Main$Token").
+
+// Mock half: Main$Session is never allocated, so a Session can reach a sink only
+// as a stand-in placed at an entry position of the type. Each of the three entry
+// positions must produce a leak under "type" with Main$Session as the source:
+// the formal of serve(Session) (the sinkObj call inside serve), the static field
+// CURRENT (a sinkObj fed by a load of it), and the result of the body-less
+// openSession() (a sinkObj fed by that call). The first check guards the premise.
+.decl Taint_FAIL_TypeMockMissing(?msg:symbol)
+.output Taint_FAIL_TypeMockMissing
+Taint_FAIL_TypeMockMissing("premise broken: Main$Session is allocated") :-
+  HeapAllocation_Type(?heap, "Main$Session"),
+  AssignHeapAllocation(?heap, _, _).
+Taint_FAIL_TypeMockMissing("formal entry position") :-
+  SinkCall(?invo, "<Main: void sinkObj(java.lang.Object)>", _),
+  Instruction_Method(?invo, "<Main: void serve(Main$Session)>"),
+  !TaintTest_Leaks("type", "sink", ?invo, "Main$Session").
+Taint_FAIL_TypeMockMissing("field entry position") :-
+  SinkFedByField(?invo, "<Main: Main$Session CURRENT>"),
+  !TaintTest_Leaks("type", "sink", ?invo, "Main$Session").
+Taint_FAIL_TypeMockMissing("body-less method result entry position") :-
+  SinkFedBy(?invo, "<Main: Main$Session openSession()>"),
+  !TaintTest_Leaks("type", "sink", ?invo, "Main$Session").

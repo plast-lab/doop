@@ -44,6 +44,24 @@
 // ?method is reachable -- the receiver was built from untrusted data by an
 // unmodeled caller (a deserialized request object's validate()).
 .decl TaintSourceThis(?label:InformationLabel, ?method:Method)
+// Field source (neither side): the CONTENTS of ?field are tainted -- data written
+// into it from outside the analyzed program (injected configuration, a bean
+// property set by a container, deserialization, native code). One mock object per
+// field is placed in the field's points-to set unconditionally, so every load of
+// the field sees it whether or not the program ever stores into the field; and
+// whatever Markable objects the field holds are marked as well. Source id = the
+// field signature.
+.decl TaintSourceField(?label:InformationLabel, ?field:Field)
+// Type source (neither side): every object whose type is ?type or a subtype is
+// tainted, wherever it was allocated -- for framework objects that reach the
+// program through too many paths to list (HttpServletRequest). Mark half:
+// every Markable value of the type is marked. Mock half (on by default, off with
+// --information-flow-disable-type-mocks): one stand-in at every ENTRY POSITION
+// of the type, the places where a value of the type arrives from outside the
+// analysed code -- formals of reachable methods declared as the type, fields
+// declared as the type, and results of calls whose declared target has no body.
+// Source id = the type for both halves.
+.decl TaintSourceType(?label:InformationLabel, ?type:Type)
 
 // Taint sinks, named by the POSITION of the data that must not be tainted.
 // Actual-parameter sink: at every reachable call to ?method, the actual at ?index
@@ -103,6 +121,14 @@
 .decl TaintedValue(?value:Value)
 
 .decl SourceFromTaintedValue(?value:Value, ?id:symbol)
+// A value that may CARRY a taint mark directly (as opposed to a minted taint
+// stand-in placed next to it): a real heap allocation that is not merged into,
+// and is not, a shared representative (<<string-constant>>, <<string-builder>>,
+// <<string-buffer>>, ...), and not the null object. Marking a shared object would
+// taint every holder of it program-wide. Under model-primitives the per-site
+// primitive mocks (<prim-param>, <prim-arith>, <prim-conv>) are markable too;
+// <prim-const> objects are shared by constant and are not.
+.decl Markable(?value:Value)
 .decl TaintedValueTransferred(?declaringType:Type, ?id:symbol, ?type:Type, ?value:Value)
 
 .decl TaintedObjectSerialized(?declaringType:Type, ?source:symbol, ?type:Type, ?hctx:mainAnalysis.configuration.HContext, ?val:Value, ?ctx:mainAnalysis.configuration.Context, ?base:Var)

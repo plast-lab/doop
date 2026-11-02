@@ -8,7 +8,8 @@ import static org.clyze.doop.TestUtils.*
 /**
  * Test the P/Taint source vocabulary (souffle-logic/addons/information-flow):
  * TaintSourceReturn, TaintSourceFormalParam, TaintSourceActualParam, TaintSourceBase,
- * TaintSourceThis, and the default override expansion.
+ * TaintSourceThis, TaintSourceField, TaintSourceType, and the default override
+ * expansion.
  *
  * Drives a context-insensitive analysis of the tests/117-taint-sources driver
  * with --information-flow minimal and the spec + property queries in
@@ -18,7 +19,7 @@ import static org.clyze.doop.TestUtils.*
 class TestTaintSources extends DoopSpec {
 
     @Unroll
-    def "Test 117 (taint sources: return, formal/actual parameter, base, this, override expansion)"() {
+    def "Test 117 (taint sources: return, formal/actual parameter, base, this, field, type, override expansion)"() {
         when:
         List options = ["--platform", "java_17",
                         "--information-flow", "minimal",
@@ -54,5 +55,19 @@ class TestTaintSources extends DoopSpec {
         relationIsEmpty(analysis, "Taint_FAIL_ThisSourceMissing")
         // Negatives: the *Neg sinks, fed only by non-source values, never leak.
         relationIsEmpty(analysis, "Taint_FAIL_CallerSideNegLeaks")
+        // Field source, mock half: a load of a source field leaks, with or
+        // without a store into the field.
+        relationIsEmpty(analysis, "Taint_FAIL_FieldSourceMissing")
+        // Field source, mark half: the real object held by the field is tainted
+        // itself, so an alias that never goes through the field leaks too.
+        relationIsEmpty(analysis, "Taint_FAIL_FieldMarkMissing")
+        // Negative: a non-source field never leaks.
+        relationIsEmpty(analysis, "Taint_FAIL_FieldNegLeaks")
+        // Type source, mark half: every object of the type or a subtype is
+        // tainted, wherever it was allocated.
+        relationIsEmpty(analysis, "Taint_FAIL_TypeSourceMissing")
+        // Type source, mock half: a never-allocated type still reaches sinks from
+        // its entry positions (a formal, a field, a body-less method's result).
+        relationIsEmpty(analysis, "Taint_FAIL_TypeMockMissing")
     }
 }
