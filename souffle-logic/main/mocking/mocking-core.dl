@@ -118,14 +118,6 @@ MOCK_OBJECT_FOR_TYPE(?value, ?type, ?type) :-
 
 //   Serializable/Comparable/Cloneable are interfaces: one min-ord concrete impl.
 .decl UniversalRepOrd(?type:ReferenceType, ?classOrd:number)
-#ifdef FLOWLOG_ENGINE
-UniversalRepOrd(?type, min(ord(?c))) :-
-  MockSiteType(?type),
-  UniversalType(?type),
-  ( isInterfaceType(?type) ; AbstractClassType(?type) ),
-  ConcreteClassType(?c),
-  basic.SubtypeOf(?c, ?type).
-#else
 UniversalRepOrd(?type, ?classOrd) :-
   MockSiteType(?type),
   UniversalType(?type),
@@ -133,7 +125,6 @@ UniversalRepOrd(?type, ?classOrd) :-
   ?classOrd = min ord(?c) : {
     ConcreteClassType(?c), basic.SubtypeOf(?c, ?type)
   }.
-#endif // FLOWLOG_ENGINE
 
 MOCK_OBJECT_FOR_TYPE(?value, ?class, ?type) :-
   UniversalRepOrd(?type, ?classOrd),
@@ -166,16 +157,6 @@ MOCK_OBJECT_FOR_TYPE(?value, ?type, ?type) :-
 // field, whose only implementations live in the library. Types WITH an
 // application implementation go through the policy instead.
 .decl LibraryRepOrd(?type:ReferenceType, ?classOrd:number)
-#ifdef FLOWLOG_ENGINE
-LibraryRepOrd(?type, min(ord(?c))) :-
-  MockSiteType(?type),
-  !UniversalType(?type),
-  !CollectionOrMapType(?type),
-  !TypeHasAppConcreteImpl(?type),
-  ( isInterfaceType(?type) ; AbstractClassType(?type) ),
-  ConcreteClassType(?c),
-  basic.SubtypeOf(?c, ?type).
-#else
 LibraryRepOrd(?type, ?classOrd) :-
   MockSiteType(?type),
   !UniversalType(?type),
@@ -185,7 +166,6 @@ LibraryRepOrd(?type, ?classOrd) :-
   ?classOrd = min ord(?c) : {
     ConcreteClassType(?c), basic.SubtypeOf(?c, ?type)
   }.
-#endif //FLOWLOG_ENGINE
 
 MOCK_OBJECT_FOR_TYPE(?value, ?class, ?type) :-
   LibraryRepOrd(?type, ?classOrd),

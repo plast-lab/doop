@@ -20,33 +20,7 @@ import java.util.regex.Pattern
  * safe course is to drop the directives altogether and let FlowLog join the
  * body in source order.
  *
- * Transformation #2: statistics metrics. souffle-logic/addons/statistics/macros.dl
- * expands each metric into a Souffle body aggregate that FlowLog cannot express:
- *
- * <pre>Stats_Metrics("8.0", "call graph edges (INS)", c) :- c = count : { R(_, _) }.</pre>
- *
- * FlowLog aggregates in the rule head, and its count() counts DISTINCT VALUES
- * rather than rows, so the whole row has to be counted as a tuple -- which
- * requires naming every column, and therefore knowing the column count. That
- * count is visible only inside the atom, where the C preprocessor cannot reach,
- * which is why the rewrite happens here rather than in the macro. Running on the
- * preprocessed program also means every #ifdef around a metric has already been
- * resolved, so no guard is duplicated. The rule above becomes:
- *
- * <pre>.decl _MAgg_3(c:number)
- * _MAgg_3(count((v1, v2))) :- R(v1, v2).
- * _MetricCount("8.0", "call graph edges (INS)", c) :- _MAgg_3(c).
- * MetricDecl("8.0", "call graph edges (INS)").</pre>
- *
- * Each metric gets an aggregate relation to itself: sharing one relation between
- * metrics trips a FlowLog code-generation defect, recorded in macros.dl. The
- * MetricDecl registry, _MetricCount and the rules assembling Stats_Metrics from
- * them live in macros.dl, under its FLOWLOG_ENGINE branch; the _MetricCount and
- * MetricDecl names are a contract between this pass and that file.
- * A metric rule that does not match the expected shape is an error rather than
- * a silent pass-through, so a change to the macro cannot quietly drop metrics.
- *
- * Transformation #3: inline declarations. Souffle lets a .decl carry an "inline"
+ * Transformation #2: inline declarations. Souffle lets a .decl carry an "inline"
  * qualifier, telling it to expand the relation at its use sites rather than
  * materialise it. FlowLog's grammar has no such qualifier and rejects the
  * declaration outright. Like a join order, it is an evaluation directive that
@@ -54,11 +28,45 @@ import java.util.regex.Pattern
  * FlowLog materialises the relation instead -- which may cost memory on a large
  * one, but cannot change the result.
  *
- * All three rewrites are lexically aware: text inside a string literal or a
- * comment is preserved verbatim (a commented-out "// .plan 1:(2,1)" is left
- * alone, an "inline" inside a string or a trailing comment is not mistaken for
- * the qualifier, and an aggregate written out inside a string is not mistaken
- * for code).
+ * Transformation #3: aggregate wildcards. Since flowlog-compiler 0.8.0 FlowLog
+ * accepts Souffle's body aggregate ("<code>c = count : { R(_, _) }</code>") as
+ * written, with one semantic difference: a "_" inside the braces projects the
+ * column away, because FlowLog counts the distinct bindings of the NAMED
+ * variables, whereas Souffle counts a lone atom's rows. So Souffle's idiom for
+ * "how many rows" would count 1 -- and an aggregate whose body binds no variable
+ * at all does not even compile (a codegen defect in 0.8.0). Naming every "_" of a
+ * lone-atom <code>count</code>/<code>sum</code> body restores Souffle's meaning
+ * and sidesteps the defect:
+ *
+ * <pre>c = count : { R(_, _) }       becomes    c = count : { R(?_w1, ?_w2) }
+ * ?n = count : R(_, ?k)          becomes    ?n = count : R(?_w3, ?k)</pre>
+ *
+ * Only a body that is a single atom is touched. With two or more atoms Souffle
+ * projects the "_" away as well, so the two engines already agree and naming the
+ * column would change the count. <code>min</code> and <code>max</code> are
+ * idempotent, so a "_" cannot change their value and they are left alone.
+ *
+ * Transformation #4: nullary metrics. A statistics metric over a relation with
+ * no columns -- souffle-logic/addons/statistics/macros.dl expands
+ * <code>NewMetricMacro("26.10", "obfuscation (boolean)", R())</code> into
+ * <code>Stats_Metrics("26.10", "obfuscation (boolean)", c) :- c = count : { R() }.</code>
+ * -- has no column to name, so #3 cannot help it and FlowLog cannot compile it.
+ * It is rewritten into a registry fact and a presence rule:
+ *
+ * <pre>MetricDecl("26.10", "obfuscation (boolean)").
+ * _MetricOn("26.10", "obfuscation (boolean)") :- R().</pre>
+ *
+ * which the FLOWLOG_ENGINE branch of macros.dl completes into the 1 or 0 that
+ * Souffle reports. The MetricDecl and _MetricOn names and shapes are a contract
+ * between this pass and that file. Only the macro's exact expansion is
+ * recognised; a nullary aggregate written any other way is left for the FlowLog
+ * compiler to reject.
+ *
+ * All rewrites are lexically aware: text inside a string literal or a comment is
+ * preserved verbatim (a commented-out "// .plan 1:(2,1)" is left alone, an
+ * "inline" inside a string or a trailing comment is not mistaken for the
+ * qualifier, and an aggregate written out inside a string is not mistaken for
+ * code).
  *
  * An instance holds the source text of one file and applies the passes to it in
  * the order requested, each returning the transformer so they can be chained;
@@ -69,7 +77,8 @@ import java.util.regex.Pattern
  * new FlowLogTransformer(analysisFile)
  *         .dropPlanDirectives()
  *         .dropInlineQualifiers()
- *         .rewriteStatsMetrics()
+ *         .rewriteNullaryMetrics()
+ *         .nameAggregateWildcards()
  *         .writeTo(analysisFile)
  * </pre>
  *
@@ -93,15 +102,21 @@ class FlowLogTransformer {
 		return this
 	}
 
-	/** Rewrites the Souffle statistics metrics into FlowLog form. Returns this, for chaining. */
-	FlowLogTransformer rewriteStatsMetrics() {
-		text = rewriteStatsMetrics(text)
-		return this
-	}
-
 	/** Drops the Souffle "inline" qualifier from declarations. Returns this, for chaining. */
 	FlowLogTransformer dropInlineQualifiers() {
 		text = dropInlineQualifiers(text)
+		return this
+	}
+
+	/** Rewrites nullary statistics metrics into the MetricDecl/_MetricOn form. Returns this, for chaining. */
+	FlowLogTransformer rewriteNullaryMetrics() {
+		text = rewriteNullaryMetrics(text)
+		return this
+	}
+
+	/** Names the wildcards of lone-atom count/sum bodies. Returns this, for chaining. */
+	FlowLogTransformer nameAggregateWildcards() {
+		text = nameAggregateWildcards(text)
 		return this
 	}
 
@@ -174,77 +189,95 @@ class FlowLogTransformer {
 	private static final Pattern INLINE_DECL = ~/^(\s*\.decl\s+[^\/]*\))\s+inline\s*(\/\/.*)?$/
 
 	/**
-	 * Rewrites every expanded statistics metric in a .dl source text into the
-	 * head-aggregation form FlowLog accepts. A source with no metrics (an analysis
-	 * run with --stats none) is returned unchanged.
-	 *
-	 * <p>Postcondition: no Souffle body aggregate survives anywhere in the program.
-	 * Only metrics written with NewMetricMacro are rewritten here; any other aggregate
-	 * has to be ported by hand, and is reported rather than left for the FlowLog
-	 * compiler to reject against generated code.
-	 *
-	 * @throws IllegalStateException if a Stats_Metrics counting rule is not in the
-	 *         shape macros.dl produces, or if any Souffle body aggregate remains --
-	 *         better a build failure than logic silently lost.
+	 * Rewrites every expanded NULLARY statistics metric in a .dl source text into
+	 * the MetricDecl fact and _MetricOn rule that macros.dl completes. Metrics over
+	 * a relation with columns are not touched here; {@link #nameAggregateWildcards}
+	 * makes those count rows. A source with no nullary metric is returned unchanged.
 	 */
-	static String rewriteStatsMetrics(String source) {
+	static String rewriteNullaryMetrics(String source) {
 		String[] lines = source.split('\n', -1)
-		StringBuilder out = new StringBuilder(source.length() + 1024)
-		int metricIndex = 0
+		StringBuilder out = new StringBuilder(source.length() + 256)
 		for (int i = 0; i < lines.length; i++) {
 			if (i > 0) out.append('\n')
 			String line = lines[i]
-			Matcher m = METRIC_RULE.matcher(line)
+			Matcher m = NULLARY_METRIC_RULE.matcher(line)
 			if (m.matches()) {
-				metricIndex++
-				out.append(metricRule(metricIndex, m.group(1), m.group(2), m.group(3), m.group(4), m.group(5), line))
+				String indent = m.group(1)
+				String order = m.group(2)
+				String msg = m.group(3)
+				String relation = m.group(4)
+				out.append("${indent}MetricDecl(${order}, ${msg}).\n")
+				out.append("${indent}_MetricOn(${order}, ${msg}) :- ${relation}().")
 			} else {
-				if (line.contains(STATS_METRICS) && line.contains('count')) {
-					throw new IllegalStateException(
-							"FlowLogTransformer: Stats_Metrics rule not in the shape macros.dl produces, " +
-							"cannot rewrite for FlowLog: " + line.trim())
-				}
 				out.append(line)
 			}
 		}
-		String rewritten = out.toString()
-		assertNoSouffleAggregates(rewritten)
-		return rewritten
+		return out.toString()
 	}
 
-	private static final String STATS_METRICS = 'Stats_Metrics('
+	/**
+	 * One expanded metric over a nullary relation:
+	 * {@code Stats_Metrics(<order>, <msg>, c) :- c = count : { R() }.}
+	 * The groups are the leading indent, the two quoted literals and the relation name.
+	 */
+	private static final Pattern NULLARY_METRIC_RULE = ~/^(\s*)Stats_Metrics\(\s*("(?:[^"\\]|\\.)*")\s*,\s*("(?:[^"\\]|\\.)*")\s*,\s*c\s*\)\s*:-\s*c\s*=\s*count\s*:\s*\{\s*([A-Za-z_][A-Za-z0-9_.]*)\s*\(\s*\)\s*}\s*\.\s*$/
 
 	/**
-	 * A Souffle body aggregate: {@code = <agg> [expr] :}. FlowLog has no such form,
-	 * so none may survive this pass.
+	 * Names every "_" argument of a lone-atom count/sum aggregate body in a .dl
+	 * source text, so FlowLog counts rows as Souffle does. Both the braced form
+	 * {@code count : { R(_, ?k) }} and the brace-less {@code count : R(_, ?k)} are
+	 * recognised, on one line or several. A body of two or more atoms, and any
+	 * min/max aggregate, is left as it is. A source with no such wildcard is
+	 * returned unchanged.
+	 *
+	 * <p>The fresh names are {@code ?_w1}, {@code ?_w2}, ... numbered through the
+	 * whole text. Doop's own variables never start with "?_", so they cannot
+	 * collide, and a name is one variable throughout a FlowLog rule, so each
+	 * wildcard must get a name of its own.
 	 */
-	private static final Pattern SOUFFLE_BODY_AGGREGATE = ~/=\s*(count|min|max|sum|mean|avg)\b[^:\n]*:/
-
-	/**
-	 * Statement-level backstop for the line-level check above. A metric rule written
-	 * directly rather than through NewMetricMacro spreads its aggregates over several
-	 * lines, so no single line carries both markers and the line check cannot see it.
-	 * Sweeping the rewritten text catches those, and any other Souffle aggregate that
-	 * was never ported, with a message naming the line instead of leaving the FlowLog
-	 * compiler to fail on generated code.
-	 */
-	private static void assertNoSouffleAggregates(String source) {
-		Matcher m = SOUFFLE_BODY_AGGREGATE.matcher(blankLiteralsAndComments(source))
-		if (!m.find()) return
-		int lineNo = 1
-		for (int i = 0; i < m.start(); i++) {
-			if (source.charAt(i) == ('\n' as char)) lineNo++
+	static String nameAggregateWildcards(String source) {
+		// Match on a copy with literals and comments blanked, edit the original at
+		// the same offsets: the copy preserves every position.
+		String blanked = blankLiteralsAndComments(source)
+		Matcher m = LONE_ATOM_AGGREGATE.matcher(blanked)
+		StringBuilder out = new StringBuilder(source)
+		List<int[]> argSpans = []
+		while (m.find()) {
+			// Group 1 holds the braced form's arguments, group 3 the brace-less form's.
+			int argGroup = m.group(1) != null ? 1 : 3
+			int argsStart = m.start(argGroup)
+			String args = m.group(argGroup)
+			int from = 0
+			while (true) {
+				int comma = args.indexOf(',' as String, from)
+				int to = comma < 0 ? args.length() : comma
+				if (args.substring(from, to).trim() == '_') {
+					int us = argsStart + from + args.substring(from, to).indexOf('_' as String)
+					argSpans.add([us, us + 1] as int[])
+				}
+				if (comma < 0) break
+				from = comma + 1
+			}
 		}
-		int from = source.lastIndexOf('\n' as String, m.start()) + 1
-		int to = source.indexOf('\n' as String, m.start())
-		String line = (to < 0 ? source.substring(from) : source.substring(from, to)).trim()
-		throw new IllegalStateException(
-				"FlowLogTransformer: Souffle body aggregate survives at line ${lineNo}, which FlowLog cannot " +
-				"parse: ${line} -- FlowLog has no body aggregate form, so the rule has to be ported to head " +
-				"aggregation under #ifdef FLOWLOG_ENGINE, keeping the Souffle form in the #else. Metrics written " +
-				"with NewMetricMacro are rewritten automatically by this pass; every other aggregate is ported by " +
-				"hand. See souffle-logic/addons/statistics/macros.dl for what the ported shapes look like.")
+		// Replace back to front so earlier offsets stay valid.
+		int counter = argSpans.size()
+		for (int k = argSpans.size() - 1; k >= 0; k--) {
+			int[] span = argSpans[k]
+			out.replace(span[0], span[1], "?_w${counter}".toString())
+			counter--
+		}
+		return out.toString()
 	}
+
+	/**
+	 * A count/sum aggregate whose body is a single atom. The keyword must not be
+	 * the tail of a variable or identifier ({@code ?count}), the optional target
+	 * ({@code sum ?n}) runs to the colon, and the colon must not open a rule
+	 * ({@code :-}). Group 1 holds the arguments of the braced form, group 3 those
+	 * of the brace-less form (group 2), which must be followed by the end of its
+	 * predicate.
+	 */
+	private static final Pattern LONE_ATOM_AGGREGATE = ~/(?<![?A-Za-z0-9_])(?:count|sum)\b(?:\s+[^:{};]*?)?\s*:(?!-)\s*(?:\{\s*[A-Za-z_][A-Za-z0-9_.]*\s*\(([^(){}]*)\)\s*}|([A-Za-z_][A-Za-z0-9_.]*\s*\(([^(){}]*)\))(?=\s*[,.]))/
 
 	/**
 	 * A copy of {@code source} with the inside of string literals and comments blanked
@@ -290,61 +323,6 @@ class FlowLogTransformer {
 			}
 		}
 		return out.toString()
-	}
-
-	/**
-	 * One expanded metric: {@code Stats_Metrics(<order>, <msg>, c) :- c = count : { R(_, ...) }.}
-	 * The groups are the leading indent, the two quoted literals, the relation name
-	 * and the raw argument list.
-	 */
-	private static final Pattern METRIC_RULE = ~/^(\s*)Stats_Metrics\(\s*("(?:[^"\\]|\\.)*")\s*,\s*("(?:[^"\\]|\\.)*")\s*,\s*c\s*\)\s*:-\s*c\s*=\s*count\s*:\s*\{\s*([A-Za-z_][A-Za-z0-9_.]*)\s*\(([^)]*)\)\s*}\s*\.\s*$/
-
-	/**
-	 * Builds the FlowLog rules for one metric: a private aggregate relation holding a
-	 * single rule, a plain rule copying its value into _MetricCount, and the registry
-	 * entry. The aggregate gets a relation to itself deliberately -- see the KNOWN
-	 * FLOWLOG DEFECT note in souffle-logic/addons/statistics/macros.dl.
-	 */
-	private static String metricRule(int index, String indent, String order, String msg,
-	                                 String relation, String args, String original) {
-		int arity = metricArity(args, original)
-		String agg = "_MAgg_${index}"
-		String head
-		if (arity == 0) {
-			// A nullary relation holds no columns to count: it is present or it is not.
-			head = "${indent}${agg}(1) :- ${relation}()."
-		} else {
-			StringBuilder vars = new StringBuilder()
-			for (int i = 1; i <= arity; i++) {
-				if (i > 1) vars.append(', ')
-				vars.append('v').append(i)
-			}
-			String varList = vars.toString()
-			// One column is already unique per row, so it needs no tuple wrapper; more
-			// than one does, because FlowLog's count() counts distinct values of its
-			// argument.
-			String counted = arity == 1 ? varList : "(${varList})"
-			head = "${indent}${agg}(count(${counted})) :- ${relation}(${varList})."
-		}
-		return "${indent}.decl ${agg}(c:number)\n" +
-				head + "\n" +
-				"${indent}_MetricCount(${order}, ${msg}, c) :- ${agg}(c).\n" +
-				"${indent}MetricDecl(${order}, ${msg})."
-	}
-
-	/** Number of columns in a metric body, which macros.dl guarantees are all {@code _}. */
-	private static int metricArity(String args, String original) {
-		String trimmed = args.trim()
-		if (trimmed.isEmpty()) return 0
-		String[] parts = trimmed.split(',', -1)
-		for (String part : parts) {
-			if (part.trim() != '_') {
-				throw new IllegalStateException(
-						"FlowLogTransformer: metric body argument is not '_', so the row cannot be " +
-						"counted as a tuple: " + original.trim())
-			}
-		}
-		return parts.length
 	}
 
 	private static final String PLAN_KEYWORD = '.plan'

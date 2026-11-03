@@ -53,7 +53,8 @@ class FlowLogAnalysis extends SouffleCompatibleAnalysis {
 		new FlowLogTransformer(analysisFile)
 				.dropPlanDirectives()
 				.dropInlineQualifiers()
-				.rewriteStatsMetrics()
+				.rewriteNullaryMetrics()
+				.nameAggregateWildcards()
 				.writeTo(analysisFile)
 
 		File db = new File(outDir, 'database')

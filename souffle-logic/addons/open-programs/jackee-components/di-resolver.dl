@@ -153,23 +153,9 @@ TypeCandidate(?type, ?beanType, ?beanMock) :-
 TypeCandidateType(?type, ?beanType) :- TypeCandidate(?type, ?beanType, _).
 
 .decl TypeCandidateCount(?type:Type, ?n:number)
-// NOTE: count over an empty group yields 0 in Souffle but no row in Flowlog, so
-// the zero case is restored explicitly to keep the two relations equal.
-#ifdef FLOWLOG_ENGINE
-.decl _TypeCandidateTypeCount(?type:Type, ?n:number)
-_TypeCandidateTypeCount(?type, count(?beanType)) :- TypeCandidateType(?type, ?beanType).
-
-TypeCandidateCount(?type, ?n) :-
-  InjectionType(?type),
-  _TypeCandidateTypeCount(?type, ?n).
-TypeCandidateCount(?type, 0) :-
-  InjectionType(?type),
-  !_TypeCandidateTypeCount(?type, _).
-#else
 TypeCandidateCount(?type, ?n) :-
   InjectionType(?type),
   ?n = count : TypeCandidateType(?type, _).
-#endif // FLOWLOG_ENGINE
 
 .decl TypeHasPrimaryCandidate(?type:Type)
 TypeHasPrimaryCandidate(?type) :- TypeCandidate(?type, ?beanType, _), PrimaryBean(?beanType).
