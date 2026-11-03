@@ -62,11 +62,52 @@ import java.util.regex.Pattern
  * recognised; a nullary aggregate written any other way is left for the FlowLog
  * compiler to reject.
  *
+ * Transformation #5: records. Souffle spells a record type
+ * "<code>[ f:T, g:U ]</code>" and a record value "<code>[?a, ?b]</code>". FlowLog
+ * has the same construct under the name tuple, spelled "<code>( f:T, g:U )</code>"
+ * and "<code>(?a, ?b)</code>", with "<code>(?a,)</code>" for a value of one field
+ * (a 1-tuple type takes no trailing comma). Both are structural values -- equal
+ * when their fields are, usable as join keys and relation columns -- so the
+ * rewrite is purely a spelling change and cannot alter a program's results.
+ * FlowLog will not adopt Souffle's spelling: its grammar reserves brackets for a
+ * future array type. The only visible difference is in the output files, where
+ * Souffle prints "<code>[a, b]</code>" and FlowLog "<code>(a, b)</code>".
+ *
+ * Where Doop's logic uses records (inventory of souffle-logic as of 2026-11-03,
+ * comments and strings excluded):
+ * <ul>
+ * <li>Every context-sensitive configuration -- the 17 analysis.dl files of the
+ *     1- and 2-call-site-sensitive, 1- to 4-object-sensitive, 1- to 3-type-sensitive
+ *     analyses, their +heap variants, and context-insensitive-plusplus -- declares
+ *     Context and/or HContext as a record of 1 to 4 symbol-typed fields (31 .type
+ *     declarations) and builds or destructures them only through body equalities,
+ *     "<code>?ctx = [?a, ?b]</code>" (95 sites, 2 to 8 per file). This pass covers
+ *     all of them; the 1-call-site-sensitive program checks and runs on
+ *     flowlog-compiler 0.8.0 with no other change.</li>
+ * <li>Under HEAPDLS the same files also write a record literal directly as a head
+ *     argument, "<code>DynamicContextToContext([?a, ?b], ?dynCtx) :- ...</code>"
+ *     (12 sites in 7 files), which FlowLog accepts once rewritten, and in
+ *     2-object-sensitive+heap and 2-type-sensitive+heap as a body atom argument,
+ *     "<code>isContext([?v, ?any])</code>" (2 sites), which FlowLog's grammar does
+ *     not allow in any spelling (a body atom argument must be a constant, a
+ *     variable or "_"). Those two are rewritten here all the same and left for
+ *     the compiler to reject; they need a hand rewrite into a variable plus a
+ *     destructuring equality.</li>
+ * <li>The shared logic under main/, basic/, facts/ and the remaining addons has
+ *     no record at all.</li>
+ * <li>Not covered, and outside the port: context-insensitive-plusplus also needs
+ *     a union type, which FlowLog lacks; addons/symbolic-reasoning,
+ *     analyses/sound-may-point-to, analyses/xtractor and the deprecated analyses
+ *     use recursive records and <code>nil</code>, which FlowLog tuples cannot
+ *     express (its type registry rejects recursion and it has no nil). The
+ *     python/ logic mirrors the Java call-site configurations.</li>
+ * </ul>
+ *
  * All rewrites are lexically aware: text inside a string literal or a comment is
  * preserved verbatim (a commented-out "// .plan 1:(2,1)" is left alone, an
  * "inline" inside a string or a trailing comment is not mistaken for the
  * qualifier, and an aggregate written out inside a string is not mistaken for
- * code).
+ * code, nor is a bracket inside a string or a comment mistaken for a record).
  *
  * An instance holds the source text of one file and applies the passes to it in
  * the order requested, each returning the transformer so they can be chained;
@@ -79,6 +120,7 @@ import java.util.regex.Pattern
  *         .dropInlineQualifiers()
  *         .rewriteNullaryMetrics()
  *         .nameAggregateWildcards()
+ *         .recordsToTuples()
  *         .writeTo(analysisFile)
  * </pre>
  *
@@ -117,6 +159,12 @@ class FlowLogTransformer {
 	/** Names the wildcards of lone-atom count/sum bodies. Returns this, for chaining. */
 	FlowLogTransformer nameAggregateWildcards() {
 		text = nameAggregateWildcards(text)
+		return this
+	}
+
+	/** Rewrites Souffle records into FlowLog tuples. Returns this, for chaining. */
+	FlowLogTransformer recordsToTuples() {
+		text = recordsToTuples(text)
 		return this
 	}
 
@@ -278,6 +326,65 @@ class FlowLogTransformer {
 	 * predicate.
 	 */
 	private static final Pattern LONE_ATOM_AGGREGATE = ~/(?<![?A-Za-z0-9_])(?:count|sum)\b(?:\s+[^:{};]*?)?\s*:(?!-)\s*(?:\{\s*[A-Za-z_][A-Za-z0-9_.]*\s*\(([^(){}]*)\)\s*}|([A-Za-z_][A-Za-z0-9_.]*\s*\(([^(){}]*)\))(?=\s*[,.]))/
+
+	/**
+	 * Rewrites every Souffle record type and record value in a .dl source text
+	 * into FlowLog's tuple spelling: the brackets become parentheses, and a
+	 * value of exactly one field gets the trailing comma that tells a 1-tuple
+	 * from a parenthesised value. A one-field type ({@code .type C = [ f:T ]})
+	 * gets no comma, as FlowLog's tuple type syntax takes none. Nested records
+	 * are rewritten at every level; the field count of a record is taken at its
+	 * own level, so a comma inside a nested record or a function call does not
+	 * count. An empty pair of brackets is rewritten as it is. A source with no
+	 * record is returned unchanged.
+	 */
+	static String recordsToTuples(String source) {
+		// Match on a copy with literals and comments blanked, edit the original at
+		// the same offsets: the copy preserves every position.
+		String blanked = blankLiteralsAndComments(source)
+		int n = blanked.length()
+		// Open records, innermost on top: [open offset, field count so far, paren depth at open].
+		Deque<int[]> open = new ArrayDeque<int[]>()
+		// Closed records: [open offset, close offset, field count, 1 if a type declaration].
+		List<int[]> records = []
+		int paren = 0
+		for (int i = 0; i < n; i++) {
+			char c = blanked.charAt(i)
+			if (c == ('[' as char)) {
+				open.push([i, 0, paren] as int[])
+			} else if (c == ('(' as char)) {
+				paren++
+			} else if (c == (')' as char)) {
+				paren--
+			} else if (c == (',' as char)) {
+				if (!open.isEmpty() && open.peek()[2] == paren) open.peek()[1]++
+			} else if (c == (']' as char)) {
+				if (open.isEmpty()) continue
+				int[] rec = open.pop()
+				boolean empty = blanked.substring(rec[0] + 1, i).trim().isEmpty()
+				int fields = empty ? 0 : rec[1] + 1
+				int lineStart = blanked.lastIndexOf('\n', rec[0]) + 1
+				boolean isType = TYPE_DECL_PREFIX.matcher(blanked.substring(lineStart, rec[0])).matches()
+				records.add([rec[0], i, fields, isType ? 1 : 0] as int[])
+			}
+		}
+		if (records.isEmpty()) return source
+		StringBuilder out = new StringBuilder(source)
+		for (int[] rec : records) {
+			out.setCharAt(rec[0], '(' as char)
+			out.setCharAt(rec[1], ')' as char)
+		}
+		// Trailing commas lengthen the text: insert them back to front so earlier
+		// offsets stay valid.
+		records.sort { int[] a, int[] b -> b[1] <=> a[1] }
+		for (int[] rec : records) {
+			if (rec[2] == 1 && rec[3] == 0) out.insert(rec[1], ',' as char)
+		}
+		return out.toString()
+	}
+
+	/** The start of a record type declaration, up to its opening bracket: {@code .type Name = }. */
+	private static final Pattern TYPE_DECL_PREFIX = ~/^\s*\.type\s+[A-Za-z_][A-Za-z0-9_]*\s*=\s*$/
 
 	/**
 	 * A copy of {@code source} with the inside of string literals and comments blanked
