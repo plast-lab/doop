@@ -168,6 +168,15 @@ mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB)
   mainAnalysis.isImmutableHContext(?hctx).
 .plan 1:(7,1,2,3,4,5,6,8,9),2:(8,1,2,3,4,5,6,7,9)
 
+// Cast bridge. A cast re-mints a tainted value in the cast's type so that a
+// value up-typed by a transfer (an Object-typed Iterator.next() result, say) can
+// be brought back down. Only a STRICT DOWNCAST of the value's own type does that:
+// an upcast flows the value itself through the ordinary cast rule, and a cast to
+// an unrelated type fails at run time, so the ordinary rule drops the value. The
+// old unconditional form re-minted every tainted value in an Object-typed
+// variable into whatever that variable was ever cast to; in the JDK (HashMap
+// values, Object[] contents) that is every type in the program, and the mocks
+// flooded the type universe (437 types per source in the msgpack run).
 TaintedValueTransferred(?declaringType, ?source, ?type, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB)),
 mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB), ?ctx, ?to) :-
   TaintedVarPointsTo(?value, ?ctx, ?from),
@@ -175,8 +184,25 @@ mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB)
   mainAnalysis.Value_DeclaringType(?value, ?declaringType),
   SourceFromTaintedValue(?value, ?source),
   Var_Type(?to, ?type),
+  isReferenceType(?type),
+  mainAnalysis.Value_Type(?value, ?valueType),
+  basic.SubtypeOf(?type, ?valueType),
+  ?type != ?valueType,
   mainAnalysis.isImmutableHContext(?hctx).
-.plan 1:(3,1,2,4,5,6),2:(4,1,2,3,5,6)
+.plan 1:(3,1,2,4,5,6,7,8,9),2:(4,1,2,3,5,6,7,8,9)
+
+// A cast to a primitive type is a conversion, not a type test: the result is a
+// fresh primitive value, re-minted in the target type as before.
+TaintedValueTransferred(?declaringType, ?source, ?type, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB)),
+mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB), ?ctx, ?to) :-
+  TaintedVarPointsTo(?value, ?ctx, ?from),
+  AssignCast(_, ?from, ?to, _),
+  mainAnalysis.Value_DeclaringType(?value, ?declaringType),
+  SourceFromTaintedValue(?value, ?source),
+  Var_Type(?to, ?type),
+  isPrimitiveType(?type),
+  mainAnalysis.isImmutableHContext(?hctx).
+.plan 1:(3,1,2,4,5,6,7),2:(4,1,2,3,5,6,7)
 
 TaintObjTransfer(?ctx, ?base, ?ctx, ?to),
 TaintedValueTransferred(?declaringType, ?source, ?type, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB)),
