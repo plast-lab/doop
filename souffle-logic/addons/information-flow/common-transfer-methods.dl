@@ -69,4 +69,37 @@ TaintTransferBaseToReturn("<java.lang.String: java.lang.String format(java.lang.
 TaintTransferBaseToReturn("<java.lang.String: java.lang.String format(java.util.Locale,java.lang.String,java.lang.Object[])>").
 */
 
+// Raw memory reads: the value read out of an object comes from that object
+// (actual 0). Closes the wall at buffer implementations that read through
+// sun.misc.Unsafe instead of array loads (msgpack's MessageBuffer, netty, ...).
+// The Mock variant: it fires on the DECLARED target of the call, not on a
+// call-graph edge. The Unsafe instance is always obtained reflectively
+// (Unsafe.theUnsafe via Field.get), so without reflection analysis the receiver
+// points to nothing, the virtual call never resolves, and an edge-keyed
+// transfer could never fire.
+TaintTransferActualParamToReturnMock("<sun.misc.Unsafe: boolean getBoolean(java.lang.Object,long)>").
+TaintTransferActualParamToReturnMock("<sun.misc.Unsafe: byte getByte(java.lang.Object,long)>").
+TaintTransferActualParamToReturnMock("<sun.misc.Unsafe: char getChar(java.lang.Object,long)>").
+TaintTransferActualParamToReturnMock("<sun.misc.Unsafe: short getShort(java.lang.Object,long)>").
+TaintTransferActualParamToReturnMock("<sun.misc.Unsafe: int getInt(java.lang.Object,long)>").
+TaintTransferActualParamToReturnMock("<sun.misc.Unsafe: long getLong(java.lang.Object,long)>").
+TaintTransferActualParamToReturnMock("<sun.misc.Unsafe: float getFloat(java.lang.Object,long)>").
+TaintTransferActualParamToReturnMock("<sun.misc.Unsafe: double getDouble(java.lang.Object,long)>").
+TaintTransferActualParamToReturnMock("<sun.misc.Unsafe: boolean getBooleanVolatile(java.lang.Object,long)>").
+TaintTransferActualParamToReturnMock("<sun.misc.Unsafe: byte getByteVolatile(java.lang.Object,long)>").
+TaintTransferActualParamToReturnMock("<sun.misc.Unsafe: char getCharVolatile(java.lang.Object,long)>").
+TaintTransferActualParamToReturnMock("<sun.misc.Unsafe: short getShortVolatile(java.lang.Object,long)>").
+TaintTransferActualParamToReturnMock("<sun.misc.Unsafe: int getIntVolatile(java.lang.Object,long)>").
+TaintTransferActualParamToReturnMock("<sun.misc.Unsafe: long getLongVolatile(java.lang.Object,long)>").
+TaintTransferActualParamToReturnMock("<sun.misc.Unsafe: float getFloatVolatile(java.lang.Object,long)>").
+TaintTransferActualParamToReturnMock("<sun.misc.Unsafe: double getDoubleVolatile(java.lang.Object,long)>").
+
+// Byte-order swaps: pure functions of their argument, applied to raw reads by
+// every little-endian buffer implementation (and JDK-internal, so beyond the
+// reach of an application-scoped arithmetic rule).
+TaintTransferActualParamToReturn("<java.lang.Short: short reverseBytes(short)>").
+TaintTransferActualParamToReturn("<java.lang.Character: char reverseBytes(char)>").
+TaintTransferActualParamToReturn("<java.lang.Integer: int reverseBytes(int)>").
+TaintTransferActualParamToReturn("<java.lang.Long: long reverseBytes(long)>").
+
 // TODO: System.arrayCopy

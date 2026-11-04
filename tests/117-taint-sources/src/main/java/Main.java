@@ -22,6 +22,10 @@
 //   Request.validate() TaintSourceThis        -- `this` is tainted on entry
 //   sinkBytes/sinkObj  TaintSinkActualParam 0
 //   sinkBytesNeg/sinkObjNeg  sinks that must NEVER leak (negative controls)
+//   sinkIntNeg(int)    sink that must NEVER leak (negative control for arithmetic)
+//   arithmetic         under --enable-model-primitives, a length computed from
+//                      the bytes of the filled buffer carries the buffer's taint
+//                      (the arithmetic mark in addons/information-flow/rules.dl)
 //   fill(byte[])       not a source (negative control for read)
 //   Main.CONFIG        TaintSourceField       -- static field, never assigned
 //   Settings.name      TaintSourceField       -- instance field, assigned in the ctor
@@ -98,6 +102,7 @@ public class Main {
     static void sinkByte(byte b)       { System.out.println(b); }
     static void sinkBytesNeg(byte[] b) { System.out.println(b.length); }
     static void sinkObjNeg(Object o)   { System.out.println(o); }
+    static void sinkIntNeg(int n)      { System.out.println(n); }
 
     public static void main(String[] args) {
         sink(untrusted());               // LEAK   return source -> sink
@@ -117,6 +122,17 @@ public class Main {
         byte[] buf2 = new byte[4];
         fill(buf2);                      // not a source
         sinkBytesNeg(buf2);              // no leak
+
+        // Arithmetic: a length decoded from the bytes of the tainted buffer carries
+        // the taint into an int sink; the same computation over the trusted buffer
+        // does not. Each binop is its own site with its own <prim-arith> object,
+        // so the mark on the first chain cannot reach the second. (A shared helper
+        // method would have ONE object per site for all its callers, and a mark
+        // placed by one caller would reach the others: the price of marking.)
+        int len = ((buf[0] & 0xff) << 8) | (buf[1] & 0xff);
+        sinkInt(len);                    // LEAK   only under --enable-model-primitives
+        int lenNeg = ((buf2[0] & 0xff) << 8) | (buf2[1] & 0xff);
+        sinkIntNeg(lenNeg);              // no leak
 
         Props p = new Props();
         p.load();                        // fills p: base source

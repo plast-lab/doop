@@ -9,7 +9,8 @@ import static org.clyze.doop.TestUtils.*
  * Test the P/Taint source vocabulary (souffle-logic/addons/information-flow):
  * TaintSourceReturn, TaintSourceFormalParam, TaintSourceActualParam, TaintSourceBase,
  * TaintSourceThis, TaintSourceField, TaintSourceType, and the default override
- * expansion.
+ * expansion; and, in a second run with --enable-model-primitives, the arithmetic
+ * taint mark (the result of an application binop/unop with a tainted operand).
  *
  * Drives a context-insensitive analysis of the tests/117-taint-sources driver
  * with --information-flow minimal and the spec + property queries in
@@ -29,6 +30,38 @@ class TestTaintSources extends DoopSpec {
                                                "context-insensitive", "test-117-taint-sources")
 
         then:
+        sourceChecks(analysis)
+        // Negative: arithmetic over a trusted buffer never leaks (primitives are
+        // not modeled here, so int sinks fed by arithmetic see no value at all).
+        relationIsEmpty(analysis, "Taint_FAIL_ArithNegLeaks")
+    }
+
+    @Unroll
+    def "Test 117 with --enable-model-primitives (arithmetic taint mark)"() {
+        when:
+        List options = ["--platform", "java_17",
+                        "--information-flow", "minimal",
+                        "--enable-model-primitives",
+                        "--extra-logic",
+                        "${Doop.souffleLogicPath}/addons/testing/TestTaintSources.dl"] + souffleInterpreter
+        Analysis analysis = analyzeBuiltinTest("117-taint-sources", options,
+                                               "context-insensitive", "test-117-taint-sources-prim")
+
+        then:
+        // Every source check holds unchanged with primitives modeled.
+        sourceChecks(analysis)
+        // Arithmetic mark: a length decoded from the bytes of the tainted buffer
+        // reaches sinkInt, attributed to the buffer's source.
+        relationIsEmpty(analysis, "Taint_FAIL_ArithTaintMissing")
+        // Negative: the same arithmetic over the trusted buffer never leaks (each
+        // binop has its own <prim-arith> object).
+        relationIsEmpty(analysis, "Taint_FAIL_ArithNegLeaks")
+        // Scope: no <prim-arith> object of a library arithmetic site is tainted.
+        relationIsEmpty(analysis, "Taint_FAIL_LibraryArithMarked")
+    }
+
+    // The source-vocabulary checks shared by both runs (each call asserts).
+    private static void sourceChecks(Analysis analysis) {
         // The spec names only methods that exist (guards typos in the spec itself).
         relationIsEmpty(analysis, "Taint_FAIL_SpecUnmatched")
         // Return source: every sink fed by untrusted() leaks under its label.

@@ -472,6 +472,26 @@ mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(cat(?invo, "/type"), ?retType, DEFA
   Method_DeclaringType(?inMethod, ?declaringType).
 #endif // INFORMATION_FLOW_DISABLE_TYPE_MOCKS
 
+#ifdef MODEL_PRIMITIVES
+// Arithmetic (limitation C): the result of a binop/unop with a tainted operand
+// carries the operand's taint. Under model-primitives the result variable already
+// points to the site's own <prim-arith> object, which is Markable, so the result
+// is MARKED: no value is minted, no breadcrumb is needed, and the mark survives
+// whatever the ordinary flow rules do with the object afterwards. Scoped to
+// APPLICATION code: a library arithmetic site (Integer.parseInt, Math.max, ...)
+// has one object for every caller, context-insensitively, so marking it would
+// taint every user of the helper program-wide (the explosion seen in C).
+TaintedValue(?arithObj),
+SourceFromTaintedValue(?arithObj, ?source) :-
+  mainAnalysis.PrimitiveArithmeticSite(?insn, ?to, ?method, _),
+  ApplicationMethod(?method),
+  AssignOper_From(?insn, _, ?from),
+  TaintedVarPointsTo(?tv, ?ctx, ?from),
+  SourceFromTaintedValue(?tv, ?source),
+  mainAnalysis.VarPointsTo(_, ?arithObj, ?ctx, ?to),
+  Markable(?arithObj).
+#endif // MODEL_PRIMITIVES
+
 TaintedVarPointsTo(?value, ?ctx, ?var) :-
   TaintedValue(?value),
   mainAnalysis.VarPointsTo(_, ?value, ?ctx, ?var).

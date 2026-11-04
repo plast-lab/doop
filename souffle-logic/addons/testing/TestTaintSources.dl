@@ -2,7 +2,8 @@
 // Test queries for the P/Taint source vocabulary (addons/information-flow):
 // TaintSourceReturn, TaintSourceFormalParam, TaintSourceActualParam,
 // TaintSourceBase, TaintSourceThis, TaintSourceField, TaintSourceType (mark and
-// mock halves) and the default override expansion, driven by
+// mock halves), the default override expansion and, under
+// --enable-model-primitives, the arithmetic taint mark, driven by
 // tests/117-taint-sources (class Main).
 //
 // Loaded via --extra-logic on top of --information-flow minimal, so it also
@@ -29,6 +30,7 @@ TaintSinkActualParam("sink", 0, "<Main: void sinkObj(java.lang.Object)>").
 TaintSinkActualParam("sink", 0, "<Main: void sinkByte(byte)>").
 TaintSinkActualParam("sink", 0, "<Main: void sinkBytesNeg(byte[])>").
 TaintSinkActualParam("sink", 0, "<Main: void sinkObjNeg(java.lang.Object)>").
+TaintSinkActualParam("sink", 0, "<Main: void sinkIntNeg(int)>").
 TaintSourceField("field", "<Main: java.lang.String CONFIG>").
 TaintSourceField("field", "<Main$Settings: java.lang.String name>").
 TaintSourceField("field", "<Main$Settings: java.lang.String external>").
@@ -270,3 +272,53 @@ Taint_FAIL_TypeMockMissing("field entry position") :-
 Taint_FAIL_TypeMockMissing("body-less method result entry position") :-
   SinkFedBy(?invo, "<Main: Main$Session openSession()>"),
   !TaintTest_Leaks("type", "sink", ?invo, "Main$Session").
+
+// ---- arithmetic -------------------------------------------------------------------
+// A sinkInt call whose actual is the result of a binop: in main, that is
+// len = ((buf[0] & 0xff) << 8) | (buf[1] & 0xff), decoded from the tainted buffer.
+.decl SinkIntFedByArith(?invo:symbol)
+SinkIntFedByArith(?invo) :-
+  SinkCall(?invo, "<Main: void sinkInt(int)>", ?actual),
+  isAssignBinop_Insn(?insn),
+  AssignInstruction_To(?insn, ?actual).
+
+// Negative, in both modes: sinkIntNeg is fed by the same arithmetic over the
+// trusted buffer and must never leak (every binop has its own <prim-arith>
+// object, so the mark on the tainted chain cannot reach this one).
+.decl Taint_FAIL_ArithNegLeaks(?invo:symbol, ?from:symbol)
+.output Taint_FAIL_ArithNegLeaks
+Taint_FAIL_ArithNegLeaks(?invo, ?from) :-
+  SinkCall(?invo, "<Main: void sinkIntNeg(int)>", _),
+  LeakAt(?from, ?invo).
+
+#ifdef MODEL_PRIMITIVES
+// Positive: the mark rule in addons/information-flow/rules.dl taints the
+// <prim-arith> object of an application binop/unop with a tainted operand. The
+// chain buf[0] -> & -> << -> | must carry the buffer's taint into sinkInt under
+// "arg", attributed to read's actual 0 like every value derived from the buffer.
+// The first check guards the premise (the actual really is a binop result).
+.decl ArithTaintLeaks()
+ArithTaintLeaks() :-
+  SinkIntFedByArith(?sinkInvo),
+  MethodInvocation_Method(?readInvo, "<Main: int read(byte[])>"),
+  TaintTest_Leaks("arg", "sink", ?sinkInvo, cat(?readInvo, "/actual0")).
+
+.decl Taint_FAIL_ArithTaintMissing(?msg:symbol)
+.output Taint_FAIL_ArithTaintMissing
+Taint_FAIL_ArithTaintMissing("premise broken: no sinkInt call is fed by a binop") :-
+  !SinkIntFedByArith(_).
+Taint_FAIL_ArithTaintMissing("sinkInt(len) did not leak from read(buf)'s actual 0") :-
+  SinkIntFedByArith(_),
+  !ArithTaintLeaks().
+
+// Scope: the mark is restricted to application code. The <prim-arith> object of
+// a library arithmetic site is shared by every caller of that library method,
+// so it must never be tainted, whatever the program does with the result.
+.decl Taint_FAIL_LibraryArithMarked(?v:symbol, ?method:symbol)
+.output Taint_FAIL_LibraryArithMarked
+Taint_FAIL_LibraryArithMarked(?v, ?method) :-
+  mainAnalysis.PrimitiveArithmeticSite(?insn, _, ?method, _),
+  !ApplicationMethod(?method),
+  ?v = cat("<prim-arith ", cat(?insn, ">")),
+  TaintedValue(?v).
+#endif // MODEL_PRIMITIVES
