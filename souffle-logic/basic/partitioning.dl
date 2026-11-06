@@ -1,4 +1,4 @@
-.number_type Partition
+.type Partition <: number
 
 .decl isPartition(partition: Partition)
 .decl PartitionedType(type: Type)
