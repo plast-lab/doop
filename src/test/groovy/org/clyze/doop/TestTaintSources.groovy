@@ -8,9 +8,10 @@ import static org.clyze.doop.TestUtils.*
 /**
  * Test the P/Taint source vocabulary (souffle-logic/addons/information-flow):
  * TaintSourceReturn, TaintSourceFormalParam, TaintSourceActualParam, TaintSourceBase,
- * TaintSourceThis, TaintSourceField, TaintSourceType, and the default override
- * expansion; and, in a second run with --enable-model-primitives, the arithmetic
- * taint mark (the result of an application binop/unop with a tainted operand).
+ * TaintSourceThis, TaintSourceField, TaintSourceType (mock and mark halves), and
+ * the default override expansion; and, in a second run with
+ * --enable-model-primitives, the arithmetic taint mark (the result of an
+ * application binop/unop with a tainted operand) and a primitive formal source.
  *
  * Drives a context-insensitive analysis of the tests/117-taint-sources driver
  * with --information-flow minimal and the spec + property queries in
@@ -58,6 +59,9 @@ class TestTaintSources extends DoopSpec {
         relationIsEmpty(analysis, "Taint_FAIL_ArithNegLeaks")
         // Scope: no <prim-arith> object of a library arithmetic site is tainted.
         relationIsEmpty(analysis, "Taint_FAIL_LibraryArithMarked")
+        // A primitive formal-parameter source works through the mark on the
+        // caller's primitive object.
+        relationIsEmpty(analysis, "Taint_FAIL_PrimFormalMarkMissing")
     }
 
     // The source-vocabulary checks shared by both runs (each call asserts).
@@ -102,5 +106,9 @@ class TestTaintSources extends DoopSpec {
         // Type source, mock half: a never-allocated type still reaches sinks from
         // its entry positions (a formal, a field, a body-less method's result).
         relationIsEmpty(analysis, "Taint_FAIL_TypeMockMissing")
+        // Mark half of the method-keyed sources: the real application object at
+        // a return / formal / actual / base / this position is tainted itself,
+        // so a holder that never went through the position leaks too.
+        relationIsEmpty(analysis, "Taint_FAIL_MethodKeyedMarkMissing")
     }
 }

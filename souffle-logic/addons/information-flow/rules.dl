@@ -15,6 +15,7 @@ Markable(?value) :-
   !mainAnalysis.HeapAllocation_Merge(?value, _),
   !mainAnalysis.HeapAllocation_Merge(_, ?value),
   !mainAnalysis.Value_Null(?value),
+  !isStringConstant(?value),
   // merged representative for reflection strings, not covered by HeapAllocation_Merge
   ?value != "<<reflection-string-constant>>".
 // Doop's other <<...>> pseudo-heaps (<<main-thread>>, <<main method array>>,
@@ -28,6 +29,19 @@ Markable(?value) :-
   ( substr(?value, 0, 12) = "<prim-param " ;
     substr(?value, 0, 12) = "<prim-arith " ;
     substr(?value, 0, 11) = "<prim-conv " ).
+#endif // MODEL_PRIMITIVES
+
+AppMarkable(?value) :-
+  Markable(?value),
+  AssignHeapAllocation(?value, _, ?method),
+  ApplicationMethod(?method).
+
+#ifdef MODEL_PRIMITIVES
+// A primitive mock is "allocated" by its site; the site's method decides.
+AppMarkable(?value) :-
+  Markable(?value),
+  mainAnalysis.PrimitiveMock_Method(?value, ?method),
+  ApplicationMethod(?method).
 #endif // MODEL_PRIMITIVES
 
 TaintObjTransfer(?fromCtx, ?from, ?toCtx, ?to),
@@ -385,6 +399,87 @@ mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?this, ?type, DEFAULT_BREADCRUMB), 
   mainAnalysis.isImmutableHContext(?hctx),
   Var_Type(?this, ?type),
   Method_DeclaringType(?method, ?declaringType).
+
+// Mark half of the method-keyed sources. Each source above places a mock at its
+// position; the rules below also MARK every AppMarkable object already at the
+// position, with the same source id and label, so a holder of that object that
+// never went through the position (a registry the factory stored it in, an alias
+// taken before the call) is tainted too. Value-only marks, no hcontext, like the
+// Field and Type marks. Primitive positions get this half only under
+// model-primitives, where the position holds a markable primitive mock.
+//
+// Only positions in APPLICATION code are marked. At a library-internal position
+// (a profile source called from inside the JDK, say) the objects present are
+// whatever the library's own plumbing aliases there under a context-insensitive
+// heap; marking them taints the application object wherever it lives. Observed:
+// the minimal profile's Reader.read source, at its call site inside
+// BufferedReader, held msgpack's length arithmetic object and marked it, which
+// re-reported every readPayload finding under the profile's label. The mock is
+// the right tool at such positions.
+// Return: the objects the call returns, source id = the call site. Only for a
+// source method that is itself application code: a library method's result, as
+// the base analysis resolves it, can hold any application object the library's
+// shared plumbing (collections, copies) ever held under a context-insensitive
+// heap. Observed: Files.readAllBytes, called from Main, "returned" msgpack's own
+// readPayload buffer through the ArrayList inside InputStream.readNBytes, and the
+// mark tainted it. The mock is exact at such a position; the mark is noise.
+TaintedValue(?value),
+SourceFromTaintedValue(?value, ?invo),
+LabelFromSource(?invo, ?label) :-
+  TaintSourceReturnInvocation(?label, ?ctx, ?invo),
+  Instruction_Method(?invo, ?inMethod),
+  ApplicationMethod(?inMethod),
+  MethodInvocation_Method(?invo, ?srcMethod),
+  ApplicationMethod(?srcMethod),
+  AssignReturnValue(?invo, ?to),
+  mainAnalysis.VarPointsTo(_, ?value, ?ctx, ?to),
+  AppMarkable(?value).
+
+// Formal parameter: the objects callers pass, source id = the formal.
+TaintedValue(?value),
+SourceFromTaintedValue(?value, ?formal),
+LabelFromSource(?formal, ?label) :-
+  TaintSourceFormalParam(?label, ?index, ?method),
+  ApplicationMethod(?method),
+  FormalParam(?index, ?method, ?formal),
+  mainAnalysis.VarPointsTo(_, ?value, _, ?formal),
+  AppMarkable(?value).
+
+// Actual parameter: the objects the actual holds at the call, source id = invo/actualN.
+TaintedValue(?value),
+SourceFromTaintedValue(?value, ?srcId),
+LabelFromSource(?srcId, ?label) :-
+  TaintSourceActualParam(?label, ?index, ?method),
+  MethodInvocationInContext(?ctx, ?invo, ?method),
+  Instruction_Method(?invo, ?inMethod),
+  ApplicationMethod(?inMethod),
+  ActualParam(?index, ?invo, ?actual),
+  ?srcId = cat(cat(?invo, "/actual"), to_string(?index)),
+  mainAnalysis.VarPointsTo(_, ?value, ?ctx, ?actual),
+  AppMarkable(?value).
+
+// Base: the receiver objects at the call, source id = invo/base.
+TaintedValue(?value),
+SourceFromTaintedValue(?value, ?srcId),
+LabelFromSource(?srcId, ?label) :-
+  TaintSourceBase(?label, ?method),
+  MethodInvocationInContext(?ctx, ?invo, ?method),
+  Instruction_Method(?invo, ?inMethod),
+  ApplicationMethod(?inMethod),
+  MethodInvocation_Base(?invo, ?base),
+  ?srcId = cat(?invo, "/base"),
+  mainAnalysis.VarPointsTo(_, ?value, ?ctx, ?base),
+  AppMarkable(?value).
+
+// This: the objects `this` holds in the method, source id = the this var.
+TaintedValue(?value),
+SourceFromTaintedValue(?value, ?this),
+LabelFromSource(?this, ?label) :-
+  TaintSourceThis(?label, ?method),
+  ApplicationMethod(?method),
+  ThisVar(?method, ?this),
+  mainAnalysis.VarPointsTo(_, ?value, _, ?this),
+  AppMarkable(?value).
 
 // Field source, mock half: one mock per field, named by the field signature and
 // typed by the field's declared type, placed in the field's points-to set. Loads

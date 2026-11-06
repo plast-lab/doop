@@ -41,6 +41,14 @@
 //                                                serve's formal, field CURRENT, the
 //                                                result of native openSession())
 //                                                can make a Session reach a sink
+//   untrustedProps()   TaintSourceReturn      -- returns an app object: mark half
+//   handleProps(Props) TaintSourceFormalParam -- its formal holds an app object: mark half
+//   *_REG fields       hold the real object that sat at a method-keyed source
+//                      position, stored there by a path that never goes through
+//                      the position: a sink fed from the field leaks only if the
+//                      object itself is MARKED
+//   handleInt(int)     TaintSourceFormalParam -- primitive formal: marked only under
+//                                                --enable-model-primitives
 public class Main {
 
     interface Reader { String read(); }
@@ -104,6 +112,23 @@ public class Main {
     static void sinkObjNeg(Object o)   { System.out.println(o); }
     static void sinkIntNeg(int n)      { System.out.println(n); }
 
+    // Mark half of the method-keyed sources: the real application object at a
+    // source position is tainted itself. Each factory registers the object it
+    // creates in a static field BEFORE the object reaches the position, so a sink
+    // fed from the field sees the object but never the mock placed at the
+    // position (the mock lives in the position's variable only).
+    static Props   RET_REG, PARAM_REG, BASE_REG, TRUSTED_REG;
+    static Object  KEEP;                                      // keeps a result variable alive
+    static Request THIS_REG;
+    static byte[]  ARG_REG;
+    static Props   untrustedProps() { Props x = new Props();     RET_REG     = x; return x; } // return source
+    static Props   trustedProps()   { Props x = new Props();     TRUSTED_REG = x; return x; } // not a source
+    static Props   makeProps()      { Props x = new Props();     BASE_REG    = x; return x; }
+    static Request makeRequest()    { Request x = new Request(); THIS_REG    = x; return x; }
+    static byte[]  makeBuf()        { byte[] x = new byte[4];    ARG_REG     = x; return x; }
+    static void    handleProps(Props p) { }                                                  // formal-param source
+    static void    handleInt(int n) { sinkInt(n); }                                          // primitive formal-param source
+
     public static void main(String[] args) {
         sink(untrusted());               // LEAK   return source -> sink
         sink(trusted());                 // no leak: not a source
@@ -162,5 +187,27 @@ public class Main {
         serve(null);                     // LEAK inside serve: formal entry position
         sinkObj(CURRENT);                // LEAK   field entry position (no store exists)
         sinkObj(openSession());          // LEAK   body-less method result entry position
+
+        // Mark half of the method-keyed sources (see the *_REG fields above).
+        Props up = untrustedProps();     // return source: the returned Props is marked
+        KEEP = up;                       // (an unused result variable would be dropped by Soot)
+        sinkObj(RET_REG);                // LEAK   through the mark only
+        Props tp = trustedProps();
+        KEEP = tp;
+        sinkObjNeg(TRUSTED_REG);         // no leak: not a source
+        Props hp = new Props();
+        PARAM_REG = hp;
+        handleProps(hp);                 // formal source: the Props passed in is marked
+        sinkObj(PARAM_REG);              // LEAK   through the mark only (the mock sits in the formal)
+        byte[] ab = makeBuf();
+        read(ab);                        // actual-param source: the array passed in is marked
+        sinkBytes(ARG_REG);              // LEAK   through the mark only
+        Props bp = makeProps();
+        bp.load();                       // base source: the receiver is marked
+        sinkObj(BASE_REG);               // LEAK   through the mark only
+        makeRequest().validate();        // this source: the receiver is marked
+        sinkObj(THIS_REG);               // LEAK   through the mark only
+        handleInt(args.length);          // LEAK inside handleInt, only under model-primitives:
+                                         //        the formal holds main's <prim-arith> object
     }
 }

@@ -2,9 +2,10 @@
 // Test queries for the P/Taint source vocabulary (addons/information-flow):
 // TaintSourceReturn, TaintSourceFormalParam, TaintSourceActualParam,
 // TaintSourceBase, TaintSourceThis, TaintSourceField, TaintSourceType (mark and
-// mock halves), the default override expansion and, under
-// --enable-model-primitives, the arithmetic taint mark, driven by
-// tests/117-taint-sources (class Main).
+// mock halves), the mark half of the method-keyed sources, the default override
+// expansion and, under --enable-model-primitives, the arithmetic taint mark and
+// the primitive formal-parameter source, driven by tests/117-taint-sources
+// (class Main).
 //
 // Loaded via --extra-logic on top of --information-flow minimal, so it also
 // carries the taint SPEC for the driver. Every check is a FAIL relation that
@@ -37,6 +38,9 @@ TaintSourceField("field", "<Main$Settings: java.lang.String external>").
 TaintSourceField("field", "<Main$Settings: byte[] data>").
 TaintSourceType("type", "Main$Token").
 TaintSourceType("type", "Main$Session").
+TaintSourceReturn("src",   "<Main: Main$Props untrustedProps()>").
+TaintSourceFormalParam("param", 0, "<Main: void handleProps(Main$Props)>").
+TaintSourceFormalParam("param", 0, "<Main: void handleInt(int)>").
 
 // ---- shared helpers ---------------------------------------------------------
 
@@ -272,6 +276,72 @@ Taint_FAIL_TypeMockMissing("field entry position") :-
 Taint_FAIL_TypeMockMissing("body-less method result entry position") :-
   SinkFedBy(?invo, "<Main: Main$Session openSession()>"),
   !TaintTest_Leaks("type", "sink", ?invo, "Main$Session").
+
+// ---- mark half of the method-keyed sources ------------------------------------------
+// Each *_REG field holds the real object that sat at a source position, stored
+// there by a path that never went through the position (see the driver). A sink
+// fed from the field can leak only through a MARK on that object, under the
+// source's label and with the position's source id. The premise check guards the
+// construction: no stand-in may ever reach a *_REG field.
+.decl MarkRegField(?field:symbol)
+MarkRegField("<Main: Main$Props RET_REG>").
+MarkRegField("<Main: Main$Props PARAM_REG>").
+MarkRegField("<Main: byte[] ARG_REG>").
+MarkRegField("<Main: Main$Props BASE_REG>").
+MarkRegField("<Main: Main$Request THIS_REG>").
+MarkRegField("<Main: Main$Props TRUSTED_REG>").
+
+.decl MethodKeyedMarkLeaks(?kind:symbol)
+MethodKeyedMarkLeaks("return") :-
+  SinkFedByField(?invo, "<Main: Main$Props RET_REG>"),
+  MethodInvocation_Method(?srcInvo, "<Main: Main$Props untrustedProps()>"),
+  TaintTest_Leaks("src", "sink", ?invo, ?srcInvo).
+MethodKeyedMarkLeaks("formal") :-
+  SinkFedByField(?invo, "<Main: Main$Props PARAM_REG>"),
+  FormalParam(0, "<Main: void handleProps(Main$Props)>", ?formal),
+  TaintTest_Leaks("param", "sink", ?invo, ?formal).
+MethodKeyedMarkLeaks("actual") :-
+  SinkFedByField(?invo, "<Main: byte[] ARG_REG>"),
+  MethodInvocation_Method(?readInvo, "<Main: int read(byte[])>"),
+  TaintTest_Leaks("arg", "sink", ?invo, cat(?readInvo, "/actual0")).
+MethodKeyedMarkLeaks("base") :-
+  SinkFedByField(?invo, "<Main: Main$Props BASE_REG>"),
+  MethodInvocation_Method(?loadInvo, "<Main$Props: void load()>"),
+  TaintTest_Leaks("base", "sink", ?invo, cat(?loadInvo, "/base")).
+MethodKeyedMarkLeaks("this") :-
+  SinkFedByField(?invo, "<Main: Main$Request THIS_REG>"),
+  ThisVar("<Main$Request: void validate()>", ?this),
+  TaintTest_Leaks("this", "sink", ?invo, ?this).
+
+.decl Taint_FAIL_MethodKeyedMarkMissing(?kind:symbol)
+.output Taint_FAIL_MethodKeyedMarkMissing
+Taint_FAIL_MethodKeyedMarkMissing(?kind) :-
+  ( ?kind = "return" ; ?kind = "formal" ; ?kind = "actual" ; ?kind = "base" ; ?kind = "this" ),
+  !MethodKeyedMarkLeaks(?kind).
+Taint_FAIL_MethodKeyedMarkMissing(cat("premise broken: a stand-in reached ", ?field)) :-
+  MarkRegField(?field),
+  mainAnalysis.StaticFieldPointsTo(_, ?value, ?field),
+  contains("::: ", ?value).
+// TRUSTED_REG feeds only sinkObjNeg, which Taint_FAIL_CallerSideNegLeaks already
+// requires to never leak.
+
+#ifdef MODEL_PRIMITIVES
+// A primitive formal-parameter source has no mock half (reference types only);
+// under model-primitives the formal holds the caller's <prim-arith> object (main's
+// `args.length`), which is AppMarkable, so the sink inside handleInt leaks under
+// "param" with the formal as the source.
+.decl PrimFormalMarkLeaks()
+PrimFormalMarkLeaks() :-
+  SinkCall(?invo, "<Main: void sinkInt(int)>", _),
+  Instruction_Method(?invo, "<Main: void handleInt(int)>"),
+  FormalParam(0, "<Main: void handleInt(int)>", ?formal),
+  TaintTest_Leaks("param", "sink", ?invo, ?formal).
+
+.decl Taint_FAIL_PrimFormalMarkMissing(?msg:symbol)
+.output Taint_FAIL_PrimFormalMarkMissing
+Taint_FAIL_PrimFormalMarkMissing("sinkInt(n) in handleInt did not leak from the marked primitive formal") :-
+  !PrimFormalMarkLeaks().
+#endif // MODEL_PRIMITIVES
 
 // ---- arithmetic -------------------------------------------------------------------
 // A sinkInt call whose actual is the result of a binop: in main, that is

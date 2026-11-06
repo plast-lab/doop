@@ -124,11 +124,20 @@
 // A value that may CARRY a taint mark directly (as opposed to a minted taint
 // stand-in placed next to it): a real heap allocation that is not merged into,
 // and is not, a shared representative (<<string-constant>>, <<string-builder>>,
-// <<string-buffer>>, ...), and not the null object. Marking a shared object would
-// taint every holder of it program-wide. Under model-primitives the per-site
-// primitive mocks (<prim-param>, <prim-arith>, <prim-conv>) are markable too;
-// <prim-const> objects are shared by constant and are not.
+// <<string-buffer>>, ...), not a string literal (one object per literal for the
+// whole program, as shared as a merged representative), and not the null object.
+// Marking a shared object would taint every holder of it program-wide. Under
+// model-primitives the per-site primitive mocks (<prim-param>, <prim-arith>,
+// <prim-conv>) are markable too; <prim-const> objects are shared by constant and
+// are not.
 .decl Markable(?value:Value)
+// The Markable objects the method-keyed sources (Return, FormalParam,
+// ActualParam, Base, This) may mark: those allocated in APPLICATION code (under
+// model-primitives, also the primitive mocks of application sites). A library
+// allocation site is shared by every caller of the library method under a
+// context-insensitive heap, so a mark on it would be a program-wide taint; the
+// mock placed at the position covers that case instead.
+.decl AppMarkable(?value:Value)
 .decl TaintedValueTransferred(?declaringType:Type, ?id:symbol, ?type:Type, ?value:Value)
 
 .decl TaintedObjectSerialized(?declaringType:Type, ?source:symbol, ?type:Type, ?hctx:mainAnalysis.configuration.HContext, ?val:Value, ?ctx:mainAnalysis.configuration.Context, ?base:Var)

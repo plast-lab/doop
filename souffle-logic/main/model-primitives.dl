@@ -66,6 +66,10 @@
 #define PRIM_CONST_OBJ(const)  cat("<prim-const ", cat(const, ">"))
 #define PRIM_CONV_OBJ(to)      cat("<prim-conv ", cat(to, ">"))
 
+// The method of the site that produced each per-site mock object (rules 1, 2 and
+// 5), so that clients can scope by method without parsing the object's name.
+.decl PrimitiveMock_Method(?value:Value, ?method:Method)
+
 // ---------------------------------------------------------------------------
 // (1) Autoboxed parameters for OPEN-WORLD ROOT methods: give the primitive
 // formals of entry points / forced-reachable roots a mock object.
@@ -83,6 +87,7 @@
 // caller" would not: CallGraphEdge lives in the points-to fixpoint).
 // ---------------------------------------------------------------------------
 MockValueConsMacro(?value, ?boxedType),
+PrimitiveMock_Method(?value, ?method),
 BOUND_VAR_POINTS_TO(?hctx, ?value, ?ctx, ?formal) :-
   FormalParam(_, ?method, ?formal),
   ( EntryPointMethod(?method) ; ForcedReachable(?method) ),
@@ -105,6 +110,7 @@ PrimitiveArithmeticSite(?insn, ?to, ?method, ?boxedType) :-
   PrimitiveType_Boxed(?primType, ?boxedType).
 
 MockValueConsMacro(?value, ?boxedType),
+PrimitiveMock_Method(?value, ?method),
 BOUND_VAR_POINTS_TO(?hctx, ?value, ?ctx, ?to) :-
   PrimitiveArithmeticSite(?insn, ?to, ?method, ?boxedType),
   ReachableContext(?ctx, ?method),
@@ -167,6 +173,7 @@ PrimitiveConversionSite(?to, ?method, ?boxedType) :-
   PrimitiveType_Boxed(?primType, ?boxedType).
 
 MockValueConsMacro(?value, ?boxedType),
+PrimitiveMock_Method(?value, ?method),
 BOUND_VAR_POINTS_TO(?hctx, ?value, ?ctx, ?to) :-
   PrimitiveConversionSite(?to, ?method, ?boxedType),
   ReachableContext(?ctx, ?method),
