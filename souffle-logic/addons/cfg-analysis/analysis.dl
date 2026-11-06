@@ -72,12 +72,14 @@ OptInstructionFromMethodIndex(?method, ?index, ?insn) :-
 Instruction_Next(?insn, ?next) :-
    Instruction_Method(?insn, ?inMethod),
    Instruction_Index(?insn, ?i),
-   OptInstructionFromMethodIndex(?inMethod, ?i + 1, ?next).
+   ?nextIndex = ?i + 1,
+   OptInstructionFromMethodIndex(?inMethod, ?nextIndex, ?next).
 
 Instruction_Prev(?insn, ?prev) :-
    Instruction_Method(?insn, ?inMethod),
    Instruction_Index(?insn, ?i),
-   OptInstructionFromMethodIndex(?inMethod, ?i - 1, ?prev).
+   ?prevIndex = ?i - 1,
+   OptInstructionFromMethodIndex(?inMethod, ?prevIndex, ?prev).
 
 JumpTarget(?insn, ?goto) :-
    Goto_Target(?goto, ?targetIndex),
