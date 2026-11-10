@@ -568,7 +568,8 @@ AssignMethodHandleToVarRequest(?method, ?paramTypesConv, ?retType, ?hctx, ?ctx, 
   !Method_Modifier("static", ?method),
   // Reconstruct method type to prepend receiver (since ?mt may contain wildcard
   // parameter types).
-  EquivalentWithPrependedReceiver(METHOD_TYPE(?paramTypes, ?retType), ?mtConv),
+  ?mtRebuilt = METHOD_TYPE(?paramTypes, ?retType),
+  EquivalentWithPrependedReceiver(?mtRebuilt, ?mtConv),
   MethodType_ParamTypes(?mtConv, ?paramTypesConv).
 
 #endif // REFLECTION_METHOD_HANDLES
