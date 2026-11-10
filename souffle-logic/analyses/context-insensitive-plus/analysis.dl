@@ -6,11 +6,16 @@
 #include "../../main/configuration.dl"
 #include "../../main/in-out-flow.dl"
 
-.type UniqueContext
+.type UniqueContext <: symbol
 
 .comp ContextInsensitivePlusConfiguration : AbstractConfiguration {
 
+#ifdef FLOWLOG_ENGINE
+// FlowLog has no union types: a Context is a MethodInvocation or the unique context.
+.type Context = symbol
+#else
 .type Context = MethodInvocation | UniqueContext
+#endif // FLOWLOG_ENGINE
 .type HContext = symbol
 
 .decl UContext(?ctx:UniqueContext)
