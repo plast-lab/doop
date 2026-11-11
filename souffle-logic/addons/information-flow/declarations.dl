@@ -73,9 +73,14 @@
 // Base sink: at every reachable call to ?method, the receiver variable is a sink.
 .decl TaintSinkBase(?label:InformationLabel, ?method:Method)
 .decl TaintSinkVar(?label:InformationLabel, ?tomethod:MethodInvocation, ?ctx:CONTEXT, ?var:Var)
-// Sanitizer. NOTE: implemented as a points-to BARRIER (main/context-sensitivity.dl,
-// main/model-primitives.dl): no object flows into the method's formals and none
-// flows out of its return. It removes real objects, not just taint.
+// Sanitizer: taint does not survive the method's RESULT. Enforced in the base
+// analysis (main/context-sensitivity.dl, return edge): no MOCK value flows from a
+// sanitizer's return into the caller's result variable -- taint stand-ins, but
+// also every other mock (primitive mocks under model-primitives, API mocks). Real
+// objects flow normally, so a MARKED object returned unchanged stays tainted (an
+// identity sanitizer does not clean). The arguments flow normally too (since
+// Nov 11): the body is analysed with what it is given, so a sanitizer that stores
+// or sinks its input is still reported. Whole-method, label-blind.
 .decl TaintSanitizer(?method:Method)
 // Taint transfers through (unanalyzed or summarized) methods, named
 // TaintTransfer<From>To<To> by the positions at the call site.

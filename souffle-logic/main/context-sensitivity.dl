@@ -470,41 +470,17 @@ OptRetVarPointsTo(?hctx, ?value, ?returnCtx, ?return) :-
   VarPointsTo(?hctx, ?value, ?returnCtx, ?return),
   ReturnVar(?return, _).
 
-#ifdef INFORMATION_FLOW
-
-BOUND_VAR_POINTS_TO(?hctx, ?value, ?toCtx, ?to) :-
-  OptArgVarPointsTo(?hctx, ?value, ?fromCtx, ?from),
-  OptArgAssign(?toCtx, ?to, ?fromCtx, ?from, ?allowedType),
-  Value_Type(?value, ?type),
-  basic.SubtypeOf(?type, ?allowedType),
-  isHeapAllocation(?value).
-  .plan 1:(2,1,3,4,5), 2:(3,1,2,4,5)
-
-BOUND_VAR_POINTS_TO(?hctx, ?value, ?toCtx, ?to) :-
-  OptArgVarPointsTo(?hctx, ?value, ?fromCtx, ?from),
-  OptArgAssign(?toCtx, ?to, ?fromCtx, ?from, ?allowedType),
-  Value_Type(?value, ?type),
-  basic.SubtypeOf(?type, ?allowedType),
-  Var_DeclaringMethod(?to, ?meth),
-  !TaintSanitizer(?meth).
-  .plan 1:(2,1,3,4,5), 2:(3,1,2,4,5)
-
-#else
-/**
- * VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
- *  OptArgVarPointsTo(?hctx, ?value, ?fromCtx, ?from),
- *  OptArgAssign(?toCtx, ?to, ?fromCtx, ?from).
- *.plan 1:(2,1)
- **/
-
+// The information-flow sanitizer (TaintSanitizer) used to guard this edge: no
+// mock value reached a sanitizer's formals. A sanitizer is a statement about its
+// RESULT, enforced at the return edge above; cutting its inputs only hid what the
+// body does with them (a store, a call to a sink). The edge is now the same with
+// and without information flow.
 BOUND_VAR_POINTS_TO(?hctx, ?value, ?toCtx, ?to) :-
   OptArgVarPointsTo(?hctx, ?value, ?fromCtx, ?from),
   OptArgAssign(?toCtx, ?to, ?fromCtx, ?from, ?allowedType),
   Value_Type(?value, ?type),
   basic.SubtypeOf(?type, ?allowedType).
   .plan 1:(2,1,3,4), 2:(3,1,2,4)
-
-#endif // INFORMATION_FLOW
 
 
 /**

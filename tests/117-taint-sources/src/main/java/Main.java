@@ -54,6 +54,9 @@
 //                      object (no `return this` path), so only the transfers in
 //                      common-transfer-methods.dl carry the taint across them
 //   sinkNeg(String)    sink that must NEVER leak (negative control for the builders)
+//   clean(String)      TaintSanitizer         -- its result never leaks; its formal
+//                                                still receives the taint (AUDIT)
+//   cleanObj(Clean)    TaintSanitizer         -- a real object crosses it: use() reachable
 public class Main {
 
     interface Reader { String read(); }
@@ -117,6 +120,13 @@ public class Main {
     static void sinkObjNeg(Object o)   { System.out.println(o); }
     static void sinkIntNeg(int n)      { System.out.println(n); }
     static void sinkNeg(String s)      { System.out.println(s); }
+
+    // Sanitizer: taint stops at its RESULT, not at its formals. The body is
+    // analysed with the real arguments, so a side channel inside it is still seen.
+    static Object AUDIT;
+    static class Clean { void use() { KEEP = this; } }
+    static String clean(String s)   { AUDIT = s; return new String(s.toCharArray()); }
+    static Clean  cleanObj(Clean c) { return c; }
 
     // Mark half of the method-keyed sources: the real application object at a
     // source position is tainted itself. Each factory registers the object it
@@ -228,5 +238,10 @@ public class Main {
         sinkBytesNeg(trusted().getBytes());                   // no leak
         sinkNeg(new StringBuilder(trusted()).toString());     // no leak
         sinkNeg(new String(trusted().getBytes()));            // no leak
+
+        // Sanitizer (TaintSanitizer in the spec).
+        sink(clean(untrusted()));        // no leak: the sanitizer's result
+        sinkObj(AUDIT);                  // LEAK   the formal received the tainted value (side channel)
+        cleanObj(new Clean()).use();     // Clean.use() must be reachable: real objects cross
     }
 }

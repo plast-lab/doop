@@ -113,5 +113,10 @@ class TestTaintSources extends DoopSpec {
         // Fresh-object string builders (format, getBytes(), StringBuilder(String),
         // String(byte[]), valueOf(char[])): the transfers carry the taint across.
         relationIsEmpty(analysis, "Taint_FAIL_BuilderTransferMissing")
+        // Sanitizer: its result never leaks, its formal still receives the taint
+        // (a side channel inside the body is reported), real objects cross it.
+        relationIsEmpty(analysis, "Taint_FAIL_SanitizerLeaks")
+        relationIsEmpty(analysis, "Taint_FAIL_SanitizerSideChannelMissing")
+        relationIsEmpty(analysis, "Taint_FAIL_SanitizerBlocksObjects")
     }
 }

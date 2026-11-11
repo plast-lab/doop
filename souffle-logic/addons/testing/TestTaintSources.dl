@@ -4,9 +4,9 @@
 // TaintSourceBase, TaintSourceThis, TaintSourceField, TaintSourceType (mark and
 // mock halves), the mark half of the method-keyed sources, the default override
 // expansion and, under --enable-model-primitives, the arithmetic taint mark and
-// the primitive formal-parameter source, and the fresh-object string builder
-// transfers (common-transfer-methods.dl), driven by tests/117-taint-sources
-// (class Main).
+// the primitive formal-parameter source, the fresh-object string builder
+// transfers (common-transfer-methods.dl) and the sanitizer, driven by
+// tests/117-taint-sources (class Main).
 //
 // Loaded via --extra-logic on top of --information-flow minimal, so it also
 // carries the taint SPEC for the driver. Every check is a FAIL relation that
@@ -34,6 +34,8 @@ TaintSinkActualParam("sink", 0, "<Main: void sinkBytesNeg(byte[])>").
 TaintSinkActualParam("sink", 0, "<Main: void sinkObjNeg(java.lang.Object)>").
 TaintSinkActualParam("sink", 0, "<Main: void sinkIntNeg(int)>").
 TaintSinkActualParam("sink", 0, "<Main: void sinkNeg(java.lang.String)>").
+TaintSanitizer("<Main: java.lang.String clean(java.lang.String)>").
+TaintSanitizer("<Main: Main$Clean cleanObj(Main$Clean)>").
 TaintSourceField("field", "<Main: java.lang.String CONFIG>").
 TaintSourceField("field", "<Main$Settings: java.lang.String name>").
 TaintSourceField("field", "<Main$Settings: java.lang.String external>").
@@ -57,6 +59,7 @@ Taint_FAIL_SpecUnmatched(?m) :- TaintSourceBase(_, ?m),           !isMethod(?m).
 Taint_FAIL_SpecUnmatched(?m) :- TaintSourceThis(_, ?m),           !isMethod(?m).
 Taint_FAIL_SpecUnmatched(?f) :- TaintSourceField(_, ?f),          !isField(?f).
 Taint_FAIL_SpecUnmatched(?t) :- TaintSourceType(_, ?t),           !isType(?t).
+Taint_FAIL_SpecUnmatched(?m) :- TaintSanitizer(?m),               !isMethod(?m).
 
 // A call to a declared sink method, with the actual at the sink index.
 .decl SinkCall(?invo:symbol, ?sinkMethod:symbol, ?actual:symbol)
@@ -380,6 +383,32 @@ Taint_FAIL_BuilderTransferMissing("premise broken: no sink is fed by", ?b) :-
     ?b = "<java.lang.String: java.lang.String valueOf(char[])>" ;
     ?b = "new String(byte[])" ),
   !BuilderSinkFedBy(_, ?b).
+
+// ---- sanitizer -----------------------------------------------------------------------
+// clean(String) is a TaintSanitizer: its RESULT never leaks, whatever the body did
+// (it re-mints a stand-in through toCharArray + the String(char[]) transfer and
+// returns a fresh String). Its formal still receives the taint: the body stores
+// the argument into AUDIT, and a sink fed from AUDIT leaks (side channel). And a
+// real object crosses a sanitizer: cleanObj(new Clean()).use() resolves.
+.decl Taint_FAIL_SanitizerLeaks(?invo:symbol, ?from:symbol)
+.output Taint_FAIL_SanitizerLeaks
+Taint_FAIL_SanitizerLeaks(?invo, ?from) :-
+  SinkFedBy(?invo, "<Main: java.lang.String clean(java.lang.String)>"),
+  LeakAt(?from, ?invo).
+
+.decl Taint_FAIL_SanitizerSideChannelMissing(?msg:symbol)
+.output Taint_FAIL_SanitizerSideChannelMissing
+Taint_FAIL_SanitizerSideChannelMissing("premise broken: no sink is fed from AUDIT") :-
+  !SinkFedByField(_, "<Main: java.lang.Object AUDIT>").
+Taint_FAIL_SanitizerSideChannelMissing("the sanitizer's formal did not receive the taint") :-
+  SinkFedByField(?invo, "<Main: java.lang.Object AUDIT>"),
+  !LeakAt("src", ?invo).
+
+.decl Taint_FAIL_SanitizerBlocksObjects(?m:symbol)
+.output Taint_FAIL_SanitizerBlocksObjects
+Taint_FAIL_SanitizerBlocksObjects(?m) :-
+  ?m = "<Main$Clean: void use()>",
+  !mainAnalysis.Reachable(?m).
 
 // ---- arithmetic -------------------------------------------------------------------
 // A sinkInt call whose actual is the result of a binop: in main, that is

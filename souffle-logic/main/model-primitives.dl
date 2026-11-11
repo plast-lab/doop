@@ -199,23 +199,14 @@ BOUND_VAR_POINTS_TO(?hctx, ?value, ?ctx, ?to) :-
 // Integer mock will not flow into a long formal. Widening (int->long at a call)
 // is handled upstream, where the i2l conversion re-mints a Long via rule (2).
 // ---------------------------------------------------------------------------
-#ifdef INFORMATION_FLOW
-BOUND_VAR_POINTS_TO(?hctx, ?value, ?toCtx, ?to) :-
-  OptArgVarPointsTo(?hctx, ?value, ?fromCtx, ?from),
-  OptArgAssign(?toCtx, ?to, ?fromCtx, ?from, ?allowedType),
-  Value_Type(?value, ?wrapper),
-  PrimitiveType_Boxed(?allowedType, ?wrapper),
-  Var_DeclaringMethod(?to, ?meth),
-  !TaintSanitizer(?meth).
- .plan 1:(2,1,3,4,5), 2:(3,1,2,4,5)
-#else
+// (The information-flow sanitizer no longer guards this edge; it is enforced at
+// the return edge, see context-sensitivity.dl.)
 BOUND_VAR_POINTS_TO(?hctx, ?value, ?toCtx, ?to) :-
   OptArgVarPointsTo(?hctx, ?value, ?fromCtx, ?from),
   OptArgAssign(?toCtx, ?to, ?fromCtx, ?from, ?allowedType),
   Value_Type(?value, ?wrapper),
   PrimitiveType_Boxed(?allowedType, ?wrapper).
  .plan 1:(2,1,3,4), 2:(3,1,2,4)
-#endif // INFORMATION_FLOW
 
 // ---------------------------------------------------------------------------
 // (6) Primitive array-element store: int[] / long[] / ... element stores drop
