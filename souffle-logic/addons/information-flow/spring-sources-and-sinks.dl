@@ -131,8 +131,10 @@ TaintSinkActualParam(?label, ?n, ?overriddenMethod) :-
    Method_SimpleName(?overriddenMethod, ?name),
    Method_Descriptor(?overriddenMethod, ?descriptor).
 
-// Params with these annotations introduce taint objects
-TaintTransferBaseToReturn(?dtoMeth),
+// Params with these annotations introduce taint objects. (Until Nov 11 every
+// method of the parameter's type was also declared a receiver->result transfer, so
+// that getters on the stand-in yielded taint; deep taint -- a field load from a
+// tainted base in application code -- now gives that, one level at a time.)
 TaintedValueIntroduced(?declaringType, ?to, ?type, "default", ValueIdMacro(?to, ?type, DEFAULT_BREADCRUMB)),
 mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?to, ?type, DEFAULT_BREADCRUMB), ?ctx, ?to) :-
   FormalParam(?idx, ?meth, ?to),
@@ -142,7 +144,6 @@ mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?to, ?type, DEFAULT_BREADCRUMB), ?c
   mainAnalysis.ReachableContext(?ctx, ?meth),
   Var_Type(?to, ?type),
   mainAnalysis.isImmutableHContext(?hctx),
-  Method_DeclaringType(?dtoMeth, ?type),
   Method_DeclaringType(?meth, ?declaringType).
 
 #ifdef OPEN_PROGRAMS
@@ -155,9 +156,8 @@ mainAnalysis.configuration.RecordContextRequest(?ctx, ValueIdMacro(?to, ?ctype, 
   Var_Type(?to, ?type),
   mainAnalysis.TypeToConcreteImplementation(?type, ?ctype).
 
-// Introduce concrete taint values for entry point parameters
-// and mark their methods as taint transfer methods
-TaintTransferBaseToReturn(?dtoMeth),
+// Introduce concrete taint values for entry point parameters (their contents
+// follow through deep taint; the per-type transfer trick is gone, see above).
 TaintedValueIntroduced(?declaringType, ?to, ?ctype, "default", ValueIdMacro(?to, ?ctype, DEFAULT_BREADCRUMB)),
 mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?to, ?ctype, DEFAULT_BREADCRUMB), ?ctx, ?to) :-
   mainAnalysis.EntryPointMethod(?meth),
@@ -166,7 +166,6 @@ mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?to, ?ctype, DEFAULT_BREADCRUMB), ?
   mainAnalysis.ReachableContext(?ctx, ?meth),
   Var_Type(?to, ?type),
   mainAnalysis.TypeToConcreteImplementation(?type, ?ctype),
-  mainAnalysis.configuration.RecordContextResponse(?ctx, ValueIdMacro(?to, ?ctype, DEFAULT_BREADCRUMB), ?to, ?hctx),
-  Method_DeclaringType(?dtoMeth, ?type).
+  mainAnalysis.configuration.RecordContextResponse(?ctx, ValueIdMacro(?to, ?ctype, DEFAULT_BREADCRUMB), ?to, ?hctx).
 
 #endif // OPEN_PROGRAMS

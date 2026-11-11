@@ -614,6 +614,49 @@ mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(cat(?invo, "/type"), ?retType, DEFA
   Method_DeclaringType(?inMethod, ?declaringType).
 #endif // INFORMATION_FLOW_DISABLE_TYPE_MOCKS
 
+// Deep taint: the CONTENTS of a tainted object are tainted -- its fields, their
+// fields, its array elements. Two halves, like every source.
+//
+// Mock half: a field loaded from a tainted base -- a stand-in, which has no
+// contents of its own, or a marked real object, whose contents may be library
+// allocations that cannot be marked -- yields a stand-in typed by the loaded
+// variable, with the base's source id. The array-load rule above is the array
+// twin. Loads in APPLICATION code only: a load inside the JDK (ArrayList.get
+// reading elementData, with a `this` that holds every list in the program) would
+// taint every collection's elements program-wide; the collection transfers cover
+// that case at the call site, where the receiver is specific.
+VarIsTaintedFromValue(?type, ?base, ?ctx, ?to) :-
+  TaintedValue(?base),
+  mainAnalysis.LoadHeapInstanceField(?ctx, ?to, ?sig, _, ?base),
+  LoadInstanceField(_, ?sig, ?to, ?inMethod),
+  ApplicationMethod(?inMethod),
+  Var_Type(?to, ?type).
+
+// Mark half: the application objects a marked REAL object holds, in its fields
+// and array cells, carry its marks, recursively. AppMarkable contents only: a
+// library allocation held in a tainted object's field is shared by every caller
+// of the library method that allocated it (the lesson of the method-keyed marks).
+// Real bases only (Markable): a stand-in is one value per source and type, so as
+// the base of a store it aliases every store site it ever flows to -- an
+// Object[]-typed stand-in reached by a profile's taint collects everything ever
+// stored into any Object[] in the program -- and marking those contents is a
+// program-wide taint (measured on msgpack: the minimal profile's readLine source
+// re-reported all five issue1 sinks). A stand-in's contents are read through the
+// mock half above instead.
+TaintedValue(?f),
+SourceFromTaintedValue(?f, ?source) :-
+  SourceFromTaintedValue(?o, ?source),
+  Markable(?o),
+  mainAnalysis.InstanceFieldPointsTo(_, ?f, _, _, ?o),
+  AppMarkable(?f).
+
+TaintedValue(?f),
+SourceFromTaintedValue(?f, ?source) :-
+  SourceFromTaintedValue(?o, ?source),
+  Markable(?o),
+  mainAnalysis.ArrayIndexPointsTo(_, ?f, _, ?o),
+  AppMarkable(?f).
+
 #ifdef MODEL_PRIMITIVES
 // Arithmetic (limitation C): the result of a binop/unop with a tainted operand
 // carries the operand's taint. Under model-primitives the result variable already

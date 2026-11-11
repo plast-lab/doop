@@ -5,7 +5,7 @@
 // mock halves), the mark half of the method-keyed sources, the default override
 // expansion and, under --enable-model-primitives, the arithmetic taint mark and
 // the primitive formal-parameter source, the fresh-object string builder
-// transfers (common-transfer-methods.dl) and the sanitizer, driven by
+// transfers (common-transfer-methods.dl), the sanitizer and deep taint, driven by
 // tests/117-taint-sources (class Main).
 //
 // Loaded via --extra-logic on top of --information-flow minimal, so it also
@@ -36,6 +36,7 @@ TaintSinkActualParam("sink", 0, "<Main: void sinkIntNeg(int)>").
 TaintSinkActualParam("sink", 0, "<Main: void sinkNeg(java.lang.String)>").
 TaintSanitizer("<Main: java.lang.String clean(java.lang.String)>").
 TaintSanitizer("<Main: Main$Clean cleanObj(Main$Clean)>").
+TaintSourceFormalParam("param", 0, "<Main: void handleAccount(Main$Account)>").
 TaintSourceField("field", "<Main: java.lang.String CONFIG>").
 TaintSourceField("field", "<Main$Settings: java.lang.String name>").
 TaintSourceField("field", "<Main$Settings: java.lang.String external>").
@@ -409,6 +410,45 @@ Taint_FAIL_SanitizerSideChannelMissing("the sanitizer's formal did not receive t
 Taint_FAIL_SanitizerBlocksObjects(?m) :-
   ?m = "<Main$Clean: void use()>",
   !mainAnalysis.Reachable(?m).
+
+// ---- deep taint ----------------------------------------------------------------------
+// handleAccount's formal is a source; inside it, the account's contents reach sinks:
+// the owner through the getter (a load in application code with a tainted `this`),
+// the owner's name (depth 2), the int field, the byte[] field. In main, OWNER_REG
+// holds the owner object, stored before the account reached the position, so a sink
+// fed from it leaks only through the deep MARK on the owner. All under "param".
+.decl DeepSink(?invo:symbol, ?kind:symbol)
+DeepSink(?invo, "getter") :-
+  SinkCall(?invo, "<Main: void sinkObj(java.lang.Object)>", ?actual),
+  Instruction_Method(?invo, "<Main: void handleAccount(Main$Account)>"),
+  AssignReturnValue(?srcInvo, ?actual),
+  MethodInvocation_Method(?srcInvo, "<Main$Account: Main$Owner getOwner()>").
+DeepSink(?invo, "depth 2") :-
+  SinkCall(?invo, "<Main: void sink(java.lang.String)>", ?actual),
+  LoadInstanceField(_, "<Main$Owner: java.lang.String name>", ?actual, _).
+DeepSink(?invo, "primitive field") :-
+  SinkCall(?invo, "<Main: void sinkInt(int)>", ?actual),
+  LoadInstanceField(_, "<Main$Account: int amount>", ?actual, _).
+DeepSink(?invo, "array field") :-
+  SinkCall(?invo, "<Main: void sinkBytes(byte[])>", ?actual),
+  LoadInstanceField(_, "<Main$Account: byte[] key>", ?actual, _).
+DeepSink(?invo, "mark") :-
+  SinkFedByField(?invo, "<Main: Main$Owner OWNER_REG>").
+
+.decl Taint_FAIL_DeepTaintMissing(?kind:symbol)
+.output Taint_FAIL_DeepTaintMissing
+Taint_FAIL_DeepTaintMissing(?kind) :-
+  DeepSink(?invo, ?kind),
+  !LeakAt("param", ?invo).
+Taint_FAIL_DeepTaintMissing(cat("premise broken: no sink of kind ", ?kind)) :-
+  ( ?kind = "getter" ; ?kind = "depth 2" ; ?kind = "primitive field" ;
+    ?kind = "array field" ; ?kind = "mark" ),
+  !DeepSink(_, ?kind).
+// (The untainted Ledger's loads feed sinkObjNeg / sinkIntNeg, asserted by
+// CallerSideNegLeaks / ArithNegLeaks. A second Account would not do as the
+// control: Account's constructor is shared, so context-insensitively every
+// Account's fields hold every constructor argument, and the deep mark reaches
+// the "clean" account's contents through the base analysis's own conflation.)
 
 // ---- arithmetic -------------------------------------------------------------------
 // A sinkInt call whose actual is the result of a binop: in main, that is

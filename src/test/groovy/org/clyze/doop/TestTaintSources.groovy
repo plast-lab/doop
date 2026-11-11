@@ -118,5 +118,8 @@ class TestTaintSources extends DoopSpec {
         relationIsEmpty(analysis, "Taint_FAIL_SanitizerLeaks")
         relationIsEmpty(analysis, "Taint_FAIL_SanitizerSideChannelMissing")
         relationIsEmpty(analysis, "Taint_FAIL_SanitizerBlocksObjects")
+        // Deep taint: a tainted object's fields (depth 1 and 2, primitive, array)
+        // are tainted on load, and the application objects it holds are marked.
+        relationIsEmpty(analysis, "Taint_FAIL_DeepTaintMissing")
     }
 }

@@ -57,6 +57,11 @@
 //   clean(String)      TaintSanitizer         -- its result never leaks; its formal
 //                                                still receives the taint (AUDIT)
 //   cleanObj(Clean)    TaintSanitizer         -- a real object crosses it: use() reachable
+//   handleAccount(Account) TaintSourceFormalParam -- deep taint: the account's fields
+//                      (an Owner, its name, an int, a byte[]) are tainted inside
+//                      handleAccount; OWNER_REG holds the owner object, stored
+//                      before the account reached the position: leaks only through
+//                      the deep MARK
 public class Main {
 
     interface Reader { String read(); }
@@ -127,6 +132,29 @@ public class Main {
     static class Clean { void use() { KEEP = this; } }
     static String clean(String s)   { AUDIT = s; return new String(s.toCharArray()); }
     static Clean  cleanObj(Clean c) { return c; }
+
+    // Deep taint: the CONTENTS of a tainted object are tainted -- its fields, their
+    // fields, its array elements -- through a load in application code (a stand-in
+    // typed by the loaded variable, mock half) and as a mark on the application
+    // objects it holds (mark half). handleAccount's formal is a source.
+    static class Owner   { String name; Owner(String n) { name = n; } }
+    static class Account {
+        Owner owner; int amount; byte[] key;
+        Account(Owner o, int a) { owner = o; amount = a; key = new byte[2]; }
+        Owner getOwner() { return owner; }
+    }
+    // Negative control with its OWN class and direct stores: a shared constructor
+    // conflates its callers' field contents context-insensitively (every Account's
+    // owner field holds every owner passed to the constructor), so a second Account
+    // would read the tainted one's contents through the base analysis, not the rule.
+    static class Ledger { Owner owner; int amount; }
+    static Owner OWNER_REG;
+    static void handleAccount(Account a) {
+        sinkObj(a.getOwner());        // LEAK   depth 1: the load inside the getter, this = the tainted account
+        sink(a.getOwner().name);      // LEAK   depth 2
+        sinkInt(a.amount);            // LEAK   primitive field
+        sinkBytes(a.key);             // LEAK   array-typed field
+    }
 
     // Mark half of the method-keyed sources: the real application object at a
     // source position is tainted itself. Each factory registers the object it
@@ -243,5 +271,16 @@ public class Main {
         sink(clean(untrusted()));        // no leak: the sanitizer's result
         sinkObj(AUDIT);                  // LEAK   the formal received the tainted value (side channel)
         cleanObj(new Clean()).use();     // Clean.use() must be reachable: real objects cross
+
+        // Deep taint (see handleAccount).
+        Owner ow = new Owner("o");
+        OWNER_REG = ow;
+        handleAccount(new Account(ow, args.length)); // formal source: the account is tainted
+        sinkObj(OWNER_REG);              // LEAK   through the deep mark on the owner only
+        Ledger clean = new Ledger();     // untainted, no shared constructor (see Ledger)
+        clean.owner = new Owner("c");
+        clean.amount = 1;
+        sinkObjNeg(clean.owner);         // no leak: loads from an untainted object
+        sinkIntNeg(clean.amount);
     }
 }
