@@ -4,7 +4,8 @@
 // TaintSourceBase, TaintSourceThis, TaintSourceField, TaintSourceType (mark and
 // mock halves), the mark half of the method-keyed sources, the default override
 // expansion and, under --enable-model-primitives, the arithmetic taint mark and
-// the primitive formal-parameter source, driven by tests/117-taint-sources
+// the primitive formal-parameter source, and the fresh-object string builder
+// transfers (common-transfer-methods.dl), driven by tests/117-taint-sources
 // (class Main).
 //
 // Loaded via --extra-logic on top of --information-flow minimal, so it also
@@ -32,6 +33,7 @@ TaintSinkActualParam("sink", 0, "<Main: void sinkByte(byte)>").
 TaintSinkActualParam("sink", 0, "<Main: void sinkBytesNeg(byte[])>").
 TaintSinkActualParam("sink", 0, "<Main: void sinkObjNeg(java.lang.Object)>").
 TaintSinkActualParam("sink", 0, "<Main: void sinkIntNeg(int)>").
+TaintSinkActualParam("sink", 0, "<Main: void sinkNeg(java.lang.String)>").
 TaintSourceField("field", "<Main: java.lang.String CONFIG>").
 TaintSourceField("field", "<Main$Settings: java.lang.String name>").
 TaintSourceField("field", "<Main$Settings: java.lang.String external>").
@@ -188,7 +190,8 @@ Taint_FAIL_ThisSourceMissing("sinkObj(this) in validate() did not leak from this
 .output Taint_FAIL_CallerSideNegLeaks
 Taint_FAIL_CallerSideNegLeaks(?invo, ?from) :-
   ( SinkCall(?invo, "<Main: void sinkBytesNeg(byte[])>", _) ;
-    SinkCall(?invo, "<Main: void sinkObjNeg(java.lang.Object)>", _) ),
+    SinkCall(?invo, "<Main: void sinkObjNeg(java.lang.Object)>", _) ;
+    SinkCall(?invo, "<Main: void sinkNeg(java.lang.String)>", _) ),
   LeakAt(?from, ?invo).
 
 // ---- element of a filled buffer -------------------------------------------------------
@@ -342,6 +345,41 @@ PrimFormalMarkLeaks() :-
 Taint_FAIL_PrimFormalMarkMissing("sinkInt(n) in handleInt did not leak from the marked primitive formal") :-
   !PrimFormalMarkLeaks().
 #endif // MODEL_PRIMITIVES
+
+// ---- fresh-object string builders ---------------------------------------------------
+// format, getBytes(), the StringBuilder(String) and String(byte[]) constructors and
+// valueOf(char[]) build a NEW object from their input (no `return this` path), so
+// only the transfers in common-transfer-methods.dl carry the taint across them.
+// Positive: every sink / sinkBytes call fed by one of them leaks under "src".
+// (The negative twins feed sinkNeg / sinkBytesNeg, covered by CallerSideNegLeaks.)
+.decl BuilderSinkFedBy(?invo:symbol, ?builder:symbol)
+BuilderSinkFedBy(?invo, ?builder) :-
+  ( SinkCall(?invo, "<Main: void sink(java.lang.String)>", ?actual) ;
+    SinkCall(?invo, "<Main: void sinkBytes(byte[])>", ?actual) ),
+  AssignReturnValue(?srcInvo, ?actual),
+  MethodInvocation_Method(?srcInvo, ?builder),
+  ( ?builder = "<java.lang.String: java.lang.String format(java.lang.String,java.lang.Object[])>" ;
+    ?builder = "<java.lang.String: byte[] getBytes()>" ;
+    ?builder = "<java.lang.StringBuilder: java.lang.String toString()>" ;
+    ?builder = "<java.lang.String: java.lang.String valueOf(char[])>" ).
+// new String(bytes): the sink actual is a String allocated in main itself.
+BuilderSinkFedBy(?invo, "new String(byte[])") :-
+  SinkCall(?invo, "<Main: void sink(java.lang.String)>", ?actual),
+  AssignHeapAllocation(?heap, ?actual, "<Main: void main(java.lang.String[])>"),
+  HeapAllocation_Type(?heap, "java.lang.String").
+
+.decl Taint_FAIL_BuilderTransferMissing(?invo:symbol, ?builder:symbol)
+.output Taint_FAIL_BuilderTransferMissing
+Taint_FAIL_BuilderTransferMissing(?invo, ?builder) :-
+  BuilderSinkFedBy(?invo, ?builder),
+  !LeakAt("src", ?invo).
+Taint_FAIL_BuilderTransferMissing("premise broken: no sink is fed by", ?b) :-
+  ( ?b = "<java.lang.String: java.lang.String format(java.lang.String,java.lang.Object[])>" ;
+    ?b = "<java.lang.String: byte[] getBytes()>" ;
+    ?b = "<java.lang.StringBuilder: java.lang.String toString()>" ;
+    ?b = "<java.lang.String: java.lang.String valueOf(char[])>" ;
+    ?b = "new String(byte[])" ),
+  !BuilderSinkFedBy(_, ?b).
 
 // ---- arithmetic -------------------------------------------------------------------
 // A sinkInt call whose actual is the result of a binop: in main, that is

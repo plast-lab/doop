@@ -110,5 +110,8 @@ class TestTaintSources extends DoopSpec {
         // a return / formal / actual / base / this position is tainted itself,
         // so a holder that never went through the position leaks too.
         relationIsEmpty(analysis, "Taint_FAIL_MethodKeyedMarkMissing")
+        // Fresh-object string builders (format, getBytes(), StringBuilder(String),
+        // String(byte[]), valueOf(char[])): the transfers carry the taint across.
+        relationIsEmpty(analysis, "Taint_FAIL_BuilderTransferMissing")
     }
 }

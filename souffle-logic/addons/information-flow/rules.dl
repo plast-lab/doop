@@ -281,6 +281,27 @@ mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB)
   mainAnalysis.isImmutableHContext(?hctx).
 #endif // INFORMATION_FLOW_HIGH_SOUNDNESS
 
+// An ActualParamToBase transfer on a CONSTRUCTOR taints the receiver variable
+// directly. The two rules above mint at the receiver object's allocation
+// variable, which for a merged allocation (<<string-builder>>: every StringBuilder
+// in the program) does not exist (AssignNormalHeapAllocation excludes merges), so
+// `new StringBuilder(tainted)` tainted nothing. The receiver variable of
+// `$r.<init>(..)` is the allocation's own variable, so nothing is lost by minting
+// there, and a merged object is never re-minted program-wide.
+TaintObjTransfer(?ctx, ?from, ?ctx, ?base),
+TaintedValueTransferred(?declaringType, ?source, ?type, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB)),
+mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB), ?ctx, ?base) :-
+  TaintTransferMethodInvocationInContext(?ctx, ?index, ?invo),
+  MethodInvocation_Method(?invo, ?ctor),
+  Method_SimpleName(?ctor, "<init>"),
+  ActualParam(?index, ?invo, ?from),
+  MethodInvocation_Base(?invo, ?base),
+  TaintedVarPointsTo(?value, ?ctx, ?from),
+  Var_Type(?base, ?type),
+  SourceFromTaintedValue(?value, ?source),
+  mainAnalysis.Value_DeclaringType(?value, ?declaringType),
+  mainAnalysis.isImmutableHContext(?hctx).
+
 #ifdef INFORMATION_FLOW_HIGH_SOUNDNESS
 // Option 1
 .decl MethodInvocationInMethod(?tomethod:Method, ?invocation:MethodInvocation, ?inmethod:Method)

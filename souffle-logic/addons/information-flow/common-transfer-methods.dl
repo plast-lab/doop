@@ -102,4 +102,64 @@ TaintTransferActualParamToReturn("<java.lang.Character: char reverseBytes(char)>
 TaintTransferActualParamToReturn("<java.lang.Integer: int reverseBytes(int)>").
 TaintTransferActualParamToReturn("<java.lang.Long: long reverseBytes(long)>").
 
+// Fresh-object string builders. trim/substring/toLowerCase/replace/split/... need
+// no transfer: each has a `return this` path, so (flow- and context-insensitively)
+// its result already holds the tainted receiver. These builders never return
+// their input; the result is a NEW object whose contents come from the argument
+// or receiver, and without a transfer the taint ends here (confirmed:
+// taint-limitations.md, section C, "String methods").
+// The receiver->result and argument->receiver entries below fire at application
+// call sites only (TaintTransferAppOnly): at JDK-internal sites they re-minted the
+// minimal profile's readLine taint into byte[] stand-ins that rode shared
+// collections into msgpack's buffers (+5 findings under the profile's label).
+// The argument->result entries are application-gated by construction.
+TaintTransferBaseToReturn("<java.lang.String: byte[] getBytes()>").
+TaintTransferBaseToReturn("<java.lang.String: byte[] getBytes(java.nio.charset.Charset)>").
+TaintTransferAppOnly("<java.lang.String: byte[] getBytes()>").
+TaintTransferAppOnly("<java.lang.String: byte[] getBytes(java.nio.charset.Charset)>").
+TaintTransferActualParamToReturn("<java.lang.String: java.lang.String valueOf(char[])>").
+TaintTransferActualParamToReturn("<java.lang.String: java.lang.String valueOf(char[],int,int)>").
+TaintTransferActualParamToReturn("<java.lang.String: java.lang.String copyValueOf(char[])>").
+TaintTransferActualParamToReturn("<java.lang.String: java.lang.String copyValueOf(char[],int,int)>").
+// Varargs builders: a tainted ELEMENT of the Object[] / CharSequence[] actual
+// taints the result; so does a tainted format string or delimiter.
+TaintTransferActualParamElementsToReturn(1, "<java.lang.String: java.lang.String format(java.lang.String,java.lang.Object[])>").
+TaintTransferActualParamElementsToReturn(2, "<java.lang.String: java.lang.String format(java.util.Locale,java.lang.String,java.lang.Object[])>").
+TaintTransferActualParamElementsToReturn(1, "<java.lang.String: java.lang.String join(java.lang.CharSequence,java.lang.CharSequence[])>").
+TaintTransferActualParamToReturn("<java.lang.String: java.lang.String format(java.lang.String,java.lang.Object[])>").
+TaintTransferActualParamToReturn("<java.lang.String: java.lang.String format(java.util.Locale,java.lang.String,java.lang.Object[])>").
+TaintTransferActualParamToReturn("<java.lang.String: java.lang.String join(java.lang.CharSequence,java.lang.CharSequence[])>").
+// Constructors: the argument's contents become the constructed object's. A
+// constructor call has no result, which is what ActualParamToBase requires.
+TaintTransferActualParamToBase(0, "<java.lang.String: void <init>(byte[])>").
+TaintTransferActualParamToBase(0, "<java.lang.String: void <init>(byte[],java.nio.charset.Charset)>").
+TaintTransferActualParamToBase(0, "<java.lang.String: void <init>(byte[],java.lang.String)>").
+TaintTransferActualParamToBase(0, "<java.lang.String: void <init>(byte[],int,int)>").
+TaintTransferActualParamToBase(0, "<java.lang.String: void <init>(byte[],int,int,java.nio.charset.Charset)>").
+TaintTransferActualParamToBase(0, "<java.lang.String: void <init>(byte[],int,int,java.lang.String)>").
+TaintTransferActualParamToBase(0, "<java.lang.String: void <init>(char[])>").
+TaintTransferActualParamToBase(0, "<java.lang.String: void <init>(char[],int,int)>").
+TaintTransferActualParamToBase(0, "<java.lang.String: void <init>(java.lang.String)>").
+TaintTransferActualParamToBase(0, "<java.lang.String: void <init>(java.lang.StringBuilder)>").
+TaintTransferActualParamToBase(0, "<java.lang.String: void <init>(java.lang.StringBuffer)>").
+TaintTransferActualParamToBase(0, "<java.lang.StringBuilder: void <init>(java.lang.String)>").
+TaintTransferActualParamToBase(0, "<java.lang.StringBuilder: void <init>(java.lang.CharSequence)>").
+TaintTransferActualParamToBase(0, "<java.lang.StringBuffer: void <init>(java.lang.String)>").
+TaintTransferActualParamToBase(0, "<java.lang.StringBuffer: void <init>(java.lang.CharSequence)>").
+TaintTransferAppOnly("<java.lang.String: void <init>(byte[])>").
+TaintTransferAppOnly("<java.lang.String: void <init>(byte[],java.nio.charset.Charset)>").
+TaintTransferAppOnly("<java.lang.String: void <init>(byte[],java.lang.String)>").
+TaintTransferAppOnly("<java.lang.String: void <init>(byte[],int,int)>").
+TaintTransferAppOnly("<java.lang.String: void <init>(byte[],int,int,java.nio.charset.Charset)>").
+TaintTransferAppOnly("<java.lang.String: void <init>(byte[],int,int,java.lang.String)>").
+TaintTransferAppOnly("<java.lang.String: void <init>(char[])>").
+TaintTransferAppOnly("<java.lang.String: void <init>(char[],int,int)>").
+TaintTransferAppOnly("<java.lang.String: void <init>(java.lang.String)>").
+TaintTransferAppOnly("<java.lang.String: void <init>(java.lang.StringBuilder)>").
+TaintTransferAppOnly("<java.lang.String: void <init>(java.lang.StringBuffer)>").
+TaintTransferAppOnly("<java.lang.StringBuilder: void <init>(java.lang.String)>").
+TaintTransferAppOnly("<java.lang.StringBuilder: void <init>(java.lang.CharSequence)>").
+TaintTransferAppOnly("<java.lang.StringBuffer: void <init>(java.lang.String)>").
+TaintTransferAppOnly("<java.lang.StringBuffer: void <init>(java.lang.CharSequence)>").
+
 // TODO: System.arrayCopy

@@ -50,9 +50,22 @@ TaintSourceReturnInvocation(?label, ?ctx, ?invocation) :-
 /**
  * Taint transfer through aliasing
  */
+TaintTransferMethod(?m) :- TaintTransferBaseToReturn(?m).
+TaintTransferMethod(?m) :- TaintTransferActualParamToBase(_, ?m).
+TaintTransferMethod(?m) :- TaintTransferActualParamElementsToBase(_, ?m).
+
+TaintTransferSite(?ctx, ?invocation, ?method) :-
+  TaintTransferMethod(?method),
+  !TaintTransferAppOnly(?method),
+  MethodInvocationInContext(?ctx, ?invocation, ?method).
+TaintTransferSite(?ctx, ?invocation, ?method) :-
+  TaintTransferMethod(?method),
+  TaintTransferAppOnly(?method),
+  MethodInvocationInContextInApplication(?ctx, ?invocation, ?method).
+
 TaintTransferMethodInvocationInContext(?ctx, ?index, ?invocation) :-
-  MethodInvocationInContext(?ctx, ?invocation, ?taintTransferMethod),
-  TaintTransferActualParamToBase(?index, ?taintTransferMethod).
+  TaintTransferActualParamToBase(?index, ?taintTransferMethod),
+  TaintTransferSite(?ctx, ?invocation, ?taintTransferMethod).
 
 ParamTaintTransferredToBase(?param, ?ctx, ?base) :-
   TaintTransferMethodInvocationInContext(?ctx, ?index, ?invocation),
@@ -83,15 +96,24 @@ VarIsTaintedFromVar(?type, ?ctx, ?param, ?ctx, ?base) :-
 
 VarIsTaintedFromVar(?type, ?ctx, ?ret, ?ctx, ?base) :-
   TaintTransferBaseToReturn(?method),
-  MethodInvocationInContext(?ctx, ?invocation, ?method),
+  TaintTransferSite(?ctx, ?invocation, ?method),
   MethodInvocation_Base(?invocation, ?base),
   TypeForReturnValue(?type, ?ret, ?invocation).
 
 VarIsTaintedFromVarIndex(?base, ?ctx, ?param) :-
-   MethodInvocationInContext(?ctx, ?invocation, ?method),
    TaintTransferActualParamElementsToBase(?index, ?method),
+   TaintTransferSite(?ctx, ?invocation, ?method),
    MethodInvocation_Base(?invocation, ?base),
    ActualParam(?index, ?invocation, ?param).
+
+// Elements of the array actual -> result. The result variable takes the receiver
+// slot of VarIsTaintedFromVarIndex: the downstream rules only need "a variable
+// tainted from the elements of ?param", typed by that variable's declared type.
+VarIsTaintedFromVarIndex(?ret, ?ctx, ?param) :-
+   MethodInvocationInContextInApplication(?ctx, ?invocation, ?method),
+   TaintTransferActualParamElementsToReturn(?index, ?method),
+   ActualParam(?index, ?invocation, ?param),
+   AssignReturnValue(?invocation, ?ret).
 
 /**
  * Sinks and leaks

@@ -88,6 +88,9 @@
 .decl TaintTransferActualParamToBase(?index:number, ?method:Method)
 // Tainted ELEMENTS of the array actual at ?index -> receiver.
 .decl TaintTransferActualParamElementsToBase(?index:number, ?method:Method)
+// Tainted ELEMENTS of the array actual at ?index -> result: the varargs string
+// builders (String.format, String.join). (App-gated, like ActualParamToReturn.)
+.decl TaintTransferActualParamElementsToReturn(?index:number, ?method:Method)
 // Any tainted actual -> result. (App-gated.)
 .decl TaintTransferActualParamToReturn(?method:Method)
 // "Mock" variants of the two *ToReturn transfers: not app-gated, and the fresh
@@ -95,6 +98,14 @@
 // of the plain forms; merge candidates.
 .decl TaintTransferBaseToReturnMock(?meth:Method)
 .decl TaintTransferActualParamToReturnMock(?meth:Method)
+// Scope modifier: every transfer declared on ?method fires only at call sites in
+// APPLICATION code, whatever the transfer kind. For summaries of JDK string
+// builders: the JDK itself calls them on strings the context-insensitive heap
+// conflates with a profile's taint, and a JDK-internal site would re-mint that
+// taint into fresh types that ride shared collections into the application
+// (measured on msgpack: +5 findings under the profile's label, see
+// taint-limitations.md section C).
+.decl TaintTransferAppOnly(?method:Method)
 .decl VarIsCast(?var:Var)
 .decl VarUse(?var:Var, ?inst:Instruction)
 .decl LabelFromSource(?source:symbol, ?label:InformationLabel)
@@ -110,6 +121,10 @@
 .decl VarIsTaintedFromVar(?type:Type, ?ctx1:CONTEXT, ?var1:Var, ?ctx2:CONTEXT, ?var2:Var)
 .decl VarIsTaintedFromVarIndex(?base:Var, ?ctx1:CONTEXT, ?param:Var)
 .decl TaintTransferMethodInvocationInContext(?ctx:CONTEXT, ?index:number, ?invocation:MethodInvocation)
+// The call sites where a transfer on ?method may fire: every reachable one, or
+// only the application ones when TaintTransferAppOnly says so.
+.decl TaintTransferMethod(?method:Method)
+.decl TaintTransferSite(?ctx:CONTEXT, ?invocation:MethodInvocation, ?method:Method)
 .decl LeakingTaintedInformation(?fromLabel:InformationLabel, ?toLabel:InformationLabel, ?ctx:CONTEXT,
                                 ?invocation:MethodInvocation, ?value:symbol)
 .output LeakingTaintedInformation                                

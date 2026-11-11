@@ -49,6 +49,11 @@
 //                      object itself is MARKED
 //   handleInt(int)     TaintSourceFormalParam -- primitive formal: marked only under
 //                                                --enable-model-primitives
+//   string builders    String.format, getBytes(), new StringBuilder(s).toString(),
+//                      new String(bytes), String.valueOf(char[]): each builds a NEW
+//                      object (no `return this` path), so only the transfers in
+//                      common-transfer-methods.dl carry the taint across them
+//   sinkNeg(String)    sink that must NEVER leak (negative control for the builders)
 public class Main {
 
     interface Reader { String read(); }
@@ -111,6 +116,7 @@ public class Main {
     static void sinkBytesNeg(byte[] b) { System.out.println(b.length); }
     static void sinkObjNeg(Object o)   { System.out.println(o); }
     static void sinkIntNeg(int n)      { System.out.println(n); }
+    static void sinkNeg(String s)      { System.out.println(s); }
 
     // Mark half of the method-keyed sources: the real application object at a
     // source position is tainted itself. Each factory registers the object it
@@ -209,5 +215,18 @@ public class Main {
         sinkObj(THIS_REG);               // LEAK   through the mark only
         handleInt(args.length);          // LEAK inside handleInt, only under model-primitives:
                                          //        the formal holds main's <prim-arith> object
+
+        // Fresh-object string builders (transfers in common-transfer-methods.dl).
+        // trim/substring/... need none: their `return this` path already carries
+        // the receiver. These never return their input.
+        sink(String.format("%s", untrusted()));              // LEAK   varargs element -> result
+        sinkBytes(untrusted().getBytes());                    // LEAK   receiver -> fresh byte[]
+        sink(new StringBuilder(untrusted()).toString());      // LEAK   ctor arg -> builder -> string
+        sink(new String(untrusted().getBytes()));             // LEAK   two transfers chained
+        sink(String.valueOf(untrusted().toCharArray()));      // LEAK   toCharArray, then valueOf(char[])
+        sinkNeg(String.format("%s", trusted()));              // no leak
+        sinkBytesNeg(trusted().getBytes());                   // no leak
+        sinkNeg(new StringBuilder(trusted()).toString());     // no leak
+        sinkNeg(new String(trusted().getBytes()));            // no leak
     }
 }
