@@ -121,5 +121,9 @@ class TestTaintSources extends DoopSpec {
         // Deep taint: a tainted object's fields (depth 1 and 2, primitive, array)
         // are tainted on load, and the application objects it holds are marked.
         relationIsEmpty(analysis, "Taint_FAIL_DeepTaintMissing")
+        // Mark copy at the mutating transfers: the application receiver / actual is
+        // marked (and the receiver gets no stand-in).
+        relationIsEmpty(analysis, "Taint_FAIL_TransferMarkMissing")
+        relationIsEmpty(analysis, "Taint_FAIL_TransferStandInMinted")
     }
 }

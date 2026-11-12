@@ -37,6 +37,8 @@ TaintSinkActualParam("sink", 0, "<Main: void sinkNeg(java.lang.String)>").
 TaintSanitizer("<Main: java.lang.String clean(java.lang.String)>").
 TaintSanitizer("<Main: Main$Clean cleanObj(Main$Clean)>").
 TaintSourceFormalParam("param", 0, "<Main: void handleAccount(Main$Account)>").
+TaintTransferActualParamToBase(0, "<Main$Box: void put(java.lang.Object)>").
+TaintTransferBaseToActualParam("<Main$Box: void fill(byte[])>").
 TaintSourceField("field", "<Main: java.lang.String CONFIG>").
 TaintSourceField("field", "<Main$Settings: java.lang.String name>").
 TaintSourceField("field", "<Main$Settings: java.lang.String external>").
@@ -61,6 +63,8 @@ Taint_FAIL_SpecUnmatched(?m) :- TaintSourceThis(_, ?m),           !isMethod(?m).
 Taint_FAIL_SpecUnmatched(?f) :- TaintSourceField(_, ?f),          !isField(?f).
 Taint_FAIL_SpecUnmatched(?t) :- TaintSourceType(_, ?t),           !isType(?t).
 Taint_FAIL_SpecUnmatched(?m) :- TaintSanitizer(?m),               !isMethod(?m).
+Taint_FAIL_SpecUnmatched(?m) :- TaintTransferActualParamToBase(_, ?m), !isMethod(?m).
+Taint_FAIL_SpecUnmatched(?m) :- TaintTransferBaseToActualParam(?m), !isMethod(?m).
 
 // A call to a declared sink method, with the actual at the sink index.
 .decl SinkCall(?invo:symbol, ?sinkMethod:symbol, ?actual:symbol)
@@ -449,6 +453,36 @@ Taint_FAIL_DeepTaintMissing(cat("premise broken: no sink of kind ", ?kind)) :-
 // control: Account's constructor is shared, so context-insensitively every
 // Account's fields hold every constructor argument, and the deep mark reaches
 // the "clean" account's contents through the base analysis's own conflation.)
+
+// ---- mark copy at the mutating transfers -----------------------------------------------
+// bx.put(untrusted()) (ActualParamToBase) marks the Box object allocated in main and
+// mints NO stand-in into its allocation variable; bx.fill(fb) (BaseToActualParam, bx
+// tainted) marks the byte[] allocated in main. Both registry fields leak under "src".
+.decl TransferTarget(?kind:symbol, ?heap:symbol, ?var:symbol)
+TransferTarget("receiver", ?heap, ?var) :-
+  AssignHeapAllocation(?heap, ?var, "<Main: void main(java.lang.String[])>"),
+  HeapAllocation_Type(?heap, "Main$Box").
+TransferTarget("actual", ?heap, ?var) :-
+  StoreStaticField(?var, "<Main: byte[] FILL_REG>", _),
+  AssignHeapAllocation(?heap, ?var, "<Main: void main(java.lang.String[])>").
+
+.decl Taint_FAIL_TransferMarkMissing(?kind:symbol)
+.output Taint_FAIL_TransferMarkMissing
+Taint_FAIL_TransferMarkMissing(cat("premise broken: no target of kind ", ?kind)) :-
+  ( ?kind = "receiver" ; ?kind = "actual" ), !TransferTarget(?kind, _, _).
+Taint_FAIL_TransferMarkMissing(cat("not marked: ", ?kind)) :-
+  TransferTarget(?kind, ?heap, _), !TaintedValue(?heap).
+Taint_FAIL_TransferMarkMissing(cat("no leak from the registry field: ", ?field)) :-
+  ( ?field = "<Main: Main$Box BOX_REG>" ; ?field = "<Main: byte[] FILL_REG>" ),
+  SinkFedByField(?invo, ?field), !LeakAt("src", ?invo).
+
+// The application receiver gets the mark INSTEAD of a stand-in.
+.decl Taint_FAIL_TransferStandInMinted(?v:symbol)
+.output Taint_FAIL_TransferStandInMinted
+Taint_FAIL_TransferStandInMinted(?v) :-
+  TransferTarget("receiver", _, ?var),
+  mainAnalysis.VarPointsTo(_, ?v, _, ?var),
+  contains("::: ", ?v).
 
 // ---- arithmetic -------------------------------------------------------------------
 // A sinkInt call whose actual is the result of a binop: in main, that is

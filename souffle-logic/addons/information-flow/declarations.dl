@@ -158,6 +158,8 @@
 // context-insensitive heap, so a mark on it would be a program-wide taint; the
 // mock placed at the position covers that case instead.
 .decl AppMarkable(?value:Value)
+// (ApplicationAllocation -- an allocation in application code -- is Doop's own
+// fact-level relation, facts/imports.dl; the mutating transfers negate it.)
 .decl TaintedValueTransferred(?declaringType:Type, ?id:symbol, ?type:Type, ?value:Value)
 
 .decl TaintedObjectSerialized(?declaringType:Type, ?source:symbol, ?type:Type, ?hctx:mainAnalysis.configuration.HContext, ?val:Value, ?ctx:mainAnalysis.configuration.Context, ?base:Var)

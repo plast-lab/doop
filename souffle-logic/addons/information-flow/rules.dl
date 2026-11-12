@@ -33,8 +33,7 @@ Markable(?value) :-
 
 AppMarkable(?value) :-
   Markable(?value),
-  AssignHeapAllocation(?value, _, ?method),
-  ApplicationMethod(?method).
+  ApplicationAllocation(?value).
 
 #ifdef MODEL_PRIMITIVES
 // A primitive mock is "allocated" by its site; the site's method decides.
@@ -274,6 +273,8 @@ TaintObjTransfer(?ctx, ?from, ?ctx, ?var),
 TaintedValueTransferred(?declaringType, ?source, ?type, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB)),
 mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB), ?ctx, ?var) :-
   XYZ2(?type, ?oldvalue, ?ctx, ?from),
+  ( !ApplicationAllocation(?oldvalue) ;
+    (Var_DeclaringMethod(?from, ?inMethod), TaintSanitizer(?inMethod)) ),
   TaintedVarPointsTo(?value, ?ctx, ?from),
   mainAnalysis.AssignNormalHeapAllocation(?oldvalue, ?var, _),
   SourceFromTaintedValue(?value, ?source),
@@ -296,11 +297,67 @@ mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB)
   Method_SimpleName(?ctor, "<init>"),
   ActualParam(?index, ?invo, ?from),
   MethodInvocation_Base(?invo, ?base),
+  mainAnalysis.VarPointsTo(_, ?o, ?ctx, ?base),
+  ( !ApplicationAllocation(?o) ;
+    (Instruction_Method(?invo, ?inMethod), TaintSanitizer(?inMethod)) ),
   TaintedVarPointsTo(?value, ?ctx, ?from),
   Var_Type(?base, ?type),
   SourceFromTaintedValue(?value, ?source),
   mainAnalysis.Value_DeclaringType(?value, ?declaringType),
   mainAnalysis.isImmutableHContext(?hctx).
+
+// Mark half of the MUTATING transfers -- the ones that say an object the caller
+// already holds now contains taint. Casts and the result transfers have no mark
+// half: a cast creates nothing (the real objects in its result are the ones in its
+// operand, already marked or not, and a stand-in must stay a stand-in), and a
+// transfer's result is the library's own allocation. Loads have theirs in deep
+// taint.
+//
+// ActualParamToBase (constructors included): the receiver objects that are
+// application allocations are MARKED; the two mint rules above fire only for
+// receivers that are not (a merge such as <<string-builder>>, a library object),
+// so an application receiver gets one representation, the mark, and no stand-in.
+// Except inside a SANITIZER's body: a sanitizer is a mock filter at its return,
+// and a mark cannot be filtered, so an object the sanitizer itself builds from
+// tainted data (`return new String(s.toCharArray())`) would walk out marked; there
+// the taint stays in mock form and the mint rules fire as before.
+TaintedValue(?o),
+SourceFromTaintedValue(?o, ?source) :-
+  ParamTaintTransferredToBase(?param, ?ctx, ?base),
+  Var_DeclaringMethod(?base, ?inMethod),
+  !TaintSanitizer(?inMethod),
+  TaintedVarPointsTo(?value, ?ctx, ?param),
+  SourceFromTaintedValue(?value, ?source),
+  mainAnalysis.VarPointsTo(_, ?o, ?ctx, ?base),
+  AppMarkable(?o).
+
+// ActualParamElementsToBase: same, from the tainted elements of the array actual.
+TaintedValue(?o),
+SourceFromTaintedValue(?o, ?source) :-
+  VarIsTaintedFromValueIndex(?ctx, ?base, ?hctx, ?arr),
+  Var_DeclaringMethod(?base, ?inMethod),
+  !TaintSanitizer(?inMethod),
+  mainAnalysis.ArrayIndexPointsTo(_, ?elem, ?hctx, ?arr),
+  SourceFromTaintedValue(?elem, ?source),
+  mainAnalysis.VarPointsTo(_, ?o, ?ctx, ?base),
+  AppMarkable(?o).
+
+// BaseToActualParam: the actuals' application objects are marked. The mint for
+// this kind (and for ElementsToBase) is per VARIABLE, typed by it, and cannot be
+// made conditional on the variable's contents without negating VarPointsTo, so
+// there the mark comes in addition to the stand-in.
+TaintedValue(?o),
+SourceFromTaintedValue(?o, ?source) :-
+  MethodInvocationInContextInApplication(?ctx, ?invo, ?method),
+  TaintTransferBaseToActualParam(?method),
+  Instruction_Method(?invo, ?inMethod),
+  !TaintSanitizer(?inMethod),
+  MethodInvocation_Base(?invo, ?base),
+  TaintedVarPointsTo(?value, ?ctx, ?base),
+  SourceFromTaintedValue(?value, ?source),
+  ActualParam(_, ?invo, ?param),
+  mainAnalysis.VarPointsTo(_, ?o, ?ctx, ?param),
+  AppMarkable(?o).
 
 #ifdef INFORMATION_FLOW_HIGH_SOUNDNESS
 // Option 1

@@ -57,6 +57,8 @@
 //   clean(String)      TaintSanitizer         -- its result never leaks; its formal
 //                                                still receives the taint (AUDIT)
 //   cleanObj(Clean)    TaintSanitizer         -- a real object crosses it: use() reachable
+//   Box.put(Object)    TaintTransferActualParamToBase 0 -- the receiver is marked
+//   Box.fill(byte[])   TaintTransferBaseToActualParam   -- the actual is marked
 //   handleAccount(Account) TaintSourceFormalParam -- deep taint: the account's fields
 //                      (an Owner, its name, an int, a byte[]) are tainted inside
 //                      handleAccount; OWNER_REG holds the owner object, stored
@@ -148,6 +150,11 @@ public class Main {
     // owner field holds every owner passed to the constructor), so a second Account
     // would read the tainted one's contents through the base analysis, not the rule.
     static class Ledger { Owner owner; int amount; }
+    // Mark copy at the mutating transfers: an application object that a transfer
+    // says now contains taint is MARKED, and no stand-in is minted for it.
+    static class Box { Object item; void put(Object o) { item = o; } void fill(byte[] b) { b[0] = 1; } }
+    static Box    BOX_REG;
+    static byte[] FILL_REG;
     static Owner OWNER_REG;
     static void handleAccount(Account a) {
         sinkObj(a.getOwner());        // LEAK   depth 1: the load inside the getter, this = the tainted account
@@ -282,5 +289,16 @@ public class Main {
         clean.amount = 1;
         sinkObjNeg(clean.owner);         // no leak: loads from an untainted object
         sinkIntNeg(clean.amount);
+
+        // Mark copy at the mutating transfers (spec: put is ActualParamToBase 0,
+        // fill is BaseToActualParam).
+        Box bx = new Box();
+        BOX_REG = bx;
+        bx.put(untrusted());             // the box now contains taint: MARKED, no stand-in
+        sinkObj(BOX_REG);                // LEAK   through the mark
+        byte[] fb = new byte[2];
+        FILL_REG = fb;
+        bx.fill(fb);                     // the tainted box fills fb: fb MARKED
+        sinkBytes(FILL_REG);             // LEAK   through the mark
     }
 }
