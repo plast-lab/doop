@@ -6,9 +6,14 @@
 #include "../../main/configuration.dl"
 #include "../../main/in-out-flow.dl"
 
-.type UniqueContext
-.type UniqueHContext
+.type UniqueContext <: symbol
+.type UniqueHContext <: symbol
+#ifdef FLOWLOG_ENGINE
+// FlowLog has no union types: a component is a MethodInvocation, a Value, or one of the unique (h)contexts.
+.type ContextInsensitivePlusPlusComponent = symbol
+#else
 .type ContextInsensitivePlusPlusComponent = MethodInvocation | Value | UniqueContext | UniqueHContext
+#endif // FLOWLOG_ENGINE
 
 .comp ContextInsensitivePlusPlusConfiguration : AbstractConfiguration {
 
