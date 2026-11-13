@@ -854,6 +854,15 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forCacheID: true,
 					forPreprocessor: true
 			),
+			new AnalysisOption<String>(
+					id: "TAINT_SPEC",
+					name: "taint-spec",
+					group: GROUP_INFORMATION_FLOW,
+					argName: "FILE",
+					argInputType: InputType.MISC,
+					forCacheID: true,
+					description: "Give a taint specification: tab-separated lines <kind> <columns...>, where <kind> is a source/sink/sanitizer/transfer relation of the information-flow addon and the method/field/type column is an exact id or a regex."
+			),
 			new AnalysisOption(
 					id: "OPEN_PROGRAMS",
 					name: "open-programs",

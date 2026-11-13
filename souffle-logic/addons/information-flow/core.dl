@@ -207,5 +207,7 @@ TaintSinkBase(?label, ?method) :-
   isMethod(?method),
   !FormalParam(_, ?method, _).
 
+// The user taint specification (--taint-spec): one rule per kind, into the relations above.
+#include "spec.dl"
 // Spec diagnostics: declared entries that match nothing or meet no reachable use.
 #include "diagnostics.dl"

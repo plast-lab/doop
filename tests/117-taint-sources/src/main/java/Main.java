@@ -25,6 +25,7 @@
 //   sinkIntNeg(int)    sink that must NEVER leak (negative control for arithmetic)
 //   sinkUnused(String) a declared sink nothing calls: must show up as INERT in
 //                      the spec diagnostics (TaintSpecInert), nowhere else
+//   sinkPatA/B(String) declared by one regex entry of the spec file
 //   arithmetic         under --enable-model-primitives, a length computed from
 //                      the bytes of the filled buffer carries the buffer's taint
 //                      (the arithmetic mark in addons/information-flow/rules.dl)
@@ -148,6 +149,8 @@ public class Main {
     static void sinkIntNeg(int n)      { System.out.println(n); }
     static void sinkNeg(String s)      { System.out.println(s); }
     static void sinkUnused(String s)   { System.out.println(s); } // declared sink, never called
+    static void sinkPatA(String s)     { System.out.println(s); } // sinks through ONE regex spec entry
+    static void sinkPatB(String s)     { System.out.println(s); }
 
     // Sanitizer: taint stops at its RESULT, not at its formals. The body is
     // analysed with the real arguments, so a side channel inside it is still seen.
@@ -332,6 +335,8 @@ public class Main {
         PAGE = untrusted();              // LEAK   at the store (static field sink)
         Resp resp = new Resp();
         resp.body = untrusted();         // LEAK   at the store (instance field sink)
-        PAGE_NEG = trusted();            // no leak
+        PAGE_NEG = trusted();
+        sinkPatA(untrusted());           // regex spec entry
+        sinkPatB(untrusted());            // no leak
     }
 }

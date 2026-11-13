@@ -32,6 +32,7 @@ class FactGenerator0 {
         ROOT("RootCodeElement"),
         SENSITIVE_LAYOUT_CONTROL("SensitiveLayoutControl"),
         TAINTSPEC("TaintSpec"),
+        TAINT_SPEC_ENTRY("TaintSpecEntry"),
         TAMIFLEX("Tamiflex");
 
         private final String name
@@ -214,6 +215,94 @@ class FactGenerator0 {
     /**
      * Initialize all output fact files.
      */
+    /**
+     * The kinds a taint specification (--taint-spec) may use -- the source, sink,
+     * sanitizer and transfer relations of addons/information-flow/declarations.dl --
+     * and the columns each takes after the kind: 'label' (free text), 'index' (a
+     * parameter index) and 'id' (a method, field or type id, or a regex over them).
+     */
+    private static final Map<String, List<String>> TAINT_SPEC_SHAPES = [
+        TaintSourceReturn: ['label', 'id'],
+        TaintSourceFormalParam: ['label', 'index', 'id'],
+        TaintSourceActualParam: ['label', 'index', 'id'],
+        TaintSourceBase: ['label', 'id'],
+        TaintSourceThis: ['label', 'id'],
+        TaintSourceField: ['label', 'id'],
+        TaintSourceType: ['label', 'id'],
+        TaintSinkActualParam: ['label', 'index', 'id'],
+        TaintSinkAnyActualParam: ['label', 'id'],
+        TaintSinkBase: ['label', 'id'],
+        TaintSinkReturn: ['label', 'id'],
+        TaintSinkField: ['label', 'id'],
+        TaintSanitizer: ['id'],
+        TaintTransferBaseToReturn: ['id'],
+        TaintTransferBaseToActualParam: ['id'],
+        TaintTransferActualParamToBase: ['index', 'id'],
+        TaintTransferActualParamElementsToBase: ['index', 'id'],
+        TaintTransferActualParamElementsToReturn: ['index', 'id'],
+        TaintTransferActualParamToReturn: ['id'],
+        TaintTransferAppOnly: ['id']
+    ]
+
+    /** An id column is a regex when it holds a regex operator that no Doop id
+     *  contains: the dot and the dollar are id characters, a '[' only as the
+     *  array suffix '[]'. */
+    private static boolean isTaintSpecPattern(String id) {
+        return (id =~ /[*+?|^{}\\]|\[(?!\])/).find()
+    }
+
+    /**
+     * Reads a taint specification and writes its entries as TaintSpecEntry facts:
+     * kind, three payload columns (padded with "") and a pattern flag ("1" when the
+     * id column is a regex). The logic (addons/information-flow/spec.dl) dispatches
+     * each entry to its relation. Malformed lines are reported and skipped.
+     *
+     * @param specPath   the specification file
+     */
+    void writeTaintSpec(String specPath) {
+        File spec = new File(specPath)
+        if (!spec.exists()) {
+            log.warn "WARNING: Cannot read taint specification: ${specPath}"
+            return
+        }
+        log.info "Reading taint specification from: ${specPath}"
+        int entries = 0
+        // Written afresh, never appended: on reused facts the existing file may be
+        // a hard link into the reused directory, which must not be modified.
+        File out = factsFile(TAINT_SPEC_ENTRY.name)
+        out.delete()
+        out.withWriter { w ->
+            spec.eachLine { String line, int lineNo ->
+                String trimmed = line.trim()
+                if (!trimmed || trimmed.startsWith('#'))
+                    return
+                String[] fields = line.split('\t')
+                String kind = fields[0].trim()
+                List<String> shape = TAINT_SPEC_SHAPES[kind]
+                if (shape == null) {
+                    log.warn "WARNING: taint spec ${specPath}:${lineNo}: unknown kind '${kind}', line ignored"
+                    return
+                }
+                if (fields.length != shape.size() + 1) {
+                    log.warn "WARNING: taint spec ${specPath}:${lineNo}: ${kind} takes ${shape.size()} columns (${shape.join(', ')}), found ${fields.length - 1}, line ignored"
+                    return
+                }
+                List<String> cols = (1..shape.size()).collect { fields[it].trim() }
+                int indexPos = shape.indexOf('index')
+                if (indexPos >= 0 && !(cols[indexPos] ==~ /\d+/)) {
+                    log.warn "WARNING: taint spec ${specPath}:${lineNo}: index '${cols[indexPos]}' is not a number, line ignored"
+                    return
+                }
+                String pattern = isTaintSpecPattern(cols[shape.indexOf('id')]) ? '1' : '0'
+                while (cols.size() < 3)
+                    cols << ''
+                w.writeLine(([kind] + cols + [pattern]).join('\t'))
+                entries++
+            }
+        }
+        log.info "Taint specification: ${entries} entries"
+    }
+
     void touch() {
         values().each {
             FileUtils.touch(factsFile(it.name))

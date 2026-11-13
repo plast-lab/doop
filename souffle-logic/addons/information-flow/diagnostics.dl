@@ -66,12 +66,20 @@ TaintSpecUnmatched(?kind, ?t) :- TaintDeclaredType(?kind, ?t), !isType(?t).
 TaintSpecUnmatched(cat("TaintSpec:", ?type), ?id) :-
   TaintSpec(?type, _, ?id),
   !isMethod(?id).
-// Pattern entries, recorded by the macros in macros.dl.
+// Pattern entries, recorded by the macros in macros.dl and by spec.dl.
 .decl TaintPatternMatched(?pattern:symbol)
 TaintPatternMatched(?pattern) :-
   TaintPattern(_, ?pattern),
   isMethod(?method),
   match(?pattern, ?method).
+TaintPatternMatched(?pattern) :-
+  TaintPattern(_, ?pattern),
+  isField(?field),
+  match(?pattern, ?field).
+TaintPatternMatched(?pattern) :-
+  TaintPattern(_, ?pattern),
+  isType(?type),
+  match(?pattern, ?type).
 TaintSpecUnmatched(?kind, ?pattern) :-
   TaintPattern(?kind, ?pattern),
   !TaintPatternMatched(?pattern).

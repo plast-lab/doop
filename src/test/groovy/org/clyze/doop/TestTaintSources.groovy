@@ -25,6 +25,7 @@ class TestTaintSources extends DoopSpec {
         when:
         List options = ["--platform", "java_17",
                         "--information-flow", "minimal",
+                        "--taint-spec", "tests/117-taint-sources/taint-spec.tsv",
                         "--extra-logic",
                         "${Doop.souffleLogicPath}/addons/testing/TestTaintSources.dl"] + souffleInterpreter
         Analysis analysis = analyzeBuiltinTest("117-taint-sources", options,
@@ -43,6 +44,7 @@ class TestTaintSources extends DoopSpec {
         List options = ["--platform", "java_17",
                         "--information-flow", "minimal",
                         "--enable-model-primitives",
+                        "--taint-spec", "tests/117-taint-sources/taint-spec.tsv",
                         "--extra-logic",
                         "${Doop.souffleLogicPath}/addons/testing/TestTaintSources.dl"] + souffleInterpreter
         Analysis analysis = analyzeBuiltinTest("117-taint-sources", options,
@@ -66,6 +68,9 @@ class TestTaintSources extends DoopSpec {
 
     // The source-vocabulary checks shared by both runs (each call asserts).
     private static void sourceChecks(Analysis analysis) {
+        // The spec reaches the analysis through --taint-spec: one regex entry
+        // declares both sinkPatA and sinkPatB.
+        relationIsEmpty(analysis, "Taint_FAIL_PatternSinkMissing")
         // Spec diagnostics: nothing unmatched or inert beyond the planted entries,
         // and the planted entries are reported.
         relationIsEmpty(analysis, "Taint_FAIL_SpecUnmatched")

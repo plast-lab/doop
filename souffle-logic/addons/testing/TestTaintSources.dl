@@ -11,59 +11,32 @@
 // (TaintSpecUnmatched, TaintSpecInert), driven by tests/117-taint-sources
 // (class Main).
 //
-// Loaded via --extra-logic on top of --information-flow minimal, so it also
-// carries the taint SPEC for the driver. Every check is a FAIL relation that
+// Loaded via --extra-logic on top of --information-flow minimal; the driver's
+// taint SPEC comes in through --taint-spec (taint-spec.tsv next to the test, see
+// below). Every check is a FAIL relation that
 // must be EMPTY when the feature works; the Groovy spec asserts each with
 // relationIsEmpty. Checks anchor on the producing / consuming method of each
 // sink argument (stable source signatures), never on invocation numbering.
 // ============================================================================
 
 // ---- the spec for the driver ------------------------------------------------
-TaintSourceReturn("src",   "<Main: java.lang.String untrusted()>").
-TaintSourceReturn("src",   "<Main$Reader: java.lang.String read()>").
-TaintSourceReturn("prim",  "<Main: int untrustedInt()>").
-TaintSourceFormalParam("param", 0, "<Main: void handle(java.lang.String)>").
-TaintSinkActualParam("sink", 0, "<Main: void sink(java.lang.String)>").
-TaintSinkActualParam("sink", 1, "<Main: void sink2(java.lang.String,java.lang.String)>").
-TaintSinkActualParam("sink", 0, "<Main: void sinkInt(int)>").
-TaintSourceActualParam("arg",  0, "<Main: int read(byte[])>").
-TaintSourceBase("base", "<Main$Props: void load()>").
-TaintSourceBase("ctor", "<Main$Conn: void <init>(java.lang.String)>").
-TaintSourceThis("this", "<Main$Request: void validate()>").
-TaintSinkActualParam("sink", 0, "<Main: void sinkBytes(byte[])>").
-TaintSinkActualParam("sink", 0, "<Main: void sinkObj(java.lang.Object)>").
-TaintSinkActualParam("sink", 0, "<Main: void sinkByte(byte)>").
-TaintSinkActualParam("sink", 0, "<Main: void sinkBytesNeg(byte[])>").
-TaintSinkActualParam("sink", 0, "<Main: void sinkObjNeg(java.lang.Object)>").
-TaintSinkActualParam("sink", 0, "<Main: void sinkIntNeg(int)>").
-TaintSinkActualParam("sink", 0, "<Main: void sinkNeg(java.lang.String)>").
-TaintSanitizer("<Main: java.lang.String clean(java.lang.String)>").
-TaintSanitizer("<Main: Main$Clean cleanObj(Main$Clean)>").
-TaintSourceFormalParam("param", 0, "<Main: void handleAccount(Main$Account)>").
-TaintTransferActualParamToBase(0, "<Main$Box: void put(java.lang.Object)>").
-TaintTransferBaseToActualParam("<Main$Box: void fill(byte[])>").
-TaintSourceField("field", "<Main: java.lang.String CONFIG>").
-TaintSourceField("field", "<Main$Settings: java.lang.String name>").
-TaintSourceField("field", "<Main$Settings: java.lang.String external>").
-TaintSourceField("field", "<Main$Settings: byte[] data>").
-TaintSourceType("type", "Main$Token").
-TaintSourceType("type", "Main$Session").
-TaintSourceReturn("src",   "<Main: Main$Props untrustedProps()>").
-TaintSourceFormalParam("param", 0, "<Main: void handleProps(Main$Props)>").
-TaintSourceFormalParam("param", 0, "<Main: void handleInt(int)>").
-TaintSinkActualParam("sink", 0, "<Main$Out: void emit(java.lang.String)>").
-TaintSinkReturn("sink", "<Main: java.lang.String render(java.lang.String)>").
-TaintSinkReturn("sink", "<Main: java.lang.String renderNeg(java.lang.String)>").
-TaintSinkField("sink", "<Main: java.lang.String PAGE>").
-TaintSinkField("sink", "<Main: java.lang.String PAGE_NEG>").
-TaintSinkField("sink", "<Main$Resp: java.lang.String body>").
-// Planted for the spec diagnostics: a dead method id, a dead field id and a
-// sink that exists but is never called.
-TaintSourceReturn("src", "<Main: java.lang.String noSuchMethod()>").
-TaintSourceField("field", "<Main: java.lang.String NO_SUCH_FIELD>").
-TaintSinkActualParam("sink", 0, "<Main: void sinkUnused(java.lang.String)>").
+// Lives in tests/117-taint-sources/taint-spec.tsv and reaches the analysis through
+// --taint-spec (addons/information-flow/spec.dl), so every kind below is also a
+// test of that channel. This file holds only the checks.
 
 // ---- shared helpers ---------------------------------------------------------
+
+// Regex spec entry: the one TaintSinkActualParam line over sinkPat. must make
+// both sinkPatA and sinkPatB sinks, each fed by untrusted().
+.decl Taint_FAIL_PatternSinkMissing(?m:symbol)
+.output Taint_FAIL_PatternSinkMissing
+Taint_FAIL_PatternSinkMissing(?m) :-
+  (?m = "<Main: void sinkPatA(java.lang.String)>" ; ?m = "<Main: void sinkPatB(java.lang.String)>"),
+  !PatternSinkLeaks(?m).
+.decl PatternSinkLeaks(?m:symbol)
+PatternSinkLeaks(?m) :-
+  MethodInvocation_Method(?invo, ?m),
+  LeakAt("src", ?invo).
 
 // Spec diagnostics (diagnostics.dl). The guard against typos in the spec above
 // is the core relation itself: whatever it reports about THIS program's ids

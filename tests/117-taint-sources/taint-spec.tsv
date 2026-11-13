@@ -1,0 +1,50 @@
+# Taint specification of tests/117-taint-sources (class Main), loaded with
+# --taint-spec by the Gradle test (TestTaintSources.groovy). One entry per line:
+# <kind> <columns...>; the id column is an exact id or a regex. See
+# souffle-logic/addons/information-flow/spec.dl for the format.
+TaintSourceReturn	src	<Main: java.lang.String untrusted()>
+TaintSourceReturn	src	<Main$Reader: java.lang.String read()>
+TaintSourceReturn	prim	<Main: int untrustedInt()>
+TaintSourceFormalParam	param	0	<Main: void handle(java.lang.String)>
+TaintSinkActualParam	sink	0	<Main: void sink(java.lang.String)>
+TaintSinkActualParam	sink	1	<Main: void sink2(java.lang.String,java.lang.String)>
+TaintSinkActualParam	sink	0	<Main: void sinkInt(int)>
+TaintSourceActualParam	arg	0	<Main: int read(byte[])>
+TaintSourceBase	base	<Main$Props: void load()>
+TaintSourceBase	ctor	<Main$Conn: void <init>(java.lang.String)>
+TaintSourceThis	this	<Main$Request: void validate()>
+TaintSinkActualParam	sink	0	<Main: void sinkBytes(byte[])>
+TaintSinkActualParam	sink	0	<Main: void sinkObj(java.lang.Object)>
+TaintSinkActualParam	sink	0	<Main: void sinkByte(byte)>
+TaintSinkActualParam	sink	0	<Main: void sinkBytesNeg(byte[])>
+TaintSinkActualParam	sink	0	<Main: void sinkObjNeg(java.lang.Object)>
+TaintSinkActualParam	sink	0	<Main: void sinkIntNeg(int)>
+TaintSinkActualParam	sink	0	<Main: void sinkNeg(java.lang.String)>
+TaintSanitizer	<Main: java.lang.String clean(java.lang.String)>
+TaintSanitizer	<Main: Main$Clean cleanObj(Main$Clean)>
+TaintSourceFormalParam	param	0	<Main: void handleAccount(Main$Account)>
+TaintTransferActualParamToBase	0	<Main$Box: void put(java.lang.Object)>
+TaintTransferBaseToActualParam	<Main$Box: void fill(byte[])>
+TaintSourceField	field	<Main: java.lang.String CONFIG>
+TaintSourceField	field	<Main$Settings: java.lang.String name>
+TaintSourceField	field	<Main$Settings: java.lang.String external>
+TaintSourceField	field	<Main$Settings: byte[] data>
+TaintSourceType	type	Main$Token
+TaintSourceType	type	Main$Session
+TaintSourceReturn	src	<Main: Main$Props untrustedProps()>
+TaintSourceFormalParam	param	0	<Main: void handleProps(Main$Props)>
+TaintSourceFormalParam	param	0	<Main: void handleInt(int)>
+TaintSinkActualParam	sink	0	<Main$Out: void emit(java.lang.String)>
+TaintSinkReturn	sink	<Main: java.lang.String render(java.lang.String)>
+TaintSinkReturn	sink	<Main: java.lang.String renderNeg(java.lang.String)>
+TaintSinkField	sink	<Main: java.lang.String PAGE>
+TaintSinkField	sink	<Main: java.lang.String PAGE_NEG>
+TaintSinkField	sink	<Main$Resp: java.lang.String body>
+# Planted for the spec diagnostics: a dead method id, a dead field id and a
+# sink that exists but is never called.
+TaintSourceReturn	src	<Main: java.lang.String noSuchMethod()>
+TaintSourceField	field	<Main: java.lang.String NO_SUCH_FIELD>
+TaintSinkActualParam	sink	0	<Main: void sinkUnused(java.lang.String)>
+
+# Regex entry: both sinkPatA and sinkPatB (fed by untrusted()) are sinks.
+TaintSinkActualParam	sink	0	<Main: void sinkPat.[(]java.lang.String[)]>
