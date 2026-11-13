@@ -23,6 +23,8 @@
 //   sinkBytes/sinkObj  TaintSinkActualParam 0
 //   sinkBytesNeg/sinkObjNeg  sinks that must NEVER leak (negative controls)
 //   sinkIntNeg(int)    sink that must NEVER leak (negative control for arithmetic)
+//   sinkUnused(String) a declared sink nothing calls: must show up as INERT in
+//                      the spec diagnostics (TaintSpecInert), nowhere else
 //   arithmetic         under --enable-model-primitives, a length computed from
 //                      the bytes of the filled buffer carries the buffer's taint
 //                      (the arithmetic mark in addons/information-flow/rules.dl)
@@ -145,6 +147,7 @@ public class Main {
     static void sinkObjNeg(Object o)   { System.out.println(o); }
     static void sinkIntNeg(int n)      { System.out.println(n); }
     static void sinkNeg(String s)      { System.out.println(s); }
+    static void sinkUnused(String s)   { System.out.println(s); } // declared sink, never called
 
     // Sanitizer: taint stops at its RESULT, not at its formals. The body is
     // analysed with the real arguments, so a side channel inside it is still seen.

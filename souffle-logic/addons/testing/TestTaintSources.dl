@@ -6,8 +6,9 @@
 // expansion and, under --enable-model-primitives, the arithmetic taint mark and
 // the primitive formal-parameter source, the fresh-object string builder
 // transfers (common-transfer-methods.dl), the sanitizer, deep taint, the mark
-// copy at the mutating transfers and the sink shapes (return sink, field-store
-// sink, default override expansion of sinks), driven by tests/117-taint-sources
+// copy at the mutating transfers, the sink shapes (return sink, field-store
+// sink, default override expansion of sinks) and the spec diagnostics
+// (TaintSpecUnmatched, TaintSpecInert), driven by tests/117-taint-sources
 // (class Main).
 //
 // Loaded via --extra-logic on top of --information-flow minimal, so it also
@@ -56,26 +57,51 @@ TaintSinkReturn("sink", "<Main: java.lang.String renderNeg(java.lang.String)>").
 TaintSinkField("sink", "<Main: java.lang.String PAGE>").
 TaintSinkField("sink", "<Main: java.lang.String PAGE_NEG>").
 TaintSinkField("sink", "<Main$Resp: java.lang.String body>").
+// Planted for the spec diagnostics: a dead method id, a dead field id and a
+// sink that exists but is never called.
+TaintSourceReturn("src", "<Main: java.lang.String noSuchMethod()>").
+TaintSourceField("field", "<Main: java.lang.String NO_SUCH_FIELD>").
+TaintSinkActualParam("sink", 0, "<Main: void sinkUnused(java.lang.String)>").
 
 // ---- shared helpers ---------------------------------------------------------
 
-// Guard against typos in the spec above: every named method must exist.
-.decl Taint_FAIL_SpecUnmatched(?m:symbol)
+// Spec diagnostics (diagnostics.dl). The guard against typos in the spec above
+// is the core relation itself: whatever it reports about THIS program's ids
+// (class Main and its nested classes) must be a planted entry. Entries of the
+// minimal profile and of common-transfer-methods.dl that are dead for this
+// program or platform are what the diagnostic is for, not a test failure.
+.decl TestProgramId(?id:symbol)
+TestProgramId(?id) :- TaintSpecUnmatched(_, ?id), match("<?Main([$:].*)?", ?id).
+TestProgramId(?id) :- TaintSpecInert(_, ?id),     match("<?Main([$:].*)?", ?id).
+.decl Taint_FAIL_SpecUnmatched(?kind:symbol, ?id:symbol)
 .output Taint_FAIL_SpecUnmatched
-Taint_FAIL_SpecUnmatched(?m) :- TaintSourceReturn(_, ?m),         !isMethod(?m).
-Taint_FAIL_SpecUnmatched(?m) :- TaintSourceFormalParam(_, _, ?m), !isMethod(?m).
-Taint_FAIL_SpecUnmatched(?m) :- TaintSinkActualParam(_, _, ?m),   !isMethod(?m).
-Taint_FAIL_SpecUnmatched(?m) :- TaintSourceActualParam(_, _, ?m), !isMethod(?m).
-Taint_FAIL_SpecUnmatched(?m) :- TaintSourceBase(_, ?m),           !isMethod(?m).
-Taint_FAIL_SpecUnmatched(?m) :- TaintSourceThis(_, ?m),           !isMethod(?m).
-Taint_FAIL_SpecUnmatched(?f) :- TaintSourceField(_, ?f),          !isField(?f).
-Taint_FAIL_SpecUnmatched(?t) :- TaintSourceType(_, ?t),           !isType(?t).
-Taint_FAIL_SpecUnmatched(?m) :- TaintSanitizer(?m),               !isMethod(?m).
-Taint_FAIL_SpecUnmatched(?m) :- TaintTransferActualParamToBase(_, ?m), !isMethod(?m).
-Taint_FAIL_SpecUnmatched(?m) :- TaintTransferBaseToActualParam(?m), !isMethod(?m).
-Taint_FAIL_SpecUnmatched(?m) :- TaintSinkBase(_, ?m),             !isMethod(?m).
-Taint_FAIL_SpecUnmatched(?m) :- TaintSinkReturn(_, ?m),           !isMethod(?m).
-Taint_FAIL_SpecUnmatched(?f) :- TaintSinkField(_, ?f),            !isField(?f).
+Taint_FAIL_SpecUnmatched(?kind, ?id) :-
+  TaintSpecUnmatched(?kind, ?id),
+  TestProgramId(?id),
+  ?id != "<Main: java.lang.String noSuchMethod()>",
+  ?id != "<Main: java.lang.String NO_SUCH_FIELD>".
+// ... and the planted dead ids must be reported under their declaring relation.
+.decl Taint_FAIL_DiagUnmatchedMissing(?id:symbol)
+.output Taint_FAIL_DiagUnmatchedMissing
+Taint_FAIL_DiagUnmatchedMissing(?id) :-
+  ?id = "<Main: java.lang.String noSuchMethod()>",
+  !TaintSpecUnmatched("TaintSourceReturn", ?id).
+Taint_FAIL_DiagUnmatchedMissing(?id) :-
+  ?id = "<Main: java.lang.String NO_SUCH_FIELD>",
+  !TaintSpecUnmatched("TaintSourceField", ?id).
+// Inert: sinkUnused exists and is a declared sink but nothing calls it; every
+// other entry of this spec is exercised by Main (negative twins included). The
+// minimal profile's PrintWriter sink and the shared transfer list are inert
+// here by design (Main prints through System.out, a PrintStream).
+.decl Taint_FAIL_DiagInert(?kind:symbol, ?id:symbol)
+.output Taint_FAIL_DiagInert
+Taint_FAIL_DiagInert("missing", ?id) :-
+  ?id = "<Main: void sinkUnused(java.lang.String)>",
+  !TaintSpecInert("TaintSinkActualParam", ?id).
+Taint_FAIL_DiagInert(?kind, ?id) :-
+  TaintSpecInert(?kind, ?id),
+  TestProgramId(?id),
+  ?id != "<Main: void sinkUnused(java.lang.String)>".
 
 // A call to a declared sink method, with the actual at the sink index.
 .decl SinkCall(?invo:symbol, ?sinkMethod:symbol, ?actual:symbol)

@@ -66,8 +66,11 @@ class TestTaintSources extends DoopSpec {
 
     // The source-vocabulary checks shared by both runs (each call asserts).
     private static void sourceChecks(Analysis analysis) {
-        // The spec names only methods that exist (guards typos in the spec itself).
+        // Spec diagnostics: nothing unmatched or inert beyond the planted entries,
+        // and the planted entries are reported.
         relationIsEmpty(analysis, "Taint_FAIL_SpecUnmatched")
+        relationIsEmpty(analysis, "Taint_FAIL_DiagUnmatchedMissing")
+        relationIsEmpty(analysis, "Taint_FAIL_DiagInert")
         // Return source: every sink fed by untrusted() leaks under its label.
         relationIsEmpty(analysis, "Taint_FAIL_ReturnSourceMissing")
         // Override expansion is the default: a source on Reader.read fires for

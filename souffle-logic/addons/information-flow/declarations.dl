@@ -9,6 +9,10 @@
 .decl TaintSpec(?type:symbol, ?tag:symbol, ?id:symbol)
 .input TaintSpec(filename="TaintSpec.facts")
 
+/** Pattern entries of the profiles, recorded by the macros in macros.dl so that
+ *  a pattern matching nothing can be reported (diagnostics.dl). */
+.decl TaintPattern(?kind:symbol, ?pattern:symbol)
+
 // Use macro to substitute to handle context types when points-to reasoning is disabled.
 #ifdef DISABLE_POINTS_TO
 #define CONTEXT symbol

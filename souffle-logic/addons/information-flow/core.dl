@@ -206,3 +206,6 @@ TaintSinkBase(?label, ?method) :-
   TaintSpec("TAINT_SINK", ?label, ?method),
   isMethod(?method),
   !FormalParam(_, ?method, _).
+
+// Spec diagnostics: declared entries that match nothing or meet no reachable use.
+#include "diagnostics.dl"

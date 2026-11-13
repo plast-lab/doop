@@ -1,0 +1,142 @@
+#pragma once
+// ============================================================================
+// Spec diagnostics: declared taint entries that cannot do anything in this run.
+//
+// Every source, sink, sanitizer and transfer entry is a method, field or type
+// id that must equal the program's id character for character. An entry that
+// matches nothing contributes nothing, silently, and "no leaks" then looks the
+// same whether the sources are wired up and nothing flows, or they never
+// attached. The two output relations below say which entries are dead here.
+//
+// TaintSpecUnmatched(kind, id): the id is not in the program -- a typo, a
+//   signature that a library change left behind, or a class this program does
+//   not ship. For a pattern entry (macros.dl) the regex matches no method. kind
+//   names the declaring relation, or "TaintSpec:<TYPE>" for the user spec file.
+// TaintSpecInert(kind, id): the id exists but meets no reachable use. For a
+//   call-position entry, no reachable call resolves to the method or to one of
+//   its overriders; for a body entry (formal parameter, this, return sink),
+//   neither the method nor an overrider is reachable; for a field entry, no
+//   reachable instruction touches the field; for a type entry, no value of the
+//   type (or a subtype) exists and no reachable method has a formal of it.
+//   Only declared entries are listed, not the overriders the default expansion
+//   derives from them.
+//
+// Neither relation affects results. Profiles must declare their entries as
+// facts (or rules without an isMethod guard) for an unmatched id to be visible.
+// ============================================================================
+
+.decl TaintSpecUnmatched(?kind:symbol, ?id:symbol)
+.output TaintSpecUnmatched
+.decl TaintSpecInert(?kind:symbol, ?id:symbol)
+.output TaintSpecInert
+
+// ---- every declared entry, keyed by its declaring relation ------------------
+.decl TaintDeclaredMethod(?kind:symbol, ?method:Method)
+.decl TaintDeclaredField(?kind:symbol, ?field:Field)
+.decl TaintDeclaredType(?kind:symbol, ?type:Type)
+
+TaintDeclaredMethod("TaintSourceReturn", ?m)       :- TaintSourceReturn(_, ?m).
+TaintDeclaredMethod("TaintSourceFormalParam", ?m)  :- TaintSourceFormalParam(_, _, ?m).
+TaintDeclaredMethod("TaintSourceActualParam", ?m)  :- TaintSourceActualParam(_, _, ?m).
+TaintDeclaredMethod("TaintSourceBase", ?m)         :- TaintSourceBase(_, ?m).
+TaintDeclaredMethod("TaintSourceThis", ?m)         :- TaintSourceThis(_, ?m).
+TaintDeclaredMethod("TaintSinkActualParam", ?m)    :- TaintSinkActualParam(_, _, ?m).
+TaintDeclaredMethod("TaintSinkAnyActualParam", ?m) :- TaintSinkAnyActualParam(_, ?m).
+TaintDeclaredMethod("TaintSinkBase", ?m)           :- TaintSinkBase(_, ?m).
+TaintDeclaredMethod("TaintSinkReturn", ?m)         :- TaintSinkReturn(_, ?m).
+TaintDeclaredMethod("TaintSanitizer", ?m)          :- TaintSanitizer(?m).
+TaintDeclaredMethod("TaintTransferBaseToReturn", ?m)                :- TaintTransferBaseToReturn(?m).
+TaintDeclaredMethod("TaintTransferBaseToActualParam", ?m)           :- TaintTransferBaseToActualParam(?m).
+TaintDeclaredMethod("TaintTransferActualParamToBase", ?m)           :- TaintTransferActualParamToBase(_, ?m).
+TaintDeclaredMethod("TaintTransferActualParamElementsToBase", ?m)   :- TaintTransferActualParamElementsToBase(_, ?m).
+TaintDeclaredMethod("TaintTransferActualParamElementsToReturn", ?m) :- TaintTransferActualParamElementsToReturn(_, ?m).
+TaintDeclaredMethod("TaintTransferActualParamToReturn", ?m)         :- TaintTransferActualParamToReturn(?m).
+TaintDeclaredMethod("TaintTransferBaseToReturnMock", ?m)            :- TaintTransferBaseToReturnMock(?m).
+TaintDeclaredMethod("TaintTransferActualParamToReturnMock", ?m)     :- TaintTransferActualParamToReturnMock(?m).
+TaintDeclaredMethod("TaintTransferAppOnly", ?m)                     :- TaintTransferAppOnly(?m).
+TaintDeclaredField("TaintSourceField", ?f) :- TaintSourceField(_, ?f).
+TaintDeclaredField("TaintSinkField", ?f)   :- TaintSinkField(_, ?f).
+TaintDeclaredType("TaintSourceType", ?t)   :- TaintSourceType(_, ?t).
+
+// ---- unmatched ids ----------------------------------------------------------
+TaintSpecUnmatched(?kind, ?m) :- TaintDeclaredMethod(?kind, ?m), !isMethod(?m).
+TaintSpecUnmatched(?kind, ?f) :- TaintDeclaredField(?kind, ?f), !isField(?f).
+TaintSpecUnmatched(?kind, ?t) :- TaintDeclaredType(?kind, ?t), !isType(?t).
+// The user spec file (keep-spec channel): every entry names a method.
+TaintSpecUnmatched(cat("TaintSpec:", ?type), ?id) :-
+  TaintSpec(?type, _, ?id),
+  !isMethod(?id).
+// Pattern entries, recorded by the macros in macros.dl.
+.decl TaintPatternMatched(?pattern:symbol)
+TaintPatternMatched(?pattern) :-
+  TaintPattern(_, ?pattern),
+  isMethod(?method),
+  match(?pattern, ?method).
+TaintSpecUnmatched(?kind, ?pattern) :-
+  TaintPattern(?kind, ?pattern),
+  !TaintPatternMatched(?pattern).
+
+// ---- inert entries ----------------------------------------------------------
+// An entry derived from another entry of the same kind by override expansion
+// is not a declared one; the declared root speaks for its overriders.
+.decl TaintDerivedMethod(?kind:symbol, ?method:Method)
+TaintDerivedMethod(?kind, ?m) :-
+  TaintDeclaredMethod(?kind, ?m),
+  TaintDeclaredMethod(?kind, ?m0),
+  basic.MethodOverridesOther(?m, ?m0).
+
+// The declared method and every method that overrides it.
+.decl TaintEntryImpl(?method:Method, ?impl:Method)
+TaintEntryImpl(?m, ?m) :- TaintDeclaredMethod(_, ?m), isMethod(?m).
+TaintEntryImpl(?m, ?o) :- TaintDeclaredMethod(_, ?m), basic.MethodOverridesOther(?o, ?m).
+
+// Body entries act inside the method; everything else acts at a call to it.
+.decl TaintBodyKind(?kind:symbol)
+TaintBodyKind("TaintSourceFormalParam").
+TaintBodyKind("TaintSourceThis").
+TaintBodyKind("TaintSinkReturn").
+
+.decl TaintMethodEntryActive(?kind:symbol, ?method:Method)
+TaintMethodEntryActive(?kind, ?m) :-
+  TaintDeclaredMethod(?kind, ?m),
+  !TaintBodyKind(?kind),
+  TaintEntryImpl(?m, ?impl),
+  MethodInvocationInContext(_, _, ?impl).
+TaintMethodEntryActive(?kind, ?m) :-
+  TaintDeclaredMethod(?kind, ?m),
+  TaintBodyKind(?kind),
+  TaintEntryImpl(?m, ?impl),
+  mainAnalysis.ReachableContext(_, ?impl).
+
+TaintSpecInert(?kind, ?m) :-
+  TaintDeclaredMethod(?kind, ?m),
+  isMethod(?m),
+  !TaintDerivedMethod(?kind, ?m),
+  !TaintMethodEntryActive(?kind, ?m).
+
+.decl TaintFieldAccessed(?field:Field)
+TaintFieldAccessed(?f) :-
+  TaintDeclaredField(_, ?f),
+  FieldInstruction_Signature(?insn, ?f),
+  Instruction_Method(?insn, ?inMethod),
+  mainAnalysis.ReachableContext(_, ?inMethod).
+TaintSpecInert(?kind, ?f) :-
+  TaintDeclaredField(?kind, ?f),
+  isField(?f),
+  !TaintFieldAccessed(?f).
+
+.decl TaintTypeInUse(?type:Type)
+TaintTypeInUse(?t) :-
+  TaintDeclaredType(_, ?t),
+  basic.SubtypeOf(?valueType, ?t),
+  mainAnalysis.Value_Type(_, ?valueType).
+TaintTypeInUse(?t) :-
+  TaintDeclaredType(_, ?t),
+  basic.SubtypeOf(?formalType, ?t),
+  Var_Type(?formal, ?formalType),
+  FormalParam(_, ?method, ?formal),
+  mainAnalysis.ReachableContext(_, ?method).
+TaintSpecInert(?kind, ?t) :-
+  TaintDeclaredType(?kind, ?t),
+  isType(?t),
+  !TaintTypeInUse(?t).
