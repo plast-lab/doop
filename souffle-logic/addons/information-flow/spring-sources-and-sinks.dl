@@ -176,7 +176,8 @@ mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?to, ?ctype, DEFAULT_BREADCRUMB), ?
   mainAnalysis.ReachableContext(?ctx, ?meth),
   Var_Type(?to, ?type),
   mainAnalysis.TypeToConcreteImplementation(?type, ?ctype),
-  mainAnalysis.configuration.RecordContextResponse(?ctx, ValueIdMacro(?to, ?ctype, DEFAULT_BREADCRUMB), ?to, ?hctx),
+  ?value = ValueIdMacro(?to, ?ctype, DEFAULT_BREADCRUMB),
+  mainAnalysis.configuration.RecordContextResponse(?ctx, ?value, ?to, ?hctx),
   Method_DeclaringType(?dtoMeth, ?type).
 
 #endif // OPEN_PROGRAMS
