@@ -139,8 +139,34 @@ TaintSinkVar(?label, ?invocation, ?ctx, ?var) :-
    MethodInvocationInContext(?ctx, ?invocation, ?tomethod),
    MethodInvocation_Base(?invocation, ?var).
 
-// Default override expansion for every method-keyed source: a source declared on
-// a method is also a source on every method overriding it.
+// Return sink: the operand of each non-void return of the method, in every
+// context where the method is reachable. The site is the return instruction.
+TaintSinkVar(?label, ?insn, ?ctx, ?var) :-
+   TaintSinkReturn(?label, ?method),
+   ReturnNonvoid_Var(?insn, ?var),
+   Instruction_Method(?insn, ?method),
+   mainAnalysis.ReachableContext(?ctx, ?method).
+
+// Field-store sink: the stored operand of each reachable store to the field.
+// The site is the store instruction.
+TaintSinkVar(?label, ?insn, ?ctx, ?var) :-
+   TaintSinkField(?label, ?field),
+   FieldInstruction_Signature(?insn, ?field),
+   StoreInstanceField_From(?insn, ?var),
+   Instruction_Method(?insn, ?inMethod),
+   mainAnalysis.ReachableContext(?ctx, ?inMethod).
+TaintSinkVar(?label, ?insn, ?ctx, ?var) :-
+   TaintSinkField(?label, ?field),
+   FieldInstruction_Signature(?insn, ?field),
+   StoreStaticField_From(?insn, ?var),
+   Instruction_Method(?insn, ?inMethod),
+   mainAnalysis.ReachableContext(?ctx, ?inMethod).
+
+// Default override expansion for every method-keyed source and sink: one
+// declared on a method is also one on every method overriding it. Sinks need it
+// as much as sources: MethodInvocationInContext matches a call by its RESOLVED
+// target (CallGraphEdge), so a sink declared on java.sql.Statement.execute meets
+// a call only through the driver class that implements it.
 TaintSourceReturn(?label, ?overrideMethod) :-
   TaintSourceReturn(?label, ?method),
   basic.MethodOverridesOther(?overrideMethod, ?method).
@@ -155,6 +181,15 @@ TaintSourceBase(?label, ?overrideMethod) :-
   basic.MethodOverridesOther(?overrideMethod, ?method).
 TaintSourceThis(?label, ?overrideMethod) :-
   TaintSourceThis(?label, ?method),
+  basic.MethodOverridesOther(?overrideMethod, ?method).
+TaintSinkActualParam(?label, ?index, ?overrideMethod) :-
+  TaintSinkActualParam(?label, ?index, ?method),
+  basic.MethodOverridesOther(?overrideMethod, ?method).
+TaintSinkBase(?label, ?overrideMethod) :-
+  TaintSinkBase(?label, ?method),
+  basic.MethodOverridesOther(?overrideMethod, ?method).
+TaintSinkReturn(?label, ?overrideMethod) :-
+  TaintSinkReturn(?label, ?method),
   basic.MethodOverridesOther(?overrideMethod, ?method).
 
 // User-provided taint sources (keep-spec channel: method return values only).

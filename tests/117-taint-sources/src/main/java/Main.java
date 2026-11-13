@@ -64,6 +64,13 @@
 //                      handleAccount; OWNER_REG holds the owner object, stored
 //                      before the account reached the position: leaks only through
 //                      the deep MARK
+//   Out.emit(String)   TaintSinkActualParam 0 declared on the INTERFACE; the call
+//                      resolves to ConsoleOut.emit, so the leak depends on the
+//                      default override expansion of sinks
+//   render(String)     TaintSinkReturn        -- its return value must not be tainted
+//   renderNeg(String)  TaintSinkReturn that must NEVER leak (fed by trusted() only)
+//   Main.PAGE, Resp.body TaintSinkField       -- storing taint there is a leak
+//   Main.PAGE_NEG      TaintSinkField that must NEVER leak (stores trusted() only)
 public class Main {
 
     interface Reader { String read(); }
@@ -119,6 +126,17 @@ public class Main {
     static Session CURRENT;                                 // field declared as Session, never assigned
     static native Session openSession();                    // body-less: its result comes from outside
     static void serve(Session s) { sinkObj(s); }            // LEAK inside serve: formal declared as Session
+
+    // Sink shapes: a sink on an interface method, return sinks, field sinks.
+    interface Out { void emit(String s); }
+    static class ConsoleOut implements Out {
+        public void emit(String s) { System.out.println(s); }
+    }
+    static String render(String s)    { return s; }
+    static String renderNeg(String s) { return s; }
+    static String PAGE;
+    static String PAGE_NEG;
+    static class Resp { String body; }
 
     static void sinkBytes(byte[] b)    { System.out.println(b.length); }
     static void sinkObj(Object o)      { System.out.println(o); }
@@ -300,5 +318,17 @@ public class Main {
         FILL_REG = fb;
         bx.fill(fb);                     // the tainted box fills fb: fb MARKED
         sinkBytes(FILL_REG);             // LEAK   through the mark
+
+        // Sink shapes (spec: Out.emit is an actual-param sink, render / renderNeg
+        // return sinks, PAGE / PAGE_NEG / Resp.body field sinks).
+        Out out = new ConsoleOut();
+        out.emit(untrusted());           // LEAK   sink declared on Out, call resolves to ConsoleOut.emit
+        out.emit(trusted());             // no leak
+        render(untrusted());             // LEAK   at render's return
+        renderNeg(trusted());            // no leak
+        PAGE = untrusted();              // LEAK   at the store (static field sink)
+        Resp resp = new Resp();
+        resp.body = untrusted();         // LEAK   at the store (instance field sink)
+        PAGE_NEG = trusted();            // no leak
     }
 }

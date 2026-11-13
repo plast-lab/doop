@@ -5,8 +5,10 @@
 // mock halves), the mark half of the method-keyed sources, the default override
 // expansion and, under --enable-model-primitives, the arithmetic taint mark and
 // the primitive formal-parameter source, the fresh-object string builder
-// transfers (common-transfer-methods.dl), the sanitizer and deep taint, driven by
-// tests/117-taint-sources (class Main).
+// transfers (common-transfer-methods.dl), the sanitizer, deep taint, the mark
+// copy at the mutating transfers and the sink shapes (return sink, field-store
+// sink, default override expansion of sinks), driven by tests/117-taint-sources
+// (class Main).
 //
 // Loaded via --extra-logic on top of --information-flow minimal, so it also
 // carries the taint SPEC for the driver. Every check is a FAIL relation that
@@ -48,6 +50,12 @@ TaintSourceType("type", "Main$Session").
 TaintSourceReturn("src",   "<Main: Main$Props untrustedProps()>").
 TaintSourceFormalParam("param", 0, "<Main: void handleProps(Main$Props)>").
 TaintSourceFormalParam("param", 0, "<Main: void handleInt(int)>").
+TaintSinkActualParam("sink", 0, "<Main$Out: void emit(java.lang.String)>").
+TaintSinkReturn("sink", "<Main: java.lang.String render(java.lang.String)>").
+TaintSinkReturn("sink", "<Main: java.lang.String renderNeg(java.lang.String)>").
+TaintSinkField("sink", "<Main: java.lang.String PAGE>").
+TaintSinkField("sink", "<Main: java.lang.String PAGE_NEG>").
+TaintSinkField("sink", "<Main$Resp: java.lang.String body>").
 
 // ---- shared helpers ---------------------------------------------------------
 
@@ -65,6 +73,9 @@ Taint_FAIL_SpecUnmatched(?t) :- TaintSourceType(_, ?t),           !isType(?t).
 Taint_FAIL_SpecUnmatched(?m) :- TaintSanitizer(?m),               !isMethod(?m).
 Taint_FAIL_SpecUnmatched(?m) :- TaintTransferActualParamToBase(_, ?m), !isMethod(?m).
 Taint_FAIL_SpecUnmatched(?m) :- TaintTransferBaseToActualParam(?m), !isMethod(?m).
+Taint_FAIL_SpecUnmatched(?m) :- TaintSinkBase(_, ?m),             !isMethod(?m).
+Taint_FAIL_SpecUnmatched(?m) :- TaintSinkReturn(_, ?m),           !isMethod(?m).
+Taint_FAIL_SpecUnmatched(?f) :- TaintSinkField(_, ?f),            !isField(?f).
 
 // A call to a declared sink method, with the actual at the sink index.
 .decl SinkCall(?invo:symbol, ?sinkMethod:symbol, ?actual:symbol)
@@ -533,3 +544,64 @@ Taint_FAIL_LibraryArithMarked(?v, ?method) :-
   ?v = cat("<prim-arith ", cat(?insn, ">")),
   TaintedValue(?v).
 #endif // MODEL_PRIMITIVES
+
+// ---- sink shapes ----------------------------------------------------------------
+// Default override expansion of sinks: the sink is declared on Out.emit; the call
+// out.emit(untrusted()) resolves to ConsoleOut.emit (premise checked), so without
+// the expansion the resolved-target match in core.dl would never fire.
+.decl OutEmitCall(?invo:symbol)
+OutEmitCall(?invo) :-
+  SinkCall(?invo, "<Main$Out: void emit(java.lang.String)>", _),
+  SinkFedBy(?invo, "<Main: java.lang.String untrusted()>").
+
+.decl Taint_FAIL_SinkOverrideMissing(?msg:symbol)
+.output Taint_FAIL_SinkOverrideMissing
+Taint_FAIL_SinkOverrideMissing("premise broken: no out.emit(untrusted()) call") :-
+  !OutEmitCall(_).
+Taint_FAIL_SinkOverrideMissing(cat("premise broken: not resolved to ConsoleOut.emit: ", ?invo)) :-
+  OutEmitCall(?invo),
+  !mainAnalysis.CallGraphEdge(_, ?invo, _, "<Main$ConsoleOut: void emit(java.lang.String)>").
+Taint_FAIL_SinkOverrideMissing(cat("no leak at ", ?invo)) :-
+  OutEmitCall(?invo),
+  !LeakAt("src", ?invo).
+
+// Return sink: the finding's site is render's return instruction, sourced at
+// untrusted() (render is fed by untrusted() only).
+.decl Taint_FAIL_ReturnSinkMissing(?msg:symbol)
+.output Taint_FAIL_ReturnSinkMissing
+Taint_FAIL_ReturnSinkMissing("premise broken: render has no non-void return") :-
+  !ReturnOf("<Main: java.lang.String render(java.lang.String)>", _).
+Taint_FAIL_ReturnSinkMissing(cat("no leak at ", ?insn)) :-
+  ReturnOf("<Main: java.lang.String render(java.lang.String)>", ?insn),
+  !LeakAt("src", ?insn).
+
+.decl ReturnOf(?method:symbol, ?insn:symbol)
+ReturnOf(?method, ?insn) :-
+  ReturnNonvoid_Var(?insn, _),
+  Instruction_Method(?insn, ?method).
+
+// Field sink: the finding's site is the store instruction, static (PAGE) and
+// instance (Resp.body), sourced at untrusted().
+.decl StoreTo(?field:symbol, ?insn:symbol)
+StoreTo(?field, ?insn) :-
+  FieldInstruction_Signature(?insn, ?field),
+  ( StoreStaticField_From(?insn, _) ; StoreInstanceField_From(?insn, _) ).
+
+.decl Taint_FAIL_FieldSinkMissing(?msg:symbol)
+.output Taint_FAIL_FieldSinkMissing
+Taint_FAIL_FieldSinkMissing(cat("premise broken: no store to ", ?field)) :-
+  TaintSinkField(_, ?field),
+  !StoreTo(?field, _).
+Taint_FAIL_FieldSinkMissing(cat("no leak at ", ?insn)) :-
+  ( ?field = "<Main: java.lang.String PAGE>" ; ?field = "<Main$Resp: java.lang.String body>" ),
+  StoreTo(?field, ?insn),
+  !LeakAt("src", ?insn).
+
+// Negatives: renderNeg's return and the store to PAGE_NEG see trusted() only and
+// must never leak.
+.decl Taint_FAIL_SinkShapeNegLeaks(?site:symbol, ?from:symbol)
+.output Taint_FAIL_SinkShapeNegLeaks
+Taint_FAIL_SinkShapeNegLeaks(?site, ?from) :-
+  ( ReturnOf("<Main: java.lang.String renderNeg(java.lang.String)>", ?site) ;
+    StoreTo("<Main: java.lang.String PAGE_NEG>", ?site) ),
+  LeakAt(?from, ?site).

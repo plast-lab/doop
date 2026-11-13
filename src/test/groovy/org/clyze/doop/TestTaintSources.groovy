@@ -125,5 +125,12 @@ class TestTaintSources extends DoopSpec {
         // marked (and the receiver gets no stand-in).
         relationIsEmpty(analysis, "Taint_FAIL_TransferMarkMissing")
         relationIsEmpty(analysis, "Taint_FAIL_TransferStandInMinted")
+        // Sink shapes: a sink declared on an interface method fires at a call
+        // resolved to its implementation; the return and field-store sinks leak at
+        // the return / store instruction; their negative twins never do.
+        relationIsEmpty(analysis, "Taint_FAIL_SinkOverrideMissing")
+        relationIsEmpty(analysis, "Taint_FAIL_ReturnSinkMissing")
+        relationIsEmpty(analysis, "Taint_FAIL_FieldSinkMissing")
+        relationIsEmpty(analysis, "Taint_FAIL_SinkShapeNegLeaks")
     }
 }

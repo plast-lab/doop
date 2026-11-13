@@ -119,17 +119,7 @@ TaintTransferActualParamToBase(1, ?method) :-
     ?method = "<java.util.Hashtable: java.lang.Object put(java.lang.Object,java.lang.Object)>"),
     isMethod(?method).
 
-// (Source override expansion is the default in core.dl; only sinks need it here.)
-TaintSinkActualParam(?label, ?n, ?overriddenMethod) :-
-   TaintSinkActualParam(?label, ?n, ?method),
-   Method_DeclaringType(?method, ?superclass),
-   Method_SimpleName(?method, ?name),
-   Method_Descriptor(?method, ?descriptor),
-   basic.SubtypeOf(?class, ?superclass),
-   isClassType(?class),
-   Method_DeclaringType(?overriddenMethod, ?class),
-   Method_SimpleName(?overriddenMethod, ?name),
-   Method_Descriptor(?overriddenMethod, ?descriptor).
+// (Override expansion of sources and sinks is the default, core.dl.)
 
 // Params with these annotations introduce taint objects. (Until Nov 11 every
 // method of the parameter's type was also declared a receiver->result transfer, so

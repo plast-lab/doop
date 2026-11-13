@@ -31,16 +31,7 @@ TaintSourceReturn(?label, ?overriddenMethod) :-
    Method_SimpleName(?overriddenMethod, ?name),
    Method_Descriptor(?overriddenMethod, ?descriptor).
 
-TaintSinkActualParam(?label, ?n, ?overriddenMethod) :-
-   TaintSinkActualParam(?label, ?n, ?method),
-   Method_DeclaringType(?method, ?superclass),
-   Method_SimpleName(?method, ?name),
-   Method_Descriptor(?method, ?descriptor),
-   basic.SubtypeOf(?class, ?superclass),
-   isClassType(?class),
-   Method_DeclaringType(?overriddenMethod, ?class),
-   Method_SimpleName(?overriddenMethod, ?name),
-   Method_Descriptor(?overriddenMethod, ?descriptor).
+// (Override expansion of sinks is the default, core.dl.)
 
 
 TaintSanitizer(?method) :-
