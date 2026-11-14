@@ -61,7 +61,6 @@ TaintTransferBaseToReturn(?method) :- TaintSanitizerIffBaseUntainted(?method).
 TaintSanitizer(?method) :- TaintSinkActualParam(_, _, ?method).
 
 TaintSourceReturn("default", "<javax.servlet.ServletRequest: java.lang.String getParameter(java.lang.String)>").
-TaintSourceReturn("default", "<javax.servlet.ServletRequest: java.lang.String getHeader(java.lang.String)>").
 TaintSourceReturn("default", "<javax.servlet.ServletRequest: java.lang.String[] getParameterValues(java.lang.String)>").
 TaintSourceReturn("default", "<javax.servlet.http.HttpServletRequest: javax.servlet.http.Cookie[] getCookies()>").
 TaintSourceReturn("default", "<javax.servlet.http.HttpServletRequest: java.lang.String getHeader(java.lang.String)>").
@@ -94,7 +93,7 @@ TaintTransferBaseToReturn("<javax.servlet.http.Cookie: java.lang.String getName(
 TaintTransferBaseToReturn("<javax.servlet.http.Cookie: java.lang.String getPath()>").
 TaintTransferBaseToReturn("<javax.servlet.http.Cookie: java.lang.String getValue()>").
 TaintTransferBaseToReturn("<java.io.BufferedReader: int read()>").
-TaintTransferBaseToReturn("<java.io.BufferedReader: java.lang.String readLine(boolean)>").
+TaintTransferBaseToReturn("<java.io.BufferedReader: java.lang.String readLine(boolean,boolean[])>").
 TaintTransferBaseToReturn("<java.io.BufferedReader: java.lang.String readLine()>").
 TaintTransferBaseToReturn("<java.util.Hashtable: java.lang.Object get(java.lang.Object)>").
 TaintTransferBaseToReturn("<java.util.HashMap: java.lang.Object get(java.lang.Object)>").

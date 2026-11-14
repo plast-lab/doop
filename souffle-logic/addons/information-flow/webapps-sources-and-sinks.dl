@@ -8,7 +8,6 @@ TaintSourceReturnPattern("default", "<javax.servlet.http.HttpServletRequest: .* 
 TaintSourceReturnPattern("default", "<javax.servlet.http.HttpSession: .* get.*[(].*[)]>").
 TaintSourceReturnPattern("default", "<javax.servlet.ServletRequest: .* get.*[(].*[)]>").
 TaintSourceReturnPattern("default", "<java.io.BufferedReader: java.lang.String readLine[(][)]>").
-TaintSourceReturnPattern("default", "<java.io.BufferedReader: java.lang.String readLine[(]boolean[)]>").
 TaintSourceReturnPattern("default", "<java.net.URLDecoder: java.lang.String decode[(]java.lang.String,java.lang.String[)]>").
 TaintSourceReturnPattern("default", "<com.oreilly.servlet.MultipartRequest: java.lang.String getParameter[(]java.lang.String[)]>").
 TaintSourceReturnPattern("default", "<javax.servlet.http.HttpServletResponse: java.io.PrintWriter getWriter[(][)]>").
