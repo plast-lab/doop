@@ -69,14 +69,14 @@ IntConstFolding(?instr, ?to, ?value, ?meth, ?use) :-
 
 IntConstFolding(?instr, ?var, ?value, ?meth, ?use) :-
     AssignUnary(?instr, ?var, ?left, ?meth, ?prev_use), 
-    _OperatorAt(?instr, "-"), 
+    _OperatorAt(?instr, "~"), 
     ?prev_use < 5, ?use = ?prev_use + 1,
     ?left != 0,
-    ?value = - ?left.
+    ?value = 0 - ?left.
 
 IntConstFolding(?instr, ?var, ?value, ?meth, ?use) :-
     AssignUnary(?instr, ?var, ?left, ?meth, ?prev_use), 
-    _OperatorAt(?instr, "-"),
+    _OperatorAt(?instr, "~"),
     ?prev_use < 5, ?use = ?prev_use + 1,
     ?left = 0,
     ?value = 0.
