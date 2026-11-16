@@ -15,8 +15,12 @@
 .decl Metrics_Method_OutgoingMethods_Count(?method:Method, ?n:number)
 .decl Metrics_Value_AsReceiver_Count(?value:Value, ?n:number)
 
+// With --server-logic, server-logic/queries.dl already outputs these relations;
+// FlowLog rejects a duplicate .output.
+#ifndef X_SERVER_LOGIC
 .output mainAnalysis.ReachableClass
 .output mainAnalysis.AppReachable
+#endif
 .output ReachableSDKClass
 .output ReachableDependencyClass
 .output DependencyMethodDirectlyReachableFromApplication
