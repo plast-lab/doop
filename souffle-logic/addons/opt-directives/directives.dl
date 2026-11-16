@@ -466,8 +466,12 @@ MethodInvokedByReflection(?method) :-
 // Output all application methods/fields (so that tools can calculate
 // optimization effects for the whole program).
 
+// With --server-logic, server-logic/queries.dl already outputs these relations;
+// FlowLog rejects a duplicate .output.
+#ifndef X_SERVER_LOGIC
 .output ApplicationMethod
 .output ApplicationField
+#endif
 
 // Compute configuration patterns: "allDeclaredConstructors",
 // "allPublicConstructors", "allDeclaredMethods", "allPublicMethods",
