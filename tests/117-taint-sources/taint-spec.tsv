@@ -48,3 +48,13 @@ TaintSinkActualParam	sink	0	<Main: void sinkUnused(java.lang.String)>
 
 # Regex entry: both sinkPatA and sinkPatB (fed by untrusted()) are sinks.
 TaintSinkActualParam	sink	0	<Main: void sinkPat.[(]java.lang.String[)]>
+
+# Scope flags (TaintSourceAppOnly / TaintSinkAppOnly). The flagged sink fires only
+# where Main calls it, not at the JDK-internal call inside StringBuilder.append(Object);
+# the unflagged JDK sink fires at the JDK-internal call inside StringBuilder.append(String);
+# the flagged source has JDK-internal call sites only and must be reported inert.
+TaintSinkActualParam	sink	0	<java.lang.String: java.lang.String valueOf(java.lang.Object)>
+TaintSinkAppOnly	<java.lang.String: java.lang.String valueOf(java.lang.Object)>
+TaintSinkActualParam	sink	0	<java.lang.AbstractStringBuilder: java.lang.AbstractStringBuilder append(java.lang.String)>
+TaintSourceReturn	inert	<java.lang.Integer: java.lang.String toString(int)>
+TaintSourceAppOnly	<java.lang.Integer: java.lang.String toString(int)>

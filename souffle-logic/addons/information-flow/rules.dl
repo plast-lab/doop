@@ -430,7 +430,7 @@ TaintedValueIntroduced(?declaringType, ?formal, ?type, ?label, ValueIdMacro(?for
 mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?formal, ?type, DEFAULT_BREADCRUMB), ?ctx, ?formal) :-
   TaintSourceFormalParam(?label, ?index, ?method),
   FormalParam(?index, ?method, ?formal),
-  mainAnalysis.ReachableContext(?ctx, ?method),
+  TaintSourceBodyContext(?ctx, ?method),
   mainAnalysis.isImmutableHContext(?hctx),
   Var_Type(?formal, ?type),
   isReferenceType(?type),
@@ -444,7 +444,7 @@ mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?formal, ?type, DEFAULT_BREADCRUMB)
 TaintedValueIntroduced(?declaringType, ?srcId, ?type, ?label, ValueIdMacro(?srcId, ?type, DEFAULT_BREADCRUMB)),
 mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?srcId, ?type, DEFAULT_BREADCRUMB), ?ctx, ?actual) :-
   TaintSourceActualParam(?label, ?index, ?method),
-  MethodInvocationInContext(?ctx, ?invo, ?method),
+  TaintSourceSite(?ctx, ?invo, ?method),
   ActualParam(?index, ?invo, ?actual),
   ?srcId = cat(cat(?invo, "/actual"), to_string(?index)),
   Var_Type(?actual, ?type),
@@ -458,7 +458,7 @@ mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?srcId, ?type, DEFAULT_BREADCRUMB),
 TaintedValueIntroduced(?declaringType, ?srcId, ?type, ?label, ValueIdMacro(?srcId, ?type, DEFAULT_BREADCRUMB)),
 mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?srcId, ?type, DEFAULT_BREADCRUMB), ?ctx, ?base) :-
   TaintSourceBase(?label, ?method),
-  MethodInvocationInContext(?ctx, ?invo, ?method),
+  TaintSourceSite(?ctx, ?invo, ?method),
   MethodInvocation_Base(?invo, ?base),
   ?srcId = cat(?invo, "/base"),
   Var_Type(?base, ?type),
@@ -473,7 +473,7 @@ TaintedValueIntroduced(?declaringType, ?this, ?type, ?label, ValueIdMacro(?this,
 mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?this, ?type, DEFAULT_BREADCRUMB), ?ctx, ?this) :-
   TaintSourceThis(?label, ?method),
   ThisVar(?method, ?this),
-  mainAnalysis.ReachableContext(?ctx, ?method),
+  TaintSourceBodyContext(?ctx, ?method),
   mainAnalysis.isImmutableHContext(?hctx),
   Var_Type(?this, ?type),
   Method_DeclaringType(?method, ?declaringType).

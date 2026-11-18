@@ -43,9 +43,11 @@ TypeForReturnValue(?type, ?ret, ?invocation) :-
 // the source's caller to be app suppresses exactly those legitimate library
 // sources. Plain reachability is also sound: an over-approximate library source
 // whose taint never reaches a sink produces no finding, only unused taint.
+// (TaintSourceSite: every reachable call site, or only the application ones
+// for a method flagged TaintSourceAppOnly.)
 TaintSourceReturnInvocation(?label, ?ctx, ?invocation) :-
   TaintSourceReturn(?label, ?tomethod),
-  MethodInvocationInContext(?ctx, ?invocation, ?tomethod).
+  TaintSourceSite(?ctx, ?invocation, ?tomethod).
 
 /**
  * Taint transfer through aliasing
@@ -77,6 +79,37 @@ MethodInvocationInContextInApplication(?ctx, ?invocation, ?method) :-
   ApplicationMethod(?fromMethod),
   Instruction_Method(?invocation, ?fromMethod),
   MethodInvocationInContext(?ctx, ?invocation, ?method).
+
+// Source / sink sites, the same case split as TaintTransferSite: an unflagged
+// method fires at every reachable call site, a method flagged *AppOnly only at
+// call sites in application code. The body-position kinds have no call site:
+// there the flag requires the method itself to be application code.
+TaintSourceSite(?ctx, ?invocation, ?method) :-
+  !TaintSourceAppOnly(?method),
+  MethodInvocationInContext(?ctx, ?invocation, ?method).
+TaintSourceSite(?ctx, ?invocation, ?method) :-
+  TaintSourceAppOnly(?method),
+  MethodInvocationInContextInApplication(?ctx, ?invocation, ?method).
+TaintSinkSite(?ctx, ?invocation, ?method) :-
+  !TaintSinkAppOnly(?method),
+  MethodInvocationInContext(?ctx, ?invocation, ?method).
+TaintSinkSite(?ctx, ?invocation, ?method) :-
+  TaintSinkAppOnly(?method),
+  MethodInvocationInContextInApplication(?ctx, ?invocation, ?method).
+TaintSourceBodyContext(?ctx, ?method) :-
+  !TaintSourceAppOnly(?method),
+  mainAnalysis.ReachableContext(?ctx, ?method).
+TaintSourceBodyContext(?ctx, ?method) :-
+  TaintSourceAppOnly(?method),
+  ApplicationMethod(?method),
+  mainAnalysis.ReachableContext(?ctx, ?method).
+TaintSinkBodyContext(?ctx, ?method) :-
+  !TaintSinkAppOnly(?method),
+  mainAnalysis.ReachableContext(?ctx, ?method).
+TaintSinkBodyContext(?ctx, ?method) :-
+  TaintSinkAppOnly(?method),
+  ApplicationMethod(?method),
+  mainAnalysis.ReachableContext(?ctx, ?method).
 
 ParamTaintTransferredToRet(?type, ?ret, ?ctx, ?param) :-
   TaintTransferActualParamToReturn(?taintTransferMethod),
@@ -126,17 +159,18 @@ VarIsTaintedFromVarIndex(?ret, ?ctx, ?param) :-
  * placed on a library-internal method (e.g. a parser/allocator deep inside a
  * dependency) report when tainted application data reaches it -- the common
  * real-world case the app-only gate previously suppressed. The transfer-method
- * and serialization rules deliberately keep the stricter app-only gate.
+ * and serialization rules deliberately keep the stricter app-only gate, and a
+ * sink flagged TaintSinkAppOnly gets it back (TaintSinkSite / TaintSinkBodyContext).
  */
 TaintSinkVar(?label, ?invocation, ?ctx, ?var) :-
   TaintSinkActualParam(?label, ?index, ?tomethod),
-  MethodInvocationInContext(?ctx, ?invocation, ?tomethod),
+  TaintSinkSite(?ctx, ?invocation, ?tomethod),
   ActualParam(?index, ?invocation, ?var).
 
 // Base sink: the receiver variable at each reachable call site.
 TaintSinkVar(?label, ?invocation, ?ctx, ?var) :-
    TaintSinkBase(?label, ?tomethod),
-   MethodInvocationInContext(?ctx, ?invocation, ?tomethod),
+   TaintSinkSite(?ctx, ?invocation, ?tomethod),
    MethodInvocation_Base(?invocation, ?var).
 
 // Return sink: the operand of each non-void return of the method, in every
@@ -145,7 +179,7 @@ TaintSinkVar(?label, ?insn, ?ctx, ?var) :-
    TaintSinkReturn(?label, ?method),
    ReturnNonvoid_Var(?insn, ?var),
    Instruction_Method(?insn, ?method),
-   mainAnalysis.ReachableContext(?ctx, ?method).
+   TaintSinkBodyContext(?ctx, ?method).
 
 // Field-store sink: the stored operand of each reachable store to the field.
 // The site is the store instruction.
@@ -154,13 +188,13 @@ TaintSinkVar(?label, ?insn, ?ctx, ?var) :-
    FieldInstruction_Signature(?insn, ?field),
    StoreInstanceField_From(?insn, ?var),
    Instruction_Method(?insn, ?inMethod),
-   mainAnalysis.ReachableContext(?ctx, ?inMethod).
+   TaintSinkBodyContext(?ctx, ?inMethod).
 TaintSinkVar(?label, ?insn, ?ctx, ?var) :-
    TaintSinkField(?label, ?field),
    FieldInstruction_Signature(?insn, ?field),
    StoreStaticField_From(?insn, ?var),
    Instruction_Method(?insn, ?inMethod),
-   mainAnalysis.ReachableContext(?ctx, ?inMethod).
+   TaintSinkBodyContext(?ctx, ?inMethod).
 
 // Default override expansion for every method-keyed source and sink: one
 // declared on a method is also one on every method overriding it. Sinks need it
@@ -181,6 +215,13 @@ TaintSourceBase(?label, ?overrideMethod) :-
   basic.MethodOverridesOther(?overrideMethod, ?method).
 TaintSourceThis(?label, ?overrideMethod) :-
   TaintSourceThis(?label, ?method),
+  basic.MethodOverridesOther(?overrideMethod, ?method).
+// The scope flags follow the kinds they modify.
+TaintSourceAppOnly(?overrideMethod) :-
+  TaintSourceAppOnly(?method),
+  basic.MethodOverridesOther(?overrideMethod, ?method).
+TaintSinkAppOnly(?overrideMethod) :-
+  TaintSinkAppOnly(?method),
   basic.MethodOverridesOther(?overrideMethod, ?method).
 TaintSinkActualParam(?label, ?index, ?overrideMethod) :-
   TaintSinkActualParam(?label, ?index, ?method),

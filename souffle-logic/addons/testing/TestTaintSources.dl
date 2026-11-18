@@ -76,6 +76,33 @@ Taint_FAIL_DiagInert(?kind, ?id) :-
   TestProgramId(?id),
   ?id != "<Main: void sinkUnused(java.lang.String)>".
 
+// ---- scope flags (TaintSourceAppOnly / TaintSinkAppOnly) ---------------------
+// String.valueOf(Object) is a sink flagged app-only: it leaks at Main's direct
+// call and NOT at the JDK-internal call inside StringBuilder.append(Object).
+// AbstractStringBuilder.append(String) is an unflagged JDK sink: it leaks at the
+// JDK-internal call inside StringBuilder.append(String). Integer.toString(int)
+// is a source flagged app-only with JDK call sites only: reported inert.
+.decl SinkLeakIn(?sinkMethod:Method, ?inMethod:Method)
+SinkLeakIn(?sinkMethod, ?inMethod) :-
+  LeakingTaintedInformation(_, "sink", _, ?invo, _),
+  MethodInvocation_Method(?invo, ?sinkMethod),
+  Instruction_Method(?invo, ?inMethod).
+.decl Taint_FAIL_GateMissing(?what:symbol)
+.output Taint_FAIL_GateMissing
+Taint_FAIL_GateMissing("flagged sink at Main's direct call") :-
+  !SinkLeakIn("<java.lang.String: java.lang.String valueOf(java.lang.Object)>",
+              "<Main: void main(java.lang.String[])>").
+Taint_FAIL_GateMissing("unflagged JDK sink at its JDK-internal call") :-
+  !SinkLeakIn("<java.lang.AbstractStringBuilder: java.lang.AbstractStringBuilder append(java.lang.String)>",
+              "<java.lang.StringBuilder: java.lang.StringBuilder append(java.lang.String)>").
+Taint_FAIL_GateMissing("flagged source with JDK call sites only reported inert") :-
+  !TaintSpecInert("TaintSourceReturn", "<java.lang.Integer: java.lang.String toString(int)>").
+.decl Taint_FAIL_GateLeakAtLibrarySite(?inMethod:Method)
+.output Taint_FAIL_GateLeakAtLibrarySite
+Taint_FAIL_GateLeakAtLibrarySite(?inMethod) :-
+  SinkLeakIn("<java.lang.String: java.lang.String valueOf(java.lang.Object)>", ?inMethod),
+  !ApplicationMethod(?inMethod).
+
 // A call to a declared sink method, with the actual at the sink index.
 .decl SinkCall(?invo:symbol, ?sinkMethod:symbol, ?actual:symbol)
 SinkCall(?invo, ?m, ?actual) :-
@@ -141,11 +168,20 @@ Taint_FAIL_NonSourceLeaks(?invo, ?from) :-
   SinkFedBy(?invo, "<Main: java.lang.String trusted()>"),
   LeakAt(?from, ?invo).
 
-// Only the spec's labels may ever appear in a finding.
+// Only the spec's labels may ever appear in a finding -- except at the
+// deliberately UNFLAGGED JDK sink AbstractStringBuilder.append(String) (scope-flag
+// case below): the minimal profile's BufferedReader.readLine source is unflagged
+// too, the JDK reads its own files (JarIndex, ServiceLoader, DomainName$Rules)
+// and that `default` taint reaches the sink inside the JDK. That is the ungated
+// reading itself, not a label error.
+.decl UnflaggedJdkSinkCall(?invo:symbol)
+UnflaggedJdkSinkCall(?invo) :-
+  MethodInvocation_Method(?invo, "<java.lang.AbstractStringBuilder: java.lang.AbstractStringBuilder append(java.lang.String)>").
 .decl Taint_FAIL_UnexpectedLabel(?from:symbol, ?to:symbol)
 .output Taint_FAIL_UnexpectedLabel
 Taint_FAIL_UnexpectedLabel(?from, ?to) :-
-  TaintTest_Leaks(?from, ?to, _, _),
+  TaintTest_Leaks(?from, ?to, ?invo, _),
+  !UnflaggedJdkSinkCall(?invo),
   ( ?to != "sink" ;
     (?from != "src", ?from != "param", ?from != "prim",
      ?from != "arg", ?from != "base", ?from != "ctor", ?from != "this",

@@ -130,6 +130,17 @@
 // (measured on msgpack: +5 findings under the profile's label, see
 // taint-limitations.md section C).
 .decl TaintTransferAppOnly(?method:Method)
+// Scope modifiers for sources and sinks: ?method is a source (sink) only where
+// APPLICATION code calls it; for the body-position kinds (formal-parameter and
+// this sources, return and field-store sinks) only when ?method itself is
+// application code. Without the flag a source or sink fires at any reachable
+// site (section B of taint-limitations.md). Framework-wide profiles (android)
+// flag every entry: their generic getters (Locale.getCountry, ...) are called
+// inside the JDK and the framework too, and those sites are not findings. The
+// flags follow override expansion like the kinds they modify. Where the taint
+// then TRAVELS is unaffected.
+.decl TaintSourceAppOnly(?method:Method)
+.decl TaintSinkAppOnly(?method:Method)
 .decl VarIsCast(?var:Var)
 .decl VarUse(?var:Var, ?inst:Instruction)
 .decl LabelFromSource(?source:symbol, ?label:InformationLabel)
@@ -139,6 +150,13 @@
 
 .decl MethodInvocationInContext(?ctx:CONTEXT, ?invocation:MethodInvocation, ?tomethod:Method)
 .decl MethodInvocationInContextInApplication(?ctx:CONTEXT, ?invocation:MethodInvocation, ?method:Method)
+// The call sites where a source / sink declared on ?method fires, and the
+// contexts in which a body-position source / sink inside ?method is active:
+// every reachable one, or only the application ones under the AppOnly flags.
+.decl TaintSourceSite(?ctx:CONTEXT, ?invocation:MethodInvocation, ?method:Method)
+.decl TaintSinkSite(?ctx:CONTEXT, ?invocation:MethodInvocation, ?method:Method)
+.decl TaintSourceBodyContext(?ctx:CONTEXT, ?method:Method)
+.decl TaintSinkBodyContext(?ctx:CONTEXT, ?method:Method)
 .decl TaintSourceReturnInvocation(?label:InformationLabel, ?ctx:CONTEXT, ?invocation:MethodInvocation)
 .decl ParamTaintTransferredToBase(?param:Var, ?ctx:CONTEXT, ?base:Var)
 .decl ParamTaintTransferredToRet(?type:Type, ?ret:Var, ?ctx:CONTEXT, ?param:Var)

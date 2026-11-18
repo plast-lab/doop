@@ -241,7 +241,9 @@ class FactGenerator0 {
         TaintTransferActualParamElementsToBase: ['index', 'id'],
         TaintTransferActualParamElementsToReturn: ['index', 'id'],
         TaintTransferActualParamToReturn: ['id'],
-        TaintTransferAppOnly: ['id']
+        TaintTransferAppOnly: ['id'],
+        TaintSourceAppOnly: ['id'],
+        TaintSinkAppOnly: ['id']
     ]
 
     /** An id column is a regex when it holds a regex operator that no Doop id

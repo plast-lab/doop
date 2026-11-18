@@ -54,6 +54,8 @@ TaintDeclaredMethod("TaintTransferActualParamToReturn", ?m)         :- TaintTran
 TaintDeclaredMethod("TaintTransferBaseToReturnMock", ?m)            :- TaintTransferBaseToReturnMock(?m).
 TaintDeclaredMethod("TaintTransferActualParamToReturnMock", ?m)     :- TaintTransferActualParamToReturnMock(?m).
 TaintDeclaredMethod("TaintTransferAppOnly", ?m)                     :- TaintTransferAppOnly(?m).
+TaintDeclaredMethod("TaintSourceAppOnly", ?m)                       :- TaintSourceAppOnly(?m).
+TaintDeclaredMethod("TaintSinkAppOnly", ?m)                         :- TaintSinkAppOnly(?m).
 TaintDeclaredField("TaintSourceField", ?f) :- TaintSourceField(_, ?f).
 TaintDeclaredField("TaintSinkField", ?f)   :- TaintSinkField(_, ?f).
 TaintDeclaredType("TaintSourceType", ?t)   :- TaintSourceType(_, ?t).
@@ -99,22 +101,49 @@ TaintEntryImpl(?m, ?m) :- TaintDeclaredMethod(_, ?m), isMethod(?m).
 TaintEntryImpl(?m, ?o) :- TaintDeclaredMethod(_, ?m), basic.MethodOverridesOther(?o, ?m).
 
 // Body entries act inside the method; everything else acts at a call to it.
+// Sources and sinks look through their own site / body-context relations, so an
+// entry flagged *AppOnly whose only reachable sites are library-internal is
+// reported inert rather than silently dead.
 .decl TaintBodyKind(?kind:symbol)
 TaintBodyKind("TaintSourceFormalParam").
 TaintBodyKind("TaintSourceThis").
 TaintBodyKind("TaintSinkReturn").
+.decl TaintSourceCallKind(?kind:symbol)
+TaintSourceCallKind("TaintSourceReturn").
+TaintSourceCallKind("TaintSourceActualParam").
+TaintSourceCallKind("TaintSourceBase").
+.decl TaintSinkCallKind(?kind:symbol)
+TaintSinkCallKind("TaintSinkActualParam").
+TaintSinkCallKind("TaintSinkAnyActualParam").
+TaintSinkCallKind("TaintSinkBase").
 
 .decl TaintMethodEntryActive(?kind:symbol, ?method:Method)
 TaintMethodEntryActive(?kind, ?m) :-
   TaintDeclaredMethod(?kind, ?m),
   !TaintBodyKind(?kind),
+  !TaintSourceCallKind(?kind),
+  !TaintSinkCallKind(?kind),
   TaintEntryImpl(?m, ?impl),
   MethodInvocationInContext(_, _, ?impl).
 TaintMethodEntryActive(?kind, ?m) :-
   TaintDeclaredMethod(?kind, ?m),
-  TaintBodyKind(?kind),
+  TaintSourceCallKind(?kind),
   TaintEntryImpl(?m, ?impl),
-  mainAnalysis.ReachableContext(_, ?impl).
+  TaintSourceSite(_, _, ?impl).
+TaintMethodEntryActive(?kind, ?m) :-
+  TaintDeclaredMethod(?kind, ?m),
+  TaintSinkCallKind(?kind),
+  TaintEntryImpl(?m, ?impl),
+  TaintSinkSite(_, _, ?impl).
+TaintMethodEntryActive(?kind, ?m) :-
+  TaintDeclaredMethod(?kind, ?m),
+  (?kind = "TaintSourceFormalParam" ; ?kind = "TaintSourceThis"),
+  TaintEntryImpl(?m, ?impl),
+  TaintSourceBodyContext(_, ?impl).
+TaintMethodEntryActive("TaintSinkReturn", ?m) :-
+  TaintDeclaredMethod("TaintSinkReturn", ?m),
+  TaintEntryImpl(?m, ?impl),
+  TaintSinkBodyContext(_, ?impl).
 
 TaintSpecInert(?kind, ?m) :-
   TaintDeclaredMethod(?kind, ?m),

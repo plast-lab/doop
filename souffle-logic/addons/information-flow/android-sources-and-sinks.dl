@@ -240,3 +240,15 @@ TaintSourceReturn("Personal", "<android.database.Cursor: java.lang.String getStr
 TaintSourceReturn("Personal", "<android.database.sqlite.SQLiteDatabase: android.database.Cursor query(android.net.Uri,java.lang.String[],java.lang.String,java.lang.String[],java.lang.String)>").
 TaintSourceReturn("Personal", "<android.database.sqlite.SQLiteDatabase: android.database.Cursor query(android.net.Uri,java.lang.String[],java.lang.String,java.lang.String[],java.lang.String,android.os.CancellationSignal)>").
 TaintSinkBase("IPC", "<java.lang.ProcessBuilder: java.lang.Process start()>").
+
+// Framework-wide profile: every source and sink above fires only where
+// APPLICATION code calls it (TaintSourceAppOnly / TaintSinkAppOnly, core.dl).
+// The generic getters listed here (Locale.getCountry, URLConnection.getInputStream,
+// Handler.obtainMessage, ...) are also called inside the JDK and the framework,
+// and the Log.* sinks are called everywhere in it; on androidterm the ungated
+// profile reported 277 leak sites, 240 of them framework-internal, every label
+// at the same sites (taint-limitations.md, section B). Entries added through
+// --taint-spec on top of this profile are gated too.
+TaintSourceAppOnly(?m) :- TaintSourceReturn(_, ?m).
+TaintSinkAppOnly(?m)   :- TaintSinkActualParam(_, _, ?m).
+TaintSinkAppOnly(?m)   :- TaintSinkBase(_, ?m).

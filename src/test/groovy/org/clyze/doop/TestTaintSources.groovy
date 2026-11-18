@@ -140,5 +140,10 @@ class TestTaintSources extends DoopSpec {
         relationIsEmpty(analysis, "Taint_FAIL_ReturnSinkMissing")
         relationIsEmpty(analysis, "Taint_FAIL_FieldSinkMissing")
         relationIsEmpty(analysis, "Taint_FAIL_SinkShapeNegLeaks")
+        // Scope flags: a sink flagged TaintSinkAppOnly leaks at Main's call and not
+        // at the JDK-internal one; an unflagged JDK sink leaks at the JDK-internal
+        // call; a flagged source with JDK call sites only is reported inert.
+        relationIsEmpty(analysis, "Taint_FAIL_GateMissing")
+        relationIsEmpty(analysis, "Taint_FAIL_GateLeakAtLibrarySite")
     }
 }

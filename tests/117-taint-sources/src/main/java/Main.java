@@ -26,6 +26,8 @@
 //   sinkUnused(String) a declared sink nothing calls: must show up as INERT in
 //                      the spec diagnostics (TaintSpecInert), nowhere else
 //   sinkPatA/B(String) declared by one regex entry of the spec file
+//   String.valueOf(Object) / AbstractStringBuilder.append(String): JDK sinks, the
+//                      first flagged TaintSinkAppOnly (fires only where Main calls it)
 //   arithmetic         under --enable-model-primitives, a length computed from
 //                      the bytes of the filled buffer carries the buffer's taint
 //                      (the arithmetic mark in addons/information-flow/rules.dl)
@@ -338,5 +340,11 @@ public class Main {
         PAGE_NEG = trusted();
         sinkPatA(untrusted());           // regex spec entry
         sinkPatB(untrusted());            // no leak
+
+        // Scope flags (spec: String.valueOf(Object) is a sink flagged TaintSinkAppOnly,
+        // AbstractStringBuilder.append(String) an unflagged sink inside the JDK).
+        String.valueOf((Object) untrusted());              // LEAK   flagged sink, called from Main
+        new StringBuilder().append((Object) untrusted());  // no leak at the valueOf(Object) call INSIDE StringBuilder.append(Object)
+        new StringBuilder().append(untrusted());           // LEAK   at the super.append(String) call INSIDE StringBuilder.append(String)
     }
 }
