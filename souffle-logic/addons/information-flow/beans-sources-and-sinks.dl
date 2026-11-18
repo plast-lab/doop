@@ -1,6 +1,6 @@
 #include "spring-sources-and-sinks.dl"
 
-BaseToRetTaintTransferMethod(?dtoMeth),
+TaintTransferBaseToReturn(?dtoMeth),
 TaintedValueIntroduced(?declaringType, ?to, ?ctype, "default", ValueIdMacro(?to, ?ctype, DEFAULT_BREADCRUMB)),
 mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?to, ?ctype, DEFAULT_BREADCRUMB), ?ctx, ?to) :-
   FormalParam(_, ?meth, ?to),

@@ -160,6 +160,9 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         if (options.KEEP_SPEC.value)
             gen0.writeKeepSpec(options.KEEP_SPEC.value as String)
 
+        if (options.TAINT_SPEC.value)
+            gen0.writeTaintSpec(options.TAINT_SPEC.value as String)
+
         if (!options.PYTHON.value && options.MAIN_CLASS.value)
             gen0.writeMainClassFacts(options.MAIN_CLASS.value)
 
@@ -209,15 +212,30 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         generateFacts0()
     }
 
+    /**
+     * Completes reused (cached or user-provided) facts with what belongs to the
+     * run rather than to the program: the front-end-free facts files must exist
+     * (empty when the reused facts predate them, e.g. TaintSpecEntry.facts), and
+     * the taint specification is written afresh, since it is an input of this
+     * run and the reused directory may be hard-linked.
+     */
+    protected void completeReusedFacts() {
+        gen0.touch()
+        if (options.TAINT_SPEC.value)
+            gen0.writeTaintSpec(options.TAINT_SPEC.value as String)
+    }
+
     protected void generateFacts() throws DoopErrorCodeException {
 
         if (options.CACHE.value) {
             log.info "Using cached facts from $cacheDir"
             linkOrCopyFacts(cacheDir)
+            completeReusedFacts()
         } else if (options.INPUT_ID.value) {
             def importedFactsDir = options.INPUT_ID.value as File
             log.info "Using user-provided facts from ${importedFactsDir} in ${factsDir}"
             linkOrCopyFacts(importedFactsDir)
+            completeReusedFacts()
         } else {
 
             log.info "-- Fact Generation --"

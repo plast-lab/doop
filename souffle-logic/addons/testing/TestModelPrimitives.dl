@@ -52,6 +52,16 @@ ModelPrim_FAIL_BadlyTyped(?v, ?t) :-
   PrimValue(?v, ?t),
   !mainAnalysis.PrimitiveType_Boxed(_, ?t).
 
+// ---- invariant: every <prim-*> object is MONO-typed (exactly one type) ------
+// Guards the keying: a bad merge (e.g. a boolean 1 and an int 1 collapsing to
+// one object) would give a single value two Value_Types and slip past BadlyTyped.
+.decl ModelPrim_FAIL_MultiTyped(?v:symbol, ?t1:symbol, ?t2:symbol)
+.output ModelPrim_FAIL_MultiTyped
+ModelPrim_FAIL_MultiTyped(?v, ?t1, ?t2) :-
+  PrimValue(?v, ?t1),
+  mainAnalysis.Value_Type(?v, ?t2),
+  ?t1 != ?t2.
+
 // ---- (2) arithmetic seeding fired ------------------------------------------
 .decl AnyArithPrim()
 AnyArithPrim() :-
@@ -86,6 +96,31 @@ LoopSumHasConst() :-
 .output ModelPrim_FAIL_DriverConstMissing
 ModelPrim_FAIL_DriverConstMissing("loopSum produced no <prim-const ...> value") :- !LoopSumHasConst().
 
+// ---- (5) conversion seeding fired ------------------------------------------
+// (long)/(double)/(byte)... casts of a variable produce <prim-conv ...> objects.
+.decl AnyConvPrim()
+AnyConvPrim() :-
+  mainAnalysis.VarPointsTo(_, ?v, _, _),
+  substr(?v, 0, 11) = "<prim-conv ".
+
+.decl ModelPrim_FAIL_ConvMissing(?msg:symbol)
+.output ModelPrim_FAIL_ConvMissing
+ModelPrim_FAIL_ConvMissing("no <prim-conv ...> value found") :- !AnyConvPrim().
+
+// ---- (3b) sub-int constant seeding fired -----------------------------------
+// A boolean/byte/char/short var assigned an int constant is seeded and typed by
+// the VAR type (e.g. a Boolean-typed <prim-const ...>, from invert's 0/1).
+.decl AnySubIntConst()
+AnySubIntConst() :-
+  PrimValue(?v, ?t),
+  substr(?v, 0, 12) = "<prim-const ",
+  ( ?t = "java.lang.Boolean" ; ?t = "java.lang.Byte" ;
+    ?t = "java.lang.Character" ; ?t = "java.lang.Short" ).
+
+.decl ModelPrim_FAIL_SubIntConstMissing(?msg:symbol)
+.output ModelPrim_FAIL_SubIntConstMissing
+ModelPrim_FAIL_SubIntConstMissing("no sub-int (Boolean/Byte/Char/Short) <prim-const> found") :- !AnySubIntConst().
+
 // ---- interprocedural return flow -------------------------------------------
 // scale's returned primitive object must reach the caller's receiving var.
 .decl ScaleReturnReaches()
@@ -98,6 +133,64 @@ ScaleReturnReaches() :-
 .decl ModelPrim_FAIL_ReturnFlowMissing(?msg:symbol)
 .output ModelPrim_FAIL_ReturnFlowMissing
 ModelPrim_FAIL_ReturnFlowMissing("scale return did not reach caller") :- !ScaleReturnReaches().
+
+// ---- interprocedural ARGUMENT flow (model-primitives.dl rule 4) -------------
+// The caller's actual object must reach scale's primitive FORMAL, not merely
+// rule (1)'s self-seed. Witness: the SAME <prim-*> object is pointed to by both
+// an actual at a scale(int) call site AND scale's formal -- it can only appear
+// in both if it crossed the argument edge. (Without rule (4) the actual points
+// to its own arith object while the formal holds only its <prim-param> self-
+// seed, so no object is shared and this check fails -- i.e. it genuinely tests
+// the fix, unlike ParamUnseeded which rule (1) satisfies on its own.)
+.decl ScaleActualReachesFormal()
+ScaleActualReachesFormal() :-
+  MethodInvocation_Method(?invo, "<Main: int scale(int)>"),
+  ActualParam(0, ?invo, ?actual),
+  mainAnalysis.VarPointsTo(_, ?v, _, ?actual),
+  substr(?v, 0, 6) = "<prim-",
+  FormalParam(0, "<Main: int scale(int)>", ?formal),
+  mainAnalysis.VarPointsTo(_, ?v, _, ?formal).
+
+.decl ModelPrim_FAIL_ArgFlowMissing(?msg:symbol)
+.output ModelPrim_FAIL_ArgFlowMissing
+ModelPrim_FAIL_ArgFlowMissing("scale: caller's primitive object did not reach the formal") :- !ScaleActualReachesFormal().
+
+// ---- lock-in: internally-called formals fed ONLY by rule (4) flow ----------
+// makeLong/makeDouble receive a conversion object ((long)n / (double)n, rule 5);
+// invert receives a sub-int boolean constant (rule 3b). Each reaches the callee
+// formal only via rule (4). With rule (1) scoped to roots, these formals have no
+// self-seed, so emptying any of rules (3b)/(4)/(5) regresses this check.
+.decl DriverFlowFormal(?method:symbol)
+DriverFlowFormal("<Main: long makeLong(long)>").
+DriverFlowFormal("<Main: double makeDouble(double)>").
+DriverFlowFormal("<Main: boolean invert(boolean)>").
+
+.decl DriverFlowFormalSeeded(?method:symbol)
+DriverFlowFormalSeeded(?method) :-
+  DriverFlowFormal(?method),
+  FormalParam(0, ?method, ?f),
+  mainAnalysis.VarPointsTo(_, ?v, _, ?f),
+  substr(?v, 0, 6) = "<prim-".
+
+.decl ModelPrim_FAIL_FlowFormalUnseeded(?method:symbol)
+.output ModelPrim_FAIL_FlowFormalUnseeded
+ModelPrim_FAIL_FlowFormalUnseeded(?method) :-
+  DriverFlowFormal(?method),
+  !DriverFlowFormalSeeded(?method).
+
+// ---- scoping: rule (1) does NOT self-seed internally-called methods --------
+// scale is called from main (not a root), so after scoping its formal must hold
+// only the flowed-in object (rule 4), never a <prim-param ...> self-seed. This
+// FAIL fires if the self-seed reappears -- i.e. if the root-scoping regresses.
+.decl ScaleFormalHasSelfSeed()
+ScaleFormalHasSelfSeed() :-
+  FormalParam(0, "<Main: int scale(int)>", ?f),
+  mainAnalysis.VarPointsTo(_, ?v, _, ?f),
+  substr(?v, 0, 12) = "<prim-param ".
+
+.decl ModelPrim_FAIL_ScopeSelfSeed(?msg:symbol)
+.output ModelPrim_FAIL_ScopeSelfSeed
+ModelPrim_FAIL_ScopeSelfSeed("scale (internal) still carries a <prim-param> self-seed") :- ScaleFormalHasSelfSeed().
 
 // ---- heap flow: static & instance fields -----------------------------------
 .decl StaticFieldSeeded()
@@ -114,12 +207,45 @@ InstanceFieldSeeded() :- mainAnalysis.InstanceFieldPointsTo(_, _, "<Main: long i
 .output ModelPrim_FAIL_InstanceFieldUnseeded
 ModelPrim_FAIL_InstanceFieldUnseeded("<Main: long iField> has no value") :- !InstanceFieldSeeded().
 
+// ---- heap flow: primitive array-element store (model-primitives.dl rule 6) --
+// main stores a primitive into an int[] (arr[0] = a). With rule (6) the wrapper-
+// typed prim object reaches ArrayIndexPointsTo; before it, the element store was
+// type-filtered (int is not a supertype of java.lang.Integer) -- the boundary
+// the driver used to only document.
+.decl DriverArrayHasPrim()
+DriverArrayHasPrim() :-
+  StoreArrayIndex(_, ?base, "<Main: void main(java.lang.String[])>"),
+  mainAnalysis.VarPointsTo(_, ?arrval, _, ?base),
+  mainAnalysis.ArrayIndexPointsTo(_, ?v, _, ?arrval),
+  substr(?v, 0, 6) = "<prim-".
+
+.decl ModelPrim_FAIL_ArrayStoreMissing(?msg:symbol)
+.output ModelPrim_FAIL_ArrayStoreMissing
+ModelPrim_FAIL_ArrayStoreMissing("main's primitive array store did not reach ArrayIndexPointsTo") :- !DriverArrayHasPrim().
+
+// ---- heap flow: primitive array-element LOAD round-trip --------------------
+// int y = arr[0] must read the stored prim object back out (rule 6 store +
+// unfiltered load). Proves the full store->load cycle, not just the store.
+.decl DriverArrayLoadHasPrim()
+DriverArrayLoadHasPrim() :-
+  LoadArrayIndex(_, ?to, "<Main: void main(java.lang.String[])>"),
+  mainAnalysis.VarPointsTo(_, ?v, _, ?to),
+  substr(?v, 0, 6) = "<prim-".
+
+.decl ModelPrim_FAIL_ArrayLoadMissing(?msg:symbol)
+.output ModelPrim_FAIL_ArrayLoadMissing
+ModelPrim_FAIL_ArrayLoadMissing("main's primitive array load did not read back a prim value") :- !DriverArrayLoadHasPrim().
+
 // ---- non-int coverage: Integer / Long / Double / Boolean all appear --------
 .decl ExpectedPrimType(?t:symbol)
 ExpectedPrimType("java.lang.Integer").
 ExpectedPrimType("java.lang.Long").
 ExpectedPrimType("java.lang.Double").
 ExpectedPrimType("java.lang.Boolean").
+ExpectedPrimType("java.lang.Float").
+ExpectedPrimType("java.lang.Short").
+ExpectedPrimType("java.lang.Byte").
+ExpectedPrimType("java.lang.Character").
 
 .decl ModelPrim_FAIL_TypeMissing(?t:symbol)
 .output ModelPrim_FAIL_TypeMissing

@@ -76,11 +76,23 @@ public class Main {
         double dd = makeDouble((double) n);
         int s = loopSum(n);           // exercises rule (3): a surviving int constant
 
-        // KNOWN LIMITATION: an array element store is type-filtered (component
-        // type int is not a supertype of java.lang.Integer), so the wrapper-
-        // typed prim object does NOT reach ArrayIndexPointsTo. Kept to document
-        // the boundary; not asserted.
+        // Full primitive-type coverage: casts of a variable produce <prim-conv>
+        // objects (rule 5) for the remaining wrapper types (Float/Short/Byte/
+        // Character). Kept live via a concatenation so the casts survive.
+        float fl = (float) n;
+        short sh = (short) n;
+        byte  by = (byte)  n;
+        char  ch = (char)  n;
+        System.out.println("" + fl + sh + by + ch);
+
+        // Primitive array-element store + LOAD round-trip. The stock array-store
+        // rule type-filters the wrapper-typed prim object out (component type int
+        // is not a supertype of java.lang.Integer); model-primitives rule (6)
+        // restores it, so the object reaches ArrayIndexPointsTo (ArrayStoreMissing)
+        // and is read back by the load into y (ArrayLoadMissing).
         int[] arr = new int[8];
         arr[0] = a;
+        int y = arr[0];
+        System.out.println(y);
     }
 }

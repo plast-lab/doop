@@ -1,0 +1,350 @@
+// Driver for the P/Taint source vocabulary
+// (souffle-logic/addons/information-flow, spec in addons/testing/TestTaintSources.dl).
+//
+// Every source and sink is one of the driver's OWN methods, so the spec can name
+// them exactly and the expected leaks are known per call site. The test logic
+// anchors on the producing/consuming method of each sink argument, never on
+// invocation numbering.
+//
+//   untrusted()        TaintSourceReturn      -- its result is tainted
+//   Reader.read()      TaintSourceReturn      -- declared on the INTERFACE; the call
+//                                                resolves to FileReader.read, so the
+//                                                leak depends on override expansion
+//   handle(String)     TaintSourceFormalParam -- its formal is tainted on entry
+//   untrustedInt()     TaintSourceReturn      -- a primitive-typed (int) source
+//   sink(String)       TaintSinkActualParam 0
+//   sink2(String,String) TaintSinkActualParam 1 (index 0 is NOT a sink)
+//   sinkInt(int)       TaintSinkActualParam 0
+//   trusted()          not a source (negative control)
+//   read(byte[])       TaintSourceActualParam 0 -- the call FILLS the buffer
+//   Props.load()       TaintSourceBase        -- the call fills its receiver
+//   Conn.<init>(String) TaintSourceBase       -- the constructed object is a source
+//   Request.validate() TaintSourceThis        -- `this` is tainted on entry
+//   sinkBytes/sinkObj  TaintSinkActualParam 0
+//   sinkBytesNeg/sinkObjNeg  sinks that must NEVER leak (negative controls)
+//   sinkIntNeg(int)    sink that must NEVER leak (negative control for arithmetic)
+//   sinkUnused(String) a declared sink nothing calls: must show up as INERT in
+//                      the spec diagnostics (TaintSpecInert), nowhere else
+//   sinkPatA/B(String) declared by one regex entry of the spec file
+//   String.valueOf(Object) / AbstractStringBuilder.append(String): JDK sinks, the
+//                      first flagged TaintSinkAppOnly (fires only where Main calls it)
+//   arithmetic         under --enable-model-primitives, a length computed from
+//                      the bytes of the filled buffer carries the buffer's taint
+//                      (the arithmetic mark in addons/information-flow/rules.dl)
+//   fill(byte[])       not a source (negative control for read)
+//   Main.CONFIG        TaintSourceField       -- static field, never assigned
+//   Settings.name      TaintSourceField       -- instance field, assigned in the ctor
+//   Settings.external  TaintSourceField       -- instance field, never assigned
+//   Settings.data      TaintSourceField       -- holds an app allocation: the
+//                                                array itself must be marked
+//   Settings.safe      not a source (negative control for fields)
+//   Token              TaintSourceType        -- every Token is tainted, wherever
+//                                                allocated; AdminToken is a subtype
+//   Ticket             not a source (negative control for types)
+//   Session            TaintSourceType        -- NEVER allocated: only the mock half
+//                                                (stand-ins at its entry positions:
+//                                                serve's formal, field CURRENT, the
+//                                                result of native openSession())
+//                                                can make a Session reach a sink
+//   untrustedProps()   TaintSourceReturn      -- returns an app object: mark half
+//   handleProps(Props) TaintSourceFormalParam -- its formal holds an app object: mark half
+//   *_REG fields       hold the real object that sat at a method-keyed source
+//                      position, stored there by a path that never goes through
+//                      the position: a sink fed from the field leaks only if the
+//                      object itself is MARKED
+//   handleInt(int)     TaintSourceFormalParam -- primitive formal: marked only under
+//                                                --enable-model-primitives
+//   string builders    String.format, getBytes(), new StringBuilder(s).toString(),
+//                      new String(bytes), String.valueOf(char[]): each builds a NEW
+//                      object (no `return this` path), so only the transfers in
+//                      common-transfer-methods.dl carry the taint across them
+//   sinkNeg(String)    sink that must NEVER leak (negative control for the builders)
+//   clean(String)      TaintSanitizer         -- its result never leaks; its formal
+//                                                still receives the taint (AUDIT)
+//   cleanObj(Clean)    TaintSanitizer         -- a real object crosses it: use() reachable
+//   Box.put(Object)    TaintTransferActualParamToBase 0 -- the receiver is marked
+//   Box.fill(byte[])   TaintTransferBaseToActualParam   -- the actual is marked
+//   handleAccount(Account) TaintSourceFormalParam -- deep taint: the account's fields
+//                      (an Owner, its name, an int, a byte[]) are tainted inside
+//                      handleAccount; OWNER_REG holds the owner object, stored
+//                      before the account reached the position: leaks only through
+//                      the deep MARK
+//   Out.emit(String)   TaintSinkActualParam 0 declared on the INTERFACE; the call
+//                      resolves to ConsoleOut.emit, so the leak depends on the
+//                      default override expansion of sinks
+//   render(String)     TaintSinkReturn        -- its return value must not be tainted
+//   renderNeg(String)  TaintSinkReturn that must NEVER leak (fed by trusted() only)
+//   Main.PAGE, Resp.body TaintSinkField       -- storing taint there is a leak
+//   Main.PAGE_NEG      TaintSinkField that must NEVER leak (stores trusted() only)
+public class Main {
+
+    interface Reader { String read(); }
+    static class FileReader implements Reader {
+        public String read() { return "file"; }
+    }
+
+    static String untrusted()    { return "u"; }
+    static String trusted()      { return "t"; }
+    static int    untrustedInt() { return 7; }
+
+    static void sink(String s)            { System.out.println(s); }
+    static void sink2(String a, String b) { System.out.println(a); System.out.println(b); }
+    static void sinkInt(int n)            { System.out.println(n); }
+
+    // Formal-parameter source: 'req' is tainted on entry regardless of what the
+    // caller passes (main passes a trusted value).
+    static void handle(String req) { sink(req); }
+
+    // Actual-parameter source: read() fills its buffer argument.
+    static int  read(byte[] buf) { buf[0] = 1; return 1; }
+    static void fill(byte[] buf) { buf[0] = 2; }            // not a source
+
+    // Base source: load() fills its receiver; Conn's constructor builds a
+    // source object.
+    static class Props { void load() { } }
+    static class Conn  { Conn(String host) { } }
+
+    // This source: validate() runs on an object built from untrusted data.
+    static class Request {
+        void validate() { sinkObj(this); }                   // LEAK  this source
+    }
+
+    // Field sources: the field's contents are tainted, whether or not the
+    // program ever stores into the field.
+    static String CONFIG;                                   // never assigned
+    static class Settings {
+        String name;                                        // assigned in the constructor
+        String external;                                    // never assigned anywhere
+        byte[] data;                                        // assigned an app allocation
+        String safe = "ok";                                 // not a source
+        Settings(String n) { name = n; }
+    }
+
+    // Type sources: every object of the type (or a subtype) is tainted.
+    static class Token { }
+    static class AdminToken extends Token { }
+    static class Ticket { }                                 // not a source
+
+    // Type source, mock half: the program never allocates a Session, so every
+    // Session reaching a sink is a stand-in placed at an entry position of the type.
+    static class Session { }
+    static Session CURRENT;                                 // field declared as Session, never assigned
+    static native Session openSession();                    // body-less: its result comes from outside
+    static void serve(Session s) { sinkObj(s); }            // LEAK inside serve: formal declared as Session
+
+    // Sink shapes: a sink on an interface method, return sinks, field sinks.
+    interface Out { void emit(String s); }
+    static class ConsoleOut implements Out {
+        public void emit(String s) { System.out.println(s); }
+    }
+    static String render(String s)    { return s; }
+    static String renderNeg(String s) { return s; }
+    static String PAGE;
+    static String PAGE_NEG;
+    static class Resp { String body; }
+
+    static void sinkBytes(byte[] b)    { System.out.println(b.length); }
+    static void sinkObj(Object o)      { System.out.println(o); }
+    static void sinkByte(byte b)       { System.out.println(b); }
+    static void sinkBytesNeg(byte[] b) { System.out.println(b.length); }
+    static void sinkObjNeg(Object o)   { System.out.println(o); }
+    static void sinkIntNeg(int n)      { System.out.println(n); }
+    static void sinkNeg(String s)      { System.out.println(s); }
+    static void sinkUnused(String s)   { System.out.println(s); } // declared sink, never called
+    static void sinkPatA(String s)     { System.out.println(s); } // sinks through ONE regex spec entry
+    static void sinkPatB(String s)     { System.out.println(s); }
+
+    // Sanitizer: taint stops at its RESULT, not at its formals. The body is
+    // analysed with the real arguments, so a side channel inside it is still seen.
+    static Object AUDIT;
+    static class Clean { void use() { KEEP = this; } }
+    static String clean(String s)   { AUDIT = s; return new String(s.toCharArray()); }
+    static Clean  cleanObj(Clean c) { return c; }
+
+    // Deep taint: the CONTENTS of a tainted object are tainted -- its fields, their
+    // fields, its array elements -- through a load in application code (a stand-in
+    // typed by the loaded variable, mock half) and as a mark on the application
+    // objects it holds (mark half). handleAccount's formal is a source.
+    static class Owner   { String name; Owner(String n) { name = n; } }
+    static class Account {
+        Owner owner; int amount; byte[] key;
+        Account(Owner o, int a) { owner = o; amount = a; key = new byte[2]; }
+        Owner getOwner() { return owner; }
+    }
+    // Negative control with its OWN class and direct stores: a shared constructor
+    // conflates its callers' field contents context-insensitively (every Account's
+    // owner field holds every owner passed to the constructor), so a second Account
+    // would read the tainted one's contents through the base analysis, not the rule.
+    static class Ledger { Owner owner; int amount; }
+    // Mark copy at the mutating transfers: an application object that a transfer
+    // says now contains taint is MARKED, and no stand-in is minted for it.
+    static class Box { Object item; void put(Object o) { item = o; } void fill(byte[] b) { b[0] = 1; } }
+    static Box    BOX_REG;
+    static byte[] FILL_REG;
+    static Owner OWNER_REG;
+    static void handleAccount(Account a) {
+        sinkObj(a.getOwner());        // LEAK   depth 1: the load inside the getter, this = the tainted account
+        sink(a.getOwner().name);      // LEAK   depth 2
+        sinkInt(a.amount);            // LEAK   primitive field
+        sinkBytes(a.key);             // LEAK   array-typed field
+    }
+
+    // Mark half of the method-keyed sources: the real application object at a
+    // source position is tainted itself. Each factory registers the object it
+    // creates in a static field BEFORE the object reaches the position, so a sink
+    // fed from the field sees the object but never the mock placed at the
+    // position (the mock lives in the position's variable only).
+    static Props   RET_REG, PARAM_REG, BASE_REG, TRUSTED_REG;
+    static Object  KEEP;                                      // keeps a result variable alive
+    static Request THIS_REG;
+    static byte[]  ARG_REG;
+    static Props   untrustedProps() { Props x = new Props();     RET_REG     = x; return x; } // return source
+    static Props   trustedProps()   { Props x = new Props();     TRUSTED_REG = x; return x; } // not a source
+    static Props   makeProps()      { Props x = new Props();     BASE_REG    = x; return x; }
+    static Request makeRequest()    { Request x = new Request(); THIS_REG    = x; return x; }
+    static byte[]  makeBuf()        { byte[] x = new byte[4];    ARG_REG     = x; return x; }
+    static void    handleProps(Props p) { }                                                  // formal-param source
+    static void    handleInt(int n) { sinkInt(n); }                                          // primitive formal-param source
+
+    public static void main(String[] args) {
+        sink(untrusted());               // LEAK   return source -> sink
+        sink(trusted());                 // no leak: not a source
+        Reader r = new FileReader();
+        sink(r.read());                  // LEAK   via override expansion
+        handle(trusted());               // LEAK   inside handle: formal-param source
+        sink2(untrusted(), trusted());   // no leak: taint at index 0, sink is index 1
+        sink2(trusted(), untrusted());   // LEAK   taint at index 1
+        sinkInt(untrustedInt());         // LEAK   primitive-typed (int) source
+
+        byte[] buf = new byte[4];
+        read(buf);                       // fills buf: actual-parameter source
+        sinkBytes(buf);                  // LEAK   buf is tainted after read
+        byte e = buf[0];
+        sinkByte(e);                     // LEAK   element loaded from the filled buffer
+        byte[] buf2 = new byte[4];
+        fill(buf2);                      // not a source
+        sinkBytesNeg(buf2);              // no leak
+
+        // Arithmetic: a length decoded from the bytes of the tainted buffer carries
+        // the taint into an int sink; the same computation over the trusted buffer
+        // does not. Each binop is its own site with its own <prim-arith> object,
+        // so the mark on the first chain cannot reach the second. (A shared helper
+        // method would have ONE object per site for all its callers, and a mark
+        // placed by one caller would reach the others: the price of marking.)
+        int len = ((buf[0] & 0xff) << 8) | (buf[1] & 0xff);
+        sinkInt(len);                    // LEAK   only under --enable-model-primitives
+        int lenNeg = ((buf2[0] & 0xff) << 8) | (buf2[1] & 0xff);
+        sinkIntNeg(lenNeg);              // no leak
+
+        Props p = new Props();
+        p.load();                        // fills p: base source
+        sinkObj(p);                      // LEAK
+        Props q = new Props();           // never loaded
+        sinkObjNeg(q);                   // no leak
+
+        Conn c = new Conn("host");       // constructed object: base source on <init>
+        sinkObj(c);                      // LEAK
+
+        new Request().validate();        // LEAK inside validate (this source)
+
+        sink(CONFIG);                    // LEAK   static field source (no store exists)
+        Settings st = new Settings("n");
+        sink(st.name);                   // LEAK   field source with a constructor store
+        sink(st.external);               // LEAK   field source with no store
+        sink(st.safe);                   // no leak: not a source
+        byte[] data = new byte[2];
+        st.data = data;
+        sinkBytes(data);                 // LEAK   the array is MARKED: this alias never
+                                         //        goes through the field
+
+        sinkObj(new Token());            // LEAK   type source
+        sinkObj(new AdminToken());       // LEAK   subtype of a type source
+        sinkObjNeg(new Ticket());        // no leak: not a source
+
+        serve(null);                     // LEAK inside serve: formal entry position
+        sinkObj(CURRENT);                // LEAK   field entry position (no store exists)
+        sinkObj(openSession());          // LEAK   body-less method result entry position
+
+        // Mark half of the method-keyed sources (see the *_REG fields above).
+        Props up = untrustedProps();     // return source: the returned Props is marked
+        KEEP = up;                       // (an unused result variable would be dropped by Soot)
+        sinkObj(RET_REG);                // LEAK   through the mark only
+        Props tp = trustedProps();
+        KEEP = tp;
+        sinkObjNeg(TRUSTED_REG);         // no leak: not a source
+        Props hp = new Props();
+        PARAM_REG = hp;
+        handleProps(hp);                 // formal source: the Props passed in is marked
+        sinkObj(PARAM_REG);              // LEAK   through the mark only (the mock sits in the formal)
+        byte[] ab = makeBuf();
+        read(ab);                        // actual-param source: the array passed in is marked
+        sinkBytes(ARG_REG);              // LEAK   through the mark only
+        Props bp = makeProps();
+        bp.load();                       // base source: the receiver is marked
+        sinkObj(BASE_REG);               // LEAK   through the mark only
+        makeRequest().validate();        // this source: the receiver is marked
+        sinkObj(THIS_REG);               // LEAK   through the mark only
+        handleInt(args.length);          // LEAK inside handleInt, only under model-primitives:
+                                         //        the formal holds main's <prim-arith> object
+
+        // Fresh-object string builders (transfers in common-transfer-methods.dl).
+        // trim/substring/... need none: their `return this` path already carries
+        // the receiver. These never return their input.
+        sink(String.format("%s", untrusted()));              // LEAK   varargs element -> result
+        sinkBytes(untrusted().getBytes());                    // LEAK   receiver -> fresh byte[]
+        sink(new StringBuilder(untrusted()).toString());      // LEAK   ctor arg -> builder -> string
+        sink(new String(untrusted().getBytes()));             // LEAK   two transfers chained
+        sink(String.valueOf(untrusted().toCharArray()));      // LEAK   toCharArray, then valueOf(char[])
+        sinkNeg(String.format("%s", trusted()));              // no leak
+        sinkBytesNeg(trusted().getBytes());                   // no leak
+        sinkNeg(new StringBuilder(trusted()).toString());     // no leak
+        sinkNeg(new String(trusted().getBytes()));            // no leak
+
+        // Sanitizer (TaintSanitizer in the spec).
+        sink(clean(untrusted()));        // no leak: the sanitizer's result
+        sinkObj(AUDIT);                  // LEAK   the formal received the tainted value (side channel)
+        cleanObj(new Clean()).use();     // Clean.use() must be reachable: real objects cross
+
+        // Deep taint (see handleAccount).
+        Owner ow = new Owner("o");
+        OWNER_REG = ow;
+        handleAccount(new Account(ow, args.length)); // formal source: the account is tainted
+        sinkObj(OWNER_REG);              // LEAK   through the deep mark on the owner only
+        Ledger clean = new Ledger();     // untainted, no shared constructor (see Ledger)
+        clean.owner = new Owner("c");
+        clean.amount = 1;
+        sinkObjNeg(clean.owner);         // no leak: loads from an untainted object
+        sinkIntNeg(clean.amount);
+
+        // Mark copy at the mutating transfers (spec: put is ActualParamToBase 0,
+        // fill is BaseToActualParam).
+        Box bx = new Box();
+        BOX_REG = bx;
+        bx.put(untrusted());             // the box now contains taint: MARKED, no stand-in
+        sinkObj(BOX_REG);                // LEAK   through the mark
+        byte[] fb = new byte[2];
+        FILL_REG = fb;
+        bx.fill(fb);                     // the tainted box fills fb: fb MARKED
+        sinkBytes(FILL_REG);             // LEAK   through the mark
+
+        // Sink shapes (spec: Out.emit is an actual-param sink, render / renderNeg
+        // return sinks, PAGE / PAGE_NEG / Resp.body field sinks).
+        Out out = new ConsoleOut();
+        out.emit(untrusted());           // LEAK   sink declared on Out, call resolves to ConsoleOut.emit
+        out.emit(trusted());             // no leak
+        render(untrusted());             // LEAK   at render's return
+        renderNeg(trusted());            // no leak
+        PAGE = untrusted();              // LEAK   at the store (static field sink)
+        Resp resp = new Resp();
+        resp.body = untrusted();         // LEAK   at the store (instance field sink)
+        PAGE_NEG = trusted();
+        sinkPatA(untrusted());           // regex spec entry
+        sinkPatB(untrusted());            // no leak
+
+        // Scope flags (spec: String.valueOf(Object) is a sink flagged TaintSinkAppOnly,
+        // AbstractStringBuilder.append(String) an unflagged sink inside the JDK).
+        String.valueOf((Object) untrusted());              // LEAK   flagged sink, called from Main
+        new StringBuilder().append((Object) untrusted());  // no leak at the valueOf(Object) call INSIDE StringBuilder.append(Object)
+        new StringBuilder().append(untrusted());           // LEAK   at the super.append(String) call INSIDE StringBuilder.append(String)
+    }
+}
