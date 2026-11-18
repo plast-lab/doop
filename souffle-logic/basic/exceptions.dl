@@ -27,7 +27,7 @@ ExceptionHandler_TypeIsCaught(?type, ?block) :-
 	ConcreteClassType(?type).
 
 /*
- * Inclusion of instuction is important. E.g. handler1 covers indices 20-30,
+ * Inclusion of instruction is important. E.g. handler1 covers indices 20-30,
  * handler2 covers indices 10-40. Also, Previous(handler1, handler2).
  * Instruction #25 may infer Impossible(T1, handler2). Subsequently, when
  * checking instruction #15, we would (falsely) have that handler2 is

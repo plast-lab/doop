@@ -276,6 +276,9 @@ AssignReturnValue(?invocation, ?to) :-
 // Properties
 .input Properties
 
+// Service-provider registrations (META-INF/services)
+.input ServiceProvider
+
 
 .decl _OperatorAt(?instruction:Instruction, ?operator:symbol)
 .input _OperatorAt(filename="OperatorAt.facts")

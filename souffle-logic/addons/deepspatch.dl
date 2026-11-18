@@ -1,0 +1,43 @@
+// ============================================================================
+// deepspatch.dl -- deep dispatch through registries that the runtime populates
+// reflectively.
+//
+// A registry names implementation classes that the program instantiates
+// reflectively and then uses through a service type: java.util.ServiceLoader
+// (classes named in META-INF/services/I), or a name->class factory
+// (`(Action) actions.getObjectOfClass(name)`). A static call graph loses every
+// product, and with it everything downstream of it.
+//
+// deepspatch binds the registered products into the analysis so that calling
+// product methods dispatches to the real product bodies. It is organised as one
+// back-end fed by front-ends:
+//
+//   deepspatch/dispatch-backend.dl          uniform back-end: product mocks, the
+//                                           COARSE tier (products stand in for the
+//                                           service type wherever it is mocked) and
+//                                           the PRECISE tier (bind the result of each
+//                                           reached registry call, in the caller's
+//                                           context: Iterable, Iterator or instance)
+//   deepspatch/frontend-service-loader.dl   ServiceLoader and reimplementations;
+//                                           fully automatic, from the ServiceProvider
+//                                           facts fact generation emits
+//   deepspatch/frontend-reflective-factory.dl
+//                                           name->class factories, from optional
+//                                           ReflectiveFactory* input facts
+//
+// Front-ends only state WHAT a registry can produce (DispatchProduct) and WHERE a
+// reached call asks for it (DispatchCall); see dispatch-backend.dl for the
+// contract. To support another kind of registry, add a front-end that derives
+// those two relations and include it below.
+//
+// Included at top level after the mocking layer (like spring-data-repo), so it
+// uses the mainAnalysis.* component-qualified relations. It is preprocessed
+// standalone (CPreprocessor.includeAtEnd), so it #includes the macro header it
+// needs; the parts below are #included into this one unit. Guarded to analyses
+// that instantiate mainAnalysis (SouffleAnalysis).
+// ============================================================================
+#include "../commonMacros.dl"
+
+#include "deepspatch/dispatch-backend.dl"
+#include "deepspatch/frontend-service-loader.dl"
+#include "deepspatch/frontend-reflective-factory.dl"

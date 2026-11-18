@@ -498,6 +498,12 @@
 // Contents of properties files
 .decl Properties(?path:StringConstant, ?key:StringConstant, ?value:StringConstant)
 
+// Java service-provider registrations from META-INF/services/<interface> entries
+// (java.util.ServiceLoader). ?iface is the service-interface FQN (the entry's file
+// name), ?provider is one registered concrete provider class. Symbols (not typed
+// references), since a provider may be phantom/library-only.
+.decl ServiceProvider(?iface:symbol, ?provider:symbol)
+
 // Return variables of native methods (no instructions exist)
 .decl NativeReturnVar(?var:Var, ?method:Method)
 
