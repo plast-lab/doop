@@ -1,0 +1,642 @@
+// ============================================================================
+// Test queries for the P/Taint source vocabulary (addons/information-flow):
+// TaintSourceReturn, TaintSourceFormalParam, TaintSourceActualParam,
+// TaintSourceBase, TaintSourceThis, TaintSourceField, TaintSourceType (mark and
+// mock halves), the mark half of the method-keyed sources, the default override
+// expansion and, under --enable-model-primitives, the arithmetic taint mark and
+// the primitive formal-parameter source, the fresh-object string builder
+// transfers (common-transfer-methods.dl), the sanitizer, deep taint, the mark
+// copy at the mutating transfers, the sink shapes (return sink, field-store
+// sink, default override expansion of sinks) and the spec diagnostics
+// (TaintSpecUnmatched, TaintSpecInert), driven by tests/117-taint-sources
+// (class Main).
+//
+// Loaded via --extra-logic on top of --information-flow minimal; the driver's
+// taint SPEC comes in through --taint-spec (taint-spec.tsv next to the test, see
+// below). Every check is a FAIL relation that
+// must be EMPTY when the feature works; the Groovy spec asserts each with
+// relationIsEmpty. Checks anchor on the producing / consuming method of each
+// sink argument (stable source signatures), never on invocation numbering.
+// ============================================================================
+
+// ---- the spec for the driver ------------------------------------------------
+// Lives in tests/117-taint-sources/taint-spec.tsv and reaches the analysis through
+// --taint-spec (addons/information-flow/spec.dl), so every kind below is also a
+// test of that channel. This file holds only the checks.
+
+// ---- shared helpers ---------------------------------------------------------
+
+// Regex spec entry: the one TaintSinkActualParam line over sinkPat. must make
+// both sinkPatA and sinkPatB sinks, each fed by untrusted().
+.decl Taint_FAIL_PatternSinkMissing(?m:symbol)
+.output Taint_FAIL_PatternSinkMissing
+Taint_FAIL_PatternSinkMissing(?m) :-
+  (?m = "<Main: void sinkPatA(java.lang.String)>" ; ?m = "<Main: void sinkPatB(java.lang.String)>"),
+  !PatternSinkLeaks(?m).
+.decl PatternSinkLeaks(?m:symbol)
+PatternSinkLeaks(?m) :-
+  MethodInvocation_Method(?invo, ?m),
+  LeakAt("src", ?invo).
+
+// Spec diagnostics (diagnostics.dl). The guard against typos in the spec above
+// is the core relation itself: whatever it reports about THIS program's ids
+// (class Main and its nested classes) must be a planted entry. Entries of the
+// minimal profile and of common-transfer-methods.dl that are dead for this
+// program or platform are what the diagnostic is for, not a test failure.
+.decl TestProgramId(?id:symbol)
+TestProgramId(?id) :- TaintSpecUnmatched(_, ?id), match("<?Main([$:].*)?", ?id).
+TestProgramId(?id) :- TaintSpecInert(_, ?id),     match("<?Main([$:].*)?", ?id).
+.decl Taint_FAIL_SpecUnmatched(?kind:symbol, ?id:symbol)
+.output Taint_FAIL_SpecUnmatched
+Taint_FAIL_SpecUnmatched(?kind, ?id) :-
+  TaintSpecUnmatched(?kind, ?id),
+  TestProgramId(?id),
+  ?id != "<Main: java.lang.String noSuchMethod()>",
+  ?id != "<Main: java.lang.String NO_SUCH_FIELD>".
+// ... and the planted dead ids must be reported under their declaring relation.
+.decl Taint_FAIL_DiagUnmatchedMissing(?id:symbol)
+.output Taint_FAIL_DiagUnmatchedMissing
+Taint_FAIL_DiagUnmatchedMissing(?id) :-
+  ?id = "<Main: java.lang.String noSuchMethod()>",
+  !TaintSpecUnmatched("TaintSourceReturn", ?id).
+Taint_FAIL_DiagUnmatchedMissing(?id) :-
+  ?id = "<Main: java.lang.String NO_SUCH_FIELD>",
+  !TaintSpecUnmatched("TaintSourceField", ?id).
+// Inert: sinkUnused exists and is a declared sink but nothing calls it; every
+// other entry of this spec is exercised by Main (negative twins included). The
+// minimal profile's PrintWriter sink and the shared transfer list are inert
+// here by design (Main prints through System.out, a PrintStream).
+.decl Taint_FAIL_DiagInert(?kind:symbol, ?id:symbol)
+.output Taint_FAIL_DiagInert
+Taint_FAIL_DiagInert("missing", ?id) :-
+  ?id = "<Main: void sinkUnused(java.lang.String)>",
+  !TaintSpecInert("TaintSinkActualParam", ?id).
+Taint_FAIL_DiagInert(?kind, ?id) :-
+  TaintSpecInert(?kind, ?id),
+  TestProgramId(?id),
+  ?id != "<Main: void sinkUnused(java.lang.String)>".
+
+// ---- scope flags (TaintSourceAppOnly / TaintSinkAppOnly) ---------------------
+// String.valueOf(Object) is a sink flagged app-only: it leaks at Main's direct
+// call and NOT at the JDK-internal call inside StringBuilder.append(Object).
+// AbstractStringBuilder.append(String) is an unflagged JDK sink: it leaks at the
+// JDK-internal call inside StringBuilder.append(String). Integer.toString(int)
+// is a source flagged app-only with JDK call sites only: reported inert.
+.decl SinkLeakIn(?sinkMethod:Method, ?inMethod:Method)
+SinkLeakIn(?sinkMethod, ?inMethod) :-
+  LeakingTaintedInformation(_, "sink", _, ?invo, _),
+  MethodInvocation_Method(?invo, ?sinkMethod),
+  Instruction_Method(?invo, ?inMethod).
+.decl Taint_FAIL_GateMissing(?what:symbol)
+.output Taint_FAIL_GateMissing
+Taint_FAIL_GateMissing("flagged sink at Main's direct call") :-
+  !SinkLeakIn("<java.lang.String: java.lang.String valueOf(java.lang.Object)>",
+              "<Main: void main(java.lang.String[])>").
+Taint_FAIL_GateMissing("unflagged JDK sink at its JDK-internal call") :-
+  !SinkLeakIn("<java.lang.AbstractStringBuilder: java.lang.AbstractStringBuilder append(java.lang.String)>",
+              "<java.lang.StringBuilder: java.lang.StringBuilder append(java.lang.String)>").
+Taint_FAIL_GateMissing("flagged source with JDK call sites only reported inert") :-
+  !TaintSpecInert("TaintSourceReturn", "<java.lang.Integer: java.lang.String toString(int)>").
+.decl Taint_FAIL_GateLeakAtLibrarySite(?inMethod:Method)
+.output Taint_FAIL_GateLeakAtLibrarySite
+Taint_FAIL_GateLeakAtLibrarySite(?inMethod) :-
+  SinkLeakIn("<java.lang.String: java.lang.String valueOf(java.lang.Object)>", ?inMethod),
+  !ApplicationMethod(?inMethod).
+
+// A call to a declared sink method, with the actual at the sink index.
+.decl SinkCall(?invo:symbol, ?sinkMethod:symbol, ?actual:symbol)
+SinkCall(?invo, ?m, ?actual) :-
+  TaintSinkActualParam(_, ?idx, ?m),
+  MethodInvocation_Method(?invo, ?m),
+  ActualParam(?idx, ?invo, ?actual).
+
+// The sink actual of ?invo is the result of a call to ?producer (declared target).
+.decl SinkFedBy(?invo:symbol, ?producer:symbol)
+SinkFedBy(?invo, ?producer) :-
+  SinkCall(?invo, _, ?actual),
+  AssignReturnValue(?srcInvo, ?actual),
+  MethodInvocation_Method(?srcInvo, ?producer).
+
+// Debug dump (not asserted): every leak reported.
+.decl TaintTest_Leaks(?from:symbol, ?to:symbol, ?invo:symbol, ?source:symbol)
+.output TaintTest_Leaks
+TaintTest_Leaks(?from, ?to, ?invo, ?source) :-
+  LeakingTaintedInformation(?from, ?to, _, ?invo, ?source).
+
+.decl LeakAt(?from:symbol, ?invo:symbol)
+LeakAt(?from, ?invo) :- TaintTest_Leaks(?from, "sink", ?invo, _).
+
+// ---- return source ------------------------------------------------------------
+// Every sink fed by untrusted() must leak under label "src" (covers sink and the
+// index-1 feed of sink2).
+.decl Taint_FAIL_ReturnSourceMissing(?invo:symbol)
+.output Taint_FAIL_ReturnSourceMissing
+Taint_FAIL_ReturnSourceMissing(?invo) :-
+  SinkFedBy(?invo, "<Main: java.lang.String untrusted()>"),
+  !LeakAt("src", ?invo).
+
+// ---- override expansion (default) ---------------------------------------------
+// The source is declared on Reader.read; the call resolves to FileReader.read.
+.decl Taint_FAIL_OverrideExpansionMissing(?invo:symbol)
+.output Taint_FAIL_OverrideExpansionMissing
+Taint_FAIL_OverrideExpansionMissing(?invo) :-
+  SinkFedBy(?invo, "<Main$Reader: java.lang.String read()>"),
+  !LeakAt("src", ?invo).
+
+// ---- formal-parameter source -----------------------------------------------------
+// The sink call inside handle must leak under label "param", attributed to
+// handle's formal 0 as the source.
+.decl HandleSinkLeaks()
+HandleSinkLeaks() :-
+  SinkCall(?invo, "<Main: void sink(java.lang.String)>", _),
+  Instruction_Method(?invo, "<Main: void handle(java.lang.String)>"),
+  FormalParam(0, "<Main: void handle(java.lang.String)>", ?formal),
+  TaintTest_Leaks("param", "sink", ?invo, ?formal).
+
+.decl Taint_FAIL_FormalParamSourceMissing(?msg:symbol)
+.output Taint_FAIL_FormalParamSourceMissing
+Taint_FAIL_FormalParamSourceMissing("no param-labelled leak at handle's sink call, sourced at its formal 0") :-
+  !HandleSinkLeaks().
+
+// ---- negatives --------------------------------------------------------------------
+// A sink fed by trusted() must not leak: covers sink(trusted()) and
+// sink2(untrusted(), trusted()), whose taint sits at the non-sink index 0.
+// (handle's internal sink is fed by the formal, not by a call, so it is excluded.)
+.decl Taint_FAIL_NonSourceLeaks(?invo:symbol, ?from:symbol)
+.output Taint_FAIL_NonSourceLeaks
+Taint_FAIL_NonSourceLeaks(?invo, ?from) :-
+  SinkFedBy(?invo, "<Main: java.lang.String trusted()>"),
+  LeakAt(?from, ?invo).
+
+// Only the spec's labels may ever appear in a finding -- except at the
+// deliberately UNFLAGGED JDK sink AbstractStringBuilder.append(String) (scope-flag
+// case below): the minimal profile's BufferedReader.readLine source is unflagged
+// too, the JDK reads its own files (JarIndex, ServiceLoader, DomainName$Rules)
+// and that `default` taint reaches the sink inside the JDK. That is the ungated
+// reading itself, not a label error.
+.decl UnflaggedJdkSinkCall(?invo:symbol)
+UnflaggedJdkSinkCall(?invo) :-
+  MethodInvocation_Method(?invo, "<java.lang.AbstractStringBuilder: java.lang.AbstractStringBuilder append(java.lang.String)>").
+.decl Taint_FAIL_UnexpectedLabel(?from:symbol, ?to:symbol)
+.output Taint_FAIL_UnexpectedLabel
+Taint_FAIL_UnexpectedLabel(?from, ?to) :-
+  TaintTest_Leaks(?from, ?to, ?invo, _),
+  !UnflaggedJdkSinkCall(?invo),
+  ( ?to != "sink" ;
+    (?from != "src", ?from != "param", ?from != "prim",
+     ?from != "arg", ?from != "base", ?from != "ctor", ?from != "this",
+     ?from != "field", ?from != "type") ).
+
+// ---- primitive-typed return source ------------------------------------------
+// An int-typed taint value must survive the actual->formal edge into sinkInt
+// (no model-primitives needed: the value is minted with the primitive type and
+// the edge's subtype check holds reflexively).
+.decl Taint_FAIL_PrimSourceMissing(?invo:symbol)
+.output Taint_FAIL_PrimSourceMissing
+Taint_FAIL_PrimSourceMissing(?invo) :-
+  SinkFedBy(?invo, "<Main: int untrustedInt()>"), !LeakAt("prim", ?invo).
+
+// ---- actual-parameter source --------------------------------------------------
+// The sinkBytes call must leak under "arg", sourced at read's actual 0 (source id
+// = <read call site>/actual0).
+.decl Taint_FAIL_ActualParamSourceMissing(?msg:symbol)
+.output Taint_FAIL_ActualParamSourceMissing
+.decl ActualParamSourceLeaks()
+ActualParamSourceLeaks() :-
+  SinkCall(?sinkInvo, "<Main: void sinkBytes(byte[])>", _),
+  MethodInvocation_Method(?readInvo, "<Main: int read(byte[])>"),
+  TaintTest_Leaks("arg", "sink", ?sinkInvo, cat(?readInvo, "/actual0")).
+Taint_FAIL_ActualParamSourceMissing("sinkBytes(buf) did not leak from read(buf)'s actual 0") :-
+  !ActualParamSourceLeaks().
+
+// ---- base source (method and constructor) -----------------------------------------
+.decl BaseSourceLeaks(?label:symbol)
+BaseSourceLeaks("base") :-
+  SinkCall(?sinkInvo, "<Main: void sinkObj(java.lang.Object)>", _),
+  MethodInvocation_Method(?loadInvo, "<Main$Props: void load()>"),
+  TaintTest_Leaks("base", "sink", ?sinkInvo, cat(?loadInvo, "/base")).
+BaseSourceLeaks("ctor") :-
+  SinkCall(?sinkInvo, "<Main: void sinkObj(java.lang.Object)>", _),
+  MethodInvocation_Method(?initInvo, "<Main$Conn: void <init>(java.lang.String)>"),
+  TaintTest_Leaks("ctor", "sink", ?sinkInvo, cat(?initInvo, "/base")).
+
+.decl Taint_FAIL_BaseSourceMissing(?label:symbol)
+.output Taint_FAIL_BaseSourceMissing
+Taint_FAIL_BaseSourceMissing("base") :- !BaseSourceLeaks("base").
+Taint_FAIL_BaseSourceMissing("ctor") :- !BaseSourceLeaks("ctor").
+
+// ---- this source --------------------------------------------------------------------
+.decl ThisSourceLeaks()
+ThisSourceLeaks() :-
+  SinkCall(?invo, "<Main: void sinkObj(java.lang.Object)>", _),
+  Instruction_Method(?invo, "<Main$Request: void validate()>"),
+  ThisVar("<Main$Request: void validate()>", ?this),
+  TaintTest_Leaks("this", "sink", ?invo, ?this).
+
+.decl Taint_FAIL_ThisSourceMissing(?msg:symbol)
+.output Taint_FAIL_ThisSourceMissing
+Taint_FAIL_ThisSourceMissing("sinkObj(this) in validate() did not leak from this") :-
+  !ThisSourceLeaks().
+
+// ---- negatives for the caller-side positions -----------------------------------------
+// The *Neg sinks are fed only by non-source values and must never leak.
+.decl Taint_FAIL_CallerSideNegLeaks(?invo:symbol, ?from:symbol)
+.output Taint_FAIL_CallerSideNegLeaks
+Taint_FAIL_CallerSideNegLeaks(?invo, ?from) :-
+  ( SinkCall(?invo, "<Main: void sinkBytesNeg(byte[])>", _) ;
+    SinkCall(?invo, "<Main: void sinkObjNeg(java.lang.Object)>", _) ;
+    SinkCall(?invo, "<Main: void sinkNeg(java.lang.String)>", _) ),
+  LeakAt(?from, ?invo).
+
+// ---- element of a filled buffer -------------------------------------------------------
+// After read(buf), buf[0] carries taint into sinkByte: the tainted byte[] value
+// in buf feeds the existing tainted-array load rule, which mints a byte-typed
+// value into the loaded element.
+.decl Taint_FAIL_FilledElementMissing(?invo:symbol)
+.output Taint_FAIL_FilledElementMissing
+Taint_FAIL_FilledElementMissing(?invo) :-
+  SinkCall(?invo, "<Main: void sinkByte(byte)>", _), !LeakAt("arg", ?invo).
+
+// ---- field source -------------------------------------------------------------------
+// Mock half: a sink whose actual is loaded from a source field must leak under
+// "field" with the field signature as the source -- for the static field with no
+// store, the instance field assigned in the constructor, and the instance field
+// never assigned at all.
+.decl SinkFedByField(?invo:symbol, ?field:symbol)
+SinkFedByField(?invo, ?field) :-
+  SinkCall(?invo, _, ?actual),
+  ( LoadStaticField(?field, ?actual, _) ; LoadInstanceField(_, ?field, ?actual, _) ).
+
+.decl Taint_FAIL_FieldSourceMissing(?invo:symbol, ?field:symbol)
+.output Taint_FAIL_FieldSourceMissing
+Taint_FAIL_FieldSourceMissing(?invo, ?field) :-
+  SinkFedByField(?invo, ?field),
+  TaintSourceField(_, ?field),
+  !TaintTest_Leaks("field", "sink", ?invo, ?field).
+
+// Mark half: the array stored into Settings.data is passed to sinkBytes through an
+// alias that never goes through the field, so only a mark on the real array
+// object can produce this leak (the field is never loaded, so the mock cannot).
+.decl FieldMarkLeaks()
+FieldMarkLeaks() :-
+  SinkCall(?invo, "<Main: void sinkBytes(byte[])>", _),
+  TaintTest_Leaks("field", "sink", ?invo, "<Main$Settings: byte[] data>").
+
+.decl Taint_FAIL_FieldMarkMissing(?msg:symbol)
+.output Taint_FAIL_FieldMarkMissing
+Taint_FAIL_FieldMarkMissing("sinkBytes(data) did not leak from the marked contents of Settings.data") :-
+  !FieldMarkLeaks().
+
+// Negative: a sink fed from a non-source field never leaks.
+.decl Taint_FAIL_FieldNegLeaks(?invo:symbol, ?from:symbol)
+.output Taint_FAIL_FieldNegLeaks
+Taint_FAIL_FieldNegLeaks(?invo, ?from) :-
+  SinkFedByField(?invo, "<Main$Settings: java.lang.String safe>"),
+  LeakAt(?from, ?invo).
+
+// ---- type source --------------------------------------------------------------------
+// Every sinkObj call whose actual is a fresh Token or AdminToken allocation must
+// leak under "type" with the type Main$Token as the source (the subtype case
+// checks that the source covers subtypes). Ticket feeds only sinkObjNeg, which
+// Taint_FAIL_CallerSideNegLeaks already requires to never leak.
+.decl SinkFedByAllocOf(?invo:symbol, ?type:symbol)
+SinkFedByAllocOf(?invo, ?type) :-
+  SinkCall(?invo, "<Main: void sinkObj(java.lang.Object)>", ?actual),
+  AssignHeapAllocation(?heap, ?actual, _),
+  HeapAllocation_Type(?heap, ?type).
+
+.decl Taint_FAIL_TypeSourceMissing(?invo:symbol, ?type:symbol)
+.output Taint_FAIL_TypeSourceMissing
+Taint_FAIL_TypeSourceMissing(?invo, ?type) :-
+  SinkFedByAllocOf(?invo, ?type),
+  ( ?type = "Main$Token" ; ?type = "Main$AdminToken" ),
+  !TaintTest_Leaks("type", "sink", ?invo, "Main$Token").
+
+// Mock half: Main$Session is never allocated, so a Session can reach a sink only
+// as a stand-in placed at an entry position of the type. Each of the three entry
+// positions must produce a leak under "type" with Main$Session as the source:
+// the formal of serve(Session) (the sinkObj call inside serve), the static field
+// CURRENT (a sinkObj fed by a load of it), and the result of the body-less
+// openSession() (a sinkObj fed by that call). The first check guards the premise.
+.decl Taint_FAIL_TypeMockMissing(?msg:symbol)
+.output Taint_FAIL_TypeMockMissing
+Taint_FAIL_TypeMockMissing("premise broken: Main$Session is allocated") :-
+  HeapAllocation_Type(?heap, "Main$Session"),
+  AssignHeapAllocation(?heap, _, _).
+Taint_FAIL_TypeMockMissing("formal entry position") :-
+  SinkCall(?invo, "<Main: void sinkObj(java.lang.Object)>", _),
+  Instruction_Method(?invo, "<Main: void serve(Main$Session)>"),
+  !TaintTest_Leaks("type", "sink", ?invo, "Main$Session").
+Taint_FAIL_TypeMockMissing("field entry position") :-
+  SinkFedByField(?invo, "<Main: Main$Session CURRENT>"),
+  !TaintTest_Leaks("type", "sink", ?invo, "Main$Session").
+Taint_FAIL_TypeMockMissing("body-less method result entry position") :-
+  SinkFedBy(?invo, "<Main: Main$Session openSession()>"),
+  !TaintTest_Leaks("type", "sink", ?invo, "Main$Session").
+
+// ---- mark half of the method-keyed sources ------------------------------------------
+// Each *_REG field holds the real object that sat at a source position, stored
+// there by a path that never went through the position (see the driver). A sink
+// fed from the field can leak only through a MARK on that object, under the
+// source's label and with the position's source id. The premise check guards the
+// construction: no stand-in may ever reach a *_REG field.
+.decl MarkRegField(?field:symbol)
+MarkRegField("<Main: Main$Props RET_REG>").
+MarkRegField("<Main: Main$Props PARAM_REG>").
+MarkRegField("<Main: byte[] ARG_REG>").
+MarkRegField("<Main: Main$Props BASE_REG>").
+MarkRegField("<Main: Main$Request THIS_REG>").
+MarkRegField("<Main: Main$Props TRUSTED_REG>").
+
+.decl MethodKeyedMarkLeaks(?kind:symbol)
+MethodKeyedMarkLeaks("return") :-
+  SinkFedByField(?invo, "<Main: Main$Props RET_REG>"),
+  MethodInvocation_Method(?srcInvo, "<Main: Main$Props untrustedProps()>"),
+  TaintTest_Leaks("src", "sink", ?invo, ?srcInvo).
+MethodKeyedMarkLeaks("formal") :-
+  SinkFedByField(?invo, "<Main: Main$Props PARAM_REG>"),
+  FormalParam(0, "<Main: void handleProps(Main$Props)>", ?formal),
+  TaintTest_Leaks("param", "sink", ?invo, ?formal).
+MethodKeyedMarkLeaks("actual") :-
+  SinkFedByField(?invo, "<Main: byte[] ARG_REG>"),
+  MethodInvocation_Method(?readInvo, "<Main: int read(byte[])>"),
+  TaintTest_Leaks("arg", "sink", ?invo, cat(?readInvo, "/actual0")).
+MethodKeyedMarkLeaks("base") :-
+  SinkFedByField(?invo, "<Main: Main$Props BASE_REG>"),
+  MethodInvocation_Method(?loadInvo, "<Main$Props: void load()>"),
+  TaintTest_Leaks("base", "sink", ?invo, cat(?loadInvo, "/base")).
+MethodKeyedMarkLeaks("this") :-
+  SinkFedByField(?invo, "<Main: Main$Request THIS_REG>"),
+  ThisVar("<Main$Request: void validate()>", ?this),
+  TaintTest_Leaks("this", "sink", ?invo, ?this).
+
+.decl Taint_FAIL_MethodKeyedMarkMissing(?kind:symbol)
+.output Taint_FAIL_MethodKeyedMarkMissing
+Taint_FAIL_MethodKeyedMarkMissing(?kind) :-
+  ( ?kind = "return" ; ?kind = "formal" ; ?kind = "actual" ; ?kind = "base" ; ?kind = "this" ),
+  !MethodKeyedMarkLeaks(?kind).
+Taint_FAIL_MethodKeyedMarkMissing(cat("premise broken: a stand-in reached ", ?field)) :-
+  MarkRegField(?field),
+  mainAnalysis.StaticFieldPointsTo(_, ?value, ?field),
+  contains("::: ", ?value).
+// TRUSTED_REG feeds only sinkObjNeg, which Taint_FAIL_CallerSideNegLeaks already
+// requires to never leak.
+
+#ifdef MODEL_PRIMITIVES
+// A primitive formal-parameter source has no mock half (reference types only);
+// under model-primitives the formal holds the caller's <prim-arith> object (main's
+// `args.length`), which is AppMarkable, so the sink inside handleInt leaks under
+// "param" with the formal as the source.
+.decl PrimFormalMarkLeaks()
+PrimFormalMarkLeaks() :-
+  SinkCall(?invo, "<Main: void sinkInt(int)>", _),
+  Instruction_Method(?invo, "<Main: void handleInt(int)>"),
+  FormalParam(0, "<Main: void handleInt(int)>", ?formal),
+  TaintTest_Leaks("param", "sink", ?invo, ?formal).
+
+.decl Taint_FAIL_PrimFormalMarkMissing(?msg:symbol)
+.output Taint_FAIL_PrimFormalMarkMissing
+Taint_FAIL_PrimFormalMarkMissing("sinkInt(n) in handleInt did not leak from the marked primitive formal") :-
+  !PrimFormalMarkLeaks().
+#endif // MODEL_PRIMITIVES
+
+// ---- fresh-object string builders ---------------------------------------------------
+// format, getBytes(), the StringBuilder(String) and String(byte[]) constructors and
+// valueOf(char[]) build a NEW object from their input (no `return this` path), so
+// only the transfers in common-transfer-methods.dl carry the taint across them.
+// Positive: every sink / sinkBytes call fed by one of them leaks under "src".
+// (The negative twins feed sinkNeg / sinkBytesNeg, covered by CallerSideNegLeaks.)
+.decl BuilderSinkFedBy(?invo:symbol, ?builder:symbol)
+BuilderSinkFedBy(?invo, ?builder) :-
+  ( SinkCall(?invo, "<Main: void sink(java.lang.String)>", ?actual) ;
+    SinkCall(?invo, "<Main: void sinkBytes(byte[])>", ?actual) ),
+  AssignReturnValue(?srcInvo, ?actual),
+  MethodInvocation_Method(?srcInvo, ?builder),
+  ( ?builder = "<java.lang.String: java.lang.String format(java.lang.String,java.lang.Object[])>" ;
+    ?builder = "<java.lang.String: byte[] getBytes()>" ;
+    ?builder = "<java.lang.StringBuilder: java.lang.String toString()>" ;
+    ?builder = "<java.lang.String: java.lang.String valueOf(char[])>" ).
+// new String(bytes): the sink actual is a String allocated in main itself.
+BuilderSinkFedBy(?invo, "new String(byte[])") :-
+  SinkCall(?invo, "<Main: void sink(java.lang.String)>", ?actual),
+  AssignHeapAllocation(?heap, ?actual, "<Main: void main(java.lang.String[])>"),
+  HeapAllocation_Type(?heap, "java.lang.String").
+
+.decl Taint_FAIL_BuilderTransferMissing(?invo:symbol, ?builder:symbol)
+.output Taint_FAIL_BuilderTransferMissing
+Taint_FAIL_BuilderTransferMissing(?invo, ?builder) :-
+  BuilderSinkFedBy(?invo, ?builder),
+  !LeakAt("src", ?invo).
+Taint_FAIL_BuilderTransferMissing("premise broken: no sink is fed by", ?b) :-
+  ( ?b = "<java.lang.String: java.lang.String format(java.lang.String,java.lang.Object[])>" ;
+    ?b = "<java.lang.String: byte[] getBytes()>" ;
+    ?b = "<java.lang.StringBuilder: java.lang.String toString()>" ;
+    ?b = "<java.lang.String: java.lang.String valueOf(char[])>" ;
+    ?b = "new String(byte[])" ),
+  !BuilderSinkFedBy(_, ?b).
+
+// ---- sanitizer -----------------------------------------------------------------------
+// clean(String) is a TaintSanitizer: its RESULT never leaks, whatever the body did
+// (it re-mints a stand-in through toCharArray + the String(char[]) transfer and
+// returns a fresh String). Its formal still receives the taint: the body stores
+// the argument into AUDIT, and a sink fed from AUDIT leaks (side channel). And a
+// real object crosses a sanitizer: cleanObj(new Clean()).use() resolves.
+.decl Taint_FAIL_SanitizerLeaks(?invo:symbol, ?from:symbol)
+.output Taint_FAIL_SanitizerLeaks
+Taint_FAIL_SanitizerLeaks(?invo, ?from) :-
+  SinkFedBy(?invo, "<Main: java.lang.String clean(java.lang.String)>"),
+  LeakAt(?from, ?invo).
+
+.decl Taint_FAIL_SanitizerSideChannelMissing(?msg:symbol)
+.output Taint_FAIL_SanitizerSideChannelMissing
+Taint_FAIL_SanitizerSideChannelMissing("premise broken: no sink is fed from AUDIT") :-
+  !SinkFedByField(_, "<Main: java.lang.Object AUDIT>").
+Taint_FAIL_SanitizerSideChannelMissing("the sanitizer's formal did not receive the taint") :-
+  SinkFedByField(?invo, "<Main: java.lang.Object AUDIT>"),
+  !LeakAt("src", ?invo).
+
+.decl Taint_FAIL_SanitizerBlocksObjects(?m:symbol)
+.output Taint_FAIL_SanitizerBlocksObjects
+Taint_FAIL_SanitizerBlocksObjects(?m) :-
+  ?m = "<Main$Clean: void use()>",
+  !mainAnalysis.Reachable(?m).
+
+// ---- deep taint ----------------------------------------------------------------------
+// handleAccount's formal is a source; inside it, the account's contents reach sinks:
+// the owner through the getter (a load in application code with a tainted `this`),
+// the owner's name (depth 2), the int field, the byte[] field. In main, OWNER_REG
+// holds the owner object, stored before the account reached the position, so a sink
+// fed from it leaks only through the deep MARK on the owner. All under "param".
+.decl DeepSink(?invo:symbol, ?kind:symbol)
+DeepSink(?invo, "getter") :-
+  SinkCall(?invo, "<Main: void sinkObj(java.lang.Object)>", ?actual),
+  Instruction_Method(?invo, "<Main: void handleAccount(Main$Account)>"),
+  AssignReturnValue(?srcInvo, ?actual),
+  MethodInvocation_Method(?srcInvo, "<Main$Account: Main$Owner getOwner()>").
+DeepSink(?invo, "depth 2") :-
+  SinkCall(?invo, "<Main: void sink(java.lang.String)>", ?actual),
+  LoadInstanceField(_, "<Main$Owner: java.lang.String name>", ?actual, _).
+DeepSink(?invo, "primitive field") :-
+  SinkCall(?invo, "<Main: void sinkInt(int)>", ?actual),
+  LoadInstanceField(_, "<Main$Account: int amount>", ?actual, _).
+DeepSink(?invo, "array field") :-
+  SinkCall(?invo, "<Main: void sinkBytes(byte[])>", ?actual),
+  LoadInstanceField(_, "<Main$Account: byte[] key>", ?actual, _).
+DeepSink(?invo, "mark") :-
+  SinkFedByField(?invo, "<Main: Main$Owner OWNER_REG>").
+
+.decl Taint_FAIL_DeepTaintMissing(?kind:symbol)
+.output Taint_FAIL_DeepTaintMissing
+Taint_FAIL_DeepTaintMissing(?kind) :-
+  DeepSink(?invo, ?kind),
+  !LeakAt("param", ?invo).
+Taint_FAIL_DeepTaintMissing(cat("premise broken: no sink of kind ", ?kind)) :-
+  ( ?kind = "getter" ; ?kind = "depth 2" ; ?kind = "primitive field" ;
+    ?kind = "array field" ; ?kind = "mark" ),
+  !DeepSink(_, ?kind).
+// (The untainted Ledger's loads feed sinkObjNeg / sinkIntNeg, asserted by
+// CallerSideNegLeaks / ArithNegLeaks. A second Account would not do as the
+// control: Account's constructor is shared, so context-insensitively every
+// Account's fields hold every constructor argument, and the deep mark reaches
+// the "clean" account's contents through the base analysis's own conflation.)
+
+// ---- mark copy at the mutating transfers -----------------------------------------------
+// bx.put(untrusted()) (ActualParamToBase) marks the Box object allocated in main and
+// mints NO stand-in into its allocation variable; bx.fill(fb) (BaseToActualParam, bx
+// tainted) marks the byte[] allocated in main. Both registry fields leak under "src".
+.decl TransferTarget(?kind:symbol, ?heap:symbol, ?var:symbol)
+TransferTarget("receiver", ?heap, ?var) :-
+  AssignHeapAllocation(?heap, ?var, "<Main: void main(java.lang.String[])>"),
+  HeapAllocation_Type(?heap, "Main$Box").
+TransferTarget("actual", ?heap, ?var) :-
+  StoreStaticField(?var, "<Main: byte[] FILL_REG>", _),
+  AssignHeapAllocation(?heap, ?var, "<Main: void main(java.lang.String[])>").
+
+.decl Taint_FAIL_TransferMarkMissing(?kind:symbol)
+.output Taint_FAIL_TransferMarkMissing
+Taint_FAIL_TransferMarkMissing(cat("premise broken: no target of kind ", ?kind)) :-
+  ( ?kind = "receiver" ; ?kind = "actual" ), !TransferTarget(?kind, _, _).
+Taint_FAIL_TransferMarkMissing(cat("not marked: ", ?kind)) :-
+  TransferTarget(?kind, ?heap, _), !TaintedValue(?heap).
+Taint_FAIL_TransferMarkMissing(cat("no leak from the registry field: ", ?field)) :-
+  ( ?field = "<Main: Main$Box BOX_REG>" ; ?field = "<Main: byte[] FILL_REG>" ),
+  SinkFedByField(?invo, ?field), !LeakAt("src", ?invo).
+
+// The application receiver gets the mark INSTEAD of a stand-in.
+.decl Taint_FAIL_TransferStandInMinted(?v:symbol)
+.output Taint_FAIL_TransferStandInMinted
+Taint_FAIL_TransferStandInMinted(?v) :-
+  TransferTarget("receiver", _, ?var),
+  mainAnalysis.VarPointsTo(_, ?v, _, ?var),
+  contains("::: ", ?v).
+
+// ---- arithmetic -------------------------------------------------------------------
+// A sinkInt call whose actual is the result of a binop: in main, that is
+// len = ((buf[0] & 0xff) << 8) | (buf[1] & 0xff), decoded from the tainted buffer.
+.decl SinkIntFedByArith(?invo:symbol)
+SinkIntFedByArith(?invo) :-
+  SinkCall(?invo, "<Main: void sinkInt(int)>", ?actual),
+  isAssignBinop_Insn(?insn),
+  AssignInstruction_To(?insn, ?actual).
+
+// Negative, in both modes: sinkIntNeg is fed by the same arithmetic over the
+// trusted buffer and must never leak (every binop has its own <prim-arith>
+// object, so the mark on the tainted chain cannot reach this one).
+.decl Taint_FAIL_ArithNegLeaks(?invo:symbol, ?from:symbol)
+.output Taint_FAIL_ArithNegLeaks
+Taint_FAIL_ArithNegLeaks(?invo, ?from) :-
+  SinkCall(?invo, "<Main: void sinkIntNeg(int)>", _),
+  LeakAt(?from, ?invo).
+
+#ifdef MODEL_PRIMITIVES
+// Positive: the mark rule in addons/information-flow/rules.dl taints the
+// <prim-arith> object of an application binop/unop with a tainted operand. The
+// chain buf[0] -> & -> << -> | must carry the buffer's taint into sinkInt under
+// "arg", attributed to read's actual 0 like every value derived from the buffer.
+// The first check guards the premise (the actual really is a binop result).
+.decl ArithTaintLeaks()
+ArithTaintLeaks() :-
+  SinkIntFedByArith(?sinkInvo),
+  MethodInvocation_Method(?readInvo, "<Main: int read(byte[])>"),
+  TaintTest_Leaks("arg", "sink", ?sinkInvo, cat(?readInvo, "/actual0")).
+
+.decl Taint_FAIL_ArithTaintMissing(?msg:symbol)
+.output Taint_FAIL_ArithTaintMissing
+Taint_FAIL_ArithTaintMissing("premise broken: no sinkInt call is fed by a binop") :-
+  !SinkIntFedByArith(_).
+Taint_FAIL_ArithTaintMissing("sinkInt(len) did not leak from read(buf)'s actual 0") :-
+  SinkIntFedByArith(_),
+  !ArithTaintLeaks().
+
+// Scope: the mark is restricted to application code. The <prim-arith> object of
+// a library arithmetic site is shared by every caller of that library method,
+// so it must never be tainted, whatever the program does with the result.
+.decl Taint_FAIL_LibraryArithMarked(?v:symbol, ?method:symbol)
+.output Taint_FAIL_LibraryArithMarked
+Taint_FAIL_LibraryArithMarked(?v, ?method) :-
+  mainAnalysis.PrimitiveArithmeticSite(?insn, _, ?method, _),
+  !ApplicationMethod(?method),
+  ?v = cat("<prim-arith ", cat(?insn, ">")),
+  TaintedValue(?v).
+#endif // MODEL_PRIMITIVES
+
+// ---- sink shapes ----------------------------------------------------------------
+// Default override expansion of sinks: the sink is declared on Out.emit; the call
+// out.emit(untrusted()) resolves to ConsoleOut.emit (premise checked), so without
+// the expansion the resolved-target match in core.dl would never fire.
+.decl OutEmitCall(?invo:symbol)
+OutEmitCall(?invo) :-
+  SinkCall(?invo, "<Main$Out: void emit(java.lang.String)>", _),
+  SinkFedBy(?invo, "<Main: java.lang.String untrusted()>").
+
+.decl Taint_FAIL_SinkOverrideMissing(?msg:symbol)
+.output Taint_FAIL_SinkOverrideMissing
+Taint_FAIL_SinkOverrideMissing("premise broken: no out.emit(untrusted()) call") :-
+  !OutEmitCall(_).
+Taint_FAIL_SinkOverrideMissing(cat("premise broken: not resolved to ConsoleOut.emit: ", ?invo)) :-
+  OutEmitCall(?invo),
+  !mainAnalysis.CallGraphEdge(_, ?invo, _, "<Main$ConsoleOut: void emit(java.lang.String)>").
+Taint_FAIL_SinkOverrideMissing(cat("no leak at ", ?invo)) :-
+  OutEmitCall(?invo),
+  !LeakAt("src", ?invo).
+
+// Return sink: the finding's site is render's return instruction, sourced at
+// untrusted() (render is fed by untrusted() only).
+.decl Taint_FAIL_ReturnSinkMissing(?msg:symbol)
+.output Taint_FAIL_ReturnSinkMissing
+Taint_FAIL_ReturnSinkMissing("premise broken: render has no non-void return") :-
+  !ReturnOf("<Main: java.lang.String render(java.lang.String)>", _).
+Taint_FAIL_ReturnSinkMissing(cat("no leak at ", ?insn)) :-
+  ReturnOf("<Main: java.lang.String render(java.lang.String)>", ?insn),
+  !LeakAt("src", ?insn).
+
+.decl ReturnOf(?method:symbol, ?insn:symbol)
+ReturnOf(?method, ?insn) :-
+  ReturnNonvoid_Var(?insn, _),
+  Instruction_Method(?insn, ?method).
+
+// Field sink: the finding's site is the store instruction, static (PAGE) and
+// instance (Resp.body), sourced at untrusted().
+.decl StoreTo(?field:symbol, ?insn:symbol)
+StoreTo(?field, ?insn) :-
+  FieldInstruction_Signature(?insn, ?field),
+  ( StoreStaticField_From(?insn, _) ; StoreInstanceField_From(?insn, _) ).
+
+.decl Taint_FAIL_FieldSinkMissing(?msg:symbol)
+.output Taint_FAIL_FieldSinkMissing
+Taint_FAIL_FieldSinkMissing(cat("premise broken: no store to ", ?field)) :-
+  TaintSinkField(_, ?field),
+  !StoreTo(?field, _).
+Taint_FAIL_FieldSinkMissing(cat("no leak at ", ?insn)) :-
+  ( ?field = "<Main: java.lang.String PAGE>" ; ?field = "<Main$Resp: java.lang.String body>" ),
+  StoreTo(?field, ?insn),
+  !LeakAt("src", ?insn).
+
+// Negatives: renderNeg's return and the store to PAGE_NEG see trusted() only and
+// must never leak.
+.decl Taint_FAIL_SinkShapeNegLeaks(?site:symbol, ?from:symbol)
+.output Taint_FAIL_SinkShapeNegLeaks
+Taint_FAIL_SinkShapeNegLeaks(?site, ?from) :-
+  ( ReturnOf("<Main: java.lang.String renderNeg(java.lang.String)>", ?site) ;
+    StoreTo("<Main: java.lang.String PAGE_NEG>", ?site) ),
+  LeakAt(?from, ?site).

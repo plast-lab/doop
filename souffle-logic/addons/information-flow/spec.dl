@@ -1,0 +1,229 @@
+#pragma once
+// ============================================================================
+// The user taint specification (--taint-spec FILE).
+//
+// A tab-separated file, one entry per line, blank lines and '#' lines ignored:
+//   <kind> <columns...>
+// where <kind> is one of the source / sink / sanitizer / transfer relations below
+// and the columns are that relation's own, in order: a free-text label, a
+// parameter index, and a method / field / type id. The id column may be a regex
+// over the whole id (Souffle's match, whole-string); the fact generator flags it
+// as one when it holds a regex operator no Doop id contains (anything of
+// `* + ? | ^ { } \`, or a `[` that is not the array suffix `[]`).
+//
+//   TaintSourceReturn       src     <Main: java.lang.String untrusted()>
+//   TaintSinkActualParam    sink    0   <java.io.PrintWriter: void println[(].*[)]>
+//   TaintSanitizer          <java.net.URLEncoder: java.lang.String encode[(].*[)]>
+//   TaintSourceType         type    Main$Token
+//   TaintSinkAppOnly        <android.util.Log: int [a-z]+[(].*[)]>     (scope flag)
+//
+// FactGenerator0.writeTaintSpec checks kind and column count and writes
+// TaintSpecEntry(kind, c1, c2, c3, pattern) with "" padding; the rules below
+// put each entry into its relation, so override expansion, the diagnostics
+// (diagnostics.dl: an exact id that is not in the program, a regex that matches
+// nothing) and the leak rules see it exactly as a profile fact. An exact id
+// enters its relation unchecked on purpose: that is what makes a dead id
+// visible to TaintSpecUnmatched. The legacy keep-spec TAINT lines (TaintSpec,
+// core.dl) keep their meaning.
+// ============================================================================
+
+.decl TaintSpecEntry(?kind:symbol, ?c1:symbol, ?c2:symbol, ?c3:symbol, ?pattern:symbol)
+.input TaintSpecEntry(filename="TaintSpecEntry.facts")
+
+TaintSourceReturn(?label, as(?id, Method)) :-
+  TaintSpecEntry("TaintSourceReturn", ?label, ?id, _, "0").
+TaintSourceReturn(?label, ?m) :-
+  TaintSpecEntry("TaintSourceReturn", ?label, ?re, _, "1"),
+  isMethod(?m),
+  match(?re, ?m).
+TaintPattern("TaintSourceReturn", ?re) :-
+  TaintSpecEntry("TaintSourceReturn", _, ?re, _, "1").
+
+TaintSourceFormalParam(?label, to_number(?index), as(?id, Method)) :-
+  TaintSpecEntry("TaintSourceFormalParam", ?label, ?index, ?id, "0").
+TaintSourceFormalParam(?label, to_number(?index), ?m) :-
+  TaintSpecEntry("TaintSourceFormalParam", ?label, ?index, ?re, "1"),
+  isMethod(?m),
+  match(?re, ?m).
+TaintPattern("TaintSourceFormalParam", ?re) :-
+  TaintSpecEntry("TaintSourceFormalParam", _, _, ?re, "1").
+
+TaintSourceActualParam(?label, to_number(?index), as(?id, Method)) :-
+  TaintSpecEntry("TaintSourceActualParam", ?label, ?index, ?id, "0").
+TaintSourceActualParam(?label, to_number(?index), ?m) :-
+  TaintSpecEntry("TaintSourceActualParam", ?label, ?index, ?re, "1"),
+  isMethod(?m),
+  match(?re, ?m).
+TaintPattern("TaintSourceActualParam", ?re) :-
+  TaintSpecEntry("TaintSourceActualParam", _, _, ?re, "1").
+
+TaintSourceBase(?label, as(?id, Method)) :-
+  TaintSpecEntry("TaintSourceBase", ?label, ?id, _, "0").
+TaintSourceBase(?label, ?m) :-
+  TaintSpecEntry("TaintSourceBase", ?label, ?re, _, "1"),
+  isMethod(?m),
+  match(?re, ?m).
+TaintPattern("TaintSourceBase", ?re) :-
+  TaintSpecEntry("TaintSourceBase", _, ?re, _, "1").
+
+TaintSourceThis(?label, as(?id, Method)) :-
+  TaintSpecEntry("TaintSourceThis", ?label, ?id, _, "0").
+TaintSourceThis(?label, ?m) :-
+  TaintSpecEntry("TaintSourceThis", ?label, ?re, _, "1"),
+  isMethod(?m),
+  match(?re, ?m).
+TaintPattern("TaintSourceThis", ?re) :-
+  TaintSpecEntry("TaintSourceThis", _, ?re, _, "1").
+
+TaintSourceField(?label, as(?id, Field)) :-
+  TaintSpecEntry("TaintSourceField", ?label, ?id, _, "0").
+TaintSourceField(?label, ?m) :-
+  TaintSpecEntry("TaintSourceField", ?label, ?re, _, "1"),
+  isField(?m),
+  match(?re, ?m).
+TaintPattern("TaintSourceField", ?re) :-
+  TaintSpecEntry("TaintSourceField", _, ?re, _, "1").
+
+TaintSourceType(?label, as(?id, Type)) :-
+  TaintSpecEntry("TaintSourceType", ?label, ?id, _, "0").
+TaintSourceType(?label, ?m) :-
+  TaintSpecEntry("TaintSourceType", ?label, ?re, _, "1"),
+  isType(?m),
+  match(?re, ?m).
+TaintPattern("TaintSourceType", ?re) :-
+  TaintSpecEntry("TaintSourceType", _, ?re, _, "1").
+
+TaintSinkActualParam(?label, to_number(?index), as(?id, Method)) :-
+  TaintSpecEntry("TaintSinkActualParam", ?label, ?index, ?id, "0").
+TaintSinkActualParam(?label, to_number(?index), ?m) :-
+  TaintSpecEntry("TaintSinkActualParam", ?label, ?index, ?re, "1"),
+  isMethod(?m),
+  match(?re, ?m).
+TaintPattern("TaintSinkActualParam", ?re) :-
+  TaintSpecEntry("TaintSinkActualParam", _, _, ?re, "1").
+
+TaintSinkAnyActualParam(?label, as(?id, Method)) :-
+  TaintSpecEntry("TaintSinkAnyActualParam", ?label, ?id, _, "0").
+TaintSinkAnyActualParam(?label, ?m) :-
+  TaintSpecEntry("TaintSinkAnyActualParam", ?label, ?re, _, "1"),
+  isMethod(?m),
+  match(?re, ?m).
+TaintPattern("TaintSinkAnyActualParam", ?re) :-
+  TaintSpecEntry("TaintSinkAnyActualParam", _, ?re, _, "1").
+
+TaintSinkBase(?label, as(?id, Method)) :-
+  TaintSpecEntry("TaintSinkBase", ?label, ?id, _, "0").
+TaintSinkBase(?label, ?m) :-
+  TaintSpecEntry("TaintSinkBase", ?label, ?re, _, "1"),
+  isMethod(?m),
+  match(?re, ?m).
+TaintPattern("TaintSinkBase", ?re) :-
+  TaintSpecEntry("TaintSinkBase", _, ?re, _, "1").
+
+TaintSinkReturn(?label, as(?id, Method)) :-
+  TaintSpecEntry("TaintSinkReturn", ?label, ?id, _, "0").
+TaintSinkReturn(?label, ?m) :-
+  TaintSpecEntry("TaintSinkReturn", ?label, ?re, _, "1"),
+  isMethod(?m),
+  match(?re, ?m).
+TaintPattern("TaintSinkReturn", ?re) :-
+  TaintSpecEntry("TaintSinkReturn", _, ?re, _, "1").
+
+TaintSinkField(?label, as(?id, Field)) :-
+  TaintSpecEntry("TaintSinkField", ?label, ?id, _, "0").
+TaintSinkField(?label, ?m) :-
+  TaintSpecEntry("TaintSinkField", ?label, ?re, _, "1"),
+  isField(?m),
+  match(?re, ?m).
+TaintPattern("TaintSinkField", ?re) :-
+  TaintSpecEntry("TaintSinkField", _, ?re, _, "1").
+
+TaintSanitizer(as(?id, Method)) :-
+  TaintSpecEntry("TaintSanitizer", ?id, _, _, "0").
+TaintSanitizer(?m) :-
+  TaintSpecEntry("TaintSanitizer", ?re, _, _, "1"),
+  isMethod(?m),
+  match(?re, ?m).
+TaintPattern("TaintSanitizer", ?re) :-
+  TaintSpecEntry("TaintSanitizer", ?re, _, _, "1").
+
+TaintTransferBaseToReturn(as(?id, Method)) :-
+  TaintSpecEntry("TaintTransferBaseToReturn", ?id, _, _, "0").
+TaintTransferBaseToReturn(?m) :-
+  TaintSpecEntry("TaintTransferBaseToReturn", ?re, _, _, "1"),
+  isMethod(?m),
+  match(?re, ?m).
+TaintPattern("TaintTransferBaseToReturn", ?re) :-
+  TaintSpecEntry("TaintTransferBaseToReturn", ?re, _, _, "1").
+
+TaintTransferBaseToActualParam(as(?id, Method)) :-
+  TaintSpecEntry("TaintTransferBaseToActualParam", ?id, _, _, "0").
+TaintTransferBaseToActualParam(?m) :-
+  TaintSpecEntry("TaintTransferBaseToActualParam", ?re, _, _, "1"),
+  isMethod(?m),
+  match(?re, ?m).
+TaintPattern("TaintTransferBaseToActualParam", ?re) :-
+  TaintSpecEntry("TaintTransferBaseToActualParam", ?re, _, _, "1").
+
+TaintTransferActualParamToBase(to_number(?index), as(?id, Method)) :-
+  TaintSpecEntry("TaintTransferActualParamToBase", ?index, ?id, _, "0").
+TaintTransferActualParamToBase(to_number(?index), ?m) :-
+  TaintSpecEntry("TaintTransferActualParamToBase", ?index, ?re, _, "1"),
+  isMethod(?m),
+  match(?re, ?m).
+TaintPattern("TaintTransferActualParamToBase", ?re) :-
+  TaintSpecEntry("TaintTransferActualParamToBase", _, ?re, _, "1").
+
+TaintTransferActualParamElementsToBase(to_number(?index), as(?id, Method)) :-
+  TaintSpecEntry("TaintTransferActualParamElementsToBase", ?index, ?id, _, "0").
+TaintTransferActualParamElementsToBase(to_number(?index), ?m) :-
+  TaintSpecEntry("TaintTransferActualParamElementsToBase", ?index, ?re, _, "1"),
+  isMethod(?m),
+  match(?re, ?m).
+TaintPattern("TaintTransferActualParamElementsToBase", ?re) :-
+  TaintSpecEntry("TaintTransferActualParamElementsToBase", _, ?re, _, "1").
+
+TaintTransferActualParamElementsToReturn(to_number(?index), as(?id, Method)) :-
+  TaintSpecEntry("TaintTransferActualParamElementsToReturn", ?index, ?id, _, "0").
+TaintTransferActualParamElementsToReturn(to_number(?index), ?m) :-
+  TaintSpecEntry("TaintTransferActualParamElementsToReturn", ?index, ?re, _, "1"),
+  isMethod(?m),
+  match(?re, ?m).
+TaintPattern("TaintTransferActualParamElementsToReturn", ?re) :-
+  TaintSpecEntry("TaintTransferActualParamElementsToReturn", _, ?re, _, "1").
+
+TaintTransferActualParamToReturn(as(?id, Method)) :-
+  TaintSpecEntry("TaintTransferActualParamToReturn", ?id, _, _, "0").
+TaintTransferActualParamToReturn(?m) :-
+  TaintSpecEntry("TaintTransferActualParamToReturn", ?re, _, _, "1"),
+  isMethod(?m),
+  match(?re, ?m).
+TaintPattern("TaintTransferActualParamToReturn", ?re) :-
+  TaintSpecEntry("TaintTransferActualParamToReturn", ?re, _, _, "1").
+
+TaintTransferAppOnly(as(?id, Method)) :-
+  TaintSpecEntry("TaintTransferAppOnly", ?id, _, _, "0").
+TaintTransferAppOnly(?m) :-
+  TaintSpecEntry("TaintTransferAppOnly", ?re, _, _, "1"),
+  isMethod(?m),
+  match(?re, ?m).
+TaintPattern("TaintTransferAppOnly", ?re) :-
+  TaintSpecEntry("TaintTransferAppOnly", ?re, _, _, "1").
+
+TaintSourceAppOnly(as(?id, Method)) :-
+  TaintSpecEntry("TaintSourceAppOnly", ?id, _, _, "0").
+TaintSourceAppOnly(?m) :-
+  TaintSpecEntry("TaintSourceAppOnly", ?re, _, _, "1"),
+  isMethod(?m),
+  match(?re, ?m).
+TaintPattern("TaintSourceAppOnly", ?re) :-
+  TaintSpecEntry("TaintSourceAppOnly", ?re, _, _, "1").
+
+TaintSinkAppOnly(as(?id, Method)) :-
+  TaintSpecEntry("TaintSinkAppOnly", ?id, _, _, "0").
+TaintSinkAppOnly(?m) :-
+  TaintSpecEntry("TaintSinkAppOnly", ?re, _, _, "1"),
+  isMethod(?m),
+  match(?re, ?m).
+TaintPattern("TaintSinkAppOnly", ?re) :-
+  TaintSpecEntry("TaintSinkAppOnly", ?re, _, _, "1").

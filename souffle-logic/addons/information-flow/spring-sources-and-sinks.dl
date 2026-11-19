@@ -1,35 +1,36 @@
 #include "common-transfer-methods.dl"
 
-// Spring-specific sources-sinks-sanitizers
-LeakingSinkMethodPattern(0, "<javax.servlet.jsp.JspWriter: void print[(].*[)]>").
-LeakingSinkMethodPattern(0, "<javax.servlet.jsp.JspWriter: void println[(].*[)]>").
-LeakingSinkMethodPattern(0, "<java.io.Writer: void write[(].*[)]>").
-LeakingSinkMethodPattern(0, "<java.io.Writer: java.io.Writer append[(].*[)]>").
+// Spring-specific sources-sinks-sanitizers. Entries are plain facts: a method
+// that does not exist in the analysed program is then visible to the spec
+// diagnostics (TaintSpecUnmatched), instead of being dropped by an isMethod
+// guard; every consumer joins the program anyway.
+TaintSinkActualParamPattern("default", 0, "<javax.servlet.jsp.JspWriter: void print[(].*[)]>").
+TaintSinkActualParamPattern("default", 0, "<javax.servlet.jsp.JspWriter: void println[(].*[)]>").
+TaintSinkActualParamPattern("default", 0, "<java.io.Writer: void write[(].*[)]>").
+TaintSinkActualParamPattern("default", 0, "<java.io.Writer: java.io.Writer append[(].*[)]>").
 // "javax.servlet.http.HttpServletResponse([C)V"])" // TODO it's an interface?
-LeakingSinkMethodPattern(0, "<java.io.PrintWriter: void write[(].*[)]>").
-LeakingSinkMethodPattern(0, "<java.io.PrintWriter: java.io.Writer append[(].*[)]>").
-LeakingSinkMethodPattern(0, "<java.io.PrintWriter: void print[(].*[)]>").
-LeakingSinkMethodPattern(0, "<java.io.PrintWriter: void println[(].*[)]>").
-LeakingSinkMethodPattern(0, "<java.sql.Statement: void addBatch[(]java.lang.String[)]>").
-LeakingSinkMethodPattern(0, "<java.sql.Statement: int executeUpdate[(].*[)]>").
-LeakingSinkMethodPattern(0, "<java.sql.Statement: boolean execute[(].*[)]>").
-LeakingSinkMethodPattern(0, "<java.sql.Statement: java.sql.ResultSet executeQuery[(].*[)]>").
-LeakingSinkMethodPattern(0, "<java.sql.Connection: java.sql.PreparedStatement prepareStatement[(].*[)]>").
-LeakingSinkMethodPattern(0, "<java.sql.Connection: java.sql.CallableStatement prepareCall[(].*[)]>").
-LeakingSinkMethodPattern(0, "<java.sql.PreparedStatement: void setString[(].*[)]>").
+TaintSinkActualParamPattern("default", 0, "<java.io.PrintWriter: void write[(].*[)]>").
+TaintSinkActualParamPattern("default", 0, "<java.io.PrintWriter: java.io.Writer append[(].*[)]>").
+TaintSinkActualParamPattern("default", 0, "<java.io.PrintWriter: void print[(].*[)]>").
+TaintSinkActualParamPattern("default", 0, "<java.io.PrintWriter: void println[(].*[)]>").
+TaintSinkActualParamPattern("default", 0, "<java.sql.Statement: void addBatch[(]java.lang.String[)]>").
+TaintSinkActualParamPattern("default", 0, "<java.sql.Statement: int executeUpdate[(].*[)]>").
+TaintSinkActualParamPattern("default", 0, "<java.sql.Statement: boolean execute[(].*[)]>").
+TaintSinkActualParamPattern("default", 0, "<java.sql.Statement: java.sql.ResultSet executeQuery[(].*[)]>").
+TaintSinkActualParamPattern("default", 0, "<java.sql.Connection: java.sql.PreparedStatement prepareStatement[(].*[)]>").
+TaintSinkActualParamPattern("default", 0, "<java.sql.Connection: java.sql.CallableStatement prepareCall[(].*[)]>").
+TaintSinkActualParamPattern("default", 0, "<java.sql.PreparedStatement: void setString[(].*[)]>").
 
 
-.decl SanitizationMethodIffBaseUntainted(?meth: Method)
+.decl TaintSanitizerIffBaseUntainted(?meth: Method)
 
-SanitizationMethod(?method) :-
-  (?method = "<java.net.URLEncoder: java.lang.String encode(java.lang.String)>" ;
-   ?method = "<java.net.URLEncoder: java.lang.String encode(java.lang.String,java.lang.String)>" ;
-   ?method = "<org.apache.catalina.util.URLEncoder: java.lang.String encode(java.lang.String,java.lang.String)>" ;
-   SanitizationMethodIffBaseUntainted(?method)),
-  isMethod(?method).
+TaintSanitizer("<java.net.URLEncoder: java.lang.String encode(java.lang.String)>").
+TaintSanitizer("<java.net.URLEncoder: java.lang.String encode(java.lang.String,java.lang.String)>").
+TaintSanitizer("<org.apache.catalina.util.URLEncoder: java.lang.String encode(java.lang.String,java.lang.String)>").
+TaintSanitizer(?method) :- TaintSanitizerIffBaseUntainted(?method).
 
-SanitizationMethod(?overriddenMethod) :-
-   SanitizationMethod(?method),
+TaintSanitizer(?overriddenMethod) :-
+   TaintSanitizer(?method),
    Method_DeclaringType(?method, ?superclass),
    Method_SimpleName(?method, ?name),
    Method_Descriptor(?method, ?descriptor),
@@ -39,15 +40,13 @@ SanitizationMethod(?overriddenMethod) :-
    Method_SimpleName(?overriddenMethod, ?name),
    Method_Descriptor(?overriddenMethod, ?descriptor).
 
-SanitizationMethodIffBaseUntainted(?method) :-
-  (?method = "<java.util.Properties: java.lang.String getProperty(java.lang.String)>" ;
-   ?method = "<java.util.Hashtable: java.lang.Object get(java.lang.Object)>" ;
-   ?method = "<java.util.Map: java.lang.Object get(java.lang.Object)>" ;
-   ?method = "<java.util.HashMap: java.lang.Object get(java.lang.Object)>"),
-  isMethod(?method).
+TaintSanitizerIffBaseUntainted("<java.util.Properties: java.lang.String getProperty(java.lang.String)>").
+TaintSanitizerIffBaseUntainted("<java.util.Hashtable: java.lang.Object get(java.lang.Object)>").
+TaintSanitizerIffBaseUntainted("<java.util.Map: java.lang.Object get(java.lang.Object)>").
+TaintSanitizerIffBaseUntainted("<java.util.HashMap: java.lang.Object get(java.lang.Object)>").
 
-SanitizationMethodIffBaseUntainted(?overriddenMethod) :-
-   SanitizationMethodIffBaseUntainted(?method),
+TaintSanitizerIffBaseUntainted(?overriddenMethod) :-
+   TaintSanitizerIffBaseUntainted(?method),
    Method_DeclaringType(?method, ?superclass),
    Method_SimpleName(?method, ?name),
    Method_Descriptor(?method, ?descriptor),
@@ -57,92 +56,63 @@ SanitizationMethodIffBaseUntainted(?overriddenMethod) :-
    Method_SimpleName(?overriddenMethod, ?name),
    Method_Descriptor(?overriddenMethod, ?descriptor).
 
-BaseToRetTaintTransferMethod(?method) :- SanitizationMethodIffBaseUntainted(?method).
+TaintTransferBaseToReturn(?method) :- TaintSanitizerIffBaseUntainted(?method).
 
-SanitizationMethod(?method) :- LeakingSinkMethodArg(_, _, ?method).
+TaintSanitizer(?method) :- TaintSinkActualParam(_, _, ?method).
 
-TaintSourceMethod("default", ?method) :-
- (?method = "<javax.servlet.ServletRequest: java.lang.String getParameter(java.lang.String)>" ;
-  ?method = "<javax.servlet.ServletRequest: java.lang.String getHeader(java.lang.String)>" ;
-  ?method = "<javax.servlet.ServletRequest: java.lang.String[] getParameterValues(java.lang.String)>" ;
-  ?method = "<javax.servlet.http.HttpServletRequest: javax.servlet.http.Cookie[] getCookies()>" ;
-  ?method = "<javax.servlet.http.HttpServletRequest: java.lang.String getHeader(java.lang.String)>" ;
-  ?method = "<javax.servlet.http.HttpServletRequest: java.util.Enumeration getHeaders(java.lang.String)>" ;
-  ?method = "<javax.servlet.http.HttpServletRequest: java.util.Enumeration getHeaderNames()>" ;
-  ?method = "<javax.servlet.http.HttpServletRequest: java.lang.String getPathInfo()>" ;
-  ?method = "<javax.servlet.http.HttpServletRequest: java.lang.String getPathTranslated()>" ;
-  ?method = "<javax.servlet.http.HttpServletRequest: java.lang.String getQueryString()>" ;
-  ?method = "<javax.servlet.http.HttpServletRequest: java.lang.String getRequestedSessionId()>" ;
-  ?method = "<javax.servlet.http.HttpServletRequest: java.lang.String getRequestURI()>" ;
-  ?method = "<javax.servlet.http.HttpServletRequest: java.lang.StringBuffer getRequestURL()>" ;
-  ?method = "<javax.servlet.http.HttpServletRequest: java.lang.String getServletPath()>" ;
-  ?method = "<javax.servlet.ServletRequest: java.lang.Object getAttribute(java.lang.String)>" ;
-  ?method = "<javax.servlet.ServletRequest: java.util.Enumeration getAttributeNames()>" ;
-  ?method = "<javax.servlet.ServletRequest: javax.servlet.ServletInputStream getInputStream()>" ;
-  ?method = "<javax.servlet.ServletRequest: java.lang.String getParameter(java.lang.String)>" ;
-  ?method = "<javax.servlet.ServletRequest: java.util.Enumeration getParameterNames()>" ;
-  ?method = "<javax.servlet.ServletRequest: java.lang.String[] getParameterValues(java.lang.String)>" ;
-  ?method = "<javax.servlet.ServletRequest: java.util.Map getParameterMap()>" ;
-  ?method = "<javax.servlet.ServletRequest: java.lang.String getServerName()>" ;
-  ?method = "<javax.servlet.ServletRequest: java.io.BufferedReader getReader()>" ;
-  ?method = "<javax.servlet.ServletRequest: java.lang.String getRemoteAddr()>" ;
-  ?method = "<javax.servlet.ServletRequest: java.lang.String getRemoteHost()>"),
- isMethod(?method).
+TaintSourceReturn("default", "<javax.servlet.ServletRequest: java.lang.String getParameter(java.lang.String)>").
+TaintSourceReturn("default", "<javax.servlet.ServletRequest: java.lang.String[] getParameterValues(java.lang.String)>").
+TaintSourceReturn("default", "<javax.servlet.http.HttpServletRequest: javax.servlet.http.Cookie[] getCookies()>").
+TaintSourceReturn("default", "<javax.servlet.http.HttpServletRequest: java.lang.String getHeader(java.lang.String)>").
+TaintSourceReturn("default", "<javax.servlet.http.HttpServletRequest: java.util.Enumeration getHeaders(java.lang.String)>").
+TaintSourceReturn("default", "<javax.servlet.http.HttpServletRequest: java.util.Enumeration getHeaderNames()>").
+TaintSourceReturn("default", "<javax.servlet.http.HttpServletRequest: java.lang.String getPathInfo()>").
+TaintSourceReturn("default", "<javax.servlet.http.HttpServletRequest: java.lang.String getPathTranslated()>").
+TaintSourceReturn("default", "<javax.servlet.http.HttpServletRequest: java.lang.String getQueryString()>").
+TaintSourceReturn("default", "<javax.servlet.http.HttpServletRequest: java.lang.String getRequestedSessionId()>").
+TaintSourceReturn("default", "<javax.servlet.http.HttpServletRequest: java.lang.String getRequestURI()>").
+TaintSourceReturn("default", "<javax.servlet.http.HttpServletRequest: java.lang.StringBuffer getRequestURL()>").
+TaintSourceReturn("default", "<javax.servlet.http.HttpServletRequest: java.lang.String getServletPath()>").
+TaintSourceReturn("default", "<javax.servlet.ServletRequest: java.lang.Object getAttribute(java.lang.String)>").
+TaintSourceReturn("default", "<javax.servlet.ServletRequest: java.util.Enumeration getAttributeNames()>").
+TaintSourceReturn("default", "<javax.servlet.ServletRequest: javax.servlet.ServletInputStream getInputStream()>").
+TaintSourceReturn("default", "<javax.servlet.ServletRequest: java.util.Enumeration getParameterNames()>").
+TaintSourceReturn("default", "<javax.servlet.ServletRequest: java.util.Map getParameterMap()>").
+TaintSourceReturn("default", "<javax.servlet.ServletRequest: java.lang.String getServerName()>").
+TaintSourceReturn("default", "<javax.servlet.ServletRequest: java.io.BufferedReader getReader()>").
+TaintSourceReturn("default", "<javax.servlet.ServletRequest: java.lang.String getRemoteAddr()>").
+TaintSourceReturn("default", "<javax.servlet.ServletRequest: java.lang.String getRemoteHost()>").
 
 
-BaseToRetTaintTransferMethod("<java.lang.String: java.lang.CharSequence subSequence(int,int)>").
+TaintTransferBaseToReturn("<java.lang.String: java.lang.CharSequence subSequence(int,int)>").
 
-BaseToRetTaintTransferMethod(?method) :-
-   (?method = "<java.util.Map: java.lang.Object get(java.lang.Object)>" ;
-    ?method = "<javax.servlet.http.Cookie: java.lang.String getComment()>" ;
-    ?method = "<javax.servlet.http.Cookie: java.lang.String getDomain()>" ;
-    ?method = "<javax.servlet.http.Cookie: java.lang.String getName()>" ;
-    ?method = "<javax.servlet.http.Cookie: java.lang.String getPath()>" ;
-    ?method = "<javax.servlet.http.Cookie: java.lang.String getValue()>" ;
-    ?method = "<java.io.BufferedReader: int read()>" ;
-    ?method = "<java.io.BufferedReader: java.lang.String readLine(boolean)>" ;
-    ?method = "<java.io.BufferedReader: java.lang.String readLine()>" ;
-    ?method = "<java.util.Hashtable: java.lang.Object get(java.lang.Object)>" ;
-    ?method = "<java.util.HashMap: java.lang.Object get(java.lang.Object)>"),
-   isMethod(?method).
+TaintTransferBaseToReturn("<java.util.Map: java.lang.Object get(java.lang.Object)>").
+TaintTransferBaseToReturn("<javax.servlet.http.Cookie: java.lang.String getComment()>").
+TaintTransferBaseToReturn("<javax.servlet.http.Cookie: java.lang.String getDomain()>").
+TaintTransferBaseToReturn("<javax.servlet.http.Cookie: java.lang.String getName()>").
+TaintTransferBaseToReturn("<javax.servlet.http.Cookie: java.lang.String getPath()>").
+TaintTransferBaseToReturn("<javax.servlet.http.Cookie: java.lang.String getValue()>").
+TaintTransferBaseToReturn("<java.io.BufferedReader: int read()>").
+TaintTransferBaseToReturn("<java.io.BufferedReader: java.lang.String readLine(boolean,boolean[])>").
+TaintTransferBaseToReturn("<java.io.BufferedReader: java.lang.String readLine()>").
+TaintTransferBaseToReturn("<java.util.Hashtable: java.lang.Object get(java.lang.Object)>").
+TaintTransferBaseToReturn("<java.util.HashMap: java.lang.Object get(java.lang.Object)>").
 
-BaseToParamTaintTransferMethod(?method) :-
-    (?method = "<javax.servlet.ServletInputStream: int readLine(byte[],int,int)>" ;
-    ?method = "<java.io.BufferedReader: int read1(char[],int,int)>" ;
-    ?method = "<java.io.BufferedReader: int read(char[],int,int)>"),
-    isMethod(?method).
+TaintTransferBaseToActualParam("<javax.servlet.ServletInputStream: int readLine(byte[],int,int)>").
+TaintTransferBaseToActualParam("<java.io.BufferedReader: int read1(char[],int,int)>").
+TaintTransferBaseToActualParam("<java.io.BufferedReader: int read(char[],int,int)>").
 
-ParamToBaseTaintTransferMethod(1, ?method) :-
-    (?method = "<java.util.HashMap: java.lang.Object put(java.lang.Object,java.lang.Object)>" ;
-    ?method = "<java.util.Map: java.lang.Object put(java.lang.Object,java.lang.Object)>" ;
-    ?method = "<java.util.Properties: java.lang.Object setProperty(java.lang.String,java.lang.String)>" ;
-    ?method = "<java.util.Hashtable: java.lang.Object put(java.lang.Object,java.lang.Object)>"),
-    isMethod(?method).
+TaintTransferActualParamToBase(1, "<java.util.HashMap: java.lang.Object put(java.lang.Object,java.lang.Object)>").
+TaintTransferActualParamToBase(1, "<java.util.Map: java.lang.Object put(java.lang.Object,java.lang.Object)>").
+TaintTransferActualParamToBase(1, "<java.util.Properties: java.lang.Object setProperty(java.lang.String,java.lang.String)>").
+TaintTransferActualParamToBase(1, "<java.util.Hashtable: java.lang.Object put(java.lang.Object,java.lang.Object)>").
 
-TaintSourceMethod(?label, ?overriddenMethod) :-
-   TaintSourceMethod(?label, ?method),
-   Method_DeclaringType(?method, ?superclass),
-   Method_SimpleName(?method, ?name),
-   Method_Descriptor(?method, ?descriptor),
-   basic.SubtypeOf(?class, ?superclass),
-   isClassType(?class),
-   Method_DeclaringType(?overriddenMethod, ?class),
-   Method_SimpleName(?overriddenMethod, ?name),
-   Method_Descriptor(?overriddenMethod, ?descriptor).
+// (Override expansion of sources and sinks is the default, core.dl.)
 
-LeakingSinkMethodArg(?label, ?n, ?overriddenMethod) :-
-   LeakingSinkMethodArg(?label, ?n, ?method),
-   Method_DeclaringType(?method, ?superclass),
-   Method_SimpleName(?method, ?name),
-   Method_Descriptor(?method, ?descriptor),
-   basic.SubtypeOf(?class, ?superclass),
-   isClassType(?class),
-   Method_DeclaringType(?overriddenMethod, ?class),
-   Method_SimpleName(?overriddenMethod, ?name),
-   Method_Descriptor(?overriddenMethod, ?descriptor).
-
-// Params with these annotations introduce taint objects
-BaseToRetTaintTransferMethod(?dtoMeth),
+// Params with these annotations introduce taint objects. (Until Nov 11 every
+// method of the parameter's type was also declared a receiver->result transfer, so
+// that getters on the stand-in yielded taint; deep taint -- a field load from a
+// tainted base in application code -- now gives that, one level at a time.)
 TaintedValueIntroduced(?declaringType, ?to, ?type, "default", ValueIdMacro(?to, ?type, DEFAULT_BREADCRUMB)),
 mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?to, ?type, DEFAULT_BREADCRUMB), ?ctx, ?to) :-
   FormalParam(?idx, ?meth, ?to),
@@ -152,7 +122,6 @@ mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?to, ?type, DEFAULT_BREADCRUMB), ?c
   mainAnalysis.ReachableContext(?ctx, ?meth),
   Var_Type(?to, ?type),
   mainAnalysis.isImmutableHContext(?hctx),
-  Method_DeclaringType(?dtoMeth, ?type),
   Method_DeclaringType(?meth, ?declaringType).
 
 #ifdef OPEN_PROGRAMS
@@ -165,9 +134,8 @@ mainAnalysis.configuration.RecordContextRequest(?ctx, ValueIdMacro(?to, ?ctype, 
   Var_Type(?to, ?type),
   mainAnalysis.TypeToConcreteImplementation(?type, ?ctype).
 
-// Introduce concrete taint values for entry point parameters
-// and mark their methods as taint transfer methods
-BaseToRetTaintTransferMethod(?dtoMeth),
+// Introduce concrete taint values for entry point parameters (their contents
+// follow through deep taint; the per-type transfer trick is gone, see above).
 TaintedValueIntroduced(?declaringType, ?to, ?ctype, "default", ValueIdMacro(?to, ?ctype, DEFAULT_BREADCRUMB)),
 mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?to, ?ctype, DEFAULT_BREADCRUMB), ?ctx, ?to) :-
   mainAnalysis.EntryPointMethod(?meth),
@@ -176,7 +144,6 @@ mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?to, ?ctype, DEFAULT_BREADCRUMB), ?
   mainAnalysis.ReachableContext(?ctx, ?meth),
   Var_Type(?to, ?type),
   mainAnalysis.TypeToConcreteImplementation(?type, ?ctype),
-  mainAnalysis.configuration.RecordContextResponse(?ctx, ValueIdMacro(?to, ?ctype, DEFAULT_BREADCRUMB), ?to, ?hctx),
-  Method_DeclaringType(?dtoMeth, ?type).
+  mainAnalysis.configuration.RecordContextResponse(?ctx, ValueIdMacro(?to, ?ctype, DEFAULT_BREADCRUMB), ?to, ?hctx).
 
 #endif // OPEN_PROGRAMS
