@@ -156,10 +156,17 @@
   .decl VarMustAliasRepresentative(?var:Var, ?varRepr:Var, ?ctx:MayContext)
   .output VarMustAliasRepresentative
 
+  // The representative is the last must-alias by name (not by ord(), which
+  // is the engine's string-interning order).
+  .decl _VarMustAliasNotLast(?var:Var, ?varRepr:Var, ?ctx:MayContext)
+  _VarMustAliasNotLast(?var, ?varRepr, ?ctx) :-
+    VarMustAlias(?var, ?varRepr, ?ctx),
+    VarMustAlias(?var, ?other, ?ctx),
+    ?varRepr < ?other.
+
   VarMustAliasRepresentative(?var, ?varRepr, ?ctx) :-
     VarMustAlias(?var, ?varRepr, ?ctx),
-    ?valRepr = ord(?varRepr),
-    ?valRepr = max ord(v) : VarMustAlias(?var, v, ?ctx).
+    !_VarMustAliasNotLast(?var, ?varRepr, ?ctx).
 
 
 /*

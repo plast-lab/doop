@@ -1098,7 +1098,7 @@
   CalleeFromSameCallsite(?calleeCtx, ?meth1, ?meth2) :-
     MayCallGraphEdge_Prev(?calleeCtx, ?meth1, ?callerCtx, ?invo),
     MayCallGraphEdge_Prev(?calleeCtx, ?meth2, ?callerCtx, ?invo),
-    ord(?meth1) < ord(?meth2).
+    ?meth1 < ?meth2.
    .plan 1: (2,1)
 
   .decl FirstCalleeFromCallsite(?calleeCtx:MayContext, ?meth:Method)
@@ -1110,7 +1110,7 @@
   NotNextCalleeFromCallsite(?calleeCtx, ?meth, ?methNext) :-
     CalleeFromSameCallsite(?calleeCtx, ?meth, ?methNext),
     CalleeFromSameCallsite(?calleeCtx, ?meth, ?methOther),
-    ord(?methOther) < ord(?methNext).
+    ?methOther < ?methNext.
    .plan 1: (2,1)
 
   .decl NextCalleeFromCallsite(?calleeCtx:MayContext, ?meth:Method, ?methNext:Method)
@@ -2054,7 +2054,7 @@ _StoreInstanceFieldInMethod(?storeInsn, ?meth) :-
 InstanceStoreInSameMethod(?storeInsn1, ?storeInsn2, ?meth) :-
   _StoreInstanceFieldInMethod(?storeInsn1, ?meth),
   _StoreInstanceFieldInMethod(?storeInsn2, ?meth),
-  ord(?storeInsn1) < ord(?storeInsn2).
+  Instruction_Index(?storeInsn1, ?storeInsn1Idx), Instruction_Index(?storeInsn2, ?storeInsn2Idx), ?storeInsn1Idx < ?storeInsn2Idx.
 
 .decl FirstInstanceStoreInMethod(?storeInsn:Instruction, ?meth:Method)
 FirstInstanceStoreInMethod(?storeInsn, ?meth) :-
@@ -2065,7 +2065,7 @@ FirstInstanceStoreInMethod(?storeInsn, ?meth) :-
 NotNextInstanceStoreInSameMethod(?storeInsn1, ?storeInsn2, ?meth) :-
   InstanceStoreInSameMethod(?storeInsn1, ?storeInsn2, ?meth),
   InstanceStoreInSameMethod(?storeInsn1, ?storeInsnOther, ?meth),
-  ord(?storeInsnOther) < ord(?storeInsn2).
+  Instruction_Index(?storeInsnOther, ?storeInsnOtherIdx), Instruction_Index(?storeInsn2, ?storeInsn2Idx), ?storeInsnOtherIdx < ?storeInsn2Idx.
 
 .decl NextInstanceStoreInSameMethod(?storeInsn1:Instruction, ?storeInsn2:Instruction, ?meth:Method)
 NextInstanceStoreInSameMethod(?storeInsn1, ?storeInsn2, ?meth) :-
@@ -2087,7 +2087,7 @@ InvocationInSameMethod(?invo1, ?invo2, ?meth) :-
   _ReasonableMethod(?meth),
   MethodInvocation_Method(?invo1, ?meth),
   MethodInvocation_Method(?invo2, ?meth),
-  ord(?invo1) < ord(?invo2).
+  Instruction_Index(?invo1, ?invo1Idx), Instruction_Index(?invo2, ?invo2Idx), ?invo1Idx < ?invo2Idx.
 
 .decl FirstInvocationInMethod(?invo:Instruction, ?meth:Method)
 FirstInvocationInMethod(?invo, ?meth) :-
@@ -2100,7 +2100,7 @@ NotNextInvocationInSameMethod(?invo1, ?invo2, ?meth) :-
   _ReasonableMethod(?meth),
   InvocationInSameMethod(?invo1, ?invo2, ?meth),
   InvocationInSameMethod(?invo1, ?invoOther, ?meth),
-  ord(?invoOther) < ord(?invo2).
+  Instruction_Index(?invoOther, ?invoOtherIdx), Instruction_Index(?invo2, ?invo2Idx), ?invoOtherIdx < ?invo2Idx.
 
 .decl NextInvocationInSameMethod(?invo1:Instruction, ?invo2:Instruction, ?meth:Method)
 NextInvocationInSameMethod(?invo1, ?invo2, ?meth) :-

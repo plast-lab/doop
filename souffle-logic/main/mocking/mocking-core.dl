@@ -116,19 +116,20 @@ MOCK_OBJECT_FOR_TYPE(?value, ?type, ?type) :-
   ConcreteClassType(?type),
   ?value = MOCK_OBJECT_OF_TYPE(?type).
 
-//   Serializable/Comparable/Cloneable are interfaces: one min-ord concrete impl.
-.decl UniversalRepOrd(?type:ReferenceType, ?classOrd:number)
-UniversalRepOrd(?type, ?classOrd) :-
+//   Serializable/Comparable/Cloneable are interfaces: one concrete impl, the
+//   first by name (TypeRank).
+.decl UniversalRepRank(?type:ReferenceType, ?classRank:number)
+UniversalRepRank(?type, ?classRank) :-
   MockSiteType(?type),
   UniversalType(?type),
   ( isInterfaceType(?type) ; AbstractClassType(?type) ),
-  ?classOrd = min ord(?c) : {
-    ConcreteClassType(?c), basic.SubtypeOf(?c, ?type)
+  ?classRank = min ?r : {
+    ConcreteClassType(?c), basic.SubtypeOf(?c, ?type), TypeRank(?c, ?r)
   }.
 MOCK_OBJECT_FOR_TYPE(?value, ?class, ?type) :-
-  UniversalRepOrd(?type, ?classOrd),
+  UniversalRepRank(?type, ?classRank),
+  TypeRank(?class, ?classRank),
   isClassType(?class),
-  ord(?class) = ?classOrd,
   ?value = MOCK_OBJECT_OF_TYPE(?class).
 
 // An array type is mocked as itself: one mock array per array type.
@@ -155,20 +156,20 @@ MOCK_OBJECT_FOR_TYPE(?value, ?type, ?type) :-
 // covers e.g. a Runnable[]/EventListener[] element, or a Number/CharSequence
 // field, whose only implementations live in the library. Types WITH an
 // application implementation go through the policy instead.
-.decl LibraryRepOrd(?type:ReferenceType, ?classOrd:number)
-LibraryRepOrd(?type, ?classOrd) :-
+.decl LibraryRepRank(?type:ReferenceType, ?classRank:number)
+LibraryRepRank(?type, ?classRank) :-
   MockSiteType(?type),
   !UniversalType(?type),
   !CollectionOrMapType(?type),   // collections go through the seeded canonical container (mocking-collections.dl)
   !TypeHasAppConcreteImpl(?type),
   ( isInterfaceType(?type) ; AbstractClassType(?type) ),
-  ?classOrd = min ord(?c) : {
-    ConcreteClassType(?c), basic.SubtypeOf(?c, ?type)
+  ?classRank = min ?r : {
+    ConcreteClassType(?c), basic.SubtypeOf(?c, ?type), TypeRank(?c, ?r)
   }.
 MOCK_OBJECT_FOR_TYPE(?value, ?class, ?type) :-
-  LibraryRepOrd(?type, ?classOrd),
+  LibraryRepRank(?type, ?classRank),
+  TypeRank(?class, ?classRank),
   isClassType(?class),
-  ord(?class) = ?classOrd,
   ?value = MOCK_OBJECT_OF_TYPE(?class).
 
 // ===========================================================================

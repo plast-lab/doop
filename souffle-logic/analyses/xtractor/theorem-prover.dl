@@ -37,7 +37,7 @@ EqualsToSmallerExt(expr1, expr2) :-
 EqualsToSmallerExt(expr1, expr2) :-
 	EqualsToNotLarger(expr1, size, expr2, size),
 	ToSymbol(expr1, out1), ToSymbol(expr2, out2),
-	ord(out2) < ord(out1).
+	out2 < out1.
 
 
 Equals(expr1, expr2) :- OptBaseEquals(expr1, expr2).

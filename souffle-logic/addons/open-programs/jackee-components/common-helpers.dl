@@ -49,7 +49,7 @@ AbstractOrInterfaceTypeHasNoApplicationConcreteImplementations(?class) :-
 
 .decl NonApplicationConcreteImplementations(?class:Type, ?staticType:Type)
 
-.decl NonApplicationConcreteImplementationsOrd(?classOrd:number, ?staticType:Type)
+.decl NonApplicationConcreteImplementationsRank(?classRank:number, ?staticType:Type)
 
 .decl NonApplicationConcreteImplementationRepresentative(?class:Type, ?staticType:Type)
 
@@ -58,11 +58,13 @@ NonApplicationConcreteImplementations(?class, ?staticType) :-
     ConcreteClassType(?class),
     basic.SubtypeOf(?class, ?staticType).
 
-NonApplicationConcreteImplementationsOrd(?classOrd, ?staticType) :-
+// The representative is the first implementation by name (TypeRank), so the
+// choice does not depend on the engine's string-interning order.
+NonApplicationConcreteImplementationsRank(?classRank, ?staticType) :-
     NonApplicationConcreteImplementations(_, ?staticType),
-    ?classOrd = min ord(?allConcreteImplementations): NonApplicationConcreteImplementations(?allConcreteImplementations, ?staticType).
+    ?classRank = min ?r : { NonApplicationConcreteImplementations(?impl, ?staticType), TypeRank(?impl, ?r) }.
 
 NonApplicationConcreteImplementationRepresentative(?class, ?staticType) :-
-    NonApplicationConcreteImplementationsOrd(?classOrd, ?staticType),
-    isClassType(?class),
-    ord(?class) = ?classOrd.
+    NonApplicationConcreteImplementationsRank(?classRank, ?staticType),
+    TypeRank(?class, ?classRank),
+    isClassType(?class).

@@ -307,6 +307,17 @@ HeapAllocation_Type(?id, ?type) :-
 isClassType("java.lang.String").
 
 
+// TypeRank, HeapRank: types and heap allocations numbered in the order of
+// their names (written by Doop after fact generation). Use these, never ord(),
+// to pick one element of a set: ord() is the engine's string-interning order.
+
+.decl TypeRank(?type:ReferenceType, ?rank:number)
+.input TypeRank(filename="TypeRank.facts")
+
+.decl HeapRank(?heap:HeapAllocation, ?rank:number)
+.input HeapRank(filename="HeapRank.facts")
+
+
 // StringConstant
 
 .decl _StringConstant(?id:StringConstant)

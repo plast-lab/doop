@@ -53,13 +53,17 @@ TypesInSameSCC(type1, type2) :-
   TypeTransitivelyRefersToOther(type1, type2),
   TypeTransitivelyRefersToOther(type2, type1).
 
+// Partition ids are type ranks (names in sorted order), not ord().
+.decl _PartitionRank(type: Type, r: Partition)
+_PartitionRank(t, as(r, Partition)) :- TypeRank(t, r).
+
 TypesInSameSCC(type, type) :-
   PartitionedType(type),
   isType(type).
 
 TypeToSCCId(type, scc) :-
   PartitionedType(type),
-  scc = min ord(x) : TypesInSameSCC(type, x).
+  scc = min r : { TypesInSameSCC(type, x), _PartitionRank(x, r) }.
 
 CountOfTypesPerSCC(scc, cnt) :-
   TypeToSCCId(_, scc),
@@ -83,7 +87,7 @@ TypeInGenericPartition(type) :-
 
 isPartition(idType),
 IdTypeOfGenericPartition(idType) :-
-  idType = min ord(x) : TypeInGenericPartition(x).
+  idType = min r : { TypeInGenericPartition(x), _PartitionRank(x, r) }.
 
 TypeToPartitionId(type, idType) :-
   TypeInGenericPartition(type),
@@ -92,4 +96,4 @@ TypeToPartitionId(type, idType) :-
 TypeToPartition(type, partitionName) :-
   TypeToPartitionId(type, id),
   PartitionedType(partitionName),
-  id = ord(partitionName).
+  _PartitionRank(partitionName, id).

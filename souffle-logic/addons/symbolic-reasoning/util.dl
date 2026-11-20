@@ -170,12 +170,13 @@ NegationOfConditionAtIfInsn(?cond, ?negatedCond, ?insn) :-
  * corresponding path expression, before the insnruction.
  */
 
-// Pick the predecessor with the minimum ord value as the ?first predecessor
+// Instructions of a method are ordered by Instruction_Index (program order),
+// never by ord(), which is the engine's string-interning order.
 
 FirstIfInsnInMethod(?insn, ?meth) :-
-  Instruction_Method(?insn, ?meth),
-  minOrd = min ord(?insn): IfsInMethod(?insn, ?meth),
-  ord(?insn) = minOrd.
+  IfsInMethod(?insn, ?meth),
+  Instruction_Index(?insn, ?index),
+  ?index = min ?i : { IfsInMethod(?other, ?meth), Instruction_Index(?other, ?i) }.
 
 IfsInMethod(?pred, ?meth) :-
   Instruction_Method(?insn, ?meth),
@@ -184,43 +185,45 @@ IfsInMethod(?pred, ?meth) :-
 
 FirstPredOfInsnInMethodOrdinal(?meth, ?firstOrd, ?insn) :-
   Instruction_Method(?insn, ?meth),
-  ?firstOrd = min ord(?prev): MayPredecessorModuloThrow(?prev, ?insn).
+  MayPredecessorModuloThrow(_, ?insn),
+  ?firstOrd = min ?i : { MayPredecessorModuloThrow(?prev, ?insn), Instruction_Index(?prev, ?i) }.
 
 FirstPredOfInsnInMethod(?meth, ?first, ?insn) :-
   Instruction_Method(?insn, ?meth),
   MayPredecessorModuloThrow(?first, ?insn),
-  ?min_ord = ord(?first),
+  Instruction_Index(?first, ?min_ord),
   FirstPredOfInsnInMethodOrdinal(?meth, ?min_ord, ?insn).
 
-// Pick the predecessor with the maximum ord value as the ?last predecessor
+// The ?last predecessor is the one with the largest Instruction_Index
 
 LastPredOfInsnInMethodOrdinal(?meth, ?lastOrd, ?insn) :-
   Instruction_Method(?insn, ?meth),
-  ?lastOrd = max ord(?prev): MayPredecessorModuloThrow(?prev, ?insn).
+  MayPredecessorModuloThrow(_, ?insn),
+  ?lastOrd = max ?i : { MayPredecessorModuloThrow(?prev, ?insn), Instruction_Index(?prev, ?i) }.
 
 LastPredOfInsnInMethod(?meth, ?last, ?insn) :-
   Instruction_Method(?insn, ?meth),
   MayPredecessorModuloThrow(?last, ?insn),
-  ?max_ord = ord(?last),
+  Instruction_Index(?last, ?max_ord),
   LastPredOfInsnInMethodOrdinal(?meth, ?max_ord, ?insn).
 
-// Pick as ?next predecessor of ?insn the insnruction with the least
-// greater ord number, compared to the ?prev predecessor
+// Pick as ?next predecessor of ?insn the instruction with the least
+// greater Instruction_Index, compared to the ?prev predecessor
 
 NotNextPredOfInsnInMethod(?meth, ?prev, ?next, ?insn) :-
   Instruction_Method(?insn, ?meth),
   MayPredecessorModuloThrow(?prev, ?insn),
   MayPredecessorModuloThrow(?next, ?insn),
   MayPredecessorModuloThrow(?nextPossible, ?insn),
-  ord(?prev) < ord(?next),
-  ord(?prev) < ord(?nextPossible),
-  ord(?nextPossible) < ord(?next).
+  Instruction_Index(?prev, ?prevIdx), Instruction_Index(?next, ?nextIdx),
+  Instruction_Index(?nextPossible, ?nextPossibleIdx),
+  ?prevIdx < ?nextIdx, ?prevIdx < ?nextPossibleIdx, ?nextPossibleIdx < ?nextIdx.
 
 NextPredOfInsnInMethod(?meth, ?prev, ?next, ?insn) :-
   Instruction_Method(?insn, ?meth),
   MayPredecessorModuloThrow(?prev, ?insn),
   MayPredecessorModuloThrow(?next, ?insn),
-  ord(?prev) < ord(?next),
+  Instruction_Index(?prev, ?prevIdx), Instruction_Index(?next, ?nextIdx), ?prevIdx < ?nextIdx,
   !NotNextPredOfInsnInMethod(?meth, ?prev, ?next, ?insn).
 
 // Single Pred

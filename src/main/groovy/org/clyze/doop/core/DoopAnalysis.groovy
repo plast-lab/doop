@@ -339,6 +339,43 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             Files.copy(origPartitionsFile.toPath(), destPartitionsFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
         }
 
+        writeNameRanks()
+    }
+
+    /**
+     * Writes TypeRank.facts and HeapRank.facts: every type and every heap
+     * allocation of the facts, numbered in the order of their names. The
+     * logic uses these ranks wherever it must pick one element of a set (a
+     * representative class or heap), so that the choice depends on the
+     * program alone, not on the order in which an engine interns strings
+     * (which is what ord() returns, and which varies across engines and
+     * across fact generations).
+     */
+    protected void writeNameRanks() {
+        def ranks = [
+            "TypeRank": ["ClassType", "InterfaceType", "ArrayType"],
+            "HeapRank": ["NormalHeap", "StringConstant", "ClassHeap", "MethodHandleConstant", "MethodTypeConstant"],
+        ]
+        def timing = Helper.timing {
+            ranks.each { String rank, List<String> sources ->
+                SortedSet<String> names = new TreeSet<>()
+                sources.each { String src ->
+                    File f = new File(factsDir, "${src}.facts")
+                    if (f.exists())
+                        f.eachLine { String line ->
+                            int tab = line.indexOf('\t')
+                            names << (tab < 0 ? line : line.substring(0, tab))
+                        }
+                }
+                File out = new File(factsDir, "${rank}.facts")
+                Files.deleteIfExists(out.toPath())   // may be a symbolic link into the facts cache
+                out.withWriter { BufferedWriter w ->
+                    int i = 0
+                    names.each { String n -> w.write(n); w.write('\t'); w.write(Integer.toString(i++)); w.newLine() }
+                }
+            }
+        }
+        log.info "Time to write name ranks: $timing"
     }
 
 

@@ -375,7 +375,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "CHOICE_BOUND",
 					name: "choice-bound",
-					description: "Enable choice-bound analysis pruning (Experimental, currently supported for 2objH).",
+					description: "Enable choice-bound analysis pruning (Experimental, currently supported for 2objH). Not deterministic: which values are kept depends on the engine's evaluation order (thread timing in Souffle; FlowLog and other engines differ).",
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
