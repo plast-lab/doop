@@ -1,0 +1,130 @@
+// ==========================================================================
+// Names helper:
+//
+// Java and JavaBeans naming rules (Introspector.decapitalize):
+// simple class names, decapitalized class names and setter property names.
+// ==========================================================================
+
+
+
+
+// --------------------------------------------------------------------------
+// Decapitalization (internal)
+// --------------------------------------------------------------------------
+
+.decl _Names_Lower(?upper:symbol, ?lower:symbol)
+_Names_Lower("A", "a"). _Names_Lower("B", "b"). _Names_Lower("C", "c"). _Names_Lower("D", "d").
+_Names_Lower("E", "e"). _Names_Lower("F", "f"). _Names_Lower("G", "g"). _Names_Lower("H", "h").
+_Names_Lower("I", "i"). _Names_Lower("J", "j"). _Names_Lower("K", "k"). _Names_Lower("L", "l").
+_Names_Lower("M", "m"). _Names_Lower("N", "n"). _Names_Lower("O", "o"). _Names_Lower("P", "p").
+_Names_Lower("Q", "q"). _Names_Lower("R", "r"). _Names_Lower("S", "s"). _Names_Lower("T", "t").
+_Names_Lower("U", "u"). _Names_Lower("V", "v"). _Names_Lower("W", "w"). _Names_Lower("X", "x").
+_Names_Lower("Y", "y"). _Names_Lower("Z", "z").
+
+// Inputs fed into JavaBeans decapitalization (kept small: application classes and setters).
+.decl _Names_DecapInput(?raw:symbol)
+.decl _Names_Decapitalize(?raw:symbol, ?decap:symbol)
+
+// First two letters uppercase -> unchanged (e.g. URLParser -> URLParser).
+_Names_Decapitalize(?raw, ?raw) :-
+  _Names_DecapInput(?raw),
+  strlen(?raw) > 1,
+  _Names_Lower(substr(?raw, 0, 1), _),
+  _Names_Lower(substr(?raw, 1, 1), _).
+
+// First letter uppercase, second not (or length 1) -> lowercase first letter.
+_Names_Decapitalize(?raw, ?decap) :-
+  _Names_DecapInput(?raw),
+  strlen(?raw) > 0,
+  _Names_Lower(substr(?raw, 0, 1), ?lo),
+  ( strlen(?raw) = 1 ; !_Names_Lower(substr(?raw, 1, 1), _) ),
+  ?decap = cat(?lo, substr(?raw, 1, strlen(?raw) - 1)).
+
+// First letter not uppercase (or empty) -> unchanged.
+_Names_Decapitalize(?raw, ?raw) :-
+  _Names_DecapInput(?raw),
+  ( strlen(?raw) = 0 ; !_Names_Lower(substr(?raw, 0, 1), _) ).
+
+
+
+
+// --------------------------------------------------------------------------
+// Type names (application classes and interfaces)
+// --------------------------------------------------------------------------
+
+.decl _Names_ScanIdx(?type:ReferenceType, ?pos:number)
+_Names_ScanIdx(?type, 0) :-
+  ApplicationClass(?type),
+  ( isClassType(?type) ; isInterfaceType(?type) ),
+  strlen(?type) > 0.
+_Names_ScanIdx(?type, ?pos + 1) :- _Names_ScanIdx(?type, ?pos), ?pos + 1 < strlen(?type).
+
+.decl _Names_DotPos(?type:ReferenceType, ?pos:number)
+_Names_DotPos(?type, ?pos) :- _Names_ScanIdx(?type, ?pos), substr(?type, ?pos, 1) = ".".
+
+.decl _Names_HasDot(?type:ReferenceType)
+_Names_HasDot(?type) :- _Names_DotPos(?type, _).
+
+.decl _Names_LastDot(?type:ReferenceType, ?pos:number)
+_Names_LastDot(?type, ?maxPos) :-
+  _Names_HasDot(?type),
+  ?maxPos = max ?p : { _Names_DotPos(?type, ?p) }.
+
+
+// The simple name of an application class or interface (everything after the last dot,
+// or the whole name).
+// Java: com.example.OrderService -> OrderService
+.decl TypeSimpleName(?type:ReferenceType, ?name:symbol)
+
+TypeSimpleName(?type, ?name) :-
+  _Names_LastDot(?type, ?pos),
+  ?name = substr(?type, ?pos + 1, strlen(?type) - ?pos - 1).
+
+TypeSimpleName(?type, ?type) :-
+  ApplicationClass(?type),
+  ( isClassType(?type) ; isInterfaceType(?type) ),
+  !_Names_HasDot(?type).
+
+_Names_DecapInput(?simple) :- TypeSimpleName(_, ?simple).
+
+
+// The JavaBeans decapitalized simple name of an application class or interface.
+// Spring: default @Component bean name (OrderService -> orderService, URLParser -> URLParser)
+// Spring Data: default repository bean name (OrderRepository -> orderRepository)
+// Jakarta: default CDI @Named bean name
+.decl DecapitalizedTypeName(?type:ReferenceType, ?name:symbol)
+
+DecapitalizedTypeName(?type, ?name) :-
+  TypeSimpleName(?type, ?simple),
+  _Names_Decapitalize(?simple, ?name).
+
+
+
+
+// --------------------------------------------------------------------------
+// Setter property names
+// --------------------------------------------------------------------------
+
+.decl _Names_SetterSuffix(?method:Method, ?raw:symbol)
+
+_Names_SetterSuffix(?method, ?raw) :-
+  !Method_Modifier("static", ?method),
+  !ConstructorOf(?method, _),
+  FormalParam(0, ?method, _),
+  !FormalParam(1, ?method, _),
+  Method_SimpleName(?method, ?mname),
+  strlen(?mname) > 3,
+  substr(?mname, 0, 3) = "set",
+  ?raw = substr(?mname, 3, strlen(?mname) - 3).
+
+_Names_DecapInput(?raw) :- _Names_SetterSuffix(_, ?raw).
+
+
+// The JavaBeans property name of a non-static single-parameter setter (setFoo -> foo, setURL -> URL).
+// Spring: default @Resource setter bean name
+// Jakarta: JPA property access
+.decl SetterPropertyName(?method:Method, ?name:symbol)
+
+SetterPropertyName(?method, ?name) :-
+  _Names_SetterSuffix(?method, ?raw),
+  _Names_Decapitalize(?raw, ?name).

@@ -4,6 +4,7 @@
 // Follows annotation chains (@RestController is annotated with @Controller,
 // which is annotated with @Component), so a spec or framework only names the annotation
 // at the end of the chain (aka the root, @Component).
+// Gives the values written on annotations (no defaults).
 // ==========================================================================
 
 
@@ -71,3 +72,58 @@ ParamCarries(?param, ?root) :-
   Param_Annotation(?method, ?index, ?annotation),
   FormalParam(?index, ?method, ?param),
   CarriesAnnotation(?annotation, ?root).
+
+
+
+
+// --------------------------------------------------------------------------
+// Values
+// --------------------------------------------------------------------------
+// The values written on an annotation, one tuple per value: ?index is -1 for a single value
+// and 0, 1 ... for the items of an array. An element that is not written (its default)
+// or an empty array has no tuples, so a rule handles "not written" as the framework's default.
+
+
+.decl TypeAnnotationValue(?type:ReferenceType, ?annotation:Annotation, ?element:symbol,
+                          ?index:number, ?valueKind:symbol, ?value:symbol, ?extra:symbol)
+
+TypeAnnotationValue(?type, ?annotation, ?element, ?index, ?valueKind, ?value, ?extra) :-
+  AnnotationValue("type", ?type, ?annotation, ?element, ?index, ?valueKind, ?value, ?extra),
+  isReferenceType(?type).
+
+
+.decl MethodAnnotationValue(?method:Method, ?annotation:Annotation, ?element:symbol,
+                            ?index:number, ?valueKind:symbol, ?value:symbol, ?extra:symbol)
+
+MethodAnnotationValue(?method, ?annotation, ?element, ?index, ?valueKind, ?value, ?extra) :-
+  AnnotationValue("method", ?method, ?annotation, ?element, ?index, ?valueKind, ?value, ?extra),
+  isMethod(?method).
+
+
+.decl FieldAnnotationValue(?field:Field, ?annotation:Annotation, ?element:symbol,
+                           ?index:number, ?valueKind:symbol, ?value:symbol, ?extra:symbol)
+
+FieldAnnotationValue(?field, ?annotation, ?element, ?index, ?valueKind, ?value, ?extra) :-
+  AnnotationValue("field", ?field, ?annotation, ?element, ?index, ?valueKind, ?value, ?extra),
+  isField(?field).
+
+
+.decl ParamAnnotationValue(?param:Var, ?annotation:Annotation, ?element:symbol,
+                           ?index:number, ?valueKind:symbol, ?value:symbol, ?extra:symbol)
+
+ParamAnnotationValue(?param, ?annotation, ?element, ?index, ?valueKind, ?value, ?extra) :-
+  Param_Annotation(?method, _, _),
+  FormalParam(?position, ?method, ?param),
+  ?id = cat(?method, "::parameter#", to_string(?position)),
+  AnnotationValue("param", ?id, ?annotation, ?element, ?index, ?valueKind, ?value, ?extra).
+
+
+// The values of a nested annotation, by the id in the value of its parent (?valueKind "annotation").
+// Jackson: @JsonSubTypes({@Type(Dog.class), ...}) gives
+//   TypeAnnotationValue(Animal, @JsonSubTypes, "value", 0, "annotation", "...Animal@...JsonSubTypes.value[0]", @Type)
+//   NestedAnnotationValue("...Animal@...JsonSubTypes.value[0]", @Type, "value", -1, "class", "Dog", "-")
+.decl NestedAnnotationValue(?nested:symbol, ?annotation:Annotation, ?element:symbol,
+                            ?index:number, ?valueKind:symbol, ?value:symbol, ?extra:symbol)
+
+NestedAnnotationValue(?nested, ?annotation, ?element, ?index, ?valueKind, ?value, ?extra) :-
+  AnnotationValue("annotation", ?nested, ?annotation, ?element, ?index, ?valueKind, ?value, ?extra).

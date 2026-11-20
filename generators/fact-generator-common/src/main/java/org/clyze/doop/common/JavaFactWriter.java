@@ -451,6 +451,175 @@ public abstract class JavaFactWriter {
     }
 
     /**
+     * Write one value of an annotation element, together with the annotation it belongs to.
+     *
+     * @param kind       what is annotated: "type", "method", "field", "param", or
+     *                   "annotation" for a nested annotation
+     * @param annotated  the annotated class, method, field, parameter
+     *                   ("&lt;method&gt;::parameter#i") or nested annotation id
+     * @param annotation the annotation type
+     * @param element    the element name (also for array values)
+     * @param index      the position in an array value, or -1 for a single value
+     * @param valueKind  string, class, enum, annotation, boolean, int, long, char, byte, short, float or double
+     * @param value      the value (for annotation: the id of the nested annotation)
+     * @param extra      the enum type, the nested annotation type, or null
+     */
+    protected void writeAnnotationValue(String kind, String annotated, String annotation, String element,
+                                        int index, String valueKind, String value, String extra) {
+        _db.add(ANNOTATION_VALUE, kind, annotated, annotation, element, str(index), valueKind, value, extra == null ? "-" : extra);
+    }
+
+    /** A parameter name from the MethodParameters attribute (javac -parameters). */
+    protected void writeParamName(String methodId, int index, String name) {
+        _db.add(PARAM_NAME, methodId, str(index), name);
+    }
+
+    /** A parameter name from the LocalVariableTable attribute (javac -g). */
+    protected void writeParamDebugName(String methodId, int index, String name) {
+        _db.add(PARAM_DEBUG_NAME, methodId, str(index), name);
+    }
+
+    // ------------------------------------------------------------------
+    // Generic signatures
+    // ------------------------------------------------------------------
+
+    /** Generic types and arrays already written (each is written once). */
+    private final Set<String> writtenGenericTypes = ConcurrentHashMap.newKeySet();
+
+    /**
+     * Write the generic signature of a class: its type parameters with their bounds
+     * and its superclass and interfaces with their type arguments.
+     *
+     * @param classId   the class
+     * @param signature the Signature attribute of the class
+     * @param typeVars  gives the id of a type variable used in the signature ("C::T")
+     */
+    protected void writeClassGenericSignature(String classId, String signature, java.util.function.Function<String, String> typeVars) {
+        GenericSignatures.Signature sig = GenericSignatures.parseClass(signature);
+        writeTypeParameters(TYPE_TYPE_PARAMETER, classId, sig.typeParams, typeVars);
+        if (sig.superclass != null)
+            _db.add(TYPE_GENERIC_SUPER_TYPE, classId, writeGenericType(sig.superclass, typeVars));
+        for (GenericSignatures.TypeExpr i : sig.interfaces)
+            _db.add(TYPE_GENERIC_SUPER_TYPE, classId, writeGenericType(i, typeVars));
+    }
+
+    /** Write the generic type of a field (from its Signature attribute). */
+    protected void writeFieldGenericSignature(String fieldId, String signature, java.util.function.Function<String, String> typeVars) {
+        GenericSignatures.Signature sig = GenericSignatures.parseField(signature);
+        _db.add(FIELD_GENERIC_TYPE, fieldId, writeGenericType(sig.fieldType, typeVars));
+    }
+
+    /**
+     * Write the generic signature of a method: its type parameters, its return type
+     * and its parameter types. Parameter types are written only when the signature
+     * lists as many parameters as the method has, since javac leaves synthetic
+     * parameters (such as the outer object of an inner class constructor) out of it.
+     */
+    protected void writeMethodGenericSignature(String methodId, String signature, int paramCount,
+                                               java.util.function.Function<String, String> typeVars) {
+        GenericSignatures.Signature sig = GenericSignatures.parseMethod(signature);
+        writeTypeParameters(METHOD_TYPE_PARAMETER, methodId, sig.typeParams, typeVars);
+        if (sig.returnType != null)
+            _db.add(METHOD_GENERIC_RETURN_TYPE, methodId, writeGenericType(sig.returnType, typeVars));
+        if (sig.params.size() == paramCount)
+            for (int i = 0; i < paramCount; i++)
+                _db.add(METHOD_GENERIC_PARAM_TYPE, methodId, str(i), writeGenericType(sig.params.get(i), typeVars));
+    }
+
+    /** The names of the type parameters a class or method signature declares. */
+    public static List<String> typeParameterNames(String signature) {
+        List<String> names = new ArrayList<>();
+        for (GenericSignatures.TypeParam p : GenericSignatures.parseClass(signature).typeParams)
+            names.add(p.name);
+        return names;
+    }
+
+    private void writeTypeParameters(PredicateFile file, String ownerId, List<GenericSignatures.TypeParam> params,
+                                     java.util.function.Function<String, String> typeVars) {
+        for (int i = 0; i < params.size(); i++) {
+            GenericSignatures.TypeParam p = params.get(i);
+            String varId = ownerId + "::" + p.name;
+            _db.add(TYPE_VARIABLE, varId, ownerId, p.name);
+            _db.add(file, ownerId, str(i), varId);
+            for (int j = 0; j < p.bounds.size(); j++)
+                _db.add(TYPE_VARIABLE_BOUND, varId, str(j), writeGenericType(p.bounds.get(j), typeVars));
+        }
+    }
+
+    /**
+     * Write the rows of a type expression and return its id: a plain type keeps
+     * its usual id ("int", "t.Gateway", "t.Gateway[]"), a type variable gets the id
+     * the resolver gives ("C::T"), a parameterized type is written in Java form
+     * ("java.util.Map&lt;java.lang.String,t.Gateway&gt;") and an array of a generic
+     * type or type variable gets "[]" after its component's id.
+     */
+    private String writeGenericType(GenericSignatures.TypeExpr t, java.util.function.Function<String, String> typeVars) {
+        if (t instanceof GenericSignatures.BaseType)
+            return ((GenericSignatures.BaseType) t).name;
+        if (t instanceof GenericSignatures.TypeVar)
+            return typeVars.apply(((GenericSignatures.TypeVar) t).name);
+        if (t instanceof GenericSignatures.ArrayOf) {
+            GenericSignatures.TypeExpr component = ((GenericSignatures.ArrayOf) t).component;
+            String componentId = writeGenericType(component, typeVars);
+            String id = componentId + "[]";
+            if (isGeneric(component) && writtenGenericTypes.add(id))
+                _db.add(GENERIC_ARRAY, id, componentId);
+            return id;
+        }
+        GenericSignatures.ClassOf c = (GenericSignatures.ClassOf) t;
+        StringBuilder id = new StringBuilder();
+        StringBuilder erasure = new StringBuilder();
+        List<String> lastArgIds = new ArrayList<>();
+        List<String> lastBounds = new ArrayList<>();
+        for (int s = 0; s < c.segments.size(); s++) {
+            GenericSignatures.Segment seg = c.segments.get(s);
+            if (s > 0) {
+                id.append('$');
+                erasure.append('$');
+            }
+            id.append(seg.name);
+            erasure.append(seg.name);
+            lastArgIds.clear();
+            lastBounds.clear();
+            if (!seg.args.isEmpty()) {
+                StringJoiner text = new StringJoiner(",", "<", ">");
+                for (GenericSignatures.TypeArg a : seg.args) {
+                    String argId = a.type == null ? "-" : writeGenericType(a.type, typeVars);
+                    lastArgIds.add(argId);
+                    lastBounds.add(a.bound);
+                    switch (a.bound) {
+                        case "*":       text.add("?"); break;
+                        case "extends": text.add("? extends " + argId); break;
+                        case "super":   text.add("? super " + argId); break;
+                        default:        text.add(argId);
+                    }
+                }
+                id.append(text);
+            }
+        }
+        String typeId = id.toString();
+        if (isGeneric(t) && writtenGenericTypes.add(typeId)) {
+            _db.add(GENERIC_TYPE, typeId, erasure.toString());
+            // Arguments of the innermost class; those of outer classes appear only in the id.
+            for (int i = 0; i < lastArgIds.size(); i++)
+                _db.add(GENERIC_TYPE_ARGUMENT, typeId, str(i), lastArgIds.get(i), lastBounds.get(i));
+        }
+        return typeId;
+    }
+
+    private static boolean isGeneric(GenericSignatures.TypeExpr t) {
+        if (t instanceof GenericSignatures.TypeVar)
+            return true;
+        if (t instanceof GenericSignatures.ArrayOf)
+            return isGeneric(((GenericSignatures.ArrayOf) t).component);
+        if (t instanceof GenericSignatures.ClassOf)
+            for (GenericSignatures.Segment s : ((GenericSignatures.ClassOf) t).segments)
+                if (!s.args.isEmpty())
+                    return true;
+        return false;
+    }
+
+    /**
      * Map native Java methods to native code entry points. Based on
      * section "Resolving Native Method Names" in the JNI spec:
      * https://docs.oracle.com/javase/8/docs/technotes/guides/jni/spec/design.html

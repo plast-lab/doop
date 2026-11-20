@@ -1,0 +1,186 @@
+// ==========================================================================
+// Members helper:
+//
+// The fields, methods and parameters an object of a class has by Java's rules
+// (declared in the class or a superclass, overrides) plus the types of
+// slots and sources and the names of slots.
+// ==========================================================================
+
+
+
+
+// --------------------------------------------------------------------------
+// Members of a class
+// --------------------------------------------------------------------------
+
+// A field an object of the class has: declared in the class or a superclass,
+// also private and static ones.
+.decl FieldOf(?field:Field, ?class:ClassType)
+
+FieldOf(?field, ?class) :-
+  isClassType(?class),
+  basic.SubtypeOf(?class, ?declaring),
+  Field_DeclaringType(?field, ?declaring).
+
+
+// A call of the method on an object of the class runs ?run: the method itself or its override
+// Private methods aren't overridden, so they run as they are
+// (e.g. Spring calls a private @PostConstruct of a superclass).
+// Constructors and static initializers aren't called on an object, so they aren't here.
+.decl MethodRunOn(?method:Method, ?class:ClassType, ?run:Method)
+
+MethodRunOn(?method, ?class, ?run) :-
+  isClassType(?class),
+  basic.SubtypeOf(?class, ?declaring),
+  Method_DeclaringType(?method, ?declaring),
+  !Method_Modifier("private", ?method),
+  Method_SimpleName(?method, ?name),
+  ?name != "<init>",
+  ?name != "<clinit>",
+  Method_Descriptor(?method, ?descriptor),
+  basic.MethodLookup(?name, ?descriptor, ?class, ?run).
+
+MethodRunOn(?method, ?class, ?method) :-
+  isClassType(?class),
+  basic.SubtypeOf(?class, ?declaring),
+  Method_DeclaringType(?method, ?declaring),
+  Method_Modifier("private", ?method),
+  Method_SimpleName(?method, ?name),
+  ?name != "<init>",
+  ?name != "<clinit>".
+
+
+// A non-private, non-static method declared on an interface or base class that runs
+// on a subtype ?class (itself or its override).
+// Jakarta: Servlet, Filter and listener methods running on a concrete component
+// Spring: InitializingBean.afterPropertiesSet, HandlerInterceptor.preHandle, CommandLineRunner.run
+.decl ApiMethodRunOn(?apiType:ReferenceType, ?class:ClassType, ?run:Method) inline
+
+ApiMethodRunOn(?apiType, ?class, ?run) :-
+  isClassType(?class),
+  basic.SubtypeOf(?class, ?apiType),
+  Method_DeclaringType(?apiMethod, ?apiType),
+  !Method_Modifier("private", ?apiMethod),
+  !Method_Modifier("static", ?apiMethod),
+  MethodRunOn(?apiMethod, ?class, ?run).
+
+
+// A parameter of a method that runs itself on an object of the class (not overridden).
+// Jakarta: an @Inject method overridden by a method without @Inject isn't injected
+.decl ParamOf(?param:Var, ?class:ClassType)
+
+ParamOf(?param, ?class) :-
+  MethodRunOn(?method, ?class, ?method),
+  FormalParam(_, ?method, ?param).
+
+
+// A field or parameter in an object of the class: its fields, the parameters of its methods
+// and the parameters of its own constructors.
+.decl SlotOf(?slot:Slot, ?class:ClassType)
+
+SlotOf(?field, ?class) :- FieldOf(?field, ?class).
+SlotOf(?param, ?class) :- ParamOf(?param, ?class).
+
+SlotOf(?param, ?class) :-
+  ConstructorOf(?ctor, ?class),
+  FormalParam(_, ?ctor, ?param).
+
+
+
+
+// --------------------------------------------------------------------------
+// Types of slots and sources
+// --------------------------------------------------------------------------
+
+// The declared type of a field or parameter.
+.decl SlotType(?slot:Slot, ?type:Type)
+
+SlotType(?field, ?type) :- Field_Type(?field, ?type).
+
+SlotType(?param, ?type) :-
+  FormalParam(_, _, ?param),
+  Var_Type(?param, ?type).
+
+
+// The declared type of the objects a source gives (see InjectedWith):
+// a class or interface itself, the return type of a method, the type of a field.
+// Spring: the return type of a @Bean method is what it matches slots by
+.decl SourceType(?source:Source, ?type:Type)
+
+SourceType(?type, ?type) :- isClassType(?type).
+SourceType(?type, ?type) :- isInterfaceType(?type).
+SourceType(?method, ?type) :- Method_ReturnType(?method, ?type).
+SourceType(?field, ?type) :- Field_Type(?field, ?type).
+
+
+// The full declared type of a field or parameter: the generic one where the class file has it
+// ("java.util.List<t.Plugin>", see GenericType in the facts), else the plain one.
+// Spring: an @Autowired List<Plugin> gets every Plugin bean
+.decl SlotFullType(?slot:Slot, ?type:symbol)
+
+SlotFullType(?field, ?type) :- Field_GenericType(?field, ?type).
+
+SlotFullType(?field, ?type) :-
+  Field_Type(?field, ?type),
+  !Field_GenericType(?field, _).
+
+SlotFullType(?param, ?type) :-
+  FormalParam(?index, ?method, ?param),
+  Method_GenericParamType(?method, ?index, ?type).
+
+SlotFullType(?param, ?type) :-
+  FormalParam(?index, ?method, ?param),
+  Var_Type(?param, ?type),
+  !Method_GenericParamType(?method, ?index, _).
+
+
+// The full declared type of the objects a source gives, like SourceType.
+// A class or interface is itself, its generic supertypes are in Type_GenericSuperType.
+// Spring: a @Bean method returning Repo<User> only fits Repo<User> slots
+.decl SourceFullType(?source:Source, ?type:symbol)
+
+SourceFullType(?type, ?type) :- isClassType(?type).
+SourceFullType(?type, ?type) :- isInterfaceType(?type).
+
+SourceFullType(?method, ?type) :- Method_GenericReturnType(?method, ?type).
+
+SourceFullType(?method, ?type) :-
+  Method_ReturnType(?method, ?type),
+  !Method_GenericReturnType(?method, _).
+
+SourceFullType(?field, ?type) :- Field_GenericType(?field, ?type).
+
+SourceFullType(?field, ?type) :-
+  Field_Type(?field, ?type),
+  !Field_GenericType(?field, _).
+
+
+// The type arguments of a slot's generic type, for slots that hold other objects.
+// ?bound is "=" (exactly), "extends", "super" or "*" (any, with ?argument "-").
+// The reader decides what a wildcard means. No tuples for a plain or raw type.
+// Spring: SlotTypeArgument(plugins, 0, "t.Plugin", "=") for List<Plugin>
+// Jakarta: SlotTypeArgument(clock, 0, "t.Clock", "=") for Provider<Clock>
+.decl SlotTypeArgument(?slot:Slot, ?index:number, ?argument:symbol, ?bound:symbol)
+
+SlotTypeArgument(?slot, ?index, ?argument, ?bound) :-
+  SlotFullType(?slot, ?type),
+  GenericType_Argument(?type, ?index, ?argument, ?bound).
+
+
+
+
+// --------------------------------------------------------------------------
+// Names of slots
+// --------------------------------------------------------------------------
+
+// The name of a field or parameter as reflection gives it: the field's name, or the
+// parameter's name when the class was compiled with -parameters (no tuple otherwise).
+// Spring: a slot named like a bean wins a tie
+// Jakarta: @Named and @Resource without a value use it
+.decl SlotName(?slot:Slot, ?name:symbol)
+
+SlotName(?field, ?name) :- Field_SimpleName(?field, ?name).
+
+SlotName(?param, ?name) :-
+  FormalParam(?index, ?method, ?param),
+  Param_Name(?method, ?index, ?name).

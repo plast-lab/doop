@@ -288,6 +288,7 @@ public class Main {
 
         Phantoms phantoms = new Phantoms(reportPhantoms);
         FactWriter writer = new FactWriter(db, sootParameters, rep, phantoms);
+        writer.setParameterNames(java.getArtifactScanner().getParameterNames());
         SootDriver driver = new SootDriver(classes.size(), sootParameters._cores, writer, sootParameters, phantoms);
 
         if (writeFacts) {

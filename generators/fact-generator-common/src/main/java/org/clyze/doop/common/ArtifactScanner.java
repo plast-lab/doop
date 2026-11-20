@@ -44,6 +44,11 @@ public class ArtifactScanner {
 
     Set<GenericFieldInfo> getGenericFields() { return genericFields; }
 
+    // Parameter names of the methods of every scanned class (written by the fact writers).
+    private final ParameterNames parameterNames = new ParameterNames();
+
+    public ParameterNames getParameterNames() { return parameterNames; }
+
     public Map<String, Set<ArtifactEntry>> getArtifactToClassMap() {
         return artifactToClassMap;
     }
@@ -90,7 +95,14 @@ public class ArtifactScanner {
     }
 
     public void processClass(InputStream is, File f, Consumer<String> classProc) throws IOException {
-        String className = BytecodeUtil.getClassName(new ClassReader(is));
+        ClassReader reader = new ClassReader(is);
+        String className = BytecodeUtil.getClassName(reader);
+        try {
+            parameterNames.collect(reader, className);
+        } catch (RuntimeException ex) {
+            // A class ASM cannot fully read only loses its parameter names.
+            logger.debug("Could not read parameter names of " + className + ": " + ex.getMessage());
+        }
         String artifact = f.getName();
         registerArtifactClass(artifact, className, "-", IOUtils.toByteArray(is).length);
         if (classProc != null)

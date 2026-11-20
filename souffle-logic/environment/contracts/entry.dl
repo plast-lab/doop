@@ -1,29 +1,79 @@
 // ==========================================================================
-// Entry contract:
+// Entry (contract interface):
 //
 // Methods the framework calls although no code in the application program does.
 // ==========================================================================
 
 
 
-.comp EntryTables {
 
-  // A method the framework calls, without a call to it in the application program.
-  // Its `this` is the mock object the engine made for its class (ExternallyCreatedType).
-  // Its parameters get what InjectedWith says, or a mock of their type when
-  // not known (e.g. a request body).
-  // Methods with injected parameters are added automatically (contracts/implied.dl).
-  // Spring: @GetMapping, @PostMapping, @Scheduled, @EventListener etc...
-  // Jakarta: @GET, @POST, @PostConstruct etc...
-  .decl EntryPoint(?method:Method)
-}
+// --------------------------------------------------------------------------
+// Relation
+// --------------------------------------------------------------------------
 
-// The shared table is entry.EntryPoint.
-.init entry = EntryTables
+// A method the framework calls, without a call to it in the application program.
+// Its `this` is either:
+//   - the mock object for its class when the class is an ExternallyCreatedType;
+//   - the objects the program creates of its class when the framework injects into them
+//     (e.g. objects returned from Spring @Bean methods get their @PostConstruct called)
+//     or when nobody outside the program creates the class 
+//     (e.g. a HandlerInterceptor the program creates with new and registers in code).
+// Its parameters get what InjectedWith says, or a mock of their type when
+// not known (e.g. a request body).
+// Spring: @GetMapping, @PostMapping, @Scheduled, @EventListener etc...
+// Jakarta: @GET, @POST, @PostConstruct etc...
+.decl EntryPoint(?owner:symbol, ?method:Method)
 
 
 
-// Specs and frameworks inherit this (e.g. .comp Spring : Entry, ...).
-.comp Entry : EntryTables {
-  entry.EntryPoint(?method) :- EntryPoint(?method).
-}
+
+
+
+
+// --------------------------------------------------------------------------
+// Tuples the contract adds
+// --------------------------------------------------------------------------
+// Always true when another tuple exists, whatever the framework, so specs and frameworks
+// don't need to repeat or ever forget them. Each belongs to the owner of the tuple it follows from
+// (for a request its whoever injects into the object).
+
+
+// Only the caller of a method passes its arguments.
+// So if the framework fills a parameter, it also calls the method.
+EntryPoint(?owner, ?method) :-
+  InjectedParam(?owner, ?param),
+  FormalParam(_, ?method, ?param).
+
+
+// The framework calls a method to get what it puts into a slot.
+EntryPoint(?owner, ?method) :-
+  InjectedWith(?owner, _, _, ?method),
+  isMethod(?method).
+
+
+// Whoever injects into an object calls the methods the program asked for (CallRequest, e.g. @PostConstruct),
+// whichever spec or framework wrote the request.
+// The tuple is the injecting framework's, the request only says why.
+// It's the method a call on the object runs, so an override without the annotation runs instead.
+EntryPoint(?framework, ?run) :-
+  InjectionTarget(?framework, ?class),
+  CallRequest(_, ?method),
+  MethodRunOn(?method, ?class, ?run).
+
+
+
+
+
+
+
+// --------------------------------------------------------------------------
+// Checks
+// --------------------------------------------------------------------------
+
+ContractProblem(?owner, "EntryPoint", ?method, "Owner not declared") :-
+  EntryPoint(?owner, ?method),
+  !Owner(?owner).
+
+ContractProblem(?owner, "EntryPoint", ?method, "Not a method") :-
+  EntryPoint(?owner, ?method),
+  !isMethod(?method).

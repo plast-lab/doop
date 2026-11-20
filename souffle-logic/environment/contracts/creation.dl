@@ -1,5 +1,5 @@
 // ==========================================================================
-// Creation contract:
+// Creation (contract interface):
 //
 // Classes and interfaces whose objects the framework creates instead of the program.
 // Framework here means any code outside the application program like
@@ -8,28 +8,66 @@
 
 
 
-.comp CreationTables {
 
-  // A class or interface the framework creates objects of (no "new" in the application program).
-  // For an interface or an abstract class, the framework creates an object of a class it makes at runtime,
-  // so the type stands for that class (e.g. a Spring Data repository, a Spring bean with @Lookup methods).
-  // The engine makes one mock object for it and that object is used whenever the
-  // framework calls one of its methods or injects it somewhere.
-  // Its methods without code (e.g. those of an interface) return a mock of their return type.
-  // It doesn't say which constructor runs, which methods get called or where
-  // the object gets injected. Specs and frameworks say those with EntryPoint and InjectedWith.
-  // It doesn't say either that the framework fills the object's fields (that's InjectionTarget).
-  // Spring: @Component (and @Service, @Controller etc.. via meta-annotations), Spring Data repositories
-  // Jakarta: @Entity
-  .decl ExternallyCreatedType(?type:ReferenceType)
-}
+// --------------------------------------------------------------------------
+// Relation
+// --------------------------------------------------------------------------
 
-// The shared table is creation.ExternallyCreatedType.
-.init creation = CreationTables
-
+// A class or interface the framework creates objects of (no "new" in the application program).
+// For an interface or an abstract class, the framework creates an object of a class it makes at runtime,
+// so the type stands for that class (e.g. a Spring Data repository, a Spring bean with @Lookup methods).
+// The engine makes one mock object for it and that object is used whenever the
+// framework calls one of its methods or injects it somewhere.
+// Its methods without code (those of an interface) return a mock of their return type.
+// It doesn't say which constructor runs, which methods get called or where
+// the object gets injected. Specs and frameworks say those with EntryPoint and InjectedWith.
+// It doesn't say either that the framework fills the object's fields (that's InjectionTarget).
+// Spring: @Component (and @Service, @Controller etc.. via meta-annotations), Spring Data repositories
+// Jakarta: @Entity
+.decl ExternallyCreatedType(?owner:symbol, ?type:ReferenceType)
 
 
-// Specs and frameworks inherit this (e.g. .comp Spring : Creation, ...).
-.comp Creation : CreationTables {
-  creation.ExternallyCreatedType(?type) :- ExternallyCreatedType(?type).
-}
+
+
+
+
+
+// --------------------------------------------------------------------------
+// Tuples the contract adds
+// --------------------------------------------------------------------------
+// Always true when another tuple exists, whatever the framework, so specs and frameworks
+// don't need to repeat or ever forget them. Each belongs to the owner of the tuple it follows from
+// (for a request its whoever injects into the object).
+
+
+// A class or interface given to a slot means the mock object the engine made for it,
+// so it must have one.
+ExternallyCreatedType(?owner, ?type) :-
+  InjectedWith(?owner, _, _, ?type),
+  ( isClassType(?type) ; isInterfaceType(?type) ).
+
+
+// A constructor only runs when an object of exactly its class is created
+// (with new or reflection), so if the framework calls it, it creates the object.
+ExternallyCreatedType(?owner, ?class) :-
+  EntryPoint(?owner, ?ctor),
+  ConstructorOf(?ctor, ?class).
+
+
+
+
+
+
+
+// --------------------------------------------------------------------------
+// Checks
+// --------------------------------------------------------------------------
+
+ContractProblem(?owner, "ExternallyCreatedType", ?type, "Owner not declared") :-
+  ExternallyCreatedType(?owner, ?type),
+  !Owner(?owner).
+
+ContractProblem(?owner, "ExternallyCreatedType", ?type, "Not a class or interface") :-
+  ExternallyCreatedType(?owner, ?type),
+  !isClassType(?type),
+  !isInterfaceType(?type).

@@ -1,0 +1,35 @@
+// ==========================================================================
+// Spring Boot (Spring Boot 2.x to 4.x):
+//
+// Startup runner callbacks: CommandLineRunner.run and ApplicationRunner.run.
+// ==========================================================================
+
+
+Owner("spring-boot").
+
+
+
+
+// --------------------------------------------------------------------------
+// Runner interfaces
+// --------------------------------------------------------------------------
+
+.decl SpringBoot_RunnerInterface(?iface:ReferenceType)
+
+SpringBoot_RunnerInterface("org.springframework.boot.CommandLineRunner").
+SpringBoot_RunnerInterface("org.springframework.boot.ApplicationRunner").
+
+
+
+
+// --------------------------------------------------------------------------
+// Entry points
+// --------------------------------------------------------------------------
+
+// Spring Boot: run methods on concrete application CommandLineRunner and ApplicationRunner classes.
+EntryPoint("spring-boot", ?run) :-
+  ApplicationClass(?class),
+  ConcreteClassType(?class),
+  SpringBoot_RunnerInterface(?iface),
+  ApiMethodRunOn(?iface, ?class, ?run),
+  Method_SimpleName(?run, "run").

@@ -1,57 +1,97 @@
 // ==========================================================================
-// Environment:
+// Environment
 //
-// Everything outside the application program that creates its objects,
-// calls its methods or fills its fields like DI containers, servers etc...
-// Engines include this file and only read the shared contract tables
-// without knowing anything about the underlying frameworks.
+// Models how external frameworks and libraries interact with the
+// application program (e.g. object creation, entry points, injection and taint).
+// Engines include this file and read only the contract interface.
 //
-// contracts/
-//   The shared contract tables: the only thing engines read.
-//   Also the contract rows that always follow from other rows (implied.dl)
-//   and the checks that report wrong rows (checks.dl).
+//                       facts/ + basic/ + helpers/
+//                                   │
+//        ┌──────────────┬───────────┴───┬───────────────────┐
+//        ▼              ▼               ▼                   ▼
+//    jakarta-*     spring-data     spring (own)        direct files
+//    (@Inject,     (repos,         (@Component,        (servlet,
+//     @Resource)    *Impl)          @Autowired)         spring-web)
+//        │              │               │                   │
+//        └──────────────┼───────────────┘                   │
+//                       ▼                                   │
+//           ┌───────────────────────┐                       │
+//           │   requests & offers   │                       │
+//           │ (accumulated context) │                       │
+//           └───────────┬───────────┘                       │
+//                       ▼                                   │
+//                 DI containers                             │
+//             (choosing, may negate)                        │
+//                       └─────────────────┬─────────────────┘
+//                                         ▼
+//                             ┌──────────────────────┐
+//                             │  contract interface  │  (+ auto rules)
+//                             └──────────┬───────────┘
+//                                   ┌────┴────┐
+//                                   ▼         ▼
+//                               points-to  taint / ...
 //
-// helpers/
-//   Common shortcuts over the facts so specs and frameworks write fewer lines.
+// Layout:
+//   contracts/   Shared relations:
+//                  - requests-offers.dl: internal handoff relations between specs
+//                    and frameworks for facts one file cannot finish alone (e.g. @Inject).
+//                  - creation.dl, entry.dl and injection.dl: the contract interface
+//                    (finished facts engines act on) and its auto rules.
+//   helpers/     Shared shortcuts over facts/ and basic/.
+//   specs/       Published standards (e.g. Jakarta) shared by all their
+//                implementations (e.g. Hibernate).
+//   frameworks/  Framework specific rules (e.g. spring.dl), grouped in
+//                subfolders when large (e.g. frameworks/spring/).
 //
-// specs/
-//   Published standards that every implementation follows (e.g. Jakarta),
-//   so their implementations (e.g. Hibernate) need no file of their own
-//   for what the standard covers.
-//
-// frameworks/
-//   One file per framework/library (e.g. spring.dl), for what no standard says:
-//   which classes it creates or injects into and what goes into their slots.
-//
-// Each spec and framework is a component that inherits the contracts it fills
-// (.comp Spring : Creation, Entry, Injection).
-// It gets its own copy of the contract tables, holding only its own rows,
-// and the contract copies those rows into the shared tables automatically.
-// For example: ExternallyCreatedType inside Spring is its own copy
-// while creation.ExternallyCreatedType is the shared table.
-// Its other relations stay in its own namespace (spring.*), so specs and frameworks
-// never read each other, only the shared tables connect them.
-//
-// Including a spec or framework activates it.
+// Specs and frameworks dont read each other directly: they communicate through
+// requests and offers, never read from the contract interface and never negate shared
+// relations, so DI containers can safely use negation when choosing without breaking
+// stratification.
 // ==========================================================================
 
 
-// Contracts
+
+// The name of each spec or framework.
+// Every tuple in the shared relations starts with its owner.
+// On the contract interface it is the framework that acts;
+// on a request or offer it is the one that makes it.
+.decl Owner(?name:symbol)
+
+// Tuples the contract checks report as wrong, with their owner.
+// The checks list such tuples in the output (ContractProblem.csv) without failing,
+// so mistakes in spec and framework rules are visible.
+.decl ContractProblem(?owner:symbol, ?relation:symbol, ?value:symbol, ?problem:symbol)
+.output ContractProblem
+
+
+
+// --- Contracts ---
 #include "contracts/creation.dl"
 #include "contracts/entry.dl"
 #include "contracts/injection.dl"
-#include "contracts/implied.dl"
-#include "contracts/checks.dl"
+#include "contracts/requests-offers.dl"
 
 
-// Helpers
+
+// --- Helpers ---
 #include "helpers/annotations.dl"
 #include "helpers/constructors.dl"
+#include "helpers/members.dl"
+#include "helpers/names.dl"
 
 
-// Specs
-// #include "specs/jakarta/...dl"
+
+// --- Specs ---
+// Including a spec activates it.
+#include "specs/jakarta/jakarta-inject.dl"
+#include "specs/jakarta/jakarta-annotation.dl"
+#include "specs/jakarta/jakarta-servlet.dl"
 
 
-// Frameworks
-// #include "frameworks/spring.dl"
+
+// --- Frameworks ---
+// Including a framework activates it.
+#include "frameworks/spring/spring.dl"
+#include "frameworks/spring/spring-web.dl"
+#include "frameworks/spring/spring-boot.dl"
+#include "frameworks/spring/spring-data.dl"

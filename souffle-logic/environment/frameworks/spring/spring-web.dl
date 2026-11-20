@@ -1,0 +1,95 @@
+// ==========================================================================
+// Spring Web (Spring MVC, Spring 5.3 to 7.0):
+//
+// Request handler methods on controllers (including inherited and interface
+// mappings and Spring 5.3 class-level @RequestMapping), @ExceptionHandler /
+// @InitBinder / @ModelAttribute methods and structural web callbacks.
+// ==========================================================================
+
+
+Owner("spring-web").
+
+
+
+
+// --------------------------------------------------------------------------
+// Annotations and callback interfaces
+// --------------------------------------------------------------------------
+
+.decl SpringWeb_Annotation(?role:symbol, ?annotation:Annotation)
+
+SpringWeb_Annotation("controller", "org.springframework.stereotype.Controller").
+SpringWeb_Annotation("controller-advice", "org.springframework.web.bind.annotation.ControllerAdvice").
+SpringWeb_Annotation("request-mapping", "org.springframework.web.bind.annotation.RequestMapping").
+SpringWeb_Annotation("advice-method", "org.springframework.web.bind.annotation.ExceptionHandler").
+SpringWeb_Annotation("advice-method", "org.springframework.web.bind.annotation.InitBinder").
+SpringWeb_Annotation("advice-method", "org.springframework.web.bind.annotation.ModelAttribute").
+
+
+.decl SpringWeb_CallbackInterface(?iface:ReferenceType)
+
+SpringWeb_CallbackInterface("org.springframework.web.servlet.HandlerInterceptor").
+SpringWeb_CallbackInterface("org.springframework.web.servlet.AsyncHandlerInterceptor").
+SpringWeb_CallbackInterface("org.springframework.web.servlet.config.annotation.WebMvcConfigurer").
+SpringWeb_CallbackInterface("org.springframework.web.method.support.HandlerMethodArgumentResolver").
+SpringWeb_CallbackInterface("org.springframework.web.method.support.HandlerMethodReturnValueHandler").
+SpringWeb_CallbackInterface("org.springframework.web.servlet.mvc.method.annotation.RequestBodyAdvice").
+SpringWeb_CallbackInterface("org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice").
+SpringWeb_CallbackInterface("org.springframework.web.context.ServletContextAware").
+SpringWeb_CallbackInterface("org.springframework.web.context.ServletConfigAware").
+
+
+
+
+// --------------------------------------------------------------------------
+// Controllers, advice and entry points
+// --------------------------------------------------------------------------
+
+// Spring: concrete application classes carrying @Controller (or @RestController via chain),
+// or (Spring 5.3) a class-level @RequestMapping.
+.decl SpringWeb_Controller(?class:ClassType)
+
+SpringWeb_Controller(?class) :-
+  ApplicationClass(?class),
+  ConcreteClassType(?class),
+  ( SpringWeb_Annotation("controller", ?ann)
+  ; SpringWeb_Annotation("request-mapping", ?ann) ),
+  TypeCarries(?class, ?ann).
+
+
+// Spring: @ControllerAdvice and @RestControllerAdvice classes.
+.decl SpringWeb_Advice(?class:ClassType)
+
+SpringWeb_Advice(?class) :-
+  ApplicationClass(?class),
+  ConcreteClassType(?class),
+  SpringWeb_Annotation("controller-advice", ?ann),
+  TypeCarries(?class, ?ann).
+
+
+// Spring: request handler methods on controllers.
+// MethodRunOn covers mappings inherited from superclasses and interfaces.
+EntryPoint("spring-web", ?run) :-
+  SpringWeb_Controller(?class),
+  SpringWeb_Annotation("request-mapping", ?ann),
+  MethodCarries(?method, ?ann),
+  !Method_Modifier("static", ?method),
+  MethodRunOn(?method, ?class, ?run).
+
+
+// Spring: @ExceptionHandler, @InitBinder and @ModelAttribute methods on controllers
+// and @ControllerAdvice classes.
+EntryPoint("spring-web", ?run) :-
+  ( SpringWeb_Controller(?class) ; SpringWeb_Advice(?class) ),
+  SpringWeb_Annotation("advice-method", ?ann),
+  MethodCarries(?method, ?ann),
+  !Method_Modifier("static", ?method),
+  MethodRunOn(?method, ?class, ?run).
+
+
+// Spring: structural web callbacks on concrete application classes.
+EntryPoint("spring-web", ?run) :-
+  ApplicationClass(?class),
+  ConcreteClassType(?class),
+  SpringWeb_CallbackInterface(?iface),
+  ApiMethodRunOn(?iface, ?class, ?run).

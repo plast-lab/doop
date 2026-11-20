@@ -1,0 +1,86 @@
+// ==========================================================================
+// Jakarta Servlet (jakarta.servlet and javax.servlet):
+//
+// Concrete application classes implementing Servlet, Filter or a servlet
+// listener interface are created by the container and have their servlet API
+// methods called on them.
+// ==========================================================================
+
+
+Owner("jakarta-servlet").
+
+
+
+
+// --------------------------------------------------------------------------
+// Servlet API types
+// --------------------------------------------------------------------------
+
+.decl JakartaServlet_ApiType(?type:ReferenceType)
+
+JakartaServlet_ApiType("jakarta.servlet.Servlet").
+JakartaServlet_ApiType("javax.servlet.Servlet").
+JakartaServlet_ApiType("jakarta.servlet.GenericServlet").
+JakartaServlet_ApiType("javax.servlet.GenericServlet").
+JakartaServlet_ApiType("jakarta.servlet.http.HttpServlet").
+JakartaServlet_ApiType("javax.servlet.http.HttpServlet").
+JakartaServlet_ApiType("jakarta.servlet.Filter").
+JakartaServlet_ApiType("javax.servlet.Filter").
+JakartaServlet_ApiType("jakarta.servlet.http.HttpFilter").
+JakartaServlet_ApiType("javax.servlet.http.HttpFilter").
+JakartaServlet_ApiType("jakarta.servlet.ServletContextListener").
+JakartaServlet_ApiType("javax.servlet.ServletContextListener").
+JakartaServlet_ApiType("jakarta.servlet.ServletContainerInitializer").
+JakartaServlet_ApiType("javax.servlet.ServletContainerInitializer").
+JakartaServlet_ApiType("jakarta.servlet.AsyncListener").
+JakartaServlet_ApiType("javax.servlet.AsyncListener").
+JakartaServlet_ApiType("jakarta.servlet.ReadListener").
+JakartaServlet_ApiType("javax.servlet.ReadListener").
+JakartaServlet_ApiType("jakarta.servlet.WriteListener").
+JakartaServlet_ApiType("javax.servlet.WriteListener").
+JakartaServlet_ApiType("jakarta.servlet.ServletRequestListener").
+JakartaServlet_ApiType("javax.servlet.ServletRequestListener").
+JakartaServlet_ApiType("jakarta.servlet.ServletRequestAttributeListener").
+JakartaServlet_ApiType("javax.servlet.ServletRequestAttributeListener").
+JakartaServlet_ApiType("jakarta.servlet.ServletContextAttributeListener").
+JakartaServlet_ApiType("javax.servlet.ServletContextAttributeListener").
+JakartaServlet_ApiType("jakarta.servlet.http.HttpUpgradeHandler").
+JakartaServlet_ApiType("javax.servlet.http.HttpUpgradeHandler").
+JakartaServlet_ApiType("jakarta.servlet.http.HttpSessionListener").
+JakartaServlet_ApiType("javax.servlet.http.HttpSessionListener").
+JakartaServlet_ApiType("jakarta.servlet.http.HttpSessionActivationListener").
+JakartaServlet_ApiType("javax.servlet.http.HttpSessionActivationListener").
+JakartaServlet_ApiType("jakarta.servlet.http.HttpSessionAttributeListener").
+JakartaServlet_ApiType("javax.servlet.http.HttpSessionAttributeListener").
+JakartaServlet_ApiType("jakarta.servlet.http.HttpSessionBindingListener").
+JakartaServlet_ApiType("javax.servlet.http.HttpSessionBindingListener").
+JakartaServlet_ApiType("jakarta.servlet.http.HttpSessionIdListener").
+JakartaServlet_ApiType("javax.servlet.http.HttpSessionIdListener").
+
+
+
+
+// --------------------------------------------------------------------------
+// Contract interface
+// --------------------------------------------------------------------------
+
+// Jakarta: concrete application classes implementing a servlet API type.
+.decl JakartaServlet_Component(?class:ClassType)
+
+JakartaServlet_Component(?class) :-
+  ApplicationClass(?class),
+  ConcreteClassType(?class),
+  JakartaServlet_ApiType(?apiType),
+  basic.SubtypeOf(?class, ?apiType).
+
+
+ExternallyCreatedType("jakarta-servlet", ?class) :-
+  JakartaServlet_Component(?class).
+
+
+// Jakarta: servlet API methods (init, service, doGet, doFilter, listener callbacks...)
+// that run on the component class.
+EntryPoint("jakarta-servlet", ?run) :-
+  JakartaServlet_Component(?class),
+  JakartaServlet_ApiType(?apiType),
+  ApiMethodRunOn(?apiType, ?class, ?run).

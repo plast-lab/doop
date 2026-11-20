@@ -1059,6 +1059,24 @@ isAnnotation(?annotation) :- isReferenceType(?annotation), Param_Annotation(_, _
 
 // Annotation elements
 .input AnnotationElement(filename="AnnotationElement.facts")
+.input AnnotationValue(filename="AnnotationValue.facts")
+
+// Parameter names
+.input Param_Name(filename="Param-Name.facts")
+.input Param_DebugName(filename="Param-DebugName.facts")
+
+// Generic signatures
+.input GenericType(filename="GenericType.facts")
+.input GenericType_Argument(filename="GenericType-Argument.facts")
+.input GenericArray(filename="GenericArray.facts")
+.input TypeVariable(filename="TypeVariable.facts")
+.input TypeVariable_Bound(filename="TypeVariable-Bound.facts")
+.input Type_TypeParameter(filename="Type-TypeParameter.facts")
+.input Method_TypeParameter(filename="Method-TypeParameter.facts")
+.input Type_GenericSuperType(filename="Type-GenericSuperType.facts")
+.input Field_GenericType(filename="Field-GenericType.facts")
+.input Method_GenericReturnType(filename="Method-GenericReturnType.facts")
+.input Method_GenericParamType(filename="Method-GenericParamType.facts")
 
 // Phantom types/methods and phantom-based methods.
 .decl PhantomType(?t:ReferenceType)

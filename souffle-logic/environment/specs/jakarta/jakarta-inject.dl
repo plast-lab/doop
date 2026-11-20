@@ -1,0 +1,56 @@
+// ==========================================================================
+// Jakarta Inject (JSR-330 / jakarta.inject and javax.inject):
+//
+// Requests only: @Inject asks whoever injects into an object to fill a field,
+// method parameter or constructor parameter.
+// Picking which object goes into each slot is the injecting framework's job
+// (e.g. spring.dl).
+// ==========================================================================
+
+
+Owner("jakarta-inject").
+
+
+
+
+// --------------------------------------------------------------------------
+// Annotations
+// --------------------------------------------------------------------------
+
+.decl JakartaInject_Annotation(?role:symbol, ?annotation:Annotation)
+
+JakartaInject_Annotation("inject", "jakarta.inject.Inject").
+JakartaInject_Annotation("inject", "javax.inject.Inject").
+
+
+
+
+// --------------------------------------------------------------------------
+// Requests
+// --------------------------------------------------------------------------
+
+// Jakarta: @Inject fields, except static and final ones (Inject Javadoc).
+FillRequest("jakarta-inject", ?field) :-
+  JakartaInject_Annotation("inject", ?ann),
+  FieldCarries(?field, ?ann),
+  !Field_Modifier("static", ?field),
+  !Field_Modifier("final", ?field).
+
+
+// Jakarta: parameters of non-static @Inject methods.
+// The contract's ParamOf drops methods overridden without @Inject.
+FillRequest("jakarta-inject", ?param) :-
+  JakartaInject_Annotation("inject", ?ann),
+  MethodCarries(?method, ?ann),
+  !Method_Modifier("static", ?method),
+  !ConstructorOf(?method, _),
+  FormalParam(_, ?method, ?param).
+
+
+// Jakarta: parameters of @Inject constructors.
+// The contract applies these only when the framework also creates the object.
+FillRequest("jakarta-inject", ?param) :-
+  JakartaInject_Annotation("inject", ?ann),
+  ConstructorOf(?ctor, _),
+  MethodCarries(?ctor, ?ann),
+  FormalParam(_, ?ctor, ?param).
