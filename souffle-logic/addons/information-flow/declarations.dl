@@ -9,6 +9,10 @@
 .decl TaintSpec(?type:symbol, ?tag:symbol, ?id:symbol)
 .input TaintSpec(filename="TaintSpec.facts")
 
+/** Pattern entries of the profiles, recorded by the macros in macros.dl so that
+ *  a pattern matching nothing can be reported (diagnostics.dl). */
+.decl TaintPattern(?kind:symbol, ?pattern:symbol)
+
 // Use macro to substitute to handle context types when points-to reasoning is disabled.
 #ifdef DISABLE_POINTS_TO
 #define CONTEXT symbol
@@ -16,22 +20,127 @@
 #define CONTEXT mainAnalysis.configuration.Context
 #endif // DISABLE_POINTS_TO
 
-// Declaration of a taint source method.
-.decl TaintSourceMethod(?label:InformationLabel, ?method:Method)
-// Declaration of a taint source method, including all methods that override it.
-.decl TaintSourceMethodWithOverrides(?label:InformationLabel, ?method:Method)
+// Taint sources. Named by the POSITION of the tainted data, after Doop's own fact
+// names (AssignReturnValue, FormalParam): what a call site sees vs. what a method
+// sees from the inside. Every method-keyed source is expanded to all overriding
+// methods by default (core.dl), because a call site matches the RESOLVED target of
+// the call-graph edge, so a source on an interface/abstract method would otherwise
+// fire for nothing.
+//
+// Return source (caller side): at every reachable call to ?method, the variable
+// receiving the result is tainted.
+.decl TaintSourceReturn(?label:InformationLabel, ?method:Method)
+// Formal-parameter source (callee side): formal ?index of ?method is tainted in
+// every context where ?method is reachable, with or without a visible call site.
+// Models an unmodeled caller (framework/container) passing tainted data into the
+// method -- the entry-point shape that return-only sources cannot express.
+.decl TaintSourceFormalParam(?label:InformationLabel, ?index:number, ?method:Method)
+// Actual-parameter source (caller side): at every reachable call to ?method, the
+// actual at ?index is tainted -- the call FILLED the object the caller passed in
+// (InputStream.read(byte[]), DatagramSocket.receive(packet)).
+.decl TaintSourceActualParam(?label:InformationLabel, ?index:number, ?method:Method)
+// Base source (caller side): at every reachable call to ?method, the receiver
+// variable is tainted -- the call filled the object it was invoked on. In bytecode
+// a constructor is a void call on the fresh object, so this is how "the constructed
+// object is a source" is said (new Socket(host, port), props.load(in)).
+.decl TaintSourceBase(?label:InformationLabel, ?method:Method)
+// This source (callee side): `this` of ?method is tainted in every context where
+// ?method is reachable -- the receiver was built from untrusted data by an
+// unmodeled caller (a deserialized request object's validate()).
+.decl TaintSourceThis(?label:InformationLabel, ?method:Method)
+// Field source (neither side): the CONTENTS of ?field are tainted -- data written
+// into it from outside the analyzed program (injected configuration, a bean
+// property set by a container, deserialization, native code). One mock object per
+// field is placed in the field's points-to set unconditionally, so every load of
+// the field sees it whether or not the program ever stores into the field; and
+// whatever Markable objects the field holds are marked as well. Source id = the
+// field signature.
+.decl TaintSourceField(?label:InformationLabel, ?field:Field)
+// Type source (neither side): every object whose type is ?type or a subtype is
+// tainted, wherever it was allocated -- for framework objects that reach the
+// program through too many paths to list (HttpServletRequest). Mark half:
+// every Markable value of the type is marked. Mock half (on by default, off with
+// --information-flow-disable-type-mocks): one stand-in at every ENTRY POSITION
+// of the type, the places where a value of the type arrives from outside the
+// analysed code -- formals of reachable methods declared as the type, fields
+// declared as the type, and results of calls whose declared target has no body.
+// Source id = the type for both halves.
+.decl TaintSourceType(?label:InformationLabel, ?type:Type)
 
-.decl LeakingSinkMethod(?lable:InformationLabel, ?method:Method)
-.decl LeakingSinkMethodArg(?label:InformationLabel, ?index:number, ?method:Method)
-.decl LeakingSinkVariable(?label:InformationLabel, ?tomethod:MethodInvocation, ?ctx:CONTEXT, ?var:Var)
-.decl SanitizationMethod(?method:Method)
-.decl BaseToRetTaintTransferMethod(?method:Method)
-.decl BaseToParamTaintTransferMethod(?method:Method)
-.decl ParamToBaseTaintTransferMethod(?index:number, ?method:Method)
-.decl ParamIndexToBaseTaintTransferMethod(?index:number, ?method:Method)
-.decl ParamToRetTaintTransferMethod(?method:Method)
-.decl MockBaseToRetTaintTransferMethod(?meth:Method)
-.decl MockParamToRetTaintTransferMethod(?meth:Method)
+// Taint sinks, named by the POSITION of the data that must not be tainted. A
+// sink fires wherever its position is reachable, in application or library code
+// (core.dl); the method-keyed kinds are expanded to every overriding method by
+// default, like the sources, because a reachable call is matched by its RESOLVED
+// target: a sink declared on an interface method would otherwise be silent.
+// Actual-parameter sink: at every reachable call to ?method, the actual at ?index
+// is a sink.
+.decl TaintSinkActualParam(?label:InformationLabel, ?index:number, ?method:Method)
+// Convenience: every actual of every reachable call to ?method is a sink
+// (expands to TaintSinkActualParam for each formal index).
+.decl TaintSinkAnyActualParam(?label:InformationLabel, ?method:Method)
+// Base sink: at every reachable call to ?method, the receiver variable is a sink.
+.decl TaintSinkBase(?label:InformationLabel, ?method:Method)
+// Return sink: whatever ?method hands back must not be tainted. The operand of
+// each of its non-void return instructions is a sink, in every context where
+// the method is reachable; the finding's site is the return instruction.
+.decl TaintSinkReturn(?label:InformationLabel, ?method:Method)
+// Field-store sink: storing a tainted value into ?field is a leak. The stored
+// operand of every reachable store to the field (instance or static) is a sink;
+// the finding's site is the store instruction. As with every sink, the STORED
+// object itself must be tainted: a clean container with tainted contents is not.
+.decl TaintSinkField(?label:InformationLabel, ?field:Field)
+// A sink position, resolved: ?var in ?ctx must not hold taint; ?site is the
+// instruction reported in the finding (the call, return or store).
+.decl TaintSinkVar(?label:InformationLabel, ?site:Instruction, ?ctx:CONTEXT, ?var:Var)
+// Sanitizer: taint does not survive the method's RESULT. Enforced in the base
+// analysis (main/context-sensitivity.dl, return edge): no MOCK value flows from a
+// sanitizer's return into the caller's result variable -- taint stand-ins, but
+// also every other mock (primitive mocks under model-primitives, API mocks). Real
+// objects flow normally, so a MARKED object returned unchanged stays tainted (an
+// identity sanitizer does not clean). The arguments flow normally too (since
+// Nov 11): the body is analysed with what it is given, so a sanitizer that stores
+// or sinks its input is still reported. Whole-method, label-blind.
+.decl TaintSanitizer(?method:Method)
+// Taint transfers through (unanalyzed or summarized) methods, named
+// TaintTransfer<From>To<To> by the positions at the call site.
+// Tainted receiver -> result.
+.decl TaintTransferBaseToReturn(?method:Method)
+// Tainted receiver -> every actual. (App-gated: call site must be in app code.)
+.decl TaintTransferBaseToActualParam(?method:Method)
+// Tainted actual at ?index -> receiver. Fires ONLY when the call's result is
+// unused, and only for heap-allocated receivers.
+.decl TaintTransferActualParamToBase(?index:number, ?method:Method)
+// Tainted ELEMENTS of the array actual at ?index -> receiver.
+.decl TaintTransferActualParamElementsToBase(?index:number, ?method:Method)
+// Tainted ELEMENTS of the array actual at ?index -> result: the varargs string
+// builders (String.format, String.join). (App-gated, like ActualParamToReturn.)
+.decl TaintTransferActualParamElementsToReturn(?index:number, ?method:Method)
+// Any tainted actual -> result. (App-gated.)
+.decl TaintTransferActualParamToReturn(?method:Method)
+// "Mock" variants of the two *ToReturn transfers: not app-gated, and the fresh
+// taint value is typed by the result variable's declared type. Near-duplicates
+// of the plain forms; merge candidates.
+.decl TaintTransferBaseToReturnMock(?meth:Method)
+.decl TaintTransferActualParamToReturnMock(?meth:Method)
+// Scope modifier: every transfer declared on ?method fires only at call sites in
+// APPLICATION code, whatever the transfer kind. For summaries of JDK string
+// builders: the JDK itself calls them on strings the context-insensitive heap
+// conflates with a profile's taint, and a JDK-internal site would re-mint that
+// taint into fresh types that ride shared collections into the application
+// (measured on msgpack: +5 findings under the profile's label, see
+// taint-limitations.md section C).
+.decl TaintTransferAppOnly(?method:Method)
+// Scope modifiers for sources and sinks: ?method is a source (sink) only where
+// APPLICATION code calls it; for the body-position kinds (formal-parameter and
+// this sources, return and field-store sinks) only when ?method itself is
+// application code. Without the flag a source or sink fires at any reachable
+// site (section B of taint-limitations.md). Framework-wide profiles (android)
+// flag every entry: their generic getters (Locale.getCountry, ...) are called
+// inside the JDK and the framework too, and those sites are not findings. The
+// flags follow override expansion like the kinds they modify. Where the taint
+// then TRAVELS is unaffected.
+.decl TaintSourceAppOnly(?method:Method)
+.decl TaintSinkAppOnly(?method:Method)
 .decl VarIsCast(?var:Var)
 .decl VarUse(?var:Var, ?inst:Instruction)
 .decl LabelFromSource(?source:symbol, ?label:InformationLabel)
@@ -41,14 +150,27 @@
 
 .decl MethodInvocationInContext(?ctx:CONTEXT, ?invocation:MethodInvocation, ?tomethod:Method)
 .decl MethodInvocationInContextInApplication(?ctx:CONTEXT, ?invocation:MethodInvocation, ?method:Method)
-.decl CallTaintingMethod(?label:InformationLabel, ?ctx:CONTEXT, ?invocation:MethodInvocation)
+// The call sites where a source / sink declared on ?method fires, and the
+// contexts in which a body-position source / sink inside ?method is active:
+// every reachable one, or only the application ones under the AppOnly flags.
+.decl TaintSourceSite(?ctx:CONTEXT, ?invocation:MethodInvocation, ?method:Method)
+.decl TaintSinkSite(?ctx:CONTEXT, ?invocation:MethodInvocation, ?method:Method)
+.decl TaintSourceBodyContext(?ctx:CONTEXT, ?method:Method)
+.decl TaintSinkBodyContext(?ctx:CONTEXT, ?method:Method)
+.decl TaintSourceReturnInvocation(?label:InformationLabel, ?ctx:CONTEXT, ?invocation:MethodInvocation)
 .decl ParamTaintTransferredToBase(?param:Var, ?ctx:CONTEXT, ?base:Var)
 .decl ParamTaintTransferredToRet(?type:Type, ?ret:Var, ?ctx:CONTEXT, ?param:Var)
 .decl VarIsTaintedFromVar(?type:Type, ?ctx1:CONTEXT, ?var1:Var, ?ctx2:CONTEXT, ?var2:Var)
 .decl VarIsTaintedFromVarIndex(?base:Var, ?ctx1:CONTEXT, ?param:Var)
 .decl TaintTransferMethodInvocationInContext(?ctx:CONTEXT, ?index:number, ?invocation:MethodInvocation)
+// The call sites where a transfer on ?method may fire: every reachable one, or
+// only the application ones when TaintTransferAppOnly says so.
+.decl TaintTransferMethod(?method:Method)
+.decl TaintTransferSite(?ctx:CONTEXT, ?invocation:MethodInvocation, ?method:Method)
+// ?site is the sink's instruction: a call for the actual-parameter and base
+// sinks, a return instruction for a return sink, a store for a field sink.
 .decl LeakingTaintedInformation(?fromLabel:InformationLabel, ?toLabel:InformationLabel, ?ctx:CONTEXT,
-                                ?invocation:MethodInvocation, ?value:symbol)
+                                ?site:Instruction, ?value:symbol)
 .output LeakingTaintedInformation                                
 .decl LeakingTaintedInformationVars(?fromCtx:CONTEXT, ?from:Var, ?toCtx:CONTEXT, ?to:Var)
 .output LeakingTaintedInformationVars
@@ -58,6 +180,25 @@
 .decl TaintedValue(?value:Value)
 
 .decl SourceFromTaintedValue(?value:Value, ?id:symbol)
+// A value that may CARRY a taint mark directly (as opposed to a minted taint
+// stand-in placed next to it): a real heap allocation that is not merged into,
+// and is not, a shared representative (<<string-constant>>, <<string-builder>>,
+// <<string-buffer>>, ...), not a string literal (one object per literal for the
+// whole program, as shared as a merged representative), and not the null object.
+// Marking a shared object would taint every holder of it program-wide. Under
+// model-primitives the per-site primitive mocks (<prim-param>, <prim-arith>,
+// <prim-conv>) are markable too; <prim-const> objects are shared by constant and
+// are not.
+.decl Markable(?value:Value)
+// The Markable objects the method-keyed sources (Return, FormalParam,
+// ActualParam, Base, This) may mark: those allocated in APPLICATION code (under
+// model-primitives, also the primitive mocks of application sites). A library
+// allocation site is shared by every caller of the library method under a
+// context-insensitive heap, so a mark on it would be a program-wide taint; the
+// mock placed at the position covers that case instead.
+.decl AppMarkable(?value:Value)
+// (ApplicationAllocation -- an allocation in application code -- is Doop's own
+// fact-level relation, facts/imports.dl; the mutating transfers negate it.)
 .decl TaintedValueTransferred(?declaringType:Type, ?id:symbol, ?type:Type, ?value:Value)
 
 .decl TaintedObjectSerialized(?declaringType:Type, ?source:symbol, ?type:Type, ?hctx:mainAnalysis.configuration.HContext, ?val:Value, ?ctx:mainAnalysis.configuration.Context, ?base:Var)

@@ -680,6 +680,11 @@ class DoopAnalysisFamily implements AnalysisFamily {
 						description: "Open programs: mock EVERY concrete subtype of a mocked type (sound/complete) instead of a single representative subtype (default).",
 				),
 			new BooleanAnalysisOption(
+					id: "DEEPSPATCH",
+					name: "deepspatch",
+					description: "Deep dispatch through reflectively populated registries: bind ServiceLoader/META-INF/services (+spring.factories) providers from auto-generated ServiceProvider facts, and reflective-factory products from optional ReflectiveFactoryMethod / ReflectiveFactoryRegistry / MemberOfReflectiveFactoryRegistry / FactoryReadsRegistry facts (pass with --Xextra-facts). Off by default.",
+			),
+			new BooleanAnalysisOption(
 					id: "GENERATE_OPTIMIZATION_DIRECTIVES",
 					name: "gen-opt-directives",
 					description: "Generate additional relations for code optimization uses.",
@@ -839,6 +844,13 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Enter high soundness mode for information flow microbenchmarks.",
 					forPreprocessor: true
 			),
+			new BooleanAnalysisOption(
+					id: "INFORMATION_FLOW_DISABLE_TYPE_MOCKS",
+					name: "information-flow-disable-type-mocks",
+					group: GROUP_INFORMATION_FLOW,
+					description: "Keep type taint sources (TaintSourceType) to marking existing objects of the type: do not place mock objects at the type's entry positions (formals, fields and body-less method results declared as the type).",
+					forPreprocessor: true
+			),
 			new AnalysisOption<String>(
 					id: "INFORMATION_FLOW_EXTRA_CONTROLS",
 					name: "information-flow-extra-controls",
@@ -847,6 +859,15 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Load additional sensitive layout control from string triplets \"id1,type1,parent_id1,...\".",
 					forCacheID: true,
 					forPreprocessor: true
+			),
+			new AnalysisOption<String>(
+					id: "TAINT_SPEC",
+					name: "taint-spec",
+					group: GROUP_INFORMATION_FLOW,
+					argName: "FILE",
+					argInputType: InputType.MISC,
+					forCacheID: true,
+					description: "Give a taint specification: tab-separated lines <kind> <columns...>, where <kind> is a source/sink/sanitizer/transfer relation of the information-flow addon and the method/field/type column is an exact id or a regex."
 			),
 			new AnalysisOption(
 					id: "OPEN_PROGRAMS",

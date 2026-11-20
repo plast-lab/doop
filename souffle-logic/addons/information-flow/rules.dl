@@ -10,6 +10,39 @@
 
 #ifndef DISABLE_POINTS_TO
 
+Markable(?value) :-
+  mainAnalysis.Value_isHeap(?value),
+  !mainAnalysis.HeapAllocation_Merge(?value, _),
+  !mainAnalysis.HeapAllocation_Merge(_, ?value),
+  !mainAnalysis.Value_Null(?value),
+  !isStringConstant(?value),
+  // merged representative for reflection strings, not covered by HeapAllocation_Merge
+  ?value != "<<reflection-string-constant>>".
+// Doop's other <<...>> pseudo-heaps (<<main-thread>>, <<main method array>>,
+// <<main method array content>>, the context pseudo-heaps) are per-program
+// singletons, not merges of allocation sites, and stay markable: a source on
+// main(String[]) must be able to mark the argument array.
+
+#ifdef MODEL_PRIMITIVES
+Markable(?value) :-
+  mainAnalysis.Value_isMock(?value),
+  ( substr(?value, 0, 12) = "<prim-param " ;
+    substr(?value, 0, 12) = "<prim-arith " ;
+    substr(?value, 0, 11) = "<prim-conv " ).
+#endif // MODEL_PRIMITIVES
+
+AppMarkable(?value) :-
+  Markable(?value),
+  ApplicationAllocation(?value).
+
+#ifdef MODEL_PRIMITIVES
+// A primitive mock is "allocated" by its site; the site's method decides.
+AppMarkable(?value) :-
+  Markable(?value),
+  mainAnalysis.PrimitiveMock_Method(?value, ?method),
+  ApplicationMethod(?method).
+#endif // MODEL_PRIMITIVES
+
 TaintObjTransfer(?fromCtx, ?from, ?toCtx, ?to),
 TaintedVarTaintedFromVar(?toCtx, ?to, ?value, ?type) :-
   VarIsTaintedFromVar(?type, ?toCtx, ?to, ?fromCtx, ?from),
@@ -140,7 +173,7 @@ mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB)
   TaintedVarPointsTo(?value, ?ctx, ?param),
   ActualParam(_, ?invo, ?param),
   MethodInvocation_Method(?invo, ?meth),
-  MockParamToRetTaintTransferMethod(?meth),
+  TaintTransferActualParamToReturnMock(?meth),
   AssignReturnValue(?invo, ?to),
   Var_Type(?to, ?type),
   mainAnalysis.Value_DeclaringType(?value, ?declaringType),
@@ -148,6 +181,15 @@ mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB)
   mainAnalysis.isImmutableHContext(?hctx).
 .plan 1:(7,1,2,3,4,5,6,8,9),2:(8,1,2,3,4,5,6,7,9)
 
+// Cast bridge. A cast re-mints a tainted value in the cast's type so that a
+// value up-typed by a transfer (an Object-typed Iterator.next() result, say) can
+// be brought back down. Only a STRICT DOWNCAST of the value's own type does that:
+// an upcast flows the value itself through the ordinary cast rule, and a cast to
+// an unrelated type fails at run time, so the ordinary rule drops the value. The
+// old unconditional form re-minted every tainted value in an Object-typed
+// variable into whatever that variable was ever cast to; in the JDK (HashMap
+// values, Object[] contents) that is every type in the program, and the mocks
+// flooded the type universe (437 types per source in the msgpack run).
 TaintedValueTransferred(?declaringType, ?source, ?type, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB)),
 mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB), ?ctx, ?to) :-
   TaintedVarPointsTo(?value, ?ctx, ?from),
@@ -155,8 +197,25 @@ mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB)
   mainAnalysis.Value_DeclaringType(?value, ?declaringType),
   SourceFromTaintedValue(?value, ?source),
   Var_Type(?to, ?type),
+  isReferenceType(?type),
+  mainAnalysis.Value_Type(?value, ?valueType),
+  basic.SubtypeOf(?type, ?valueType),
+  ?type != ?valueType,
   mainAnalysis.isImmutableHContext(?hctx).
-.plan 1:(3,1,2,4,5,6),2:(4,1,2,3,5,6)
+.plan 1:(3,1,2,4,5,6,7,8,9),2:(4,1,2,3,5,6,7,8,9)
+
+// A cast to a primitive type is a conversion, not a type test: the result is a
+// fresh primitive value, re-minted in the target type as before.
+TaintedValueTransferred(?declaringType, ?source, ?type, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB)),
+mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB), ?ctx, ?to) :-
+  TaintedVarPointsTo(?value, ?ctx, ?from),
+  AssignCast(_, ?from, ?to, _),
+  mainAnalysis.Value_DeclaringType(?value, ?declaringType),
+  SourceFromTaintedValue(?value, ?source),
+  Var_Type(?to, ?type),
+  isPrimitiveType(?type),
+  mainAnalysis.isImmutableHContext(?hctx).
+.plan 1:(3,1,2,4,5,6,7),2:(4,1,2,3,5,6,7)
 
 TaintObjTransfer(?ctx, ?base, ?ctx, ?to),
 TaintedValueTransferred(?declaringType, ?source, ?type, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB)),
@@ -164,7 +223,7 @@ mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB)
   TaintedVarPointsTo(?value, ?ctx, ?base),
   VirtualMethodInvocation_Base(?invo, ?base),
   MethodInvocation_Method(?invo, ?meth),
-  MockBaseToRetTaintTransferMethod(?meth),
+  TaintTransferBaseToReturnMock(?meth),
   AssignReturnValue(?invo, ?to),
   Var_Type(?to, ?type),
   mainAnalysis.Value_DeclaringType(?value, ?declaringType),
@@ -214,12 +273,91 @@ TaintObjTransfer(?ctx, ?from, ?ctx, ?var),
 TaintedValueTransferred(?declaringType, ?source, ?type, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB)),
 mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB), ?ctx, ?var) :-
   XYZ2(?type, ?oldvalue, ?ctx, ?from),
+  ( !ApplicationAllocation(?oldvalue) ;
+    (Var_DeclaringMethod(?from, ?inMethod), TaintSanitizer(?inMethod)) ),
   TaintedVarPointsTo(?value, ?ctx, ?from),
   mainAnalysis.AssignNormalHeapAllocation(?oldvalue, ?var, _),
   SourceFromTaintedValue(?value, ?source),
   mainAnalysis.Value_DeclaringType(?value, ?declaringType),
   mainAnalysis.isImmutableHContext(?hctx).
 #endif // INFORMATION_FLOW_HIGH_SOUNDNESS
+
+// An ActualParamToBase transfer on a CONSTRUCTOR taints the receiver variable
+// directly. The two rules above mint at the receiver object's allocation
+// variable, which for a merged allocation (<<string-builder>>: every StringBuilder
+// in the program) does not exist (AssignNormalHeapAllocation excludes merges), so
+// `new StringBuilder(tainted)` tainted nothing. The receiver variable of
+// `$r.<init>(..)` is the allocation's own variable, so nothing is lost by minting
+// there, and a merged object is never re-minted program-wide.
+TaintObjTransfer(?ctx, ?from, ?ctx, ?base),
+TaintedValueTransferred(?declaringType, ?source, ?type, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB)),
+mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB), ?ctx, ?base) :-
+  TaintTransferMethodInvocationInContext(?ctx, ?index, ?invo),
+  MethodInvocation_Method(?invo, ?ctor),
+  Method_SimpleName(?ctor, "<init>"),
+  ActualParam(?index, ?invo, ?from),
+  MethodInvocation_Base(?invo, ?base),
+  mainAnalysis.VarPointsTo(_, ?o, ?ctx, ?base),
+  ( !ApplicationAllocation(?o) ;
+    (Instruction_Method(?invo, ?inMethod), TaintSanitizer(?inMethod)) ),
+  TaintedVarPointsTo(?value, ?ctx, ?from),
+  Var_Type(?base, ?type),
+  SourceFromTaintedValue(?value, ?source),
+  mainAnalysis.Value_DeclaringType(?value, ?declaringType),
+  mainAnalysis.isImmutableHContext(?hctx).
+
+// Mark half of the MUTATING transfers -- the ones that say an object the caller
+// already holds now contains taint. Casts and the result transfers have no mark
+// half: a cast creates nothing (the real objects in its result are the ones in its
+// operand, already marked or not, and a stand-in must stay a stand-in), and a
+// transfer's result is the library's own allocation. Loads have theirs in deep
+// taint.
+//
+// ActualParamToBase (constructors included): the receiver objects that are
+// application allocations are MARKED; the two mint rules above fire only for
+// receivers that are not (a merge such as <<string-builder>>, a library object),
+// so an application receiver gets one representation, the mark, and no stand-in.
+// Except inside a SANITIZER's body: a sanitizer is a mock filter at its return,
+// and a mark cannot be filtered, so an object the sanitizer itself builds from
+// tainted data (`return new String(s.toCharArray())`) would walk out marked; there
+// the taint stays in mock form and the mint rules fire as before.
+TaintedValue(?o),
+SourceFromTaintedValue(?o, ?source) :-
+  ParamTaintTransferredToBase(?param, ?ctx, ?base),
+  Var_DeclaringMethod(?base, ?inMethod),
+  !TaintSanitizer(?inMethod),
+  TaintedVarPointsTo(?value, ?ctx, ?param),
+  SourceFromTaintedValue(?value, ?source),
+  mainAnalysis.VarPointsTo(_, ?o, ?ctx, ?base),
+  AppMarkable(?o).
+
+// ActualParamElementsToBase: same, from the tainted elements of the array actual.
+TaintedValue(?o),
+SourceFromTaintedValue(?o, ?source) :-
+  VarIsTaintedFromValueIndex(?ctx, ?base, ?hctx, ?arr),
+  Var_DeclaringMethod(?base, ?inMethod),
+  !TaintSanitizer(?inMethod),
+  mainAnalysis.ArrayIndexPointsTo(_, ?elem, ?hctx, ?arr),
+  SourceFromTaintedValue(?elem, ?source),
+  mainAnalysis.VarPointsTo(_, ?o, ?ctx, ?base),
+  AppMarkable(?o).
+
+// BaseToActualParam: the actuals' application objects are marked. The mint for
+// this kind (and for ElementsToBase) is per VARIABLE, typed by it, and cannot be
+// made conditional on the variable's contents without negating VarPointsTo, so
+// there the mark comes in addition to the stand-in.
+TaintedValue(?o),
+SourceFromTaintedValue(?o, ?source) :-
+  MethodInvocationInContextInApplication(?ctx, ?invo, ?method),
+  TaintTransferBaseToActualParam(?method),
+  Instruction_Method(?invo, ?inMethod),
+  !TaintSanitizer(?inMethod),
+  MethodInvocation_Base(?invo, ?base),
+  TaintedVarPointsTo(?value, ?ctx, ?base),
+  SourceFromTaintedValue(?value, ?source),
+  ActualParam(_, ?invo, ?param),
+  mainAnalysis.VarPointsTo(_, ?o, ?ctx, ?param),
+  AppMarkable(?o).
 
 #ifdef INFORMATION_FLOW_HIGH_SOUNDNESS
 // Option 1
@@ -252,18 +390,18 @@ LeakingTaintedInformation(?sourceLabel, ?destLabel, ?ctx, ?invocation, ?source) 
   SourceFromTaintedValue(?value, ?source),
   LabelFromSource(?source, ?sourceLabel),
   TaintedVarPointsTo(?value, ?ctx, ?var),
-  LeakingSinkVariable(?destLabel, ?invocation, ?ctx, ?var).
+  TaintSinkVar(?destLabel, ?invocation, ?ctx, ?var).
 
 LeakingTaintedInformationVars(?fromCtx, ?from, ?toCtx, ?to) :-
   TaintedVarPointsTo(?value, ?toCtx, ?to),
-  LeakingSinkVariable(_, _, ?toCtx, ?to),
+  TaintSinkVar(_, _, ?toCtx, ?to),
   SourceFromTaintedValue(?value, ?from),
   Var_DeclaringMethod(?from, ?meth),
   mainAnalysis.ReachableContext(?fromCtx, ?meth).
 
 LeakingTaintedInformationVars(?fromCtx, ?from, ?toCtx, ?to) :-
   TaintedVarPointsTo(?value, ?toCtx, ?to),
-  LeakingSinkVariable(_, _, ?toCtx, ?to),
+  TaintSinkVar(_, _, ?toCtx, ?to),
   SourceFromTaintedValue(?value, ?source),
   AssignReturnValue(?source, ?from),
   TaintedVarPointsTo(?fromVal, ?fromCtx, ?from),
@@ -274,11 +412,327 @@ LeakingTaintedInformationVars(?fromCtx, ?from, ?toCtx, ?to) :-
  */
 TaintedValueIntroduced(?declaringType, ?invo, ?type, ?label, ValueIdMacro(?invo, ?type, DEFAULT_BREADCRUMB)),
 mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?invo, ?type, DEFAULT_BREADCRUMB), ?ctx, ?to) :-
-  CallTaintingMethod(?label, ?ctx, ?invo),
+  TaintSourceReturnInvocation(?label, ?ctx, ?invo),
   mainAnalysis.isImmutableHContext(?hctx),
   TypeForReturnValue(?type, ?to, ?invo),
   Instruction_Method(?invo, ?method),
   Method_DeclaringType(?method, ?declaringType).
+
+// Formal-parameter source: taint the FORMAL parameter ?index of ?method directly,
+// in the method's reachable context -- modelling an unmodeled caller (a framework /
+// container) that invokes ?method with attacker-controlled data. This is the
+// entry-point shape (e.g. a request handler whose argument is untrusted) that the
+// return source above cannot express. The formal is seeded directly under
+// ReachableContext (not via an actual->formal edge), and the tainted value is
+// keyed by the formal so it is distinct per parameter source. Reference-typed
+// parameters only; a primitive parameter source would need model-primitives.
+TaintedValueIntroduced(?declaringType, ?formal, ?type, ?label, ValueIdMacro(?formal, ?type, DEFAULT_BREADCRUMB)),
+mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?formal, ?type, DEFAULT_BREADCRUMB), ?ctx, ?formal) :-
+  TaintSourceFormalParam(?label, ?index, ?method),
+  FormalParam(?index, ?method, ?formal),
+  TaintSourceBodyContext(?ctx, ?method),
+  mainAnalysis.isImmutableHContext(?hctx),
+  Var_Type(?formal, ?type),
+  isReferenceType(?type),
+  Method_DeclaringType(?method, ?declaringType).
+
+// Actual-parameter source: at each reachable call site of ?method, taint the
+// ACTUAL at ?index -- the call filled the object the caller passed in. The value
+// is typed by the actual's declared type and keyed by (call site, index) so it
+// never collides with a return source on the same call. Flow-insensitive: the
+// actual is tainted before and after the call alike.
+TaintedValueIntroduced(?declaringType, ?srcId, ?type, ?label, ValueIdMacro(?srcId, ?type, DEFAULT_BREADCRUMB)),
+mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?srcId, ?type, DEFAULT_BREADCRUMB), ?ctx, ?actual) :-
+  TaintSourceActualParam(?label, ?index, ?method),
+  TaintSourceSite(?ctx, ?invo, ?method),
+  ActualParam(?index, ?invo, ?actual),
+  ?srcId = cat(cat(?invo, "/actual"), to_string(?index)),
+  Var_Type(?actual, ?type),
+  mainAnalysis.isImmutableHContext(?hctx),
+  Instruction_Method(?invo, ?inMethod),
+  Method_DeclaringType(?inMethod, ?declaringType).
+
+// Base source: at each reachable call site of ?method, taint the RECEIVER
+// variable -- the call filled the object it was invoked on. Constructors
+// (<init>) are the main use: the freshly allocated object is the receiver.
+TaintedValueIntroduced(?declaringType, ?srcId, ?type, ?label, ValueIdMacro(?srcId, ?type, DEFAULT_BREADCRUMB)),
+mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?srcId, ?type, DEFAULT_BREADCRUMB), ?ctx, ?base) :-
+  TaintSourceBase(?label, ?method),
+  TaintSourceSite(?ctx, ?invo, ?method),
+  MethodInvocation_Base(?invo, ?base),
+  ?srcId = cat(?invo, "/base"),
+  Var_Type(?base, ?type),
+  mainAnalysis.isImmutableHContext(?hctx),
+  Instruction_Method(?invo, ?inMethod),
+  Method_DeclaringType(?inMethod, ?declaringType).
+
+// This source: taint `this` of ?method directly, in the method's reachable
+// context -- the callee-side twin of the formal-parameter source, for a receiver
+// built from untrusted data by an unmodeled caller.
+TaintedValueIntroduced(?declaringType, ?this, ?type, ?label, ValueIdMacro(?this, ?type, DEFAULT_BREADCRUMB)),
+mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(?this, ?type, DEFAULT_BREADCRUMB), ?ctx, ?this) :-
+  TaintSourceThis(?label, ?method),
+  ThisVar(?method, ?this),
+  TaintSourceBodyContext(?ctx, ?method),
+  mainAnalysis.isImmutableHContext(?hctx),
+  Var_Type(?this, ?type),
+  Method_DeclaringType(?method, ?declaringType).
+
+// Mark half of the method-keyed sources. Each source above places a mock at its
+// position; the rules below also MARK every AppMarkable object already at the
+// position, with the same source id and label, so a holder of that object that
+// never went through the position (a registry the factory stored it in, an alias
+// taken before the call) is tainted too. Value-only marks, no hcontext, like the
+// Field and Type marks. Primitive positions get this half only under
+// model-primitives, where the position holds a markable primitive mock.
+//
+// Only positions in APPLICATION code are marked. At a library-internal position
+// (a profile source called from inside the JDK, say) the objects present are
+// whatever the library's own plumbing aliases there under a context-insensitive
+// heap; marking them taints the application object wherever it lives. Observed:
+// the minimal profile's Reader.read source, at its call site inside
+// BufferedReader, held msgpack's length arithmetic object and marked it, which
+// re-reported every readPayload finding under the profile's label. The mock is
+// the right tool at such positions.
+// Return: the objects the call returns, source id = the call site. Only for a
+// source method that is itself application code: a library method's result, as
+// the base analysis resolves it, can hold any application object the library's
+// shared plumbing (collections, copies) ever held under a context-insensitive
+// heap. Observed: Files.readAllBytes, called from Main, "returned" msgpack's own
+// readPayload buffer through the ArrayList inside InputStream.readNBytes, and the
+// mark tainted it. The mock is exact at such a position; the mark is noise.
+TaintedValue(?value),
+SourceFromTaintedValue(?value, ?invo),
+LabelFromSource(?invo, ?label) :-
+  TaintSourceReturnInvocation(?label, ?ctx, ?invo),
+  Instruction_Method(?invo, ?inMethod),
+  ApplicationMethod(?inMethod),
+  MethodInvocation_Method(?invo, ?srcMethod),
+  ApplicationMethod(?srcMethod),
+  AssignReturnValue(?invo, ?to),
+  mainAnalysis.VarPointsTo(_, ?value, ?ctx, ?to),
+  AppMarkable(?value).
+
+// Formal parameter: the objects callers pass, source id = the formal.
+TaintedValue(?value),
+SourceFromTaintedValue(?value, ?formal),
+LabelFromSource(?formal, ?label) :-
+  TaintSourceFormalParam(?label, ?index, ?method),
+  ApplicationMethod(?method),
+  FormalParam(?index, ?method, ?formal),
+  mainAnalysis.VarPointsTo(_, ?value, _, ?formal),
+  AppMarkable(?value).
+
+// Actual parameter: the objects the actual holds at the call, source id = invo/actualN.
+TaintedValue(?value),
+SourceFromTaintedValue(?value, ?srcId),
+LabelFromSource(?srcId, ?label) :-
+  TaintSourceActualParam(?label, ?index, ?method),
+  MethodInvocationInContext(?ctx, ?invo, ?method),
+  Instruction_Method(?invo, ?inMethod),
+  ApplicationMethod(?inMethod),
+  ActualParam(?index, ?invo, ?actual),
+  ?srcId = cat(cat(?invo, "/actual"), to_string(?index)),
+  mainAnalysis.VarPointsTo(_, ?value, ?ctx, ?actual),
+  AppMarkable(?value).
+
+// Base: the receiver objects at the call, source id = invo/base.
+TaintedValue(?value),
+SourceFromTaintedValue(?value, ?srcId),
+LabelFromSource(?srcId, ?label) :-
+  TaintSourceBase(?label, ?method),
+  MethodInvocationInContext(?ctx, ?invo, ?method),
+  Instruction_Method(?invo, ?inMethod),
+  ApplicationMethod(?inMethod),
+  MethodInvocation_Base(?invo, ?base),
+  ?srcId = cat(?invo, "/base"),
+  mainAnalysis.VarPointsTo(_, ?value, ?ctx, ?base),
+  AppMarkable(?value).
+
+// This: the objects `this` holds in the method, source id = the this var.
+TaintedValue(?value),
+SourceFromTaintedValue(?value, ?this),
+LabelFromSource(?this, ?label) :-
+  TaintSourceThis(?label, ?method),
+  ApplicationMethod(?method),
+  ThisVar(?method, ?this),
+  mainAnalysis.VarPointsTo(_, ?value, _, ?this),
+  AppMarkable(?value).
+
+// Field source, mock half: one mock per field, named by the field signature and
+// typed by the field's declared type, placed in the field's points-to set. Loads
+// need no rule of their own: the ordinary load rules move it into every variable
+// the field is read into. Placed unconditionally (next to any real contents): "the
+// field is empty" is a negation over a relation this very head extends, and a
+// field assigned in a constructor can still be overwritten from outside.
+// Static field: one tuple.
+TaintedValueIntroduced(?declaringType, ?field, ?type, ?label, ValueIdMacro(?field, ?type, DEFAULT_BREADCRUMB)),
+mainAnalysis.StaticFieldPointsTo(?hctx, ValueIdMacro(?field, ?type, DEFAULT_BREADCRUMB), ?field) :-
+  TaintSourceField(?label, ?field),
+  Field_Modifier("static", ?field),
+  Field_Type(?field, ?type),
+  Field_DeclaringType(?field, ?declaringType),
+  mainAnalysis.isImmutableHContext(?hctx).
+
+// Instance field: one tuple per base object that some reachable load of the
+// field dereferences (the only base objects through which the field is ever read).
+TaintedValueIntroduced(?declaringType, ?field, ?type, ?label, ValueIdMacro(?field, ?type, DEFAULT_BREADCRUMB)),
+mainAnalysis.InstanceFieldPointsTo(?hctx, ValueIdMacro(?field, ?type, DEFAULT_BREADCRUMB), ?field, ?baseHctx, ?baseValue) :-
+  TaintSourceField(?label, ?field),
+  !Field_Modifier("static", ?field),
+  mainAnalysis.LoadHeapInstanceField(_, _, ?field, ?baseHctx, ?baseValue),
+  Field_Type(?field, ?type),
+  Field_DeclaringType(?field, ?declaringType),
+  mainAnalysis.isImmutableHContext(?hctx).
+
+// Field source, mark half: every Markable object the field holds carries the
+// taint itself, so aliases of it that never go through the field are tainted too.
+TaintedValue(?value),
+SourceFromTaintedValue(?value, ?field),
+LabelFromSource(?field, ?label) :-
+  TaintSourceField(?label, ?field),
+  ( mainAnalysis.StaticFieldPointsTo(_, ?value, ?field) ;
+    mainAnalysis.InstanceFieldPointsTo(_, ?value, ?field, _, _) ),
+  Markable(?value).
+
+// Type source, mark half: every Markable object of the type or a subtype carries
+// the taint, with the type as source id. Markable already excludes minted taint
+// stand-ins (not heap values) and shared representatives, so a type source on
+// java.lang.String marks real string allocations but never <<string-constant>>.
+TaintedValue(?value),
+SourceFromTaintedValue(?value, ?type),
+LabelFromSource(?type, ?label) :-
+  TaintSourceType(?label, ?type),
+  basic.SubtypeOf(?valueType, ?type),
+  mainAnalysis.Value_Type(?value, ?valueType),
+  Markable(?value).
+
+#ifndef INFORMATION_FLOW_DISABLE_TYPE_MOCKS
+// Type source, mock half: a stand-in at every ENTRY POSITION of the type, i.e.
+// where a value declared as the type (or a subtype) arrives from code the
+// analysis does not see. These are the positional sources applied by declared
+// type: the stand-in is named by its position (suffix "/type", so it never
+// collides with a positional source on the same position) and typed by the
+// position's declared type, but its source id is the TYPE, like the marks. One
+// stand-in per position however many type sources cover it. Reference types only.
+//
+// Entry position 1: a formal of a reachable method, declared as the type.
+TaintedValueIntroduced(?declaringType, ?type, ?formalType, ?label, ValueIdMacro(cat(?formal, "/type"), ?formalType, DEFAULT_BREADCRUMB)),
+mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(cat(?formal, "/type"), ?formalType, DEFAULT_BREADCRUMB), ?ctx, ?formal) :-
+  TaintSourceType(?label, ?type),
+  basic.SubtypeOf(?formalType, ?type),
+  isReferenceType(?formalType),
+  Var_Type(?formal, ?formalType),
+  FormalParam(_, ?method, ?formal),
+  mainAnalysis.ReachableContext(?ctx, ?method),
+  mainAnalysis.isImmutableHContext(?hctx),
+  Method_DeclaringType(?method, ?declaringType).
+
+// Entry position 2: a field declared as the type. Static: one tuple. Instance:
+// one per base object some reachable load dereferences, as for TaintSourceField.
+TaintedValueIntroduced(?declaringType, ?type, ?fieldType, ?label, ValueIdMacro(cat(?field, "/type"), ?fieldType, DEFAULT_BREADCRUMB)),
+mainAnalysis.StaticFieldPointsTo(?hctx, ValueIdMacro(cat(?field, "/type"), ?fieldType, DEFAULT_BREADCRUMB), ?field) :-
+  TaintSourceType(?label, ?type),
+  basic.SubtypeOf(?fieldType, ?type),
+  isReferenceType(?fieldType),
+  Field_Type(?field, ?fieldType),
+  Field_Modifier("static", ?field),
+  Field_DeclaringType(?field, ?declaringType),
+  mainAnalysis.isImmutableHContext(?hctx).
+
+TaintedValueIntroduced(?declaringType, ?type, ?fieldType, ?label, ValueIdMacro(cat(?field, "/type"), ?fieldType, DEFAULT_BREADCRUMB)),
+mainAnalysis.InstanceFieldPointsTo(?hctx, ValueIdMacro(cat(?field, "/type"), ?fieldType, DEFAULT_BREADCRUMB), ?field, ?baseHctx, ?baseValue) :-
+  TaintSourceType(?label, ?type),
+  basic.SubtypeOf(?fieldType, ?type),
+  isReferenceType(?fieldType),
+  Field_Type(?field, ?fieldType),
+  !Field_Modifier("static", ?field),
+  mainAnalysis.LoadHeapInstanceField(_, _, ?field, ?baseHctx, ?baseValue),
+  Field_DeclaringType(?field, ?declaringType),
+  mainAnalysis.isImmutableHContext(?hctx).
+
+// Entry position 3: the result of a reachable call whose DECLARED target has no
+// body in the facts (native, abstract or interface method, phantom method) and
+// returns the type. The call's declared target, not its resolved callees: when
+// resolution finds a body the stand-in sits next to the real results, when it
+// finds none (an interface with no visible implementation) it is all there is.
+TaintedValueIntroduced(?declaringType, ?type, ?retType, ?label, ValueIdMacro(cat(?invo, "/type"), ?retType, DEFAULT_BREADCRUMB)),
+mainAnalysis.VarPointsTo(?hctx, ValueIdMacro(cat(?invo, "/type"), ?retType, DEFAULT_BREADCRUMB), ?ctx, ?to) :-
+  TaintSourceType(?label, ?type),
+  basic.SubtypeOf(?retType, ?type),
+  isReferenceType(?retType),
+  Method_ReturnType(?method, ?retType),
+  !Instruction_Method(_, ?method),
+  AnyMethodInvocation(?invo, ?method),
+  AssignReturnValue(?invo, ?to),
+  Instruction_Method(?invo, ?inMethod),
+  mainAnalysis.ReachableContext(?ctx, ?inMethod),
+  mainAnalysis.isImmutableHContext(?hctx),
+  Method_DeclaringType(?inMethod, ?declaringType).
+#endif // INFORMATION_FLOW_DISABLE_TYPE_MOCKS
+
+// Deep taint: the CONTENTS of a tainted object are tainted -- its fields, their
+// fields, its array elements. Two halves, like every source.
+//
+// Mock half: a field loaded from a tainted base -- a stand-in, which has no
+// contents of its own, or a marked real object, whose contents may be library
+// allocations that cannot be marked -- yields a stand-in typed by the loaded
+// variable, with the base's source id. The array-load rule above is the array
+// twin. Loads in APPLICATION code only: a load inside the JDK (ArrayList.get
+// reading elementData, with a `this` that holds every list in the program) would
+// taint every collection's elements program-wide; the collection transfers cover
+// that case at the call site, where the receiver is specific.
+VarIsTaintedFromValue(?type, ?base, ?ctx, ?to) :-
+  TaintedValue(?base),
+  mainAnalysis.LoadHeapInstanceField(?ctx, ?to, ?sig, _, ?base),
+  LoadInstanceField(_, ?sig, ?to, ?inMethod),
+  ApplicationMethod(?inMethod),
+  Var_Type(?to, ?type).
+
+// Mark half: the application objects a marked REAL object holds, in its fields
+// and array cells, carry its marks, recursively. AppMarkable contents only: a
+// library allocation held in a tainted object's field is shared by every caller
+// of the library method that allocated it (the lesson of the method-keyed marks).
+// Real bases only (Markable): a stand-in is one value per source and type, so as
+// the base of a store it aliases every store site it ever flows to -- an
+// Object[]-typed stand-in reached by a profile's taint collects everything ever
+// stored into any Object[] in the program -- and marking those contents is a
+// program-wide taint (measured on msgpack: the minimal profile's readLine source
+// re-reported all five issue1 sinks). A stand-in's contents are read through the
+// mock half above instead.
+TaintedValue(?f),
+SourceFromTaintedValue(?f, ?source) :-
+  SourceFromTaintedValue(?o, ?source),
+  Markable(?o),
+  mainAnalysis.InstanceFieldPointsTo(_, ?f, _, _, ?o),
+  AppMarkable(?f).
+
+TaintedValue(?f),
+SourceFromTaintedValue(?f, ?source) :-
+  SourceFromTaintedValue(?o, ?source),
+  Markable(?o),
+  mainAnalysis.ArrayIndexPointsTo(_, ?f, _, ?o),
+  AppMarkable(?f).
+
+#ifdef MODEL_PRIMITIVES
+// Arithmetic (limitation C): the result of a binop/unop with a tainted operand
+// carries the operand's taint. Under model-primitives the result variable already
+// points to the site's own <prim-arith> object, which is Markable, so the result
+// is MARKED: no value is minted, no breadcrumb is needed, and the mark survives
+// whatever the ordinary flow rules do with the object afterwards. Scoped to
+// APPLICATION code: a library arithmetic site (Integer.parseInt, Math.max, ...)
+// has one object for every caller, context-insensitively, so marking it would
+// taint every user of the helper program-wide (the explosion seen in C).
+TaintedValue(?arithObj),
+SourceFromTaintedValue(?arithObj, ?source) :-
+  mainAnalysis.PrimitiveArithmeticSite(?insn, ?to, ?method, _),
+  ApplicationMethod(?method),
+  AssignOper_From(?insn, _, ?from),
+  TaintedVarPointsTo(?tv, ?ctx, ?from),
+  SourceFromTaintedValue(?tv, ?source),
+  mainAnalysis.VarPointsTo(_, ?arithObj, ?ctx, ?to),
+  Markable(?arithObj).
+#endif // MODEL_PRIMITIVES
 
 TaintedVarPointsTo(?value, ?ctx, ?var) :-
   TaintedValue(?value),
@@ -351,7 +805,7 @@ VarIsTaintedFromValue(?type, ?basevalue, ?ctx, ?to) :-
    !Field_Modifier("transient", ?sig),
    Var_Type(?to, ?type).
 
-BaseToRetTaintTransferMethod("<java.io.ObjectInputStream: java.lang.Object readObject()>").
+TaintTransferBaseToReturn("<java.io.ObjectInputStream: java.lang.Object readObject()>").
 
 .decl OptDeserializeInvoke(?ret:Var)
 

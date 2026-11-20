@@ -1,0 +1,154 @@
+// ============================================================================
+// deepspatch/dispatch-backend.dl -- the uniform back-end of deepspatch.
+//
+// Front-ends say WHAT a registry can produce and WHERE the program asks for it;
+// this file turns that into points-to and dispatch, identically for every
+// front-end. Two relations are the whole interface:
+//
+//   DispatchProduct(?key, ?serviceType, ?product)
+//       Registry ?key can hand out an instance of concrete class ?product, which
+//       the program uses through ?serviceType.
+//         service-loader front-end:     key = serviceType = the SPI interface
+//         reflective-factory front-end: key = the factory method,
+//                                       serviceType = its declared return type
+//   DispatchCall(?ctx, ?ret, ?key, ?retType)
+//       A reached call (in caller context ?ctx) asks registry ?key; its result is
+//       assigned to ?ret, whose static type is ?retType.
+//
+// From these the back-end
+//   * mints one canonical mock per product, unconditionally;
+//   * COARSE tier: makes each product a stand-in for its service type wherever
+//     that type is mocked (MockSiteType), so the program's own `s.m()` calls
+//     dispatch to it -- however the registry was reached;
+//   * PRECISE tier: binds each DispatchCall's result, in the CALLER's context,
+//     shaped by ?retType: an Iterable (an ArrayList container of the products), a
+//     bare Iterator (next() yields the products), or the product itself (any
+//     other type the product is a subtype of).
+// Binding at the caller's call site means the factory's own body and return
+// value play no part: a library or platform factory works the same as an
+// application one.
+//
+// Constructors: the back-end does NOT run products' constructors. Ctor mocking in
+// the central layer happens only under --sound-mocking. A front-end may run them
+// for its own products (the reflective-factory front-end runs the no-arg ctor).
+//
+// Included from addons/deepspatch.dl (which provides commonMacros.dl).
+// ============================================================================
+
+.decl DispatchProduct(?key:symbol, ?serviceType:symbol, ?product:ReferenceType)
+.decl DispatchCall(?ctx:mainAnalysis.configuration.Context, ?ret:Var, ?key:symbol, ?retType:Type)
+
+// --- Products: one canonical mock each ---------------------------------------
+// Canonical per-product mock value, held in a helper relation so the macro calls
+// below get a plain variable (nesting MOCK_OBJECT_OF_TYPE inside MOCK_OBJECT_FOR_TYPE
+// does not expand cleanly under the C preprocessor).
+// UNCONDITIONAL over registered products -- the sound model for a registry whose
+// members the runtime instantiates (a class listed in META-INF/services/I IS
+// instantiated by its loader), whether or not the analysis has independently
+// observed the service type being used. (An earlier attempt to gate this on
+// MockSiteType regressed recall by ~10pp: the unconditional minting also
+// bootstraps the MockSiteType closure, so gating it starved the coarse tier.)
+.decl ProviderMockValue(?provider:ReferenceType, ?mock:Value)
+ProviderMockValue(?provider, cat(?provider, "::MockObject")) :-
+  DispatchProduct(_, _, ?provider).
+
+// Mint the product mock into the global mock registries (MockObject /
+// MockObjectForType are the top-level registries read by the rest of the
+// analysis; mainAnalysis_MockValueConsMacro registers the value's type). Uses
+// the canonical per-type mock value, shared with any other layer that mocks the
+// same type. Expanded manually instead of the MOCK_OBJECT_FOR_TYPE macro, which
+// is defined in mocking-core.dl and not visible when this file is preprocessed
+// standalone.
+MockObjectForType(?mock, ?provider),
+MockObject(?mock, ?provider),
+mainAnalysis_MockValueConsMacro(?mock, ?provider) :-
+  ProviderMockValue(?provider, ?mock).
+
+// --- COARSE TIER: each product stands in for its service type ----------------
+// Reaching s.m() on a registry product is a DISPATCH problem, not an entry-point
+// problem: seeding the product's constructor as a root makes the ctor reachable
+// but never reaches m(). So each product mock becomes a valid stand-in for the
+// SERVICE type: MockObjectForType(productMock, serviceType). Wherever the service
+// type is mocked (its fields, parameters, receivers -- the central wiring in
+// mocking-core section 5), the product mock is among the values, so the program's
+// own `s.m()` call sites dispatch to the product's m(). This adds NO entry points
+// and mocks NO uncalled methods' arguments; it reaches exactly the methods the
+// program invokes. It also overrides the representative-subtypes policy's "one
+// impl per type" choice for these registered products (the whole reason a
+// registry is needed: name ALL the products, not just one). Gated on the service
+// type actually being used (MockSiteType).
+MockObjectForType(?mock, ?serviceType) :-
+  DispatchProduct(_, ?serviceType, ?product),
+  MockSiteType(?serviceType),
+  ProviderMockValue(?product, ?mock).
+
+// --- PRECISE TIER: bind the result of a reached registry call -----------------
+// Result shapes. An Iterable result (`for (S s : loader)` compiles to
+// loader.iterator().next()) is modelled with an ArrayList container; a bare
+// Iterator gets next() modelled directly; any other result type receives the
+// products themselves. Extend these relations to teach the back-end another
+// container type.
+.decl DispatchIterableReturn(?t:Type)
+DispatchIterableReturn("java.util.ServiceLoader").
+DispatchIterableReturn("java.lang.Iterable").
+
+.decl DispatchIteratorReturn(?t:Type)
+DispatchIteratorReturn("java.util.Iterator").
+
+// Iterable: the result is an ArrayList whose backing array holds the product
+// mocks, so `for (S s : r) s.m()` -- i.e. r.iterator().next().m() -- dispatches
+// to each product's m(). Mirrors the Spring-Data repository List model.
+mainAnalysis_MockValueConsMacro(?list, "java.util.ArrayList"),
+mainAnalysis_MockValueConsMacro(?arr, "java.lang.Object[]"),
+mainAnalysis.VarPointsTo(?h, ?list, ?ctx, ?ret),
+mainAnalysis.InstanceFieldPointsTo(?h, ?arr, ?edField, ?h, ?list),
+mainAnalysis.ArrayIndexPointsTo(?h, ?mock, ?h, ?arr) :-
+  DispatchCall(?ctx, ?ret, ?key, ?retType),
+  DispatchIterableReturn(?retType),
+  DispatchProduct(?key, _, ?provider),
+  ProviderMockValue(?provider, ?mock),
+  Field_DeclaringType(?edField, "java.util.ArrayList"),
+  Field_SimpleName(?edField, "elementData"),
+  ?list = cat("<service-loader-list ", cat(?key, ">")),
+  ?arr  = cat("<service-loader-arr ", cat(?key, ">")),
+  mainAnalysis.isImmutableHContext(?h).
+
+// Iterator: there is no iterator() hop to route through a container, so the
+// result points to a synthetic per-key iterator value and next() on it yields
+// each product mock directly.
+.decl DispatchIteratorValue(?itVal:Value, ?key:symbol)
+DispatchIteratorValue(?itVal, ?key) :-
+  DispatchCall(_, _, ?key, ?retType),
+  DispatchIteratorReturn(?retType),
+  ?itVal = cat("<service-iterator ", cat(?key, ">")).
+
+mainAnalysis_MockValueConsMacro(?itVal, ?retType),
+mainAnalysis.VarPointsTo(?h, ?itVal, ?ctx, ?ret) :-
+  DispatchCall(?ctx, ?ret, ?key, ?retType),
+  DispatchIteratorReturn(?retType),
+  DispatchIteratorValue(?itVal, ?key),
+  mainAnalysis.isImmutableHContext(?h).
+
+// next() called on (anything aliasing) the iterator returns the products.
+// Iterator.next() is abstract, so ordinary dispatch produces no edge/value; we
+// supply the result directly.
+mainAnalysis.VarPointsTo(?h, ?mock, ?callerCtx, ?to) :-
+  DispatchIteratorValue(?itVal, ?key),
+  DispatchProduct(?key, _, ?provider),
+  ProviderMockValue(?provider, ?mock),
+  mainAnalysis.VarPointsTo(_, ?itVal, ?callerCtx, ?base),
+  VirtualMethodInvocation_Base(?invo, ?base),
+  VirtualMethodInvocation_SimpleName(?invo, "next"),
+  AssignReturnValue(?invo, ?to),
+  mainAnalysis.isImmutableHContext(?h).
+
+// Single instance: any other result type receives the products that are
+// subtypes of it (a factory returning the product itself).
+mainAnalysis.VarPointsTo(?h, ?mock, ?ctx, ?ret) :-
+  DispatchCall(?ctx, ?ret, ?key, ?retType),
+  !DispatchIterableReturn(?retType),
+  !DispatchIteratorReturn(?retType),
+  DispatchProduct(?key, _, ?provider),
+  basic.SubtypeOf(?provider, ?retType),
+  ProviderMockValue(?provider, ?mock),
+  mainAnalysis.isImmutableHContext(?h).
