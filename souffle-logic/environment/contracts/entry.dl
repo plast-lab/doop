@@ -12,11 +12,11 @@
 // --------------------------------------------------------------------------
 
 // A method the framework calls, without a call to it in the application program.
-// Its `this` is either:
-//   - the mock object for its class when the class is an FrameworkCreatedType;
-//   - the objects the program creates of its class when the framework injects into them
+// Its `this` is every one of these that applies:
+//   - the mock object for its class, when the class is a FrameworkCreatedType;
+//   - the objects the program creates of its class, when the framework injects into them
 //     (e.g. objects returned from Spring @Bean methods get their @PostConstruct called)
-//     or when nobody outside the program creates the class 
+//     or when nobody outside the program creates the class
 //     (e.g. a HandlerInterceptor the program creates with new and registers in code).
 // Its parameters get what InjectedWith says, or a mock of their type when
 // not known (e.g. a request body).
@@ -74,9 +74,7 @@ EntryPoint(?framework, ?run) :-
 // Checks
 // --------------------------------------------------------------------------
 
-ContractProblem(?owner, "EntryPoint", ?method, "Owner not declared") :-
-  EntryPoint(?owner, ?method),
-  !Owner(?owner).
+CONTRACT_OWNER_CHECK(EntryPoint, ?method, (?owner, ?method))
 
 ContractProblem(?owner, "EntryPoint", ?method, "Not a method") :-
   EntryPoint(?owner, ?method),

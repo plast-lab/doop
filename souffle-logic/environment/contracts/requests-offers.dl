@@ -23,18 +23,23 @@
 .decl SlotInjectionRequest(?owner:symbol, ?slot:Slot)
 
 
-// The program asks for this DI callback method to be called by whoever injects into its object.
+// The program asks for this method to be called by whoever injects into its object,
+// as part of injection (after it, or before the object is discarded).
 // The contract turns it into EntryPoint on every InjectionTarget (entry.dl).
+// Callbacks other frameworks call are their own EntryPoints instead (e.g. JPA @PrePersist).
 // Jakarta: @PostConstruct, @PreDestroy
 .decl DICallbackRequest(?owner:symbol, ?method:Method)
 
 
-// A spec or library asks the active DI framework to create objects of this class and inject into them
-// (the DI framework marks the class FrameworkCreatedType and InjectionTarget, without offering it to others).
-// Unlike writing FrameworkCreatedType directly (e.g. for a JPA @Entity that never gets injected),
-// this delegates creation to DI so constructor/field injection and callbacks all run on it.
+// A spec or library asks the application's DI framework to create objects of this class and inject
+// into them (the DI framework marks it FrameworkCreatedType and InjectionTarget and picks the constructor).
+// It neither offers the class nor replaces the library's own creation: a spec whose library also creates
+// the objects without DI writes FrameworkCreatedType itself (e.g. Hibernate creates entity listeners
+// when no bean container is plugged in) and a file that also offers the class writes InjectionOffer
+// (e.g. Spring Data registers its *Impl fragments as beans).
 // Spring Data: custom repository implementations (OwnerRepositoryImpl)
-// Jakarta: JPA entity listeners, Bean Validation ConstraintValidators, servlets
+// Jakarta: the component classes the Jakarta EE platform injects into, constructor included
+// (servlets, filters, listeners, WebSocket endpoints, JPA entity listeners and converters).
 .decl DICreationRequest(?owner:symbol, ?class:ClassType)
 
 
@@ -68,25 +73,11 @@
 // Checks
 // --------------------------------------------------------------------------
 
-ContractProblem(?owner, "SlotInjectionRequest", ?slot, "Owner not declared") :-
-  SlotInjectionRequest(?owner, ?slot),
-  !Owner(?owner).
-
-ContractProblem(?owner, "DICallbackRequest", ?method, "Owner not declared") :-
-  DICallbackRequest(?owner, ?method),
-  !Owner(?owner).
-
-ContractProblem(?owner, "DICreationRequest", ?class, "Owner not declared") :-
-  DICreationRequest(?owner, ?class),
-  !Owner(?owner).
-
-ContractProblem(?owner, "InjectionOffer", ?source, "Owner not declared") :-
-  InjectionOffer(?owner, ?source),
-  !Owner(?owner).
-
-ContractProblem(?owner, "InjectionOfferName", ?source, "Owner not declared") :-
-  InjectionOfferName(?owner, ?source, _),
-  !Owner(?owner).
+CONTRACT_OWNER_CHECK(SlotInjectionRequest, ?slot, (?owner, ?slot))
+CONTRACT_OWNER_CHECK(DICallbackRequest, ?method, (?owner, ?method))
+CONTRACT_OWNER_CHECK(DICreationRequest, ?class, (?owner, ?class))
+CONTRACT_OWNER_CHECK(InjectionOffer, ?source, (?owner, ?source))
+CONTRACT_OWNER_CHECK(InjectionOfferName, ?source, (?owner, ?source, _))
 
 
 ContractProblem(?owner, "SlotInjectionRequest", ?slot, "Not a field or formal parameter") :-
@@ -104,10 +95,7 @@ ContractProblem(?owner, "DICreationRequest", ?class, "Not a class") :-
 
 ContractProblem(?owner, "InjectionOffer", ?source, "Source is not a class, interface, method or field") :-
   InjectionOffer(?owner, ?source),
-  !isClassType(?source),
-  !isInterfaceType(?source),
-  !isMethod(?source),
-  !isField(?source).
+  !isSource(?source).
 
 ContractProblem(?owner, "InjectionOfferName", ?source, "Source is not offered by this owner") :-
   InjectionOfferName(?owner, ?source, _),

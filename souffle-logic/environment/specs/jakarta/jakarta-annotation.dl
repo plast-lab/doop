@@ -20,14 +20,11 @@ Owner("jakarta-annotation").
 
 .decl JakartaAnnotation_Annotation(?role:symbol, ?annotation:Annotation)
 
-JakartaAnnotation_Annotation("post-construct", "jakarta.annotation.PostConstruct").
-JakartaAnnotation_Annotation("post-construct", "javax.annotation.PostConstruct").
+JakartaAnnotation_Annotation("post-construct", ?annotation) :- JakartaOrJavaxName("annotation.PostConstruct", ?annotation).
 
-JakartaAnnotation_Annotation("pre-destroy", "jakarta.annotation.PreDestroy").
-JakartaAnnotation_Annotation("pre-destroy", "javax.annotation.PreDestroy").
+JakartaAnnotation_Annotation("pre-destroy", ?annotation) :- JakartaOrJavaxName("annotation.PreDestroy", ?annotation).
 
-JakartaAnnotation_Annotation("resource", "jakarta.annotation.Resource").
-JakartaAnnotation_Annotation("resource", "javax.annotation.Resource").
+JakartaAnnotation_Annotation("resource", ?annotation) :- JakartaOrJavaxName("annotation.Resource", ?annotation).
 
 
 

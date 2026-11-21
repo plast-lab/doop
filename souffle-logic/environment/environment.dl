@@ -63,6 +63,14 @@
 .decl ContractProblem(?owner:symbol, ?relation:symbol, ?value:symbol, ?problem:symbol)
 .output ContractProblem
 
+// Reports the tuples of a shared relation whose owner is not declared.
+// ?owner must be named in args; value is the column the report shows.
+// e.g. CONTRACT_OWNER_CHECK(InjectedWith, ?slot, (?owner, _, ?slot, _))
+#define CONTRACT_OWNER_CHECK(relation, value, args) \
+  ContractProblem(?owner, #relation, value, "Owner not declared") :- \
+    relation args, \
+    !Owner(?owner).
+
 
 
 // --- Contracts ---

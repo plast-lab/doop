@@ -2,7 +2,8 @@
 // Names helper:
 //
 // Java and JavaBeans naming rules (Introspector.decapitalize):
-// simple class names, decapitalized class names and setter property names.
+// type names without their package, decapitalized type names, setter property names
+// and the jakarta/javax names of Jakarta EE APIs.
 // ==========================================================================
 
 
@@ -55,7 +56,7 @@ _Names_Decapitalize(?raw, ?raw) :-
 .decl _Names_ScanIdx(?type:ReferenceType, ?pos:number)
 _Names_ScanIdx(?type, 0) :-
   ApplicationClass(?type),
-  ( isClassType(?type) ; isInterfaceType(?type) ),
+  isClassOrInterfaceType(?type),
   strlen(?type) > 0.
 _Names_ScanIdx(?type, ?pos + 1) :- _Names_ScanIdx(?type, ?pos), ?pos + 1 < strlen(?type).
 
@@ -71,31 +72,31 @@ _Names_LastDot(?type, ?maxPos) :-
   ?maxPos = max ?p : { _Names_DotPos(?type, ?p) }.
 
 
-// The simple name of an application class or interface (everything after the last dot,
-// or the whole name).
-// Java: com.example.OrderService -> OrderService
-.decl TypeSimpleName(?type:ReferenceType, ?name:symbol)
+// The name of an application class or interface without its package (everything after the last dot,
+// or the whole name). A nested class keeps its outer class, unlike Class.getSimpleName.
+// Java: com.example.OrderService -> OrderService, com.example.Outer$Inner -> Outer$Inner
+.decl TypeNameWithoutPackage(?type:ReferenceType, ?name:symbol)
 
-TypeSimpleName(?type, ?name) :-
+TypeNameWithoutPackage(?type, ?name) :-
   _Names_LastDot(?type, ?pos),
   ?name = substr(?type, ?pos + 1, strlen(?type) - ?pos - 1).
 
-TypeSimpleName(?type, ?type) :-
+TypeNameWithoutPackage(?type, ?type) :-
   ApplicationClass(?type),
-  ( isClassType(?type) ; isInterfaceType(?type) ),
+  isClassOrInterfaceType(?type),
   !_Names_HasDot(?type).
 
-_Names_DecapInput(?simple) :- TypeSimpleName(_, ?simple).
+_Names_DecapInput(?simple) :- TypeNameWithoutPackage(_, ?simple).
 
 
-// The JavaBeans decapitalized simple name of an application class or interface.
+// The JavaBeans decapitalized name of an application class or interface, without its package.
 // Spring: default @Component bean name (OrderService -> orderService, URLParser -> URLParser)
 // Spring Data: default repository bean name (OrderRepository -> orderRepository)
-// Jakarta: default CDI @Named bean name
+// Not CDI's default bean name, which lowercases only the first character (URLParser -> uRLParser).
 .decl DecapitalizedTypeName(?type:ReferenceType, ?name:symbol)
 
 DecapitalizedTypeName(?type, ?name) :-
-  TypeSimpleName(?type, ?simple),
+  TypeNameWithoutPackage(?type, ?simple),
   _Names_Decapitalize(?simple, ?name).
 
 
@@ -128,3 +129,18 @@ _Names_DecapInput(?raw) :- _Names_SetterSuffix(_, ?raw).
 SetterPropertyName(?method, ?name) :-
   _Names_SetterSuffix(?method, ?raw),
   _Names_Decapitalize(?raw, ?name).
+
+
+
+
+// --------------------------------------------------------------------------
+// Jakarta EE names
+// --------------------------------------------------------------------------
+
+// Both names of a Jakarta EE API type or annotation: jakarta.<suffix> and javax.<suffix>.
+// An API that only exists as jakarta also gets a javax name that matches nothing.
+// Jakarta: JakartaOrJavaxName("inject.Inject", ?name) gives jakarta.inject.Inject and javax.inject.Inject
+.decl JakartaOrJavaxName(?suffix:symbol, ?name:symbol) inline
+
+JakartaOrJavaxName(?suffix, cat("jakarta.", ?suffix)) :- true.
+JakartaOrJavaxName(?suffix, cat("javax.", ?suffix)) :- true.

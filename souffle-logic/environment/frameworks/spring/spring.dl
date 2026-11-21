@@ -1,7 +1,9 @@
 // ==========================================================================
 // Spring Framework (core DI and lifecycle, Spring 5.3 to 7.0):
 //
-// Accepts the names and behaviours of Spring 5.3 to 7.0 (javax and jakarta).
+// Accepts the names and behaviours of Spring 5.3 to 7.0 (javax and jakarta):
+// Spring 5.3 reads only the javax names and 7.0 only the jakarta ones (and no @ManagedBean),
+// so both are listed.
 // Where versions pick differently (e.g. @Priority vs name order in <=6.1 and
 // 6.2+), both picks are kept.
 //
@@ -30,24 +32,18 @@ Owner("spring").
 
 .decl Spring_Annotation(?role:symbol, ?annotation:Annotation)
 Spring_Annotation("component", "org.springframework.stereotype.Component").
-Spring_Annotation("named", "jakarta.inject.Named").
-Spring_Annotation("named", "javax.inject.Named").
-Spring_Annotation("managed-bean", "jakarta.annotation.ManagedBean").
-Spring_Annotation("managed-bean", "javax.annotation.ManagedBean").
+Spring_Annotation("named", ?annotation) :- JakartaOrJavaxName("inject.Named", ?annotation).
+Spring_Annotation("managed-bean", ?annotation) :- JakartaOrJavaxName("annotation.ManagedBean", ?annotation).
 Spring_Annotation("lookup", "org.springframework.beans.factory.annotation.Lookup").
 Spring_Annotation("import", "org.springframework.context.annotation.Import").
 Spring_Annotation("bean", "org.springframework.context.annotation.Bean").
 Spring_Annotation("autowired", "org.springframework.beans.factory.annotation.Autowired").
 Spring_Annotation("qualifier", "org.springframework.beans.factory.annotation.Qualifier").
 Spring_Annotation("primary", "org.springframework.context.annotation.Primary").
-Spring_Annotation("priority", "jakarta.annotation.Priority").
-Spring_Annotation("priority", "javax.annotation.Priority").
-Spring_Annotation("resource", "jakarta.annotation.Resource").
-Spring_Annotation("resource", "javax.annotation.Resource").
-Spring_Annotation("post-construct", "jakarta.annotation.PostConstruct").
-Spring_Annotation("post-construct", "javax.annotation.PostConstruct").
-Spring_Annotation("pre-destroy", "jakarta.annotation.PreDestroy").
-Spring_Annotation("pre-destroy", "javax.annotation.PreDestroy").
+Spring_Annotation("priority", ?annotation) :- JakartaOrJavaxName("annotation.Priority", ?annotation).
+Spring_Annotation("resource", ?annotation) :- JakartaOrJavaxName("annotation.Resource", ?annotation).
+Spring_Annotation("post-construct", ?annotation) :- JakartaOrJavaxName("annotation.PostConstruct", ?annotation).
+Spring_Annotation("pre-destroy", ?annotation) :- JakartaOrJavaxName("annotation.PreDestroy", ?annotation).
 Spring_Annotation("event-listener", "org.springframework.context.event.EventListener").
 Spring_Annotation("scheduled", "org.springframework.scheduling.annotation.Scheduled").
 Spring_Annotation("scheduled", "org.springframework.scheduling.annotation.Schedules").
@@ -71,8 +67,7 @@ Spring_ImportHelperInterface("org.springframework.beans.factory.BeanRegistrar").
 // (DefaultListableBeanFactory.resolveDependency).
 .decl Spring_SingleHolderInterface(?type:ReferenceType)
 Spring_SingleHolderInterface("java.util.Optional").
-Spring_SingleHolderInterface("jakarta.inject.Provider").
-Spring_SingleHolderInterface("javax.inject.Provider").
+Spring_SingleHolderInterface(?type) :- JakartaOrJavaxName("inject.Provider", ?type).
 Spring_SingleHolderInterface("org.springframework.beans.factory.ObjectFactory").
 
 // Multi-bean holders: Spring unwraps T and collects all type + @Qualifier matches
@@ -621,7 +616,7 @@ Spring_SlotQualifier(?param, ?q) :-
 .decl Spring_SourceQualifier(?source:Source, ?q:symbol)
 Spring_SourceQualifier(?type, ?q) :-
   InjectionOffer(_, ?type),
-  ( isClassType(?type) ; isInterfaceType(?type) ),
+  isClassOrInterfaceType(?type),
   ( Spring_Annotation("qualifier", ?ann) ; Spring_Annotation("named", ?ann) ),
   TypeAnnotationValue(?type, ?ann, "value", _, "string", ?q, _),
   ?q != "".
@@ -630,7 +625,8 @@ Spring_SourceQualifier(?method, ?q) :-
   ( Spring_Annotation("qualifier", ?ann) ; Spring_Annotation("named", ?ann) ),
   MethodAnnotationValue(?method, ?ann, "value", _, "string", ?q, _),
   ?q != "".
-// Spring matches @Qualifier("q") against bean names when no @Qualifier sits on the bean.
+// Spring also matches @Qualifier("q") against bean names and aliases, even when the bean has another @Qualifier
+// (QualifierAnnotationAutowireCandidateResolver.checkQualifier falls back to the name).
 Spring_SourceQualifier(?source, ?q) :- InjectionOfferName(_, ?source, ?q).
 
 .decl Spring_QualifierMatch(?class:ClassType, ?slot:Slot, ?source:Source)
@@ -670,7 +666,7 @@ Spring_NeedsTieBreak(?class, ?slot) :-
 // @Primary
 .decl Spring_IsPrimary(?source:Source)
 Spring_IsPrimary(?type) :-
-  ( isClassType(?type) ; isInterfaceType(?type) ),
+  isClassOrInterfaceType(?type),
   Spring_Annotation("primary", ?ann),
   TypeCarries(?type, ?ann).
 Spring_IsPrimary(?method) :-
@@ -701,7 +697,7 @@ Spring_HasUniquePrimary(?class, ?slot) :- Spring_UniquePrimary(?class, ?slot, _)
 // @Priority (lowest integer value has highest priority).
 .decl Spring_PriorityValue(?source:Source, ?priority:number)
 Spring_PriorityValue(?type, to_number(?val)) :-
-  ( isClassType(?type) ; isInterfaceType(?type) ),
+  isClassOrInterfaceType(?type),
   Spring_Annotation("priority", ?ann),
   TypeAnnotationValue(?type, ?ann, "value", _, "int", ?val, _).
 

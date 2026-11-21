@@ -19,8 +19,7 @@ Owner("jakarta-inject").
 
 .decl JakartaInject_Annotation(?role:symbol, ?annotation:Annotation)
 
-JakartaInject_Annotation("inject", "jakarta.inject.Inject").
-JakartaInject_Annotation("inject", "javax.inject.Inject").
+JakartaInject_Annotation("inject", ?annotation) :- JakartaOrJavaxName("inject.Inject", ?annotation).
 
 
 

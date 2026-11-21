@@ -16,46 +16,35 @@ Owner("jakarta-servlet").
 // Servlet API types
 // --------------------------------------------------------------------------
 
+// The servlet API types, by their name without the jakarta. or javax. prefix.
+.decl JakartaServlet_ApiName(?suffix:symbol)
+
+JakartaServlet_ApiName("servlet.Servlet").
+JakartaServlet_ApiName("servlet.GenericServlet").
+JakartaServlet_ApiName("servlet.http.HttpServlet").
+JakartaServlet_ApiName("servlet.Filter").
+JakartaServlet_ApiName("servlet.http.HttpFilter").
+JakartaServlet_ApiName("servlet.ServletContextListener").
+JakartaServlet_ApiName("servlet.ServletContainerInitializer").
+JakartaServlet_ApiName("servlet.AsyncListener").
+JakartaServlet_ApiName("servlet.ReadListener").
+JakartaServlet_ApiName("servlet.WriteListener").
+JakartaServlet_ApiName("servlet.ServletRequestListener").
+JakartaServlet_ApiName("servlet.ServletRequestAttributeListener").
+JakartaServlet_ApiName("servlet.ServletContextAttributeListener").
+JakartaServlet_ApiName("servlet.http.HttpUpgradeHandler").
+JakartaServlet_ApiName("servlet.http.HttpSessionListener").
+JakartaServlet_ApiName("servlet.http.HttpSessionActivationListener").
+JakartaServlet_ApiName("servlet.http.HttpSessionAttributeListener").
+JakartaServlet_ApiName("servlet.http.HttpSessionBindingListener").
+JakartaServlet_ApiName("servlet.http.HttpSessionIdListener").
+
+
 .decl JakartaServlet_ApiType(?type:ReferenceType)
 
-JakartaServlet_ApiType("jakarta.servlet.Servlet").
-JakartaServlet_ApiType("javax.servlet.Servlet").
-JakartaServlet_ApiType("jakarta.servlet.GenericServlet").
-JakartaServlet_ApiType("javax.servlet.GenericServlet").
-JakartaServlet_ApiType("jakarta.servlet.http.HttpServlet").
-JakartaServlet_ApiType("javax.servlet.http.HttpServlet").
-JakartaServlet_ApiType("jakarta.servlet.Filter").
-JakartaServlet_ApiType("javax.servlet.Filter").
-JakartaServlet_ApiType("jakarta.servlet.http.HttpFilter").
-JakartaServlet_ApiType("javax.servlet.http.HttpFilter").
-JakartaServlet_ApiType("jakarta.servlet.ServletContextListener").
-JakartaServlet_ApiType("javax.servlet.ServletContextListener").
-JakartaServlet_ApiType("jakarta.servlet.ServletContainerInitializer").
-JakartaServlet_ApiType("javax.servlet.ServletContainerInitializer").
-JakartaServlet_ApiType("jakarta.servlet.AsyncListener").
-JakartaServlet_ApiType("javax.servlet.AsyncListener").
-JakartaServlet_ApiType("jakarta.servlet.ReadListener").
-JakartaServlet_ApiType("javax.servlet.ReadListener").
-JakartaServlet_ApiType("jakarta.servlet.WriteListener").
-JakartaServlet_ApiType("javax.servlet.WriteListener").
-JakartaServlet_ApiType("jakarta.servlet.ServletRequestListener").
-JakartaServlet_ApiType("javax.servlet.ServletRequestListener").
-JakartaServlet_ApiType("jakarta.servlet.ServletRequestAttributeListener").
-JakartaServlet_ApiType("javax.servlet.ServletRequestAttributeListener").
-JakartaServlet_ApiType("jakarta.servlet.ServletContextAttributeListener").
-JakartaServlet_ApiType("javax.servlet.ServletContextAttributeListener").
-JakartaServlet_ApiType("jakarta.servlet.http.HttpUpgradeHandler").
-JakartaServlet_ApiType("javax.servlet.http.HttpUpgradeHandler").
-JakartaServlet_ApiType("jakarta.servlet.http.HttpSessionListener").
-JakartaServlet_ApiType("javax.servlet.http.HttpSessionListener").
-JakartaServlet_ApiType("jakarta.servlet.http.HttpSessionActivationListener").
-JakartaServlet_ApiType("javax.servlet.http.HttpSessionActivationListener").
-JakartaServlet_ApiType("jakarta.servlet.http.HttpSessionAttributeListener").
-JakartaServlet_ApiType("javax.servlet.http.HttpSessionAttributeListener").
-JakartaServlet_ApiType("jakarta.servlet.http.HttpSessionBindingListener").
-JakartaServlet_ApiType("javax.servlet.http.HttpSessionBindingListener").
-JakartaServlet_ApiType("jakarta.servlet.http.HttpSessionIdListener").
-JakartaServlet_ApiType("javax.servlet.http.HttpSessionIdListener").
+JakartaServlet_ApiType(?type) :-
+  JakartaServlet_ApiName(?suffix),
+  JakartaOrJavaxName(?suffix, ?type).
 
 
 

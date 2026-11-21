@@ -44,11 +44,11 @@
 // the mock object the engine made for it, so it must have one.
 FrameworkCreatedType(?owner, ?type) :-
   InjectedWith(?owner, _, _, ?type),
-  ( isClassType(?type) ; isInterfaceType(?type) ).
+  isClassOrInterfaceType(?type).
 
 FrameworkCreatedType(?owner, ?type) :-
   HolderInjectedWith(?owner, _, _, ?type),
-  ( isClassType(?type) ; isInterfaceType(?type) ).
+  isClassOrInterfaceType(?type).
 
 
 // A constructor only runs when an object of exactly its class is created
@@ -67,11 +67,8 @@ FrameworkCreatedType(?owner, ?class) :-
 // Checks
 // --------------------------------------------------------------------------
 
-ContractProblem(?owner, "FrameworkCreatedType", ?type, "Owner not declared") :-
-  FrameworkCreatedType(?owner, ?type),
-  !Owner(?owner).
+CONTRACT_OWNER_CHECK(FrameworkCreatedType, ?type, (?owner, ?type))
 
 ContractProblem(?owner, "FrameworkCreatedType", ?type, "Not a class or interface") :-
   FrameworkCreatedType(?owner, ?type),
-  !isClassType(?type),
-  !isInterfaceType(?type).
+  !isClassOrInterfaceType(?type).

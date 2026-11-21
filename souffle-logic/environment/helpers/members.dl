@@ -92,6 +92,21 @@ SlotOf(?param, ?class) :-
 // Types of slots and sources
 // --------------------------------------------------------------------------
 
+// A class or an interface (not an array or primitive type).
+.decl isClassOrInterfaceType(?type:Type) inline
+
+isClassOrInterfaceType(?type) :- isClassType(?type).
+isClassOrInterfaceType(?type) :- isInterfaceType(?type).
+
+
+// A value of one of the kinds a Source can be: class or interface, method, field.
+.decl isSource(?source:Source) inline
+
+isSource(?source) :- isClassOrInterfaceType(?source).
+isSource(?source) :- isMethod(?source).
+isSource(?source) :- isField(?source).
+
+
 // The declared type of a field or parameter.
 .decl SlotType(?slot:Slot, ?type:Type)
 

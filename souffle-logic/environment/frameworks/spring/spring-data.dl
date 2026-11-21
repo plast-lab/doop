@@ -21,10 +21,8 @@ Owner("spring-data").
 SpringData_Annotation("repository-definition", "org.springframework.data.repository.RepositoryDefinition").
 SpringData_Annotation("no-repository-bean", "org.springframework.data.repository.NoRepositoryBean").
 SpringData_Annotation("component", "org.springframework.stereotype.Component").
-SpringData_Annotation("named", "jakarta.inject.Named").
-SpringData_Annotation("named", "javax.inject.Named").
-SpringData_Annotation("managed-bean", "jakarta.annotation.ManagedBean").
-SpringData_Annotation("managed-bean", "javax.annotation.ManagedBean").
+SpringData_Annotation("named", ?annotation) :- JakartaOrJavaxName("inject.Named", ?annotation).
+SpringData_Annotation("managed-bean", ?annotation) :- JakartaOrJavaxName("annotation.ManagedBean", ?annotation).
 
 
 
@@ -122,8 +120,8 @@ SpringData_FragmentImpl(?frag, ?impl) :-
   ConcreteClassType(?impl),
   basic.SubtypeOf(?impl, ?frag),
   SpringData_ImplPostfix(?postfix),
-  TypeSimpleName(?frag, ?base),
-  TypeSimpleName(?impl, ?implName),
+  TypeNameWithoutPackage(?frag, ?base),
+  TypeNameWithoutPackage(?impl, ?implName),
   ?implName = cat(?base, ?postfix).
 
 SpringData_FragmentImpl(?frag, ?impl) :-
@@ -132,8 +130,8 @@ SpringData_FragmentImpl(?frag, ?impl) :-
   ConcreteClassType(?impl),
   basic.SubtypeOf(?impl, ?frag),
   SpringData_ImplPostfix(?postfix),
-  TypeSimpleName(?repo, ?base),
-  TypeSimpleName(?impl, ?implName),
+  TypeNameWithoutPackage(?repo, ?base),
+  TypeNameWithoutPackage(?impl, ?implName),
   ?implName = cat(?base, ?postfix).
 
 

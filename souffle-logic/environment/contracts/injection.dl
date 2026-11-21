@@ -138,25 +138,11 @@ InjectedParam(?framework, ?param) :-
 // Checks
 // --------------------------------------------------------------------------
 
-ContractProblem(?owner, "InjectionTarget", ?class, "Owner not declared") :-
-  InjectionTarget(?owner, ?class),
-  !Owner(?owner).
-
-ContractProblem(?owner, "InjectedField", ?field, "Owner not declared") :-
-  InjectedField(?owner, ?field),
-  !Owner(?owner).
-
-ContractProblem(?owner, "InjectedParam", ?param, "Owner not declared") :-
-  InjectedParam(?owner, ?param),
-  !Owner(?owner).
-
-ContractProblem(?owner, "InjectedWith", ?slot, "Owner not declared") :-
-  InjectedWith(?owner, _, ?slot, _),
-  !Owner(?owner).
-
-ContractProblem(?owner, "HolderInjectedWith", ?slot, "Owner not declared") :-
-  HolderInjectedWith(?owner, _, ?slot, _),
-  !Owner(?owner).
+CONTRACT_OWNER_CHECK(InjectionTarget, ?class, (?owner, ?class))
+CONTRACT_OWNER_CHECK(InjectedField, ?field, (?owner, ?field))
+CONTRACT_OWNER_CHECK(InjectedParam, ?param, (?owner, ?param))
+CONTRACT_OWNER_CHECK(InjectedWith, ?slot, (?owner, _, ?slot, _))
+CONTRACT_OWNER_CHECK(HolderInjectedWith, ?slot, (?owner, _, ?slot, _))
 
 
 ContractProblem(?owner, "InjectionTarget", ?class, "Not a class") :-
@@ -173,17 +159,11 @@ ContractProblem(?owner, "InjectedParam", ?param, "Not a formal parameter") :-
 
 ContractProblem(?owner, "InjectedWith", ?source, "Source is not a class, interface, method or field") :-
   InjectedWith(?owner, _, _, ?source),
-  !isClassType(?source),
-  !isInterfaceType(?source),
-  !isMethod(?source),
-  !isField(?source).
+  !isSource(?source).
 
 ContractProblem(?owner, "HolderInjectedWith", ?source, "Source is not a class, interface, method or field") :-
   HolderInjectedWith(?owner, _, _, ?source),
-  !isClassType(?source),
-  !isInterfaceType(?source),
-  !isMethod(?source),
-  !isField(?source).
+  !isSource(?source).
 
 // An object of the class or interface must fit the type of the slot.
 // Only class and interface sources, since a method may declare a wider return type
@@ -191,7 +171,7 @@ ContractProblem(?owner, "HolderInjectedWith", ?source, "Source is not a class, i
 // Types missing from the facts can also show up here.
 ContractProblem(?owner, "InjectedWith", ?source, "Class or interface does not fit the type of the slot") :-
   InjectedWith(?owner, _, ?slot, ?source),
-  ( isClassType(?source) ; isInterfaceType(?source) ),
+  isClassOrInterfaceType(?source),
   SlotType(?slot, ?type),
   !basic.SubtypeOf(?source, ?type).
 
@@ -204,7 +184,7 @@ ContractProblem(?owner, "HolderInjectedWith", ?slot, "Holder slot is not a refer
 // For array slots, a class or interface source must fit the array's component type.
 ContractProblem(?owner, "HolderInjectedWith", ?source, "Class or interface does not fit the array element type") :-
   HolderInjectedWith(?owner, _, ?slot, ?source),
-  ( isClassType(?source) ; isInterfaceType(?source) ),
+  isClassOrInterfaceType(?source),
   SlotType(?slot, ?arrType),
   ComponentType(?arrType, ?elemType),
   !basic.SubtypeOf(?source, ?elemType).
