@@ -30,7 +30,7 @@ JakartaInject_Annotation("inject", "javax.inject.Inject").
 // --------------------------------------------------------------------------
 
 // Jakarta: @Inject fields, except static and final ones (Inject Javadoc).
-FillRequest("jakarta-inject", ?field) :-
+SlotInjectionRequest("jakarta-inject", ?field) :-
   JakartaInject_Annotation("inject", ?ann),
   FieldCarries(?field, ?ann),
   !Field_Modifier("static", ?field),
@@ -39,7 +39,7 @@ FillRequest("jakarta-inject", ?field) :-
 
 // Jakarta: parameters of non-static @Inject methods.
 // The contract's ParamOf drops methods overridden without @Inject.
-FillRequest("jakarta-inject", ?param) :-
+SlotInjectionRequest("jakarta-inject", ?param) :-
   JakartaInject_Annotation("inject", ?ann),
   MethodCarries(?method, ?ann),
   !Method_Modifier("static", ?method),
@@ -49,7 +49,7 @@ FillRequest("jakarta-inject", ?param) :-
 
 // Jakarta: parameters of @Inject constructors.
 // The contract applies these only when the framework also creates the object.
-FillRequest("jakarta-inject", ?param) :-
+SlotInjectionRequest("jakarta-inject", ?param) :-
   JakartaInject_Annotation("inject", ?ann),
   ConstructorOf(?ctor, _),
   MethodCarries(?ctor, ?ann),

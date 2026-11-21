@@ -16,28 +16,26 @@
 // Requests
 // --------------------------------------------------------------------------
 
-// The program asks for this field or parameter to be filled by whoever injects into its object.
-// Written by the spec/framework that asks the object's injector to fill the slot,
-// whoever that injector is. The contract turns it into InjectedField / InjectedParam
-// on every InjectionTarget (injection.dl).
+// The program asks for this field or parameter to be injected by whoever injects into its object.
+// The contract turns it into InjectedField / InjectedParam on every InjectionTarget (injection.dl).
 // Spring: @Autowired
 // Jakarta: @Inject, @Resource
-.decl FillRequest(?owner:symbol, ?slot:Slot)
+.decl SlotInjectionRequest(?owner:symbol, ?slot:Slot)
 
 
-// The program asks for this method to be called by whoever injects into its object.
-// The contract applies it for every framework that injects into the object (entry.dl).
+// The program asks for this DI callback method to be called by whoever injects into its object.
+// The contract turns it into EntryPoint on every InjectionTarget (entry.dl).
 // Jakarta: @PostConstruct, @PreDestroy
-.decl CallRequest(?owner:symbol, ?method:Method)
+.decl DICallbackRequest(?owner:symbol, ?method:Method)
 
 
-// A library asks the application's DI framework to create objects of this class and
-// inject into them (the library creates them itself when there is none).
-// Every DI framework serves these, since the bridge may come with the library
-// (e.g. cucumber-guice has Guice create Cucumber's step classes).
+// A spec or library asks the active DI framework to create objects of this class and inject into them
+// (the DI framework marks the class FrameworkCreatedType and InjectionTarget, without offering it to others).
+// Unlike writing FrameworkCreatedType directly (e.g. for a JPA @Entity that never gets injected),
+// this delegates creation to DI so constructor/field injection and callbacks all run on it.
 // Spring Data: custom repository implementations (OwnerRepositoryImpl)
-// Jakarta: JPA entity listeners and servlets (the web container creates them and CDI injects into them)
-.decl CreationRequest(?owner:symbol, ?class:ClassType)
+// Jakarta: JPA entity listeners, Bean Validation ConstraintValidators, servlets
+.decl DICreationRequest(?owner:symbol, ?class:ClassType)
 
 
 
@@ -61,7 +59,7 @@
 // Framework/specs use these names for name-based lookup (e.g. @Resource, @Qualifier).
 // Spring: bean names and @Bean aliases
 // Spring Data: decapitalized repository interface names (or @Repository("..."))
-.decl OfferName(?owner:symbol, ?source:Source, ?name:symbol)
+.decl InjectionOfferName(?owner:symbol, ?source:Source, ?name:symbol)
 
 
 
@@ -70,38 +68,38 @@
 // Checks
 // --------------------------------------------------------------------------
 
-ContractProblem(?owner, "FillRequest", ?slot, "Owner not declared") :-
-  FillRequest(?owner, ?slot),
+ContractProblem(?owner, "SlotInjectionRequest", ?slot, "Owner not declared") :-
+  SlotInjectionRequest(?owner, ?slot),
   !Owner(?owner).
 
-ContractProblem(?owner, "CallRequest", ?method, "Owner not declared") :-
-  CallRequest(?owner, ?method),
+ContractProblem(?owner, "DICallbackRequest", ?method, "Owner not declared") :-
+  DICallbackRequest(?owner, ?method),
   !Owner(?owner).
 
-ContractProblem(?owner, "CreationRequest", ?class, "Owner not declared") :-
-  CreationRequest(?owner, ?class),
+ContractProblem(?owner, "DICreationRequest", ?class, "Owner not declared") :-
+  DICreationRequest(?owner, ?class),
   !Owner(?owner).
 
 ContractProblem(?owner, "InjectionOffer", ?source, "Owner not declared") :-
   InjectionOffer(?owner, ?source),
   !Owner(?owner).
 
-ContractProblem(?owner, "OfferName", ?source, "Owner not declared") :-
-  OfferName(?owner, ?source, _),
+ContractProblem(?owner, "InjectionOfferName", ?source, "Owner not declared") :-
+  InjectionOfferName(?owner, ?source, _),
   !Owner(?owner).
 
 
-ContractProblem(?owner, "FillRequest", ?slot, "Not a field or formal parameter") :-
-  FillRequest(?owner, ?slot),
+ContractProblem(?owner, "SlotInjectionRequest", ?slot, "Not a field or formal parameter") :-
+  SlotInjectionRequest(?owner, ?slot),
   !isField(?slot),
   !FormalParam(_, _, ?slot).
 
-ContractProblem(?owner, "CallRequest", ?method, "Not a method") :-
-  CallRequest(?owner, ?method),
+ContractProblem(?owner, "DICallbackRequest", ?method, "Not a method") :-
+  DICallbackRequest(?owner, ?method),
   !isMethod(?method).
 
-ContractProblem(?owner, "CreationRequest", ?class, "Not a class") :-
-  CreationRequest(?owner, ?class),
+ContractProblem(?owner, "DICreationRequest", ?class, "Not a class") :-
+  DICreationRequest(?owner, ?class),
   !isClassType(?class).
 
 ContractProblem(?owner, "InjectionOffer", ?source, "Source is not a class, interface, method or field") :-
@@ -111,9 +109,9 @@ ContractProblem(?owner, "InjectionOffer", ?source, "Source is not a class, inter
   !isMethod(?source),
   !isField(?source).
 
-ContractProblem(?owner, "OfferName", ?source, "Source is not offered by this owner") :-
-  OfferName(?owner, ?source, _),
+ContractProblem(?owner, "InjectionOfferName", ?source, "Source is not offered by this owner") :-
+  InjectionOfferName(?owner, ?source, _),
   !InjectionOffer(?owner, ?source).
 
-ContractProblem(?owner, "OfferName", ?source, "Offer name is empty") :-
-  OfferName(?owner, ?source, "").
+ContractProblem(?owner, "InjectionOfferName", ?source, "Offer name is empty") :-
+  InjectionOfferName(?owner, ?source, "").

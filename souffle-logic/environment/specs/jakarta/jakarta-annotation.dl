@@ -38,7 +38,7 @@ JakartaAnnotation_Annotation("resource", "javax.annotation.Resource").
 
 // Jakarta: non-static no-arg @PostConstruct and @PreDestroy methods
 // (PostConstruct Javadoc; static ones are a Spring extra in spring.dl).
-CallRequest("jakarta-annotation", ?method) :-
+DICallbackRequest("jakarta-annotation", ?method) :-
   ( JakartaAnnotation_Annotation("post-construct", ?ann)
   ; JakartaAnnotation_Annotation("pre-destroy", ?ann) ),
   MethodCarries(?method, ?ann),
@@ -47,14 +47,14 @@ CallRequest("jakarta-annotation", ?method) :-
 
 
 // Jakarta: non-static @Resource fields.
-FillRequest("jakarta-annotation", ?field) :-
+SlotInjectionRequest("jakarta-annotation", ?field) :-
   JakartaAnnotation_Annotation("resource", ?ann),
   FieldCarries(?field, ?ann),
   !Field_Modifier("static", ?field).
 
 
 // Jakarta: the single parameter of a non-static @Resource method.
-FillRequest("jakarta-annotation", ?param) :-
+SlotInjectionRequest("jakarta-annotation", ?param) :-
   JakartaAnnotation_Annotation("resource", ?ann),
   MethodCarries(?method, ?ann),
   !Method_Modifier("static", ?method),

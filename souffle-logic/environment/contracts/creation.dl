@@ -24,7 +24,7 @@
 // It doesn't say either that the framework fills the object's fields (that's InjectionTarget).
 // Spring: @Component (and @Service, @Controller etc.. via meta-annotations), Spring Data repositories
 // Jakarta: @Entity
-.decl ExternallyCreatedType(?owner:symbol, ?type:ReferenceType)
+.decl FrameworkCreatedType(?owner:symbol, ?type:ReferenceType)
 
 
 
@@ -40,16 +40,20 @@
 // (for a request its whoever injects into the object).
 
 
-// A class or interface given to a slot means the mock object the engine made for it,
-// so it must have one.
-ExternallyCreatedType(?owner, ?type) :-
+// A class or interface given to a slot (directly or inside a holder) means
+// the mock object the engine made for it, so it must have one.
+FrameworkCreatedType(?owner, ?type) :-
   InjectedWith(?owner, _, _, ?type),
+  ( isClassType(?type) ; isInterfaceType(?type) ).
+
+FrameworkCreatedType(?owner, ?type) :-
+  HolderInjectedWith(?owner, _, _, ?type),
   ( isClassType(?type) ; isInterfaceType(?type) ).
 
 
 // A constructor only runs when an object of exactly its class is created
 // (with new or reflection), so if the framework calls it, it creates the object.
-ExternallyCreatedType(?owner, ?class) :-
+FrameworkCreatedType(?owner, ?class) :-
   EntryPoint(?owner, ?ctor),
   ConstructorOf(?ctor, ?class).
 
@@ -63,11 +67,11 @@ ExternallyCreatedType(?owner, ?class) :-
 // Checks
 // --------------------------------------------------------------------------
 
-ContractProblem(?owner, "ExternallyCreatedType", ?type, "Owner not declared") :-
-  ExternallyCreatedType(?owner, ?type),
+ContractProblem(?owner, "FrameworkCreatedType", ?type, "Owner not declared") :-
+  FrameworkCreatedType(?owner, ?type),
   !Owner(?owner).
 
-ContractProblem(?owner, "ExternallyCreatedType", ?type, "Not a class or interface") :-
-  ExternallyCreatedType(?owner, ?type),
+ContractProblem(?owner, "FrameworkCreatedType", ?type, "Not a class or interface") :-
+  FrameworkCreatedType(?owner, ?type),
   !isClassType(?type),
   !isInterfaceType(?type).

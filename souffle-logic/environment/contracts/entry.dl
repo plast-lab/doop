@@ -13,7 +13,7 @@
 
 // A method the framework calls, without a call to it in the application program.
 // Its `this` is either:
-//   - the mock object for its class when the class is an ExternallyCreatedType;
+//   - the mock object for its class when the class is an FrameworkCreatedType;
 //   - the objects the program creates of its class when the framework injects into them
 //     (e.g. objects returned from Spring @Bean methods get their @PostConstruct called)
 //     or when nobody outside the program creates the class 
@@ -45,19 +45,23 @@ EntryPoint(?owner, ?method) :-
   FormalParam(_, ?method, ?param).
 
 
-// The framework calls a method to get what it puts into a slot.
+// The framework calls a method to get what it puts into a slot (directly or inside a holder).
 EntryPoint(?owner, ?method) :-
   InjectedWith(?owner, _, _, ?method),
   isMethod(?method).
 
+EntryPoint(?owner, ?method) :-
+  HolderInjectedWith(?owner, _, _, ?method),
+  isMethod(?method).
 
-// Whoever injects into an object calls the methods the program asked for (CallRequest, e.g. @PostConstruct),
+
+// Whoever injects into an object calls the methods the program asked for (DICallbackRequest, e.g. @PostConstruct),
 // whichever spec or framework wrote the request.
 // The tuple is the injecting framework's, the request only says why.
 // It's the method a call on the object runs, so an override without the annotation runs instead.
 EntryPoint(?framework, ?run) :-
   InjectionTarget(?framework, ?class),
-  CallRequest(_, ?method),
+  DICallbackRequest(_, ?method),
   MethodRunOn(?method, ?class, ?run).
 
 

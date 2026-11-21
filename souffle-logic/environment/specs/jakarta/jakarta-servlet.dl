@@ -74,7 +74,7 @@ JakartaServlet_Component(?class) :-
   basic.SubtypeOf(?class, ?apiType).
 
 
-ExternallyCreatedType("jakarta-servlet", ?class) :-
+FrameworkCreatedType("jakarta-servlet", ?class) :-
   JakartaServlet_Component(?class).
 
 

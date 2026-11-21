@@ -25,7 +25,7 @@
 // --------------------------------------------------------------------------
 
 // A class whose objects get injected: the framework fills their injected fields and parameters.
-// It's separate from ExternallyCreatedType since a framework may inject into objects
+// It's separate from FrameworkCreatedType since a framework may inject into objects
 // it didn't create (e.g. Spring into the test classes JUnit creates) and may create
 // objects it never injects into (e.g. JPA entities).
 // The engine fills the injected slots only in objects of these classes and
@@ -39,18 +39,18 @@
 
 
 // A field the framework fills, in the objects of the injection targets that have it.
-// Added by the contract from FillRequest and InjectedWith; written directly for
+// Added by the contract from SlotInjectionRequest, InjectedWith and HolderInjectedWith; written directly for
 // slots driven by one injector's own rules (e.g. Spring XML <property>).
-// Spring: XML <property> (direct); @Autowired (via FillRequest)
-// Jakarta: @Inject, @Resource (via FillRequest)
+// Spring: XML <property> (direct); @Autowired (via SlotInjectionRequest)
+// Jakarta: @Inject, @Resource (via SlotInjectionRequest)
 .decl InjectedField(?owner:symbol, ?field:Field)
 
 
 // A parameter the framework fills with one of its objects.
-// Added by the contract from FillRequest and InjectedWith; written directly for
+// Added by the contract from SlotInjectionRequest, InjectedWith and HolderInjectedWith; written directly for
 // slots driven by one injector's own rules (e.g. chosen constructor, @Bean, @Produces).
-// Spring: chosen constructor, @Bean methods (direct); @Autowired setters (via FillRequest)
-// Jakarta: @Produces methods (direct); @Inject constructors and methods (via FillRequest)
+// Spring: chosen constructor, @Bean methods (direct); @Autowired setters (via SlotInjectionRequest)
+// Jakarta: @Produces methods (direct); @Inject constructors and methods (via SlotInjectionRequest)
 .decl InjectedParam(?owner:symbol, ?param:Var)
 
 
@@ -61,11 +61,24 @@
 // so BaseService<R>.repo gets OwnerRepository in OwnerService and PetRepository in PetService).
 // Several tuples for one slot mean any of them.
 // Sources are:
-//   class or interface: the mock object the engine made for it (ExternallyCreatedType)
+//   class or interface: the mock object the engine made for it (FrameworkCreatedType)
 //   method:             what the method returns when the framework calls it
 //   field:              the value of that field
 // A slot without tuples gets a mock of its type.
 .decl InjectedWith(?owner:symbol, ?class:ClassType, ?slot:Slot, ?source:Source)
+
+
+// What the framework puts inside a holder slot (collection, map, array or wrapper).
+// The holder's type is the slot's own type.
+// Separate from InjectedWith because:
+//   - InjectedWith assigns the source directly to the slot (slot = source), whereas
+//     HolderInjectedWith puts the source inside a holder (slot = Holder(source)),
+//     so a direct List bean and the elements inside a List cant be mixed up.
+//   - Several InjectedWith tuples mean "any one of them", while for collections, maps and arrays
+//     several HolderInjectedWith tuples are all in the holder together.
+// Spring: @Autowired List<Gateway>, Optional<Gateway>, ObjectProvider<Gateway>
+// Jakarta: @Inject Provider<Clock>
+.decl HolderInjectedWith(?owner:symbol, ?class:ClassType, ?slot:Slot, ?source:Source)
 
 
 
@@ -81,37 +94,39 @@
 // (for a request its whoever injects into the object).
 
 
-// A field or parameter with an InjectedWith tuple is injected.
+// A field or parameter with an InjectedWith or HolderInjectedWith tuple is injected.
 InjectedField(?owner, ?slot) :-
-  InjectedWith(?owner, _, ?slot, _),
+  ( InjectedWith(?owner, _, ?slot, _)
+  ; HolderInjectedWith(?owner, _, ?slot, _) ),
   isField(?slot).
 
 InjectedParam(?owner, ?slot) :-
-  InjectedWith(?owner, _, ?slot, _),
+  ( InjectedWith(?owner, _, ?slot, _)
+  ; HolderInjectedWith(?owner, _, ?slot, _) ),
   isVar(?slot).
 
 
 // Whoever injects into an object fills the fields and parameters the program asked for
-// (FillRequest, e.g. @Inject), whichever spec or framework wrote the request.
+// (SlotInjectionRequest, e.g. @Inject), whichever spec or framework wrote the request.
 // The tuple is the injecting framework's, the request only says why.
 InjectedField(?framework, ?field) :-
   InjectionTarget(?framework, ?class),
   FieldOf(?field, ?class),
-  FillRequest(_, ?field).
+  SlotInjectionRequest(_, ?field).
 
 InjectedParam(?framework, ?param) :-
   InjectionTarget(?framework, ?class),
   ParamOf(?param, ?class),
-  FillRequest(_, ?param).
+  SlotInjectionRequest(_, ?param).
 
 // Constructor parameters only when the framework also creates the object,
 // since it doesn't call the constructor of objects the program creates (e.g. Spring @Bean results).
 InjectedParam(?framework, ?param) :-
   InjectionTarget(?framework, ?class),
-  ExternallyCreatedType(?framework, ?class),
+  FrameworkCreatedType(?framework, ?class),
   ConstructorOf(?ctor, ?class),
   FormalParam(_, ?ctor, ?param),
-  FillRequest(_, ?param).
+  SlotInjectionRequest(_, ?param).
 
 
 
@@ -139,6 +154,10 @@ ContractProblem(?owner, "InjectedWith", ?slot, "Owner not declared") :-
   InjectedWith(?owner, _, ?slot, _),
   !Owner(?owner).
 
+ContractProblem(?owner, "HolderInjectedWith", ?slot, "Owner not declared") :-
+  HolderInjectedWith(?owner, _, ?slot, _),
+  !Owner(?owner).
+
 
 ContractProblem(?owner, "InjectionTarget", ?class, "Not a class") :-
   InjectionTarget(?owner, ?class),
@@ -159,6 +178,13 @@ ContractProblem(?owner, "InjectedWith", ?source, "Source is not a class, interfa
   !isMethod(?source),
   !isField(?source).
 
+ContractProblem(?owner, "HolderInjectedWith", ?source, "Source is not a class, interface, method or field") :-
+  HolderInjectedWith(?owner, _, _, ?source),
+  !isClassType(?source),
+  !isInterfaceType(?source),
+  !isMethod(?source),
+  !isField(?source).
+
 // An object of the class or interface must fit the type of the slot.
 // Only class and interface sources, since a method may declare a wider return type
 // (e.g. Object) and still return the right object.
@@ -168,6 +194,20 @@ ContractProblem(?owner, "InjectedWith", ?source, "Class or interface does not fi
   ( isClassType(?source) ; isInterfaceType(?source) ),
   SlotType(?slot, ?type),
   !basic.SubtypeOf(?source, ?type).
+
+// A primitive slot (int, boolean...) can never be a holder.
+ContractProblem(?owner, "HolderInjectedWith", ?slot, "Holder slot is not a reference type") :-
+  HolderInjectedWith(?owner, _, ?slot, _),
+  SlotType(?slot, ?type),
+  !isReferenceType(?type).
+
+// For array slots, a class or interface source must fit the array's component type.
+ContractProblem(?owner, "HolderInjectedWith", ?source, "Class or interface does not fit the array element type") :-
+  HolderInjectedWith(?owner, _, ?slot, ?source),
+  ( isClassType(?source) ; isInterfaceType(?source) ),
+  SlotType(?slot, ?arrType),
+  ComponentType(?arrType, ?elemType),
+  !basic.SubtypeOf(?source, ?elemType).
 
 
 // A spec or framework says what goes into the slots only of the classes it injects into
@@ -181,4 +221,13 @@ ContractProblem(?owner, "InjectedWith", ?class, "Class is not one this file inje
 
 ContractProblem(?owner, "InjectedWith", ?slot, "Slot is not in the class") :-
   InjectedWith(?owner, ?class, ?slot, _),
+  !SlotOf(?slot, ?class).
+
+ContractProblem(?owner, "HolderInjectedWith", ?class, "Class is not one this file injects into") :-
+  HolderInjectedWith(?owner, ?class, ?slot, _),
+  !InjectionTarget(?owner, ?class),
+  !Field_Modifier("static", ?slot).
+
+ContractProblem(?owner, "HolderInjectedWith", ?slot, "Slot is not in the class") :-
+  HolderInjectedWith(?owner, ?class, ?slot, _),
   !SlotOf(?slot, ?class).

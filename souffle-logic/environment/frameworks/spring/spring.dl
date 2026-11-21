@@ -8,9 +8,9 @@
 // Sections (one-way flow: facts -> requests & offers -> choosing -> contract interface):
 //   1. Annotations and framework types
 //   2. Beans, @Import, @Bean methods and test classes
-//   3. Requests and offers
-//   4. Targets, constructors and slots
-//   5. Bean names
+//   3. Bean names
+//   4. Requests and offers
+//   5. Targets, constructors and slots
 //   6. Choosing
 //   7. Contract interface
 //   8. Entry points
@@ -25,6 +25,8 @@ Owner("spring").
 // --------------------------------------------------------------------------
 // 1. Annotations and framework types
 // --------------------------------------------------------------------------
+// Static lookup tables of the Spring and Jakarta annotations, holder types
+// and callback interfaces referenced by the rules below.
 
 .decl Spring_Annotation(?role:symbol, ?annotation:Annotation)
 Spring_Annotation("component", "org.springframework.stereotype.Component").
@@ -65,17 +67,21 @@ Spring_ImportHelperInterface("org.springframework.context.annotation.DeferredImp
 Spring_ImportHelperInterface("org.springframework.context.annotation.ImportBeanDefinitionRegistrar").
 Spring_ImportHelperInterface("org.springframework.beans.factory.BeanRegistrar").
 
-// Holder slot types deferred to v2 (marked filled, no InjectedWith tuple in v1).
-.decl Spring_HolderInterface(?type:ReferenceType)
-Spring_HolderInterface("java.util.List").
-Spring_HolderInterface("java.util.Set").
-Spring_HolderInterface("java.util.Collection").
-Spring_HolderInterface("java.util.Map").
-Spring_HolderInterface("java.util.Optional").
-Spring_HolderInterface("jakarta.inject.Provider").
-Spring_HolderInterface("javax.inject.Provider").
-Spring_HolderInterface("org.springframework.beans.factory.ObjectProvider").
-Spring_HolderInterface("org.springframework.beans.factory.ObjectFactory").
+// Single-bean wrapper holders: Spring unwraps T and runs full single-bean choosing
+// (DefaultListableBeanFactory.resolveDependency).
+.decl Spring_SingleHolderInterface(?type:ReferenceType)
+Spring_SingleHolderInterface("java.util.Optional").
+Spring_SingleHolderInterface("jakarta.inject.Provider").
+Spring_SingleHolderInterface("javax.inject.Provider").
+Spring_SingleHolderInterface("org.springframework.beans.factory.ObjectFactory").
+
+// Multi-bean holders: Spring unwraps T and collects all type + @Qualifier matches
+// without @Primary, @Priority or name tie-breaking (resolveMultipleBeans / indicatesArrayCollectionOrMap).
+// ObjectProvider is included here so both getObject() and stream()/iterator() stay sound.
+.decl Spring_MultiHolderRoot(?type:ReferenceType)
+Spring_MultiHolderRoot("java.util.Collection").
+Spring_MultiHolderRoot("java.util.Map").
+Spring_MultiHolderRoot("org.springframework.beans.factory.ObjectProvider").
 
 // Callback interfaces whose methods Spring calls on managed targets.
 .decl Spring_BeanCallbackInterface(?iface:ReferenceType)
@@ -123,7 +129,9 @@ Spring_StructuralCallbackInterface("org.springframework.format.Printer").
 // --------------------------------------------------------------------------
 // 2. Beans, @Import, @Bean methods and test classes
 // --------------------------------------------------------------------------
-// Computed only from facts and helpers (never from contract-interface relations, so data flows one way).
+// Discovers Spring's own beans (@Component chains, @Named, @ManagedBean, @Import),
+// their @Bean factory methods (and the concrete classes they return/allocate)
+// and JUnit test classes injected by Spring. Reads only facts and helpers.
 
 .decl Spring_HasLookupMethod(?class:ClassType)
 Spring_HasLookupMethod(?class) :-
@@ -181,10 +189,10 @@ Spring_ImportedBean(?class) :-
   !Spring_IsImportHelperType(?class).
 
 // Spring: @Bean methods declared on a bean class or its supertypes, static ones included.
-.decl Spring_BeanMethodOwner(?bean:ClassType, ?method:Method)
+.decl Spring_BeanMethodClass(?bean:ClassType, ?method:Method)
 .decl Spring_BeanMethod(?method:Method)
 
-Spring_BeanMethodOwner(?bean, ?run) :-
+Spring_BeanMethodClass(?bean, ?run) :-
   Spring_Bean(?bean),
   Spring_Annotation("bean", ?ann),
   MethodCarries(?method, ?ann),
@@ -192,25 +200,25 @@ Spring_BeanMethodOwner(?bean, ?run) :-
   !Method_Modifier("static", ?method),
   MethodRunOn(?method, ?bean, ?run).
 
-Spring_BeanMethodOwner(?bean, ?method) :-
+Spring_BeanMethodClass(?bean, ?method) :-
   Spring_Bean(?bean),
   Spring_Annotation("bean", ?ann),
   MethodCarries(?method, ?ann),
   Method_Modifier("static", ?method),
   MethodRunOn(?method, ?bean, ?method).
 
-Spring_BeanMethod(?method) :- Spring_BeanMethodOwner(_, ?method).
+Spring_BeanMethod(?method) :- Spring_BeanMethodClass(_, ?method).
 
 // Spring: concrete classes a @Bean method gives — its declared concrete return class,
 // plus concrete classes allocated with `new` in its body that fit the return type.
-.decl Spring_Product(?method:Method, ?class:ClassType)
+.decl Spring_BeanMethodProduct(?method:Method, ?class:ClassType)
 
-Spring_Product(?method, ?class) :-
+Spring_BeanMethodProduct(?method, ?class) :-
   Spring_BeanMethod(?method),
   Method_ReturnType(?method, ?class),
   ConcreteClassType(?class).
 
-Spring_Product(?method, ?class) :-
+Spring_BeanMethodProduct(?method, ?class) :-
   Spring_BeanMethod(?method),
   Method_ReturnType(?method, ?retType),
   Instruction_Method(?insn, ?method),
@@ -244,17 +252,73 @@ Spring_TestClass(?class) :-
 
 
 // --------------------------------------------------------------------------
-// 3. Requests and offers
+// 3. Bean names
 // --------------------------------------------------------------------------
+// Computes Spring's bean names and aliases for its own bean classes and @Bean methods
+// (explicit annotation values, decapitalized simple class names, FQCNs for @Import-only
+// classes and @Bean method names) before publishing them as InjectionOfferName.
+
+// Explicit stereotype / @Named / @ManagedBean name on a bean class.
+.decl Spring_ExplicitClassBeanName(?class:ClassType, ?name:symbol)
+Spring_ExplicitClassBeanName(?class, ?name) :-
+  Spring_Bean(?class),
+  TypeAnnotationValue(?class, ?ann, "value", _, "string", ?name, _),
+  ?name != "",
+  ( ( Spring_Annotation("component", ?root), CarriesAnnotation(?ann, ?root) )
+  ; Spring_Annotation("named", ?ann)
+  ; Spring_Annotation("managed-bean", ?ann) ).
+
+.decl Spring_HasExplicitClassBeanName(?class:ClassType)
+Spring_HasExplicitClassBeanName(?class) :- Spring_ExplicitClassBeanName(?class, _).
+
+// Explicit @Bean(name/value = ...) names and aliases.
+.decl Spring_ExplicitMethodBeanName(?method:Method, ?name:symbol)
+Spring_ExplicitMethodBeanName(?method, ?name) :-
+  Spring_BeanMethod(?method),
+  Spring_Annotation("bean", ?ann),
+  MethodAnnotationValue(?method, ?ann, ?el, _, "string", ?name, _),
+  ( ?el = "name" ; ?el = "value" ),
+  ?name != "".
+
+.decl Spring_HasExplicitMethodBeanName(?method:Method)
+Spring_HasExplicitMethodBeanName(?method) :- Spring_ExplicitMethodBeanName(?method, _).
+
+.decl Spring_BeanName(?source:Source, ?name:symbol)
+Spring_BeanName(?class, ?name) :- Spring_ExplicitClassBeanName(?class, ?name).
+Spring_BeanName(?class, ?name) :-
+  Spring_ScannedBean(?class),
+  !Spring_HasExplicitClassBeanName(?class),
+  DecapitalizedTypeName(?class, ?name).
+// Imported-only classes without an explicit name get the fully qualified class name
+// (ConfigurationClassBeanDefinitionReader.importBeanNameGenerator).
+Spring_BeanName(?class, ?class) :-
+  Spring_ImportedBean(?class),
+  !Spring_ScannedBean(?class),
+  !Spring_HasExplicitClassBeanName(?class).
+Spring_BeanName(?method, ?name) :- Spring_ExplicitMethodBeanName(?method, ?name).
+Spring_BeanName(?method, ?name) :-
+  Spring_BeanMethod(?method),
+  !Spring_HasExplicitMethodBeanName(?method),
+  Method_SimpleName(?method, ?name).
+
+
+
+
+// --------------------------------------------------------------------------
+// 4. Requests and offers
+// --------------------------------------------------------------------------
+// Publishes Spring's own @Autowired slots and bean offers (with names) into the
+// shared request/offer tables so choosing below sees the combined context from
+// Spring, Jakarta specs and libraries like Spring Data all at once.
 
 // Spring: @Autowired fields and parameters of non-static @Autowired methods.
 // Spring ignores @Autowired on static members.
-FillRequest("spring", ?field) :-
+SlotInjectionRequest("spring", ?field) :-
   Spring_Annotation("autowired", ?ann),
   FieldCarries(?field, ?ann),
   !Field_Modifier("static", ?field).
 
-FillRequest("spring", ?param) :-
+SlotInjectionRequest("spring", ?param) :-
   Spring_Annotation("autowired", ?ann),
   MethodCarries(?method, ?ann),
   !Method_Modifier("static", ?method),
@@ -262,27 +326,30 @@ FillRequest("spring", ?param) :-
   FormalParam(_, ?method, ?param).
 
 // Spring: its beans and @Bean methods are offered to slots, along with their bean names.
-// CreationRequest classes and test classes are not offered.
+// DICreationRequest classes and test classes are not offered.
 InjectionOffer("spring", ?class) :- Spring_Bean(?class).
 InjectionOffer("spring", ?method) :- Spring_BeanMethod(?method).
-OfferName("spring", ?source, ?name) :- Spring_OwnBeanName(?source, ?name).
+InjectionOfferName("spring", ?source, ?name) :- Spring_BeanName(?source, ?name).
 
 
 
 
 // --------------------------------------------------------------------------
-// 4. Targets, constructors and slots
+// 5. Targets, constructors and slots
 // --------------------------------------------------------------------------
+// Determines which classes Spring creates and injects into (including DICreationRequest
+// classes from other files), picks which constructor Spring runs, collects every slot to
+// fill (from SlotInjectionRequest, constructors and @Bean methods) and unwraps holder types.
 
 .decl Spring_Created(?class:ClassType)
 Spring_Created(?class) :- Spring_Bean(?class).
-Spring_Created(?class) :- CreationRequest(_, ?class).
+Spring_Created(?class) :- DICreationRequest(_, ?class).
 
 .decl Spring_Target(?class:ClassType)
 Spring_Target(?class) :- Spring_Bean(?class).
-Spring_Target(?class) :- Spring_Product(_, ?class).
+Spring_Target(?class) :- Spring_BeanMethodProduct(_, ?class).
 Spring_Target(?class) :- Spring_TestClass(?class).
-Spring_Target(?class) :- CreationRequest(_, ?class).
+Spring_Target(?class) :- DICreationRequest(_, ?class).
 
 // Spring: constructor choice for created classes
 // (AutowiredAnnotationBeanPostProcessor.determineCandidateConstructors):
@@ -323,90 +390,98 @@ Spring_Constructor(?ctor, ?class) :-
   NoArgConstructor(?ctor, ?class).
 
 // Slots Spring fills in objects of its targets.
-// Read from FillRequest (not InjectedField/InjectedParam) so data flows one way.
+// Read from SlotInjectionRequest (not InjectedField/InjectedParam) so data flows one way.
 .decl Spring_Slot(?class:ClassType, ?slot:Slot)
 
 Spring_Slot(?class, ?field) :-
   Spring_Target(?class),
   FieldOf(?field, ?class),
-  FillRequest(_, ?field).
+  SlotInjectionRequest(_, ?field).
 
 Spring_Slot(?class, ?param) :-
   Spring_Target(?class),
   ParamOf(?param, ?class),
-  FillRequest(_, ?param).
+  SlotInjectionRequest(_, ?param).
 
 // Constructor requests (e.g. @Inject) apply only when Spring also creates the object.
 Spring_Slot(?class, ?param) :-
   Spring_Created(?class),
   ConstructorOf(?ctor, ?class),
   FormalParam(_, ?ctor, ?param),
-  FillRequest(_, ?param).
+  SlotInjectionRequest(_, ?param).
 
 Spring_Slot(?class, ?param) :-
   Spring_Constructor(?ctor, ?class),
   FormalParam(_, ?ctor, ?param).
 
 Spring_Slot(?class, ?param) :-
-  Spring_BeanMethodOwner(?class, ?method),
+  Spring_BeanMethodClass(?class, ?method),
   FormalParam(_, ?method, ?param).
 
-// Holder slots get no InjectedWith tuples in v1 (deferred to v2 InjectedHolder).
-.decl Spring_HolderSlot(?slot:Slot)
-Spring_HolderSlot(?slot) :-
+// Holder slots (single-bean wrappers vs multi-bean holders) and their erased element types.
+.decl Spring_SingleHolderSlot(?slot:Slot)
+Spring_SingleHolderSlot(?slot) :-
   Spring_Slot(_, ?slot),
   SlotType(?slot, ?type),
-  ( isArrayType(?type) ; Spring_HolderInterface(?type) ).
+  Spring_SingleHolderInterface(?type).
 
+.decl Spring_MultiHolderSlot(?slot:Slot)
+Spring_MultiHolderSlot(?slot) :-
+  Spring_Slot(_, ?slot),
+  SlotType(?slot, ?type),
+  isArrayType(?type).
+Spring_MultiHolderSlot(?slot) :-
+  Spring_Slot(_, ?slot),
+  SlotType(?slot, ?type),
+  isInterfaceType(?type),
+  Spring_MultiHolderRoot(?root),
+  basic.SubtypeOf(?type, ?root).
 
+.decl Spring_HolderSlot(?slot:Slot)
+Spring_HolderSlot(?slot) :- Spring_SingleHolderSlot(?slot).
+Spring_HolderSlot(?slot) :- Spring_MultiHolderSlot(?slot).
 
+// Unwrap a holder slot's raw generic argument (skipping raw types and unbounded "?"),
+// matching DefaultListableBeanFactory (resolveGeneric returning null).
+.decl Spring_HolderRawArg(?slot:Slot, ?arg:symbol)
+Spring_HolderRawArg(?slot, ?arg) :-
+  Spring_HolderSlot(?slot),
+  SlotType(?slot, ?type),
+  !isArrayType(?type),
+  !basic.SubtypeOf(?type, "java.util.Map"),
+  SlotTypeArgument(?slot, 0, ?arg, ?bound),
+  ( ?bound = "=" ; ?bound = "extends" ).
+Spring_HolderRawArg(?slot, ?arg) :-
+  Spring_MultiHolderSlot(?slot),
+  SlotType(?slot, ?type),
+  basic.SubtypeOf(?type, "java.util.Map"),
+  SlotTypeArgument(?slot, 0, "java.lang.String", "="),
+  SlotTypeArgument(?slot, 1, ?arg, ?bound),
+  ( ?bound = "=" ; ?bound = "extends" ).
 
-// --------------------------------------------------------------------------
-// 5. Bean names
-// --------------------------------------------------------------------------
+.decl Spring_ErasedHolderArg(?arg:symbol, ?erasure:ReferenceType)
+Spring_ErasedHolderArg(?arg, ?arg) :-
+  Spring_HolderRawArg(_, ?arg),
+  isReferenceType(?arg).
+Spring_ErasedHolderArg(?arg, ?erasure) :-
+  Spring_HolderRawArg(_, ?arg),
+  GenericType(?arg, ?erasure),
+  isReferenceType(?erasure).
+Spring_ErasedHolderArg(?tv, ?erasure) :-
+  Spring_HolderRawArg(_, ?tv),
+  TypeVariable_Bound(?tv, _, ?bound),
+  ( ( isReferenceType(?bound), ?erasure = ?bound )
+  ; ( GenericType(?bound, ?erasure), isReferenceType(?erasure) ) ).
 
-// Explicit stereotype / @Named / @ManagedBean name on a bean class.
-.decl Spring_ExplicitClassBeanName(?class:ClassType, ?name:symbol)
-Spring_ExplicitClassBeanName(?class, ?name) :-
-  Spring_Bean(?class),
-  TypeAnnotationValue(?class, ?ann, "value", _, "string", ?name, _),
-  ?name != "",
-  ( ( Spring_Annotation("component", ?root), CarriesAnnotation(?ann, ?root) )
-  ; Spring_Annotation("named", ?ann)
-  ; Spring_Annotation("managed-bean", ?ann) ).
-
-.decl Spring_HasExplicitClassBeanName(?class:ClassType)
-Spring_HasExplicitClassBeanName(?class) :- Spring_ExplicitClassBeanName(?class, _).
-
-// Explicit @Bean(name/value = ...) names and aliases.
-.decl Spring_ExplicitMethodBeanName(?method:Method, ?name:symbol)
-Spring_ExplicitMethodBeanName(?method, ?name) :-
-  Spring_BeanMethod(?method),
-  Spring_Annotation("bean", ?ann),
-  MethodAnnotationValue(?method, ?ann, ?el, _, "string", ?name, _),
-  ( ?el = "name" ; ?el = "value" ),
-  ?name != "".
-
-.decl Spring_HasExplicitMethodBeanName(?method:Method)
-Spring_HasExplicitMethodBeanName(?method) :- Spring_ExplicitMethodBeanName(?method, _).
-
-.decl Spring_OwnBeanName(?source:Source, ?name:symbol)
-Spring_OwnBeanName(?class, ?name) :- Spring_ExplicitClassBeanName(?class, ?name).
-Spring_OwnBeanName(?class, ?name) :-
-  Spring_ScannedBean(?class),
-  !Spring_HasExplicitClassBeanName(?class),
-  DecapitalizedTypeName(?class, ?name).
-// Imported-only classes without an explicit name get the fully qualified class name
-// (ConfigurationClassBeanDefinitionReader.importBeanNameGenerator).
-Spring_OwnBeanName(?class, ?class) :-
-  Spring_ImportedBean(?class),
-  !Spring_ScannedBean(?class),
-  !Spring_HasExplicitClassBeanName(?class).
-Spring_OwnBeanName(?method, ?name) :- Spring_ExplicitMethodBeanName(?method, ?name).
-Spring_OwnBeanName(?method, ?name) :-
-  Spring_BeanMethod(?method),
-  !Spring_HasExplicitMethodBeanName(?method),
-  Method_SimpleName(?method, ?name).
+.decl Spring_HolderElementType(?slot:Slot, ?elemType:ReferenceType)
+Spring_HolderElementType(?slot, ?elemType) :-
+  Spring_MultiHolderSlot(?slot),
+  SlotType(?slot, ?arrType),
+  ComponentType(?arrType, ?elemType),
+  isReferenceType(?elemType).
+Spring_HolderElementType(?slot, ?elemType) :-
+  Spring_HolderRawArg(?slot, ?arg),
+  Spring_ErasedHolderArg(?arg, ?elemType).
 
 
 
@@ -414,31 +489,33 @@ Spring_OwnBeanName(?method, ?name) :-
 // --------------------------------------------------------------------------
 // 6. Choosing
 // --------------------------------------------------------------------------
+// Resolves each slot against all accumulated InjectionOffers in Spring's order:
+// direct type match -> @Resource by-name -> holder unwrapping & fallback ->
+// @Qualifier/@Named narrowing -> @Primary / @Priority / slot-name tie-breaking
+// (multi-bean holders stop after @Qualifier and keep every matching offer).
 
-// 6a. Offers from any owner whose type (or @Bean product) fits the slot.
-.decl Spring_HasOfferName(?source:Source)
-Spring_HasOfferName(?source) :- OfferName(_, ?source, _).
+// 6a. Direct candidates (offers fitting the slot's own type).
+.decl Spring_HasInjectionOfferName(?source:Source)
+Spring_HasInjectionOfferName(?source) :- InjectionOfferName(_, ?source, _).
 
-.decl Spring_Candidate(?class:ClassType, ?slot:Slot, ?source:Source)
+.decl Spring_DirectCandidate(?class:ClassType, ?slot:Slot, ?source:Source)
 
-Spring_Candidate(?class, ?slot, ?source) :-
+Spring_DirectCandidate(?class, ?slot, ?source) :-
   Spring_Slot(?class, ?slot),
-  !Spring_HolderSlot(?slot),
   SlotType(?slot, ?slotType),
   InjectionOffer(_, ?source),
   SourceType(?source, ?srcType),
   basic.SubtypeOf(?srcType, ?slotType).
 
-Spring_Candidate(?class, ?slot, ?method) :-
+Spring_DirectCandidate(?class, ?slot, ?method) :-
   Spring_Slot(?class, ?slot),
-  !Spring_HolderSlot(?slot),
   SlotType(?slot, ?slotType),
   InjectionOffer(_, ?method),
-  Spring_Product(?method, ?prodClass),
+  Spring_BeanMethodProduct(?method, ?prodClass),
   basic.SubtypeOf(?prodClass, ?slotType).
 
 // 6b. @Resource: match by name first (explicit name, else field name or setter property name),
-// else fall back to by-type resolution (CommonAnnotationBeanPostProcessor.ResourceElement).
+// else fall back to by-type / holder resolution (CommonAnnotationBeanPostProcessor.ResourceElement).
 .decl Spring_ResourceField(?field:Field)
 Spring_ResourceField(?field) :-
   Spring_Annotation("resource", ?ann),
@@ -483,15 +560,54 @@ Spring_ResourceName(?param, ?mname) :-
 
 .decl Spring_ResourceMatch(?class:ClassType, ?slot:Slot, ?source:Source)
 Spring_ResourceMatch(?class, ?slot, ?source) :-
-  Spring_Candidate(?class, ?slot, ?source),
+  Spring_DirectCandidate(?class, ?slot, ?source),
   Spring_ResourceName(?slot, ?name),
-  OfferName(_, ?source, ?name).
+  InjectionOfferName(_, ?source, ?name).
 
 .decl Spring_HasResourceMatch(?class:ClassType, ?slot:Slot)
 Spring_HasResourceMatch(?class, ?slot) :- Spring_ResourceMatch(?class, ?slot, _).
 
-// 6c. @Qualifier("q") / @Named("q") narrowing.
-// Unnamed offers (no OfferName) stay conservatively when another candidate matches.
+// 6c. Holder element candidates and direct fallback
+// (DefaultListableBeanFactory.resolveMultipleBeans / doResolveDependency):
+// match offers against the unwrapped element type when not already hit by @Resource,
+// or fall back to Spring_DirectCandidate if no element candidates exist (e.g. @Bean List<String>).
+.decl Spring_HolderCandidate(?class:ClassType, ?slot:Slot, ?source:Source)
+Spring_HolderCandidate(?class, ?slot, ?source) :-
+  Spring_Slot(?class, ?slot),
+  Spring_HolderElementType(?slot, ?elemType),
+  !Spring_HasResourceMatch(?class, ?slot),
+  InjectionOffer(_, ?source),
+  SourceType(?source, ?srcType),
+  basic.SubtypeOf(?srcType, ?elemType).
+Spring_HolderCandidate(?class, ?slot, ?method) :-
+  Spring_Slot(?class, ?slot),
+  Spring_HolderElementType(?slot, ?elemType),
+  !Spring_HasResourceMatch(?class, ?slot),
+  InjectionOffer(_, ?method),
+  Spring_BeanMethodProduct(?method, ?prodClass),
+  basic.SubtypeOf(?prodClass, ?elemType).
+
+.decl Spring_HasHolderCandidate(?class:ClassType, ?slot:Slot)
+Spring_HasHolderCandidate(?class, ?slot) :- Spring_HolderCandidate(?class, ?slot, _).
+
+.decl Spring_ResolvedAsMultiHolder(?class:ClassType, ?slot:Slot)
+Spring_ResolvedAsMultiHolder(?class, ?slot) :-
+  Spring_MultiHolderSlot(?slot),
+  Spring_HasHolderCandidate(?class, ?slot).
+
+.decl Spring_Candidate(?class:ClassType, ?slot:Slot, ?source:Source)
+Spring_Candidate(?class, ?slot, ?source) :-
+  Spring_DirectCandidate(?class, ?slot, ?source),
+  !Spring_HolderSlot(?slot).
+Spring_Candidate(?class, ?slot, ?source) :-
+  Spring_HolderCandidate(?class, ?slot, ?source).
+Spring_Candidate(?class, ?slot, ?source) :-
+  Spring_DirectCandidate(?class, ?slot, ?source),
+  Spring_HolderSlot(?slot),
+  !Spring_HasHolderCandidate(?class, ?slot).
+
+// 6d. @Qualifier("q") / @Named("q") narrowing.
+// Unnamed offers (no InjectionOfferName) stay conservatively when another candidate matches.
 .decl Spring_SlotQualifier(?slot:Slot, ?q:symbol)
 Spring_SlotQualifier(?field, ?q) :-
   ( Spring_Annotation("qualifier", ?ann) ; Spring_Annotation("named", ?ann) ),
@@ -515,7 +631,7 @@ Spring_SourceQualifier(?method, ?q) :-
   MethodAnnotationValue(?method, ?ann, "value", _, "string", ?q, _),
   ?q != "".
 // Spring matches @Qualifier("q") against bean names when no @Qualifier sits on the bean.
-Spring_SourceQualifier(?source, ?q) :- OfferName(_, ?source, ?q).
+Spring_SourceQualifier(?source, ?q) :- InjectionOfferName(_, ?source, ?q).
 
 .decl Spring_QualifierMatch(?class:ClassType, ?slot:Slot, ?source:Source)
 Spring_QualifierMatch(?class, ?slot, ?source) :-
@@ -532,19 +648,21 @@ Spring_AfterQualifier(?class, ?slot, ?source) :- Spring_QualifierMatch(?class, ?
 Spring_AfterQualifier(?class, ?slot, ?source) :-
   Spring_HasQualifierMatch(?class, ?slot),
   Spring_Candidate(?class, ?slot, ?source),
-  !Spring_HasOfferName(?source).
+  !Spring_HasInjectionOfferName(?source).
 Spring_AfterQualifier(?class, ?slot, ?source) :-
   Spring_Candidate(?class, ?slot, ?source),
   !Spring_HasResourceMatch(?class, ?slot),
   !Spring_HasQualifierMatch(?class, ?slot).
 
-// 6d. Tie-breaking when several candidates remain:
+// 6e. Tie-breaking and final single-bean choice (normal slots and single-bean wrappers;
+// multi-bean holders skip tie-breaking and keep every post-qualifier candidate):
 //   - a unique @Primary wins;
 //   - else the union of Spring <=6.1 (unique highest @Priority, else name)
 //     and Spring 6.2+ (name, else unique highest @Priority);
 //   - else every candidate stays.
-.decl Spring_MultiCandidate(?class:ClassType, ?slot:Slot)
-Spring_MultiCandidate(?class, ?slot) :-
+.decl Spring_NeedsTieBreak(?class:ClassType, ?slot:Slot)
+Spring_NeedsTieBreak(?class, ?slot) :-
+  !Spring_ResolvedAsMultiHolder(?class, ?slot),
   Spring_AfterQualifier(?class, ?slot, ?s1),
   Spring_AfterQualifier(?class, ?slot, ?s2),
   ?s1 != ?s2.
@@ -560,55 +678,55 @@ Spring_IsPrimary(?method) :-
   Spring_Annotation("primary", ?ann),
   MethodCarries(?method, ?ann).
 
-.decl Spring_PrimaryCand(?class:ClassType, ?slot:Slot, ?source:Source)
-Spring_PrimaryCand(?class, ?slot, ?source) :-
-  Spring_MultiCandidate(?class, ?slot),
+.decl Spring_PrimaryCandidate(?class:ClassType, ?slot:Slot, ?source:Source)
+Spring_PrimaryCandidate(?class, ?slot, ?source) :-
+  Spring_NeedsTieBreak(?class, ?slot),
   Spring_AfterQualifier(?class, ?slot, ?source),
   Spring_IsPrimary(?source).
 
 .decl Spring_MultiPrimary(?class:ClassType, ?slot:Slot)
 Spring_MultiPrimary(?class, ?slot) :-
-  Spring_PrimaryCand(?class, ?slot, ?s1),
-  Spring_PrimaryCand(?class, ?slot, ?s2),
+  Spring_PrimaryCandidate(?class, ?slot, ?s1),
+  Spring_PrimaryCandidate(?class, ?slot, ?s2),
   ?s1 != ?s2.
 
 .decl Spring_UniquePrimary(?class:ClassType, ?slot:Slot, ?source:Source)
 Spring_UniquePrimary(?class, ?slot, ?source) :-
-  Spring_PrimaryCand(?class, ?slot, ?source),
+  Spring_PrimaryCandidate(?class, ?slot, ?source),
   !Spring_MultiPrimary(?class, ?slot).
 
 .decl Spring_HasUniquePrimary(?class:ClassType, ?slot:Slot)
 Spring_HasUniquePrimary(?class, ?slot) :- Spring_UniquePrimary(?class, ?slot, _).
 
 // @Priority (lowest integer value has highest priority).
-.decl Spring_PriorityVal(?source:Source, ?priority:number)
-Spring_PriorityVal(?type, to_number(?val)) :-
+.decl Spring_PriorityValue(?source:Source, ?priority:number)
+Spring_PriorityValue(?type, to_number(?val)) :-
   ( isClassType(?type) ; isInterfaceType(?type) ),
   Spring_Annotation("priority", ?ann),
   TypeAnnotationValue(?type, ?ann, "value", _, "int", ?val, _).
 
 .decl Spring_MinPriority(?class:ClassType, ?slot:Slot, ?minP:number)
 Spring_MinPriority(?class, ?slot, ?minP) :-
-  Spring_MultiCandidate(?class, ?slot),
+  Spring_NeedsTieBreak(?class, ?slot),
   Spring_AfterQualifier(?class, ?slot, ?any),
-  Spring_PriorityVal(?any, _),
-  ?minP = min ?p : { Spring_AfterQualifier(?class, ?slot, ?s), Spring_PriorityVal(?s, ?p) }.
+  Spring_PriorityValue(?any, _),
+  ?minP = min ?p : { Spring_AfterQualifier(?class, ?slot, ?s), Spring_PriorityValue(?s, ?p) }.
 
-.decl Spring_BestPriorityCand(?class:ClassType, ?slot:Slot, ?source:Source)
-Spring_BestPriorityCand(?class, ?slot, ?source) :-
+.decl Spring_BestPriorityCandidate(?class:ClassType, ?slot:Slot, ?source:Source)
+Spring_BestPriorityCandidate(?class, ?slot, ?source) :-
   Spring_MinPriority(?class, ?slot, ?minP),
   Spring_AfterQualifier(?class, ?slot, ?source),
-  Spring_PriorityVal(?source, ?minP).
+  Spring_PriorityValue(?source, ?minP).
 
 .decl Spring_MultiBestPriority(?class:ClassType, ?slot:Slot)
 Spring_MultiBestPriority(?class, ?slot) :-
-  Spring_BestPriorityCand(?class, ?slot, ?s1),
-  Spring_BestPriorityCand(?class, ?slot, ?s2),
+  Spring_BestPriorityCandidate(?class, ?slot, ?s1),
+  Spring_BestPriorityCandidate(?class, ?slot, ?s2),
   ?s1 != ?s2.
 
 .decl Spring_UniquePriority(?class:ClassType, ?slot:Slot, ?source:Source)
 Spring_UniquePriority(?class, ?slot, ?source) :-
-  Spring_BestPriorityCand(?class, ?slot, ?source),
+  Spring_BestPriorityCandidate(?class, ?slot, ?source),
   !Spring_MultiBestPriority(?class, ?slot).
 
 // Name match: SlotName (field name or -parameters) plus Param_DebugName (-g).
@@ -620,30 +738,44 @@ Spring_SlotMatchName(?param, ?name) :-
 
 .decl Spring_NameMatch(?class:ClassType, ?slot:Slot, ?source:Source)
 Spring_NameMatch(?class, ?slot, ?source) :-
-  Spring_MultiCandidate(?class, ?slot),
+  Spring_NeedsTieBreak(?class, ?slot),
   Spring_AfterQualifier(?class, ?slot, ?source),
   Spring_SlotMatchName(?slot, ?name),
-  OfferName(_, ?source, ?name).
+  InjectionOfferName(_, ?source, ?name).
 
 .decl Spring_HasNameMatch(?class:ClassType, ?slot:Slot)
 Spring_HasNameMatch(?class, ?slot) :- Spring_NameMatch(?class, ?slot, _).
 
 // Union of <=6.1 (priority then name) and 6.2+ (name then priority) when no unique @Primary.
-.decl Spring_TierPick(?class:ClassType, ?slot:Slot, ?source:Source)
-Spring_TierPick(?class, ?slot, ?source) :-
+.decl Spring_PriorityOrNamePick(?class:ClassType, ?slot:Slot, ?source:Source)
+Spring_PriorityOrNamePick(?class, ?slot, ?source) :-
   !Spring_HasUniquePrimary(?class, ?slot),
   Spring_UniquePriority(?class, ?slot, ?source).
-Spring_TierPick(?class, ?slot, ?source) :-
+Spring_PriorityOrNamePick(?class, ?slot, ?source) :-
   !Spring_HasUniquePrimary(?class, ?slot),
   Spring_NameMatch(?class, ?slot, ?source).
-Spring_TierPick(?class, ?slot, ?source) :-
+Spring_PriorityOrNamePick(?class, ?slot, ?source) :-
   !Spring_HasUniquePrimary(?class, ?slot),
   Spring_HasNameMatch(?class, ?slot),
   Spring_AfterQualifier(?class, ?slot, ?source),
-  !Spring_HasOfferName(?source).
+  !Spring_HasInjectionOfferName(?source).
 
-.decl Spring_HasTierPick(?class:ClassType, ?slot:Slot)
-Spring_HasTierPick(?class, ?slot) :- Spring_TierPick(?class, ?slot, _).
+.decl Spring_HasPriorityOrNamePick(?class:ClassType, ?slot:Slot)
+Spring_HasPriorityOrNamePick(?class, ?slot) :- Spring_PriorityOrNamePick(?class, ?slot, _).
+
+// Final single-bean pick (normal slots, direct holder fallbacks and single-bean wrappers).
+.decl Spring_SingleChosen(?class:ClassType, ?slot:Slot, ?source:Source)
+Spring_SingleChosen(?class, ?slot, ?source) :-
+  !Spring_ResolvedAsMultiHolder(?class, ?slot),
+  Spring_AfterQualifier(?class, ?slot, ?source),
+  !Spring_NeedsTieBreak(?class, ?slot).
+Spring_SingleChosen(?class, ?slot, ?source) :- Spring_UniquePrimary(?class, ?slot, ?source).
+Spring_SingleChosen(?class, ?slot, ?source) :- Spring_PriorityOrNamePick(?class, ?slot, ?source).
+Spring_SingleChosen(?class, ?slot, ?source) :-
+  Spring_NeedsTieBreak(?class, ?slot),
+  !Spring_HasUniquePrimary(?class, ?slot),
+  !Spring_HasPriorityOrNamePick(?class, ?slot),
+  Spring_AfterQualifier(?class, ?slot, ?source).
 
 
 
@@ -651,9 +783,11 @@ Spring_HasTierPick(?class, ?slot) :- Spring_TierPick(?class, ?slot, _).
 // --------------------------------------------------------------------------
 // 7. Contract interface
 // --------------------------------------------------------------------------
+// Projects Spring's finished decisions (creation, targets, constructors, @Bean methods
+// and direct/holder injection results) onto the shared contract relations read by engines.
 
-ExternallyCreatedType("spring", ?class) :- Spring_Created(?class).
-ExternallyCreatedType("spring", ?class) :- Spring_ImportHelper(?class).
+FrameworkCreatedType("spring", ?class) :- Spring_Created(?class).
+FrameworkCreatedType("spring", ?class) :- Spring_ImportHelper(?class).
 
 InjectionTarget("spring", ?class) :- Spring_Target(?class).
 
@@ -663,25 +797,26 @@ InjectedParam("spring", ?param) :- Spring_Constructor(?ctor, _), FormalParam(_, 
 EntryPoint("spring", ?method) :- Spring_BeanMethod(?method).
 InjectedParam("spring", ?param) :- Spring_BeanMethod(?method), FormalParam(_, ?method, ?param).
 
-// @Resource name hit (plus unnamed offers).
+// @Resource direct name hit (plus unnamed direct offers).
 InjectedWith("spring", ?class, ?slot, ?source) :- Spring_ResourceMatch(?class, ?slot, ?source).
 InjectedWith("spring", ?class, ?slot, ?source) :-
   Spring_HasResourceMatch(?class, ?slot),
-  Spring_Candidate(?class, ?slot, ?source),
-  !Spring_HasOfferName(?source).
+  Spring_DirectCandidate(?class, ?slot, ?source),
+  !Spring_HasInjectionOfferName(?source).
 
-// Single candidate left after qualifier.
+// Direct slots (normal slots and direct holder fallbacks).
 InjectedWith("spring", ?class, ?slot, ?source) :-
-  Spring_AfterQualifier(?class, ?slot, ?source),
-  !Spring_MultiCandidate(?class, ?slot).
+  Spring_SingleChosen(?class, ?slot, ?source),
+  !Spring_HasHolderCandidate(?class, ?slot).
 
-// Unique @Primary, else union of @Priority and name tie-breaks, else keep all.
-InjectedWith("spring", ?class, ?slot, ?source) :- Spring_UniquePrimary(?class, ?slot, ?source).
-InjectedWith("spring", ?class, ?slot, ?source) :- Spring_TierPick(?class, ?slot, ?source).
-InjectedWith("spring", ?class, ?slot, ?source) :-
-  Spring_MultiCandidate(?class, ?slot),
-  !Spring_HasUniquePrimary(?class, ?slot),
-  !Spring_HasTierPick(?class, ?slot),
+// Single-bean wrapper holders (Optional, Provider, ObjectFactory).
+HolderInjectedWith("spring", ?class, ?slot, ?source) :-
+  Spring_SingleChosen(?class, ?slot, ?source),
+  Spring_HasHolderCandidate(?class, ?slot).
+
+// Multi-bean holders (arrays, Collection/Map interfaces, ObjectProvider).
+HolderInjectedWith("spring", ?class, ?slot, ?source) :-
+  Spring_ResolvedAsMultiHolder(?class, ?slot),
   Spring_AfterQualifier(?class, ?slot, ?source).
 
 
@@ -690,6 +825,8 @@ InjectedWith("spring", ?class, ?slot, ?source) :-
 // --------------------------------------------------------------------------
 // 8. Entry points
 // --------------------------------------------------------------------------
+// Marks Spring-specific lifecycle hooks, event/scheduled methods, @Bean init/destroy
+// hooks, @Import helpers, FactoryBean.getObject and callback interfaces as EntryPoints.
 
 // Spring: static @PostConstruct and @PreDestroy methods (Jakarta forbids static; Spring allows it).
 EntryPoint("spring", ?method) :-
@@ -715,12 +852,12 @@ EntryPoint("spring", ?run) :-
 // Spring: @Bean(initMethod = ..., destroyMethod = ...) hooks on products.
 .decl Spring_BeanLifecycleMethodName(?prod:ClassType, ?name:symbol)
 Spring_BeanLifecycleMethodName(?prod, ?name) :-
-  Spring_Product(?beanMethod, ?prod),
+  Spring_BeanMethodProduct(?beanMethod, ?prod),
   Spring_Annotation("bean", ?ann),
   MethodAnnotationValue(?beanMethod, ?ann, "initMethod", _, "string", ?name, _),
   ?name != "".
 Spring_BeanLifecycleMethodName(?prod, ?name) :-
-  Spring_Product(?beanMethod, ?prod),
+  Spring_BeanMethodProduct(?beanMethod, ?prod),
   Spring_Annotation("bean", ?ann),
   MethodAnnotationValue(?beanMethod, ?ann, "destroyMethod", _, "string", ?name, _),
   ?name != "",
@@ -744,7 +881,7 @@ Spring_BeanExplicitDestroy(?beanMethod) :-
 
 .decl Spring_InferDestroyProduct(?prod:ClassType)
 Spring_InferDestroyProduct(?prod) :-
-  Spring_Product(?beanMethod, ?prod),
+  Spring_BeanMethodProduct(?beanMethod, ?prod),
   !Spring_BeanExplicitDestroy(?beanMethod),
   !basic.SubtypeOf(?prod, "org.springframework.beans.factory.DisposableBean").
 

@@ -144,13 +144,13 @@ SpringData_FragmentImpl(?frag, ?impl) :-
 // --------------------------------------------------------------------------
 
 // Proxied repository interfaces are created by Spring Data and offered as beans.
-ExternallyCreatedType("spring-data", ?iface) :- SpringData_Repository(?iface).
+FrameworkCreatedType("spring-data", ?iface) :- SpringData_Repository(?iface).
 InjectionOffer("spring-data", ?iface) :- SpringData_Repository(?iface).
-OfferName("spring-data", ?iface, ?name) :- SpringData_RepoName(?iface, ?name).
+InjectionOfferName("spring-data", ?iface, ?name) :- SpringData_RepoName(?iface, ?name).
 
 // Custom fragment implementations are created and injected by Spring, and their
 // fragment interface methods are invoked through the repository proxy.
-CreationRequest("spring-data", ?impl) :- SpringData_FragmentImpl(_, ?impl).
+DICreationRequest("spring-data", ?impl) :- SpringData_FragmentImpl(_, ?impl).
 
 EntryPoint("spring-data", ?run) :-
   SpringData_FragmentImpl(?frag, ?impl),
