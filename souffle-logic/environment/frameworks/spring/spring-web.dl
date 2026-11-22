@@ -3,7 +3,9 @@
 //
 // Request handler methods on controllers (including inherited and interface
 // mappings and Spring 5.3 class-level @RequestMapping), @ExceptionHandler /
-// @InitBinder / @ModelAttribute methods and structural web callbacks.
+// @InitBinder / @ModelAttribute methods, structural web callbacks (including
+// OncePerRequestFilter / GenericFilterBean template hooks) and @ImportHttpServices
+// declarative HTTP client interfaces (Spring 7.0+).
 // ==========================================================================
 
 
@@ -13,7 +15,7 @@ Owner("spring-web").
 
 
 // --------------------------------------------------------------------------
-// Annotations and callback interfaces
+// Annotations, callback interfaces and filter template hooks
 // --------------------------------------------------------------------------
 
 .decl SpringWeb_Annotation(?role:symbol, ?annotation:Annotation)
@@ -24,6 +26,9 @@ SpringWeb_Annotation("request-mapping", "org.springframework.web.bind.annotation
 SpringWeb_Annotation("advice-method", "org.springframework.web.bind.annotation.ExceptionHandler").
 SpringWeb_Annotation("advice-method", "org.springframework.web.bind.annotation.InitBinder").
 SpringWeb_Annotation("advice-method", "org.springframework.web.bind.annotation.ModelAttribute").
+SpringWeb_Annotation("http-exchange", "org.springframework.web.service.annotation.HttpExchange").
+SpringWeb_Annotation("import-http-services", "org.springframework.web.service.registry.ImportHttpServices").
+SpringWeb_Annotation("import-http-services-container", "org.springframework.web.service.registry.ImportHttpServices$Container").
 
 
 .decl SpringWeb_CallbackInterface(?iface:ReferenceType)
@@ -39,10 +44,22 @@ SpringWeb_CallbackInterface("org.springframework.web.context.ServletContextAware
 SpringWeb_CallbackInterface("org.springframework.web.context.ServletConfigAware").
 
 
+// Specific template hooks on Spring's abstract servlet filter base classes
+// (avoids marking inherited utility getters/setters as entry points).
+.decl SpringWeb_FilterTemplateHook(?base:ReferenceType, ?methodName:symbol)
+
+SpringWeb_FilterTemplateHook("org.springframework.web.filter.OncePerRequestFilter", "doFilterInternal").
+SpringWeb_FilterTemplateHook("org.springframework.web.filter.OncePerRequestFilter", "doFilterNestedErrorDispatch").
+SpringWeb_FilterTemplateHook("org.springframework.web.filter.OncePerRequestFilter", "shouldNotFilter").
+SpringWeb_FilterTemplateHook("org.springframework.web.filter.OncePerRequestFilter", "shouldNotFilterAsyncDispatch").
+SpringWeb_FilterTemplateHook("org.springframework.web.filter.OncePerRequestFilter", "shouldNotFilterErrorDispatch").
+SpringWeb_FilterTemplateHook("org.springframework.web.filter.GenericFilterBean", "initFilterBean").
+
+
 
 
 // --------------------------------------------------------------------------
-// Controllers, advice and entry points
+// Controllers, advice, HTTP clients and entry points
 // --------------------------------------------------------------------------
 
 // Spring: concrete application classes carrying @Controller (or @RestController via chain),
@@ -67,11 +84,71 @@ SpringWeb_Advice(?class) :-
   TypeCarries(?class, ?ann).
 
 
-// Spring: request handler methods on controllers.
+// Spring 7.0+: HTTP client interfaces registered as beans via @ImportHttpServices
+// (either listed explicitly in value/types, or scanned when basePackages/basePackageClasses
+// or an AbstractHttpServiceRegistrar subclass is present). Without a registrar, apps create
+// @HttpExchange proxies manually inside @Bean methods, so bare interfaces are not offered.
+.decl SpringWeb_HasHttpServiceScan()
+
+SpringWeb_HasHttpServiceScan() :-
+  SpringWeb_Annotation("import-http-services", ?ann),
+  ( ?el = "basePackages" ; ?el = "basePackageClasses" ),
+  TypeAnnotationValue(_, ?ann, ?el, _, _, _, _).
+
+SpringWeb_HasHttpServiceScan() :-
+  SpringWeb_Annotation("import-http-services-container", ?container),
+  TypeAnnotationValue(_, ?container, "value", _, "annotation", ?nested, _),
+  SpringWeb_Annotation("import-http-services", ?ann),
+  ( ?el = "basePackages" ; ?el = "basePackageClasses" ),
+  NestedAnnotationValue(?nested, ?ann, ?el, _, _, _, _).
+
+SpringWeb_HasHttpServiceScan() :-
+  ApplicationClass(?reg),
+  ConcreteClassType(?reg),
+  basic.SubtypeOf(?reg, "org.springframework.web.service.registry.AbstractHttpServiceRegistrar").
+
+
+.decl SpringWeb_HttpClientInterface(?iface:InterfaceType)
+
+SpringWeb_HttpClientInterface(?iface) :-
+  SpringWeb_Annotation("import-http-services", ?ann),
+  ( ?el = "value" ; ?el = "types" ),
+  TypeAnnotationValue(_, ?ann, ?el, _, "class", ?iface, _),
+  isInterfaceType(?iface).
+
+SpringWeb_HttpClientInterface(?iface) :-
+  SpringWeb_Annotation("import-http-services-container", ?container),
+  TypeAnnotationValue(_, ?container, "value", _, "annotation", ?nested, _),
+  SpringWeb_Annotation("import-http-services", ?ann),
+  ( ?el = "value" ; ?el = "types" ),
+  NestedAnnotationValue(?nested, ?ann, ?el, _, "class", ?iface, _),
+  isInterfaceType(?iface).
+
+SpringWeb_HttpClientInterface(?iface) :-
+  SpringWeb_HasHttpServiceScan(),
+  ApplicationClass(?iface),
+  isInterfaceType(?iface),
+  !basic.SubtypeOf(?iface, "java.lang.annotation.Annotation"),
+  basic.SubtypeOf(?iface, ?super),
+  isInterfaceType(?super),
+  SpringWeb_Annotation("http-exchange", ?ann),
+  ( TypeCarries(?super, ?ann)
+  ; ( Method_DeclaringType(?method, ?super), MethodCarries(?method, ?ann) ) ).
+
+
+// Proxied HTTP client interfaces are created at runtime and offered as beans.
+// Known limit: group#FQCN bean names and base-package filtering are not modelled here.
+FrameworkCreatedType("spring-web", ?iface) :- SpringWeb_HttpClientInterface(?iface).
+InjectionOffer("spring-web", ?iface) :- SpringWeb_HttpClientInterface(?iface).
+
+
+// Spring: request handler methods on controllers (including Spring 6+/7+ server-side
+// @HttpExchange methods, which RequestMappingHandlerMapping handles alongside @RequestMapping).
 // MethodRunOn covers mappings inherited from superclasses and interfaces.
 EntryPoint("spring-web", ?run) :-
   SpringWeb_Controller(?class),
-  SpringWeb_Annotation("request-mapping", ?ann),
+  ( SpringWeb_Annotation("request-mapping", ?ann)
+  ; SpringWeb_Annotation("http-exchange", ?ann) ),
   MethodCarries(?method, ?ann),
   !Method_Modifier("static", ?method),
   MethodRunOn(?method, ?class, ?run).
@@ -93,3 +170,15 @@ EntryPoint("spring-web", ?run) :-
   ConcreteClassType(?class),
   SpringWeb_CallbackInterface(?iface),
   ApiMethodRunOn(?iface, ?class, ?run).
+
+// Spring: servlet filter template hooks on OncePerRequestFilter / GenericFilterBean subclasses.
+EntryPoint("spring-web", ?run) :-
+  ApplicationClass(?class),
+  ConcreteClassType(?class),
+  SpringWeb_FilterTemplateHook(?base, ?name),
+  basic.SubtypeOf(?class, ?base),
+  Method_DeclaringType(?baseMethod, ?base),
+  Method_SimpleName(?baseMethod, ?name),
+  !Method_Modifier("private", ?baseMethod),
+  !Method_Modifier("static", ?baseMethod),
+  MethodRunOn(?baseMethod, ?class, ?run).

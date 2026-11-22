@@ -45,10 +45,27 @@ CarriesAnnotation(?annotation, ?root) :-
 
 
 // Spring: TypeCarries(OrderController, @Component) because of @RestController
+// Checks only annotations declared directly on ?type (plus their meta-annotation chains),
+// matching Spring component scanning where non-@Inherited roots such as @Component are not
+// inherited from superclasses.
 .decl TypeCarries(?type:ReferenceType, ?root:Annotation)
 
 TypeCarries(?type, ?root) :-
   Type_Annotation(?type, ?annotation),
+  CarriesAnnotation(?annotation, ?root).
+
+
+// Like TypeCarries, also following java.lang.annotation.Inherited down class inheritance
+// (classes only, never interfaces; e.g. @SpringBootTest or @RunWith on an abstract base test).
+.decl TypeCarriesInherited(?type:ReferenceType, ?root:Annotation)
+
+TypeCarriesInherited(?type, ?root) :-
+  TypeCarries(?type, ?root).
+
+TypeCarriesInherited(?sub, ?root) :-
+  basic.Subclass(?super, ?sub),
+  Type_Annotation(?super, ?annotation),
+  Type_Annotation(?annotation, "java.lang.annotation.Inherited"),
   CarriesAnnotation(?annotation, ?root).
 
 

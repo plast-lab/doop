@@ -1,0 +1,61 @@
+// ==========================================================================
+// Spring AOP (AspectJ @Aspect style, Spring 5.3 to 7.0):
+//
+// Models advice methods (@Before, @After, @Around, @AfterReturning and
+// @AfterThrowing) declared on @Aspect classes. Spring registers aspects as
+// ordinary beans (@Component, @Bean or XML), so bean creation and injection
+// stay in spring.dl / spring-xml.dl while this file marks advice entry points.
+// ==========================================================================
+
+
+Owner("spring-aop").
+
+
+
+
+// --------------------------------------------------------------------------
+// 1. Annotations
+// --------------------------------------------------------------------------
+// AspectJ class and advice annotations interpreted by Spring AOP.
+
+.decl SpringAop_Annotation(?role:symbol, ?annotation:Annotation)
+
+SpringAop_Annotation("aspect", "org.aspectj.lang.annotation.Aspect").
+SpringAop_Annotation("advice", "org.aspectj.lang.annotation.Before").
+SpringAop_Annotation("advice", "org.aspectj.lang.annotation.After").
+SpringAop_Annotation("advice", "org.aspectj.lang.annotation.Around").
+SpringAop_Annotation("advice", "org.aspectj.lang.annotation.AfterReturning").
+SpringAop_Annotation("advice", "org.aspectj.lang.annotation.AfterThrowing").
+
+
+
+
+// --------------------------------------------------------------------------
+// 2. Contract interface
+// --------------------------------------------------------------------------
+// Marks instance and static advice methods on concrete application @Aspect classes
+// as entry points. AbstractAspectJAdvisorFactory.isAspect uses AnnotationUtils.findAnnotation,
+// which walks superclasses even though @Aspect is not @Inherited.
+
+EntryPoint("spring-aop", ?run) :-
+  ApplicationClass(?class),
+  ConcreteClassType(?class),
+  basic.SubtypeOf(?class, ?aspectOwner),
+  SpringAop_Annotation("aspect", ?aspectAnn),
+  TypeCarries(?aspectOwner, ?aspectAnn),
+  SpringAop_Annotation("advice", ?adviceAnn),
+  MethodCarries(?method, ?adviceAnn),
+  !Method_Modifier("static", ?method),
+  MethodRunOn(?method, ?class, ?run).
+
+EntryPoint("spring-aop", ?method) :-
+  ApplicationClass(?class),
+  ConcreteClassType(?class),
+  basic.SubtypeOf(?class, ?aspectOwner),
+  SpringAop_Annotation("aspect", ?aspectAnn),
+  TypeCarries(?aspectOwner, ?aspectAnn),
+  basic.SubtypeOf(?class, ?decl),
+  Method_DeclaringType(?method, ?decl),
+  SpringAop_Annotation("advice", ?adviceAnn),
+  MethodCarries(?method, ?adviceAnn),
+  Method_Modifier("static", ?method).

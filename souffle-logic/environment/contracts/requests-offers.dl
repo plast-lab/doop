@@ -38,8 +38,9 @@
 // when no bean container is plugged in) and a file that also offers the class writes InjectionOffer
 // (e.g. Spring Data registers its *Impl fragments as beans).
 // Spring Data: custom repository implementations (OwnerRepositoryImpl)
+// Spring XML: class beans declared in application XML contexts
 // Jakarta: the component classes the Jakarta EE platform injects into, constructor included
-// (servlets, filters, listeners, WebSocket endpoints, JPA entity listeners and converters).
+// (servlets, filters, listeners, WebSocket endpoints, interceptors, JPA entity listeners and converters).
 .decl DICreationRequest(?owner:symbol, ?class:ClassType)
 
 

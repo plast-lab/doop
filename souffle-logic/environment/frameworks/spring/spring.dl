@@ -51,6 +51,8 @@ Spring_Annotation("event-listener", "org.springframework.context.event.EventList
 Spring_Annotation("scheduled", "org.springframework.scheduling.annotation.Scheduled").
 Spring_Annotation("scheduled", "org.springframework.scheduling.annotation.Schedules").
 Spring_Annotation("extend-with", "org.junit.jupiter.api.extension.ExtendWith").
+Spring_Annotation("extensions", "org.junit.jupiter.api.extension.Extensions").
+Spring_Annotation("nested-test", "org.junit.jupiter.api.Nested").
 Spring_Annotation("run-with", "org.junit.runner.RunWith").
 
 // JUnit extension/runner classes that tell Spring to inject into a test class.
@@ -240,9 +242,11 @@ Spring_BeanMethodProduct(?method, ?class) :-
   ConcreteClassType(?class),
   basic.SubtypeOf(?class, ?retType).
 
-// Spring: test classes carrying @ExtendWith(SpringExtension.class) or
-// @RunWith(SpringRunner / SpringJUnit4ClassRunner), directly or through a chain
-// such as @SpringBootTest. JUnit creates them and Spring injects into them.
+// Spring: test classes carrying @ExtendWith(SpringExtension.class) (including
+// repeated @Extensions) or @RunWith(SpringRunner / SpringJUnit4ClassRunner),
+// directly, inherited via @Inherited superclasses, through a meta-annotation
+// chain such as @SpringBootTest or as @Nested inner classes of a Spring test.
+// JUnit creates them and Spring injects into them.
 .decl Spring_TestClass(?class:ClassType)
 
 Spring_TestClass(?class) :-
@@ -255,10 +259,45 @@ Spring_TestClass(?class) :-
 Spring_TestClass(?class) :-
   ApplicationClass(?class),
   ConcreteClassType(?class),
-  TypeCarries(?class, ?meta),
+  basic.Subclass(?super, ?class),
+  Spring_TestMarker(?role, ?marker),
+  Spring_Annotation(?role, ?ann),
+  Type_Annotation(?ann, "java.lang.annotation.Inherited"),
+  TypeAnnotationValue(?super, ?ann, "value", _, "class", ?marker, _).
+
+Spring_TestClass(?class) :-
+  ApplicationClass(?class),
+  ConcreteClassType(?class),
+  TypeCarriesInherited(?class, ?meta),
   Spring_TestMarker(?role, ?marker),
   Spring_Annotation(?role, ?ann),
   TypeAnnotationValue(?meta, ?ann, "value", _, "class", ?marker, _).
+
+// Repeated @ExtendWith(...) stored in @Extensions({ @ExtendWith(...), ... })
+// on the class, an inherited superclass or a meta-annotation.
+Spring_TestClass(?class) :-
+  ApplicationClass(?class),
+  ConcreteClassType(?class),
+  Spring_Annotation("extensions", ?extContainer),
+  Spring_Annotation("extend-with", ?extAnn),
+  Spring_TestMarker("extend-with", ?marker),
+  ( TypeAnnotationValue(?class, ?extContainer, "value", _, "annotation", ?nested, _)
+  ; ( basic.Subclass(?super, ?class), TypeAnnotationValue(?super, ?extContainer, "value", _, "annotation", ?nested, _) )
+  ; ( TypeCarriesInherited(?class, ?meta), TypeAnnotationValue(?meta, ?extContainer, "value", _, "annotation", ?nested, _) ) ),
+  NestedAnnotationValue(?nested, ?extAnn, "value", _, "class", ?marker, _).
+
+// @Nested inner classes inherit SpringExtension from their enclosing Spring test class.
+Spring_TestClass(?inner) :-
+  Spring_TestClass(?outer),
+  ApplicationClass(?inner),
+  ConcreteClassType(?inner),
+  Spring_Annotation("nested-test", ?nestedAnn),
+  TypeCarries(?inner, ?nestedAnn),
+  ConstructorOf(?ctor, ?inner),
+  FormalParam(0, ?ctor, ?p),
+  Var_Type(?p, ?outer),
+  strlen(?inner) > strlen(?outer),
+  substr(?inner, 0, strlen(?outer) + 1) = cat(?outer, "$").
 
 
 
@@ -341,9 +380,49 @@ SlotInjectionRequest("spring", ?param) :-
 
 // Spring: its beans and @Bean methods are offered to slots, along with their bean names.
 // DICreationRequest classes and test classes are not offered.
+// For FactoryBean<T> beans, the product getObject() receives the bean name and the factory
+// itself receives "&<name>" (BeanFactory.FACTORY_BEAN_PREFIX).
+.decl Spring_OwnFactoryBean(?fb:ClassType, ?ownerSource:Source)
+Spring_OwnFactoryBean(?fb, ?fb) :-
+  Spring_Bean(?fb),
+  basic.SubtypeOf(?fb, "org.springframework.beans.factory.FactoryBean").
+Spring_OwnFactoryBean(?fb, ?beanMethod) :-
+  Spring_BeanMethodProduct(?beanMethod, ?fb),
+  basic.SubtypeOf(?fb, "org.springframework.beans.factory.FactoryBean").
+
+.decl Spring_IsOwnFactoryBeanSource(?source:Source)
+Spring_IsOwnFactoryBeanSource(?ownerSource) :- Spring_OwnFactoryBean(_, ?ownerSource).
+
+.decl Spring_FactoryBeanRawGetObject(?fb:ClassType, ?run:Method)
+Spring_FactoryBeanRawGetObject(?fb, ?run) :-
+  Spring_OwnFactoryBean(?fb, _),
+  Method_DeclaringType(?ifaceMethod, "org.springframework.beans.factory.FactoryBean"),
+  Method_SimpleName(?ifaceMethod, "getObject"),
+  !FormalParam(_, ?ifaceMethod, _),
+  MethodRunOn(?ifaceMethod, ?fb, ?run).
+
+.decl Spring_FactoryBeanGetObject(?fb:ClassType, ?getObj:Method)
+Spring_FactoryBeanGetObject(?fb, ?real) :-
+  Spring_FactoryBeanRawGetObject(?fb, ?bridge),
+  basic.Method_CovariantBridge(?bridge, ?real).
+Spring_FactoryBeanGetObject(?fb, ?run) :-
+  Spring_FactoryBeanRawGetObject(?fb, ?run),
+  !basic.Method_CovariantBridge(?run, _).
+
 InjectionOffer("spring", ?class) :- Spring_Bean(?class).
 InjectionOffer("spring", ?method) :- Spring_BeanMethod(?method).
-InjectionOfferName("spring", ?source, ?name) :- Spring_BeanName(?source, ?name).
+InjectionOffer("spring", ?getObj) :- Spring_FactoryBeanGetObject(_, ?getObj).
+
+InjectionOfferName("spring", ?source, ?name) :-
+  Spring_BeanName(?source, ?name),
+  !Spring_IsOwnFactoryBeanSource(?source).
+InjectionOfferName("spring", ?source, cat("&", ?name)) :-
+  Spring_BeanName(?source, ?name),
+  Spring_IsOwnFactoryBeanSource(?source).
+InjectionOfferName("spring", ?getObj, ?name) :-
+  Spring_OwnFactoryBean(?fb, ?ownerSource),
+  Spring_FactoryBeanGetObject(?fb, ?getObj),
+  Spring_BeanName(?ownerSource, ?name).
 
 
 
@@ -515,20 +594,6 @@ Spring_HolderRawArg(?slot, ?arg) :-
   SlotTypeArgument(?slot, 1, ?arg, ?bound),
   ( ?bound = "=" ; ?bound = "extends" ).
 
-.decl Spring_ErasedHolderArg(?arg:symbol, ?erasure:ReferenceType)
-Spring_ErasedHolderArg(?arg, ?arg) :-
-  Spring_HolderRawArg(_, ?arg),
-  isReferenceType(?arg).
-Spring_ErasedHolderArg(?arg, ?erasure) :-
-  Spring_HolderRawArg(_, ?arg),
-  GenericType(?arg, ?erasure),
-  isReferenceType(?erasure).
-Spring_ErasedHolderArg(?tv, ?erasure) :-
-  Spring_HolderRawArg(_, ?tv),
-  TypeVariable_Bound(?tv, _, ?bound),
-  ( ( isReferenceType(?bound), ?erasure = ?bound )
-  ; ( GenericType(?bound, ?erasure), isReferenceType(?erasure) ) ).
-
 .decl Spring_HolderElementType(?slot:Slot, ?elemType:ReferenceType)
 Spring_HolderElementType(?slot, ?elemType) :-
   Spring_MultiHolderSlot(?slot),
@@ -537,7 +602,57 @@ Spring_HolderElementType(?slot, ?elemType) :-
   isReferenceType(?elemType).
 Spring_HolderElementType(?slot, ?elemType) :-
   Spring_HolderRawArg(?slot, ?arg),
-  Spring_ErasedHolderArg(?arg, ?elemType).
+  GenericErasure(?arg, ?elemType),
+  isReferenceType(?elemType).
+
+// Full (potentially parameterized) element type of a holder slot on a target class
+// (substituting class-level type variables such as List<BaseService::R>).
+.decl Spring_HasGenericArraySlot(?class:ClassType, ?slot:Slot)
+Spring_HasGenericArraySlot(?class, ?slot) :-
+  Spring_Slot(?class, ?slot),
+  SlotResolvedFullType(?class, ?slot, ?arrFull),
+  GenericArray(?arrFull, _).
+
+.decl Spring_HolderElementFullType(?class:ClassType, ?slot:Slot, ?elemFull:symbol)
+Spring_HolderElementFullType(?class, ?slot, ?resolved) :-
+  Spring_Slot(?class, ?slot),
+  Spring_MultiHolderSlot(?slot),
+  SlotResolvedFullType(?class, ?slot, ?arrFull),
+  GenericArray(?arrFull, ?var),
+  TypeVariable(?var, ?declClass, _),
+  isReferenceType(?declClass),
+  Type_TypeParameter(?declClass, ?idx, ?var),
+  TypeSuperArg(?class, ?declClass, ?idx, ?resolved, ?bound),
+  ( ?bound = "=" ; ?bound = "extends" ),
+  ?resolved != "-",
+  !ContainsTypeVariable(?resolved).
+Spring_HolderElementFullType(?class, ?slot, ?comp) :-
+  Spring_Slot(?class, ?slot),
+  Spring_MultiHolderSlot(?slot),
+  SlotResolvedFullType(?class, ?slot, ?arrFull),
+  GenericArray(?arrFull, ?comp),
+  !TypeVariable(?comp, _, _).
+Spring_HolderElementFullType(?class, ?slot, ?elemType) :-
+  Spring_Slot(?class, ?slot),
+  Spring_MultiHolderSlot(?slot),
+  !Spring_HasGenericArraySlot(?class, ?slot),
+  SlotType(?slot, ?arrType),
+  ComponentType(?arrType, ?elemType),
+  isReferenceType(?elemType).
+Spring_HolderElementFullType(?class, ?slot, ?resolved) :-
+  Spring_Slot(?class, ?slot),
+  Spring_HolderRawArg(?slot, ?var),
+  TypeVariable(?var, ?declClass, _),
+  isReferenceType(?declClass),
+  Type_TypeParameter(?declClass, ?idx, ?var),
+  TypeSuperArg(?class, ?declClass, ?idx, ?resolved, ?bound),
+  ( ?bound = "=" ; ?bound = "extends" ),
+  ?resolved != "-",
+  !ContainsTypeVariable(?resolved).
+Spring_HolderElementFullType(?class, ?slot, ?arg) :-
+  Spring_Slot(?class, ?slot),
+  Spring_HolderRawArg(?slot, ?arg),
+  !TypeVariable(?arg, _, _).
 
 
 
@@ -547,12 +662,49 @@ Spring_HolderElementType(?slot, ?elemType) :-
 // --------------------------------------------------------------------------
 // Resolves each slot against all accumulated InjectionOffers in Spring's order:
 // direct type match -> @Resource by-name -> holder unwrapping & fallback ->
-// @Qualifier/@Named narrowing -> @Primary / @Priority / slot-name tie-breaking
+// generic type narrowing -> @Qualifier/@Named narrowing ->
+// @Primary / @Fallback / @Priority / slot-name tie-breaking
 // (multi-bean holders stop after @Qualifier and keep every matching offer).
 
 // 6a. Direct candidates (offers fitting the slot's own type).
 .decl Spring_HasInjectionOfferName(?source:Source)
 Spring_HasInjectionOfferName(?source) :- InjectionOfferName(_, ?source, _).
+
+// FactoryBean<T>.getObject() offers and their originating FactoryBean sources
+// (covering Spring's own beans, @Bean FactoryBean products and XML/other offers).
+.decl Spring_AnyFactoryBeanSource(?fb:ClassType, ?ownerSource:Source, ?getObj:Method)
+Spring_AnyFactoryBeanSource(?fb, ?ownerSource, ?getObj) :-
+  Spring_OwnFactoryBean(?fb, ?ownerSource),
+  Spring_FactoryBeanGetObject(?fb, ?getObj).
+Spring_AnyFactoryBeanSource(?fb, ?fb, ?real) :-
+  InjectionOffer(_, ?fb),
+  isClassType(?fb),
+  basic.SubtypeOf(?fb, "org.springframework.beans.factory.FactoryBean"),
+  Method_DeclaringType(?ifaceMethod, "org.springframework.beans.factory.FactoryBean"),
+  Method_SimpleName(?ifaceMethod, "getObject"),
+  !FormalParam(_, ?ifaceMethod, _),
+  MethodRunOn(?ifaceMethod, ?fb, ?bridge),
+  basic.Method_CovariantBridge(?bridge, ?real),
+  InjectionOffer(_, ?real).
+Spring_AnyFactoryBeanSource(?fb, ?fb, ?run) :-
+  InjectionOffer(_, ?fb),
+  isClassType(?fb),
+  basic.SubtypeOf(?fb, "org.springframework.beans.factory.FactoryBean"),
+  Method_DeclaringType(?ifaceMethod, "org.springframework.beans.factory.FactoryBean"),
+  Method_SimpleName(?ifaceMethod, "getObject"),
+  !FormalParam(_, ?ifaceMethod, _),
+  MethodRunOn(?ifaceMethod, ?fb, ?run),
+  !basic.Method_CovariantBridge(?run, _),
+  InjectionOffer(_, ?run).
+
+// A getObject() method shared by several FactoryBean owners (e.g. AbstractFactoryBean.getObject);
+// owner-specific annotations (@Primary, @Fallback, qualifiers, autowireCandidate) are not
+// propagated onto shared getters so one factory cannot leak onto unrelated products.
+.decl Spring_SharedFactoryBeanGetObject(?getObj:Method)
+Spring_SharedFactoryBeanGetObject(?getObj) :-
+  Spring_AnyFactoryBeanSource(_, ?s1, ?getObj),
+  Spring_AnyFactoryBeanSource(_, ?s2, ?getObj),
+  ?s1 != ?s2.
 
 // Spring: @Bean(autowireCandidate = false) (5.1+) is never chosen by type,
 // only by name (@Resource, which calls getBean(name)).
@@ -561,6 +713,45 @@ Spring_NotAutowireCandidate(?method) :-
   Spring_BeanMethod(?method),
   Spring_Annotation("bean", ?ann),
   MethodAnnotationValue(?method, ?ann, "autowireCandidate", _, "boolean", "false", _).
+Spring_NotAutowireCandidate(?getObj) :-
+  Spring_AnyFactoryBeanSource(_, ?ownerSource, ?getObj),
+  !Spring_SharedFactoryBeanGetObject(?getObj),
+  Spring_NotAutowireCandidate(?ownerSource).
+
+// Product full type of a FactoryBean<T>.getObject() offer (from FactoryBean<T>'s type
+// argument on the class or on a @Bean method's generic return type, or a concrete covariant
+// return type; excludes unresolved type variables).
+.decl Spring_FactoryBeanProductFullType(?getObj:Method, ?prodFull:symbol)
+Spring_FactoryBeanProductFullType(?getObj, ?prodFull) :-
+  Spring_AnyFactoryBeanSource(?fb, _, ?getObj),
+  TypeSuperArg(?fb, "org.springframework.beans.factory.FactoryBean", 0, ?prodFull, "="),
+  ?prodFull != "-",
+  !ContainsTypeVariable(?prodFull).
+Spring_FactoryBeanProductFullType(?getObj, ?prodFull) :-
+  Spring_AnyFactoryBeanSource(_, ?ownerSource, ?getObj),
+  isMethod(?ownerSource),
+  SourceFullType(?ownerSource, ?ownerFull),
+  GenericArgOnSuper(?ownerFull, "org.springframework.beans.factory.FactoryBean", 0, ?prodFull, "="),
+  ?prodFull != "-",
+  !ContainsTypeVariable(?prodFull).
+Spring_FactoryBeanProductFullType(?getObj, ?prodFull) :-
+  Spring_AnyFactoryBeanSource(_, _, ?getObj),
+  SourceFullType(?getObj, ?prodFull),
+  ?prodFull != "java.lang.Object",
+  !ContainsTypeVariable(?prodFull).
+
+// Effective erased types an offered source can produce (declared type, @Bean
+// allocated product class or FactoryBean<T> product type).
+.decl Spring_SourceEffectiveType(?source:Source, ?type:Type)
+Spring_SourceEffectiveType(?source, ?srcType) :-
+  InjectionOffer(_, ?source),
+  SourceType(?source, ?srcType).
+Spring_SourceEffectiveType(?method, ?prodClass) :-
+  InjectionOffer(_, ?method),
+  Spring_BeanMethodProduct(?method, ?prodClass).
+Spring_SourceEffectiveType(?getObj, ?prodType) :-
+  Spring_FactoryBeanProductFullType(?getObj, ?prodFull),
+  GenericErasure(?prodFull, ?prodType).
 
 // Offers whose type fits the slot's own type, whether or not they are autowire candidates.
 .decl Spring_TypeFit(?class:ClassType, ?slot:Slot, ?source:Source)
@@ -568,16 +759,8 @@ Spring_NotAutowireCandidate(?method) :-
 Spring_TypeFit(?class, ?slot, ?source) :-
   Spring_Slot(?class, ?slot),
   SlotType(?slot, ?slotType),
-  InjectionOffer(_, ?source),
-  SourceType(?source, ?srcType),
+  Spring_SourceEffectiveType(?source, ?srcType),
   basic.SubtypeOf(?srcType, ?slotType).
-
-Spring_TypeFit(?class, ?slot, ?method) :-
-  Spring_Slot(?class, ?slot),
-  SlotType(?slot, ?slotType),
-  InjectionOffer(_, ?method),
-  Spring_BeanMethodProduct(?method, ?prodClass),
-  basic.SubtypeOf(?prodClass, ?slotType).
 
 .decl Spring_DirectCandidate(?class:ClassType, ?slot:Slot, ?source:Source)
 Spring_DirectCandidate(?class, ?slot, ?source) :-
@@ -646,18 +829,9 @@ Spring_HolderCandidate(?class, ?slot, ?source) :-
   Spring_Slot(?class, ?slot),
   Spring_HolderElementType(?slot, ?elemType),
   !Spring_HasResourceMatch(?class, ?slot),
-  InjectionOffer(_, ?source),
+  Spring_SourceEffectiveType(?source, ?srcType),
   !Spring_NotAutowireCandidate(?source),
-  SourceType(?source, ?srcType),
   basic.SubtypeOf(?srcType, ?elemType).
-Spring_HolderCandidate(?class, ?slot, ?method) :-
-  Spring_Slot(?class, ?slot),
-  Spring_HolderElementType(?slot, ?elemType),
-  !Spring_HasResourceMatch(?class, ?slot),
-  InjectionOffer(_, ?method),
-  !Spring_NotAutowireCandidate(?method),
-  Spring_BeanMethodProduct(?method, ?prodClass),
-  basic.SubtypeOf(?prodClass, ?elemType).
 
 .decl Spring_HasHolderCandidate(?class:ClassType, ?slot:Slot)
 Spring_HasHolderCandidate(?class, ?slot) :- Spring_HolderCandidate(?class, ?slot, _).
@@ -677,6 +851,131 @@ Spring_Candidate(?class, ?slot, ?source) :-
   Spring_DirectCandidate(?class, ?slot, ?source),
   Spring_HolderSlot(?slot),
   !Spring_HasHolderCandidate(?class, ?slot).
+
+// 6c-bis. Generic type narrowing (Spring "Generics as Autowiring Qualifiers", ResolvableType):
+// narrows candidates for parameterized slots (Repo<User>, Mapper<A, B>), inherited type-variable
+// slots (BaseService<R> on UserService) and parameterized holder elements (List<Store<Integer>>).
+// Keeps a conservative fallback only among candidates fitting the slot's resolved erased type
+// (never falls back to unrelated beans when a resolved BaseService<R> slot has no matching bean).
+.decl Spring_SlotTargetFullType(?class:ClassType, ?slot:Slot, ?fullType:symbol)
+Spring_SlotTargetFullType(?class, ?slot, ?elemFull) :-
+  Spring_HasHolderCandidate(?class, ?slot),
+  Spring_HolderElementFullType(?class, ?slot, ?elemFull).
+Spring_SlotTargetFullType(?class, ?slot, ?fullType) :-
+  Spring_Slot(?class, ?slot),
+  !Spring_HasHolderCandidate(?class, ?slot),
+  SlotResolvedFullType(?class, ?slot, ?fullType).
+
+// Raw generic arguments of a source when viewed as ?super (covering classes,
+// @Bean methods and their allocated product classes and FactoryBean<T> products).
+.decl Spring_SourceRawGenericArg(?source:Source, ?super:ReferenceType, ?index:number, ?arg:symbol, ?bound:symbol)
+Spring_SourceRawGenericArg(?source, ?super, ?index, ?arg, ?bound) :-
+  InjectionOffer(_, ?source),
+  SourceGenericArg(?source, ?super, ?index, ?arg, ?bound).
+Spring_SourceRawGenericArg(?method, ?super, ?index, ?arg, ?bound) :-
+  InjectionOffer(_, ?method),
+  Spring_BeanMethodProduct(?method, ?prod),
+  TypeSuperArg(?prod, ?super, ?index, ?arg, ?bound).
+Spring_SourceRawGenericArg(?getObj, ?super, ?index, ?arg, ?bound) :-
+  Spring_FactoryBeanProductFullType(?getObj, ?prodFull),
+  GenericArgOnSuper(?prodFull, ?super, ?index, ?arg, ?bound).
+Spring_SourceRawGenericArg(?getObj, ?super, ?index, ?arg, ?bound) :-
+  Spring_FactoryBeanProductFullType(?getObj, ?prodType),
+  isReferenceType(?prodType),
+  TypeSuperArg(?prodType, ?super, ?index, ?arg, ?bound).
+
+// Drop unresolved type-variable args (e.g. StoreImpl::T from new StoreImpl<>()) whenever
+// the same source already has a concrete generic arg at (?super, ?index) (e.g. String
+// from @Bean Store<String>).
+.decl Spring_SourceHasConcreteGenericArg(?source:Source, ?super:ReferenceType, ?index:number)
+Spring_SourceHasConcreteGenericArg(?source, ?super, ?index) :-
+  Spring_SourceRawGenericArg(?source, ?super, ?index, ?arg, _),
+  !ContainsTypeVariable(?arg).
+
+.decl Spring_SourceEffectiveGenericArg(?source:Source, ?super:ReferenceType, ?index:number, ?arg:symbol, ?bound:symbol)
+Spring_SourceEffectiveGenericArg(?source, ?super, ?index, ?arg, ?bound) :-
+  Spring_SourceRawGenericArg(?source, ?super, ?index, ?arg, ?bound),
+  !ContainsTypeVariable(?arg).
+Spring_SourceEffectiveGenericArg(?source, ?super, ?index, ?arg, ?bound) :-
+  Spring_SourceRawGenericArg(?source, ?super, ?index, ?arg, ?bound),
+  ContainsTypeVariable(?arg),
+  !Spring_SourceHasConcreteGenericArg(?source, ?super, ?index).
+
+// Candidate fits the slot's resolved erased target type (narrower than SlotType for BaseService<R>).
+.decl Spring_SourceFitsResolvedErasure(?class:ClassType, ?slot:Slot, ?source:Source)
+Spring_SourceFitsResolvedErasure(?class, ?slot, ?source) :-
+  Spring_Candidate(?class, ?slot, ?source),
+  Spring_SlotTargetFullType(?class, ?slot, ?targetFull),
+  GenericErasure(?targetFull, ?targetEr),
+  Spring_SourceEffectiveType(?source, ?srcEr),
+  basic.SubtypeOf(?srcEr, ?targetEr).
+
+// Generic arguments expected by (?class, ?slot) on the target type's erasure.
+.decl Spring_SlotExpectedGenericArg(?class:ClassType, ?slot:Slot, ?erasure:ReferenceType, ?index:number, ?arg:symbol, ?bound:symbol)
+Spring_SlotExpectedGenericArg(?class, ?slot, ?erasure, ?index, ?resolved, ?subBound) :-
+  Spring_SlotTargetFullType(?class, ?slot, ?targetFull),
+  GenericType(?targetFull, ?erasure),
+  isReferenceType(?erasure),
+  GenericType_Argument(?targetFull, ?index, ?var, "="),
+  TypeVariable(?var, ?declClass, _),
+  isReferenceType(?declClass),
+  Type_TypeParameter(?declClass, ?tIdx, ?var),
+  TypeSuperArg(?class, ?declClass, ?tIdx, ?resolved, ?subBound).
+Spring_SlotExpectedGenericArg(?class, ?slot, ?erasure, ?index, ?arg, ?bound) :-
+  Spring_SlotTargetFullType(?class, ?slot, ?targetFull),
+  GenericType(?targetFull, ?erasure),
+  isReferenceType(?erasure),
+  GenericType_Argument(?targetFull, ?index, ?arg, ?bound),
+  !TypeVariable(?arg, _, _).
+
+// At least one generic argument value of ?source at (?erasure, ?index) is compatible
+// with what (?class, ?slot) expects (keeps shared AbstractFactoryBean.getObject() when
+// one of its subclasses produces the matching generic type).
+.decl Spring_SlotSourceArgPairMismatch(?class:ClassType, ?slot:Slot, ?source:Source, ?erasure:ReferenceType, ?index:number, ?bArg:symbol, ?bBound:symbol)
+Spring_SlotSourceArgPairMismatch(?class, ?slot, ?source, ?erasure, ?index, ?bArg, ?bBound) :-
+  Spring_Candidate(?class, ?slot, ?source),
+  Spring_SlotExpectedGenericArg(?class, ?slot, ?erasure, ?index, ?sArg, ?sBound),
+  Spring_SourceEffectiveGenericArg(?source, ?erasure, ?index, ?bArg, ?bBound),
+  GenericArgMismatch(?sArg, ?sBound, ?bArg, ?bBound).
+
+.decl Spring_SlotSourceArgCompatible(?class:ClassType, ?slot:Slot, ?source:Source, ?erasure:ReferenceType, ?index:number)
+Spring_SlotSourceArgCompatible(?class, ?slot, ?source, ?erasure, ?index) :-
+  Spring_Candidate(?class, ?slot, ?source),
+  Spring_SlotExpectedGenericArg(?class, ?slot, ?erasure, ?index, _, _),
+  Spring_SourceEffectiveGenericArg(?source, ?erasure, ?index, ?bArg, ?bBound),
+  !Spring_SlotSourceArgPairMismatch(?class, ?slot, ?source, ?erasure, ?index, ?bArg, ?bBound).
+
+// Candidate fails the slot's resolved erased type (e.g. OrderRepo for BaseService<UserRepo>)
+// or is provably incompatible on a generic argument.
+.decl Spring_GenericErasureRejected(?class:ClassType, ?slot:Slot, ?source:Source)
+Spring_GenericErasureRejected(?class, ?slot, ?source) :-
+  Spring_Candidate(?class, ?slot, ?source),
+  Spring_SlotTargetFullType(?class, ?slot, _),
+  !Spring_SourceFitsResolvedErasure(?class, ?slot, ?source).
+
+.decl Spring_GenericMismatch(?class:ClassType, ?slot:Slot, ?source:Source)
+Spring_GenericMismatch(?class, ?slot, ?source) :-
+  Spring_GenericErasureRejected(?class, ?slot, ?source).
+Spring_GenericMismatch(?class, ?slot, ?source) :-
+  Spring_Candidate(?class, ?slot, ?source),
+  Spring_SlotExpectedGenericArg(?class, ?slot, ?erasure, ?index, _, _),
+  Spring_SourceEffectiveGenericArg(?source, ?erasure, ?index, _, _),
+  !Spring_SlotSourceArgCompatible(?class, ?slot, ?source, ?erasure, ?index).
+
+.decl Spring_GenericMatched(?class:ClassType, ?slot:Slot, ?source:Source)
+Spring_GenericMatched(?class, ?slot, ?source) :-
+  Spring_Candidate(?class, ?slot, ?source),
+  !Spring_GenericMismatch(?class, ?slot, ?source).
+
+.decl Spring_HasGenericMatched(?class:ClassType, ?slot:Slot)
+Spring_HasGenericMatched(?class, ?slot) :- Spring_GenericMatched(?class, ?slot, _).
+
+.decl Spring_AfterGenerics(?class:ClassType, ?slot:Slot, ?source:Source)
+Spring_AfterGenerics(?class, ?slot, ?source) :- Spring_GenericMatched(?class, ?slot, ?source).
+Spring_AfterGenerics(?class, ?slot, ?source) :-
+  Spring_Candidate(?class, ?slot, ?source),
+  !Spring_HasGenericMatched(?class, ?slot),
+  !Spring_GenericErasureRejected(?class, ?slot, ?source).
 
 // 6d. Qualifier narrowing (@Qualifier("q"), @Named("q"), custom qualifier annotations)
 // and @Bean(defaultCandidate = false) filtering.
@@ -706,7 +1005,9 @@ Spring_SourceQualifier(?type, ?q) :-
   InjectionOffer(_, ?type),
   isClassOrInterfaceType(?type),
   ( Spring_Annotation("qualifier", ?ann) ; Spring_Annotation("named", ?ann) ),
-  TypeAnnotationValue(?type, ?ann, "value", _, "string", ?q, _),
+  ( TypeAnnotationValue(?type, ?ann, "value", _, "string", ?q, _)
+  ; ( basic.Subclass(?super, ?type), Type_Annotation(?ann, "java.lang.annotation.Inherited"),
+      TypeAnnotationValue(?super, ?ann, "value", _, "string", ?q, _) ) ),
   ?q != "".
 Spring_SourceQualifier(?method, ?q) :-
   Spring_BeanMethod(?method),
@@ -716,6 +1017,20 @@ Spring_SourceQualifier(?method, ?q) :-
 // Spring also matches @Qualifier("q") against bean names and aliases, even when the bean has another @Qualifier
 // (QualifierAnnotationAutowireCandidateResolver.checkQualifier falls back to the name).
 Spring_SourceQualifier(?source, ?q) :- InjectionOfferName(_, ?source, ?q).
+// Spring also matches @Qualifier("name") against a FactoryBean's unprefixed bean name
+// (InjectionOfferName carries "&name" so @Resource / XML refs still resolve to the product).
+Spring_SourceQualifier(?fbSource, ?name) :-
+  Spring_AnyFactoryBeanSource(_, ?fbSource, _),
+  InjectionOfferName(_, ?fbSource, ?prefixed),
+  strlen(?prefixed) > 1,
+  substr(?prefixed, 0, 1) = "&",
+  ?name = substr(?prefixed, 1, strlen(?prefixed) - 1).
+// Qualifiers written on a unique FactoryBean class or @Bean method apply to its getObject() product too.
+Spring_SourceQualifier(?getObj, ?q) :-
+  Spring_AnyFactoryBeanSource(_, ?ownerSource, ?getObj),
+  !Spring_SharedFactoryBeanGetObject(?getObj),
+  Spring_SourceQualifier(?ownerSource, ?q),
+  !InjectionOfferName(_, ?ownerSource, ?q).
 
 // Custom qualifiers: annotation types annotated with Spring's @Qualifier or
 // jakarta/javax.inject.Qualifier (QualifierAnnotationAutowireCandidateResolver registers all three),
@@ -746,12 +1061,18 @@ Spring_SlotCustomQualifier(?param, ?q) :-
 Spring_SourceCustomQualifier(?type, ?q) :-
   InjectionOffer(_, ?type),
   isClassOrInterfaceType(?type),
-  Type_Annotation(?type, ?q),
-  Spring_CustomQualifier(?q).
+  Spring_CustomQualifier(?q),
+  ( Type_Annotation(?type, ?q)
+  ; ( basic.Subclass(?super, ?type), Type_Annotation(?q, "java.lang.annotation.Inherited"),
+      Type_Annotation(?super, ?q) ) ).
 Spring_SourceCustomQualifier(?method, ?q) :-
   Spring_BeanMethod(?method),
   Method_Annotation(?method, ?q),
   Spring_CustomQualifier(?q).
+Spring_SourceCustomQualifier(?getObj, ?q) :-
+  Spring_AnyFactoryBeanSource(_, ?ownerSource, ?getObj),
+  !Spring_SharedFactoryBeanGetObject(?getObj),
+  Spring_SourceCustomQualifier(?ownerSource, ?q).
 
 // The values written on a custom qualifier of a slot or a source (index -1 for a single value).
 .decl Spring_SlotQualifierValue(?slot:Slot, ?q:Annotation, ?element:symbol, ?index:number, ?valueKind:symbol, ?value:symbol)
@@ -770,34 +1091,41 @@ Spring_SlotQualifierValue(?param, ?q, ?element, ?index, ?valueKind, ?value) :-
 .decl Spring_SourceQualifierValue(?source:Source, ?q:Annotation, ?element:symbol, ?index:number, ?valueKind:symbol, ?value:symbol)
 Spring_SourceQualifierValue(?type, ?q, ?element, ?index, ?valueKind, ?value) :-
   Spring_SourceCustomQualifier(?type, ?q),
-  TypeAnnotationValue(?type, ?q, ?element, ?index, ?valueKind, ?value, _).
+  ( TypeAnnotationValue(?type, ?q, ?element, ?index, ?valueKind, ?value, _)
+  ; ( !Type_Annotation(?type, ?q), basic.Subclass(?super, ?type),
+      Type_Annotation(?q, "java.lang.annotation.Inherited"),
+      TypeAnnotationValue(?super, ?q, ?element, ?index, ?valueKind, ?value, _) ) ).
 Spring_SourceQualifierValue(?method, ?q, ?element, ?index, ?valueKind, ?value) :-
   Spring_SourceCustomQualifier(?method, ?q),
   MethodAnnotationValue(?method, ?q, ?element, ?index, ?valueKind, ?value, _).
+Spring_SourceQualifierValue(?getObj, ?q, ?element, ?index, ?valueKind, ?value) :-
+  Spring_AnyFactoryBeanSource(_, ?ownerSource, ?getObj),
+  !Spring_SharedFactoryBeanGetObject(?getObj),
+  Spring_SourceQualifierValue(?ownerSource, ?q, ?element, ?index, ?valueKind, ?value).
 
 // Both sides write the same element of the qualifier with different values. An element written
 // on one side only keeps the candidate, since its default is not in the facts.
 .decl Spring_QualifierValueMismatch(?slot:Slot, ?source:Source, ?q:Annotation)
 Spring_QualifierValueMismatch(?slot, ?source, ?q) :-
-  Spring_Candidate(_, ?slot, ?source),
+  Spring_AfterGenerics(_, ?slot, ?source),
   Spring_SlotQualifierValue(?slot, ?q, ?element, ?index, ?valueKind, ?value),
   Spring_SourceQualifierValue(?source, ?q, ?element, _, _, _),
   !Spring_SourceQualifierValue(?source, ?q, ?element, ?index, ?valueKind, ?value).
 Spring_QualifierValueMismatch(?slot, ?source, ?q) :-
-  Spring_Candidate(_, ?slot, ?source),
+  Spring_AfterGenerics(_, ?slot, ?source),
   Spring_SourceQualifierValue(?source, ?q, ?element, ?index, ?valueKind, ?value),
   Spring_SlotQualifierValue(?slot, ?q, ?element, _, _, _),
   !Spring_SlotQualifierValue(?slot, ?q, ?element, ?index, ?valueKind, ?value).
 
 .decl Spring_QualifierMatch(?class:ClassType, ?slot:Slot, ?source:Source)
 Spring_QualifierMatch(?class, ?slot, ?source) :-
-  Spring_Candidate(?class, ?slot, ?source),
+  Spring_AfterGenerics(?class, ?slot, ?source),
   !Spring_HasResourceMatch(?class, ?slot),
   Spring_SlotQualifier(?slot, ?q),
   Spring_SourceQualifier(?source, ?q).
 
 Spring_QualifierMatch(?class, ?slot, ?source) :-
-  Spring_Candidate(?class, ?slot, ?source),
+  Spring_AfterGenerics(?class, ?slot, ?source),
   !Spring_HasResourceMatch(?class, ?slot),
   Spring_SlotCustomQualifier(?slot, ?q),
   Spring_SourceCustomQualifier(?source, ?q),
@@ -806,7 +1134,7 @@ Spring_QualifierMatch(?class, ?slot, ?source) :-
 // A source without the custom qualifier still matches when the qualifier's String value is its
 // bean name (QualifierAnnotationAutowireCandidateResolver.checkQualifier falls back to the name).
 Spring_QualifierMatch(?class, ?slot, ?source) :-
-  Spring_Candidate(?class, ?slot, ?source),
+  Spring_AfterGenerics(?class, ?slot, ?source),
   !Spring_HasResourceMatch(?class, ?slot),
   Spring_SlotQualifierValue(?slot, ?q, "value", -1, "string", ?name),
   !Spring_SourceCustomQualifier(?source, ?q),
@@ -823,16 +1151,20 @@ Spring_NotDefaultCandidate(?method) :-
   Spring_BeanMethod(?method),
   Spring_Annotation("bean", ?ann),
   MethodAnnotationValue(?method, ?ann, "defaultCandidate", _, "boolean", "false", _).
+Spring_NotDefaultCandidate(?getObj) :-
+  Spring_AnyFactoryBeanSource(_, ?ownerSource, ?getObj),
+  !Spring_SharedFactoryBeanGetObject(?getObj),
+  Spring_NotDefaultCandidate(?ownerSource).
 
 // Filtering candidates after qualifier matching and defaultCandidate checks.
 .decl Spring_AfterQualifier(?class:ClassType, ?slot:Slot, ?source:Source)
 Spring_AfterQualifier(?class, ?slot, ?source) :- Spring_QualifierMatch(?class, ?slot, ?source).
 Spring_AfterQualifier(?class, ?slot, ?source) :-
   Spring_HasQualifierMatch(?class, ?slot),
-  Spring_Candidate(?class, ?slot, ?source),
+  Spring_AfterGenerics(?class, ?slot, ?source),
   !Spring_HasInjectionOfferName(?source).
 Spring_AfterQualifier(?class, ?slot, ?source) :-
-  Spring_Candidate(?class, ?slot, ?source),
+  Spring_AfterGenerics(?class, ?slot, ?source),
   !Spring_HasResourceMatch(?class, ?slot),
   !Spring_HasQualifierMatch(?class, ?slot),
   !Spring_NotDefaultCandidate(?source).
@@ -860,6 +1192,10 @@ Spring_IsPrimary(?method) :-
   Spring_BeanMethod(?method),
   Spring_Annotation("primary", ?ann),
   MethodCarries(?method, ?ann).
+Spring_IsPrimary(?getObj) :-
+  Spring_AnyFactoryBeanSource(_, ?ownerSource, ?getObj),
+  !Spring_SharedFactoryBeanGetObject(?getObj),
+  Spring_IsPrimary(?ownerSource).
 
 .decl Spring_PrimaryCandidate(?class:ClassType, ?slot:Slot, ?source:Source)
 Spring_PrimaryCandidate(?class, ?slot, ?source) :-
@@ -887,6 +1223,10 @@ Spring_IsFallback(?method) :-
   Spring_BeanMethod(?method),
   Spring_Annotation("fallback", ?ann),
   MethodCarries(?method, ?ann).
+Spring_IsFallback(?getObj) :-
+  Spring_AnyFactoryBeanSource(_, ?ownerSource, ?getObj),
+  !Spring_SharedFactoryBeanGetObject(?getObj),
+  Spring_IsFallback(?ownerSource).
 
 .decl Spring_NonFallbackCandidate(?class:ClassType, ?slot:Slot, ?source:Source)
 Spring_NonFallbackCandidate(?class, ?slot, ?source) :-
@@ -915,6 +1255,8 @@ Spring_UniquePrimary(?class, ?slot, ?source) :-
 Spring_HasUniquePrimary(?class, ?slot) :- Spring_UniquePrimary(?class, ?slot, _).
 
 // @Priority (lowest integer value has highest priority).
+// Spring reads @Priority on the candidate product itself (determineHighestPriorityCandidate),
+// not on a FactoryBean class.
 .decl Spring_PriorityValue(?source:Source, ?priority:number)
 Spring_PriorityValue(?type, to_number(?val)) :-
   isClassOrInterfaceType(?type),

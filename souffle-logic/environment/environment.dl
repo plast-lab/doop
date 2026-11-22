@@ -10,9 +10,10 @@
 //        ┌──────────────┬───────────┴───┬───────────────────┐
 //        ▼              ▼               ▼                   ▼
 //    jakarta-*     spring-data     spring (own)        direct files
-//    (@Inject,     (repos,         (@Component,        (servlet, JPA,
-//     @Resource,    *Impl)          @Autowired)         REST, validation,
-//     listeners)                                        spring-web)
+//    (@Inject,     spring-xml      (@Component,        (servlet, JPA, REST,
+//     @Resource,   (repos, *Impl,   @Autowired,         validation, WebSocket,
+//     listeners)    XML beans)      FactoryBean)        interceptors, web,
+//                                                       security, AOP, JUnit)
 //        │              │               │                   │
 //        └──────────────┼───────────────┘                   │
 //                       ▼                                   │
@@ -86,6 +87,7 @@
 #include "helpers/annotations.dl"
 #include "helpers/constructors.dl"
 #include "helpers/members.dl"
+#include "helpers/generics.dl"
 #include "helpers/names.dl"
 
 
@@ -98,6 +100,8 @@
 #include "specs/jakarta/jakarta-persistence.dl"
 #include "specs/jakarta/jakarta-rest.dl"
 #include "specs/jakarta/jakarta-validation.dl"
+#include "specs/jakarta/jakarta-websocket.dl"
+#include "specs/jakarta/jakarta-interceptors.dl"
 
 
 
@@ -107,3 +111,8 @@
 #include "frameworks/spring/spring-web.dl"
 #include "frameworks/spring/spring-boot.dl"
 #include "frameworks/spring/spring-data.dl"
+#include "frameworks/spring/spring-security.dl"
+#include "frameworks/spring/spring-aop.dl"
+#include "frameworks/spring/spring-messaging.dl"
+#include "frameworks/spring/spring-xml.dl"
+#include "frameworks/junit.dl"
