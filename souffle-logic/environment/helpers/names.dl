@@ -2,7 +2,7 @@
 // Names helper:
 //
 // Java and JavaBeans naming rules (Introspector.decapitalize):
-// type names without their package, decapitalized type names, setter property names
+// type names without their package (binary and dotted), decapitalized type names, setter property names
 // and the jakarta/javax names of Jakarta EE APIs.
 // ==========================================================================
 
@@ -73,8 +73,10 @@ _Names_LastDot(?type, ?maxPos) :-
 
 
 // The name of an application class or interface without its package (everything after the last dot,
-// or the whole name). A nested class keeps its outer class, unlike Class.getSimpleName.
+// or the whole name), as the class file has it: a nested class keeps its outer class and the $,
+// unlike Class.getSimpleName (DottedTypeNameWithoutPackage gives the source form).
 // Java: com.example.OrderService -> OrderService, com.example.Outer$Inner -> Outer$Inner
+// Spring Data: matching *Impl class names
 .decl TypeNameWithoutPackage(?type:ReferenceType, ?name:symbol)
 
 TypeNameWithoutPackage(?type, ?name) :-
@@ -86,17 +88,56 @@ TypeNameWithoutPackage(?type, ?type) :-
   isClassOrInterfaceType(?type),
   !_Names_HasDot(?type).
 
-_Names_DecapInput(?simple) :- TypeNameWithoutPackage(_, ?simple).
+// Rebuilds a name without its package that has a $, one character at a time, with a dot for each $
+// (Souffle has no string replace). ?prefix is the rebuilt name up to ?pos.
+.decl _Names_DollarToDot(?type:ReferenceType, ?pos:number, ?prefix:symbol)
+
+_Names_DollarToDot(?type, 0, "") :-
+  TypeNameWithoutPackage(?type, ?name),
+  contains("$", ?name).
+
+_Names_DollarToDot(?type, ?pos + 1, cat(?prefix, ?char)) :-
+  _Names_DollarToDot(?type, ?pos, ?prefix),
+  TypeNameWithoutPackage(?type, ?name),
+  ?pos < strlen(?name),
+  ?char = substr(?name, ?pos, 1),
+  ?char != "$".
+
+_Names_DollarToDot(?type, ?pos + 1, cat(?prefix, ".")) :-
+  _Names_DollarToDot(?type, ?pos, ?prefix),
+  TypeNameWithoutPackage(?type, ?name),
+  ?pos < strlen(?name),
+  substr(?name, ?pos, 1) = "$".
 
 
-// The JavaBeans decapitalized name of an application class or interface, without its package.
-// Spring: default @Component bean name (OrderService -> orderService, URLParser -> URLParser)
+// The name of an application class or interface without its package, with a dot between
+// a nested class and its outer class, as in Java source code (every $ becomes a dot).
+// Java: com.example.OrderService -> OrderService, com.example.Outer$Inner -> Outer.Inner
+// Spring: ClassUtils.getShortName, the base of default bean names
+.decl DottedTypeNameWithoutPackage(?type:ReferenceType, ?name:symbol)
+
+DottedTypeNameWithoutPackage(?type, ?name) :-
+  TypeNameWithoutPackage(?type, ?binary),
+  !contains("$", ?binary),
+  ?name = ?binary.
+
+DottedTypeNameWithoutPackage(?type, ?name) :-
+  TypeNameWithoutPackage(?type, ?binary),
+  _Names_DollarToDot(?type, strlen(?binary), ?name).
+
+_Names_DecapInput(?simple) :- DottedTypeNameWithoutPackage(_, ?simple).
+
+
+// The JavaBeans decapitalized name of an application class or interface, without its package
+// and with dots for nested classes (DottedTypeNameWithoutPackage).
+// Spring: default @Component bean name (OrderService -> orderService, URLParser -> URLParser,
+//         Outer$Inner -> outer.Inner; AnnotationBeanNameGenerator.buildDefaultBeanName)
 // Spring Data: default repository bean name (OrderRepository -> orderRepository)
 // Not CDI's default bean name, which lowercases only the first character (URLParser -> uRLParser).
 .decl DecapitalizedTypeName(?type:ReferenceType, ?name:symbol)
 
 DecapitalizedTypeName(?type, ?name) :-
-  TypeNameWithoutPackage(?type, ?simple),
+  DottedTypeNameWithoutPackage(?type, ?simple),
   _Names_Decapitalize(?simple, ?name).
 
 

@@ -10,8 +10,9 @@
 //        ┌──────────────┬───────────┴───┬───────────────────┐
 //        ▼              ▼               ▼                   ▼
 //    jakarta-*     spring-data     spring (own)        direct files
-//    (@Inject,     (repos,         (@Component,        (servlet,
-//     @Resource)    *Impl)          @Autowired)         spring-web)
+//    (@Inject,     (repos,         (@Component,        (servlet, JPA,
+//     @Resource,    *Impl)          @Autowired)         REST, validation,
+//     listeners)                                        spring-web)
 //        │              │               │                   │
 //        └──────────────┼───────────────┘                   │
 //                       ▼                                   │
@@ -94,6 +95,9 @@
 #include "specs/jakarta/jakarta-inject.dl"
 #include "specs/jakarta/jakarta-annotation.dl"
 #include "specs/jakarta/jakarta-servlet.dl"
+#include "specs/jakarta/jakarta-persistence.dl"
+#include "specs/jakarta/jakarta-rest.dl"
+#include "specs/jakarta/jakarta-validation.dl"
 
 
 

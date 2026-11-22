@@ -1,0 +1,82 @@
+// ==========================================================================
+// Jakarta Validation (Bean Validation; jakarta.validation and javax.validation):
+//
+// Models how validation providers (Hibernate Validator, Apache BVal) instantiate
+// and call ConstraintValidator classes referenced by @Constraint(validatedBy = ...).
+// In DI environments the ConstraintValidatorFactory delegates instantiation to
+// the DI container, so validators are also requested via DICreationRequest.
+// Constraint annotations themselves (@NotNull, @Valid) carry data rules only;
+// validators declared solely in XML constraint mappings are not read.
+// ==========================================================================
+
+
+Owner("jakarta-validation").
+
+
+
+
+// --------------------------------------------------------------------------
+// 1. Annotations and API types
+// --------------------------------------------------------------------------
+// Static lookup tables for @Constraint and the ConstraintValidator interface.
+
+.decl JakartaValidation_Annotation(?role:symbol, ?annotation:Annotation)
+
+JakartaValidation_Annotation("constraint", ?annotation) :-
+  JakartaOrJavaxName("validation.Constraint", ?annotation).
+
+
+.decl JakartaValidation_ValidatorInterface(?type:ReferenceType)
+
+JakartaValidation_ValidatorInterface(?type) :-
+  JakartaOrJavaxName("validation.ConstraintValidator", ?type).
+
+
+
+
+// --------------------------------------------------------------------------
+// 2. Validators
+// --------------------------------------------------------------------------
+// Collects concrete validator classes named in @Constraint(validatedBy = ...).
+
+.decl JakartaValidation_Validator(?class:ClassType)
+
+JakartaValidation_Validator(?class) :-
+  JakartaValidation_Annotation("constraint", ?ann),
+  TypeAnnotationValue(_, ?ann, "validatedBy", _, "class", ?class, _),
+  ConcreteClassType(?class).
+
+
+
+
+// --------------------------------------------------------------------------
+// 3. Requests
+// --------------------------------------------------------------------------
+// Asks the application's DI framework to create and inject into validators
+// (e.g. SpringConstraintValidatorFactory, CDI ConstraintValidatorFactory).
+
+DICreationRequest("jakarta-validation", ?class) :- JakartaValidation_Validator(?class).
+
+
+
+
+// --------------------------------------------------------------------------
+// 4. Contract interface
+// --------------------------------------------------------------------------
+// Projects standalone validator creation (public no-arg constructor) and
+// ConstraintValidator.initialize / isValid entry points.
+
+// Jakarta: the default ConstraintValidatorFactory instantiates validators
+// through their public no-arg constructor (spec "The ConstraintValidatorFactory").
+FrameworkCreatedType("jakarta-validation", ?class) :- JakartaValidation_Validator(?class).
+
+EntryPoint("jakarta-validation", ?ctor) :-
+  JakartaValidation_Validator(?class),
+  NoArgConstructor(?ctor, ?class),
+  Method_Modifier("public", ?ctor).
+
+// Jakarta: ConstraintValidator.initialize and isValid.
+EntryPoint("jakarta-validation", ?run) :-
+  JakartaValidation_Validator(?class),
+  JakartaValidation_ValidatorInterface(?iface),
+  ApiMethodRunOn(?iface, ?class, ?run).

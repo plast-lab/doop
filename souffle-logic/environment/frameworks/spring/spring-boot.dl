@@ -1,7 +1,15 @@
 // ==========================================================================
 // Spring Boot (Spring Boot 2.x to 4.x):
 //
-// Startup runner callbacks: CommandLineRunner.run and ApplicationRunner.run.
+// Models Spring Boot's startup runner callbacks (CommandLineRunner, ApplicationRunner)
+// and @ConfigurationProperties registration and binding (constructor binding vs
+// JavaBean setter binding, keeping the union of Boot 2.x and Boot 3+/4+ rules).
+//
+// Sections:
+//   1. Annotations and framework types
+//   2. Runners
+//   3. @ConfigurationProperties classes
+//   4. Requests, offers and contract interface
 // ==========================================================================
 
 
@@ -11,8 +19,22 @@ Owner("spring-boot").
 
 
 // --------------------------------------------------------------------------
-// Runner interfaces
+// 1. Annotations and framework types
 // --------------------------------------------------------------------------
+// Static lookup tables for Spring Boot @ConfigurationProperties annotations
+// (including both Boot 2.x and Boot 3+ @ConstructorBinding packages) and runners.
+
+.decl SpringBoot_Annotation(?role:symbol, ?annotation:Annotation)
+
+SpringBoot_Annotation("configuration-properties", "org.springframework.boot.context.properties.ConfigurationProperties").
+SpringBoot_Annotation("enable-configuration-properties", "org.springframework.boot.context.properties.EnableConfigurationProperties").
+SpringBoot_Annotation("configuration-properties-scan", "org.springframework.boot.context.properties.ConfigurationPropertiesScan").
+SpringBoot_Annotation("constructor-binding", "org.springframework.boot.context.properties.bind.ConstructorBinding").
+SpringBoot_Annotation("constructor-binding", "org.springframework.boot.context.properties.ConstructorBinding").
+SpringBoot_Annotation("autowired", "org.springframework.beans.factory.annotation.Autowired").
+SpringBoot_Annotation("component", "org.springframework.stereotype.Component").
+SpringBoot_Annotation("bean", "org.springframework.context.annotation.Bean").
+
 
 .decl SpringBoot_RunnerInterface(?iface:ReferenceType)
 
@@ -23,13 +45,200 @@ SpringBoot_RunnerInterface("org.springframework.boot.ApplicationRunner").
 
 
 // --------------------------------------------------------------------------
-// Entry points
+// 2. Runners
 // --------------------------------------------------------------------------
+// Marks CommandLineRunner.run and ApplicationRunner.run on concrete application classes.
 
-// Spring Boot: run methods on concrete application CommandLineRunner and ApplicationRunner classes.
 EntryPoint("spring-boot", ?run) :-
   ApplicationClass(?class),
   ConcreteClassType(?class),
   SpringBoot_RunnerInterface(?iface),
   ApiMethodRunOn(?iface, ?class, ?run),
   Method_SimpleName(?run, "run").
+
+
+
+
+// --------------------------------------------------------------------------
+// 3. @ConfigurationProperties classes
+// --------------------------------------------------------------------------
+// Discovers @ConfigurationProperties beans registered by Boot, computes their
+// Boot bean names ("<prefix>-<FQCN>" or "<FQCN>") and classifies how Boot binds
+// them: constructor binding (annotated or Boot 3+ deduced) vs JavaBean setters.
+
+// Spring Boot: concrete application classes carrying @ConfigurationProperties.
+.decl SpringBoot_PropertiesClass(?class:ClassType)
+
+SpringBoot_PropertiesClass(?class) :-
+  ApplicationClass(?class),
+  ConcreteClassType(?class),
+  SpringBoot_Annotation("configuration-properties", ?ann),
+  TypeCarries(?class, ?ann).
+
+// Spring Boot: classes Boot registers as beans (ConfigurationPropertiesBeanRegistrar):
+//   - classes listed in @EnableConfigurationProperties;
+//   - when @ConfigurationPropertiesScan is present, all non-@Component properties classes
+//     (scanned packages are not filtered, matching Spring component scanning).
+// Both annotations are read wherever written, since only spring.dl knows bean classes.
+.decl SpringBoot_IsComponent(?class:ClassType)
+
+SpringBoot_IsComponent(?class) :-
+  SpringBoot_PropertiesClass(?class),
+  SpringBoot_Annotation("component", ?component),
+  TypeCarries(?class, ?component).
+
+.decl SpringBoot_RegisteredProperties(?class:ClassType)
+
+SpringBoot_RegisteredProperties(?class) :-
+  SpringBoot_Annotation("enable-configuration-properties", ?ann),
+  TypeAnnotationValue(_, ?ann, "value", _, "class", ?class, _),
+  SpringBoot_PropertiesClass(?class).
+
+SpringBoot_RegisteredProperties(?class) :-
+  SpringBoot_Annotation("configuration-properties-scan", ?scan),
+  TypeCarries(_, ?scan),
+  SpringBoot_PropertiesClass(?class),
+  !SpringBoot_IsComponent(?class).
+
+// Spring Boot: explicit prefix (or its alias `value`) used to build "<prefix>-<FQCN>".
+.decl SpringBoot_PropertiesPrefix(?class:ClassType, ?prefix:symbol)
+
+SpringBoot_PropertiesPrefix(?class, ?prefix) :-
+  SpringBoot_RegisteredProperties(?class),
+  SpringBoot_Annotation("configuration-properties", ?ann),
+  TypeAnnotationValue(?class, ?ann, ?element, -1, "string", ?prefix, _),
+  ( ?element = "prefix" ; ?element = "value" ),
+  ?prefix != "".
+
+.decl SpringBoot_HasPropertiesPrefix(?class:ClassType)
+
+SpringBoot_HasPropertiesPrefix(?class) :- SpringBoot_PropertiesPrefix(?class, _).
+
+// Classes carrying explicit @ConstructorBinding (on a constructor, or on the class in Boot 2.x).
+.decl SpringBoot_HasAnnotatedBinding(?class:ClassType)
+
+SpringBoot_HasAnnotatedBinding(?class) :-
+  ConstructorOf(?ctor, ?class),
+  SpringBoot_Annotation("constructor-binding", ?ann),
+  MethodCarries(?ctor, ?ann).
+
+SpringBoot_HasAnnotatedBinding(?class) :-
+  isClassType(?class),
+  SpringBoot_Annotation("constructor-binding", ?ann),
+  TypeCarries(?class, ?ann).
+
+// Spring Boot 3+ deduced bind constructor (DefaultBindConstructorProvider):
+// when there is no @ConstructorBinding, the single parameterized non-@Autowired constructor.
+.decl SpringBoot_IsAutowiredCtor(?ctor:Method)
+
+SpringBoot_IsAutowiredCtor(?ctor) :-
+  ConstructorOf(?ctor, _),
+  SpringBoot_Annotation("autowired", ?autowired),
+  MethodCarries(?ctor, ?autowired).
+
+.decl SpringBoot_DeducedBindConstructor(?ctor:Method, ?class:ClassType)
+
+SpringBoot_DeducedBindConstructor(?ctor, ?class) :-
+  SpringBoot_RegisteredProperties(?class),
+  !SpringBoot_HasAnnotatedBinding(?class),
+  OnlyConstructor(?ctor, ?class),
+  FormalParam(0, ?ctor, _),
+  !SpringBoot_IsAutowiredCtor(?ctor).
+
+// Spring Boot: all constructors Boot's binder invokes directly via an instance supplier:
+//   - a constructor carrying @ConstructorBinding;
+//   - the sole constructor of a class carrying @ConstructorBinding (Boot 2.x);
+//   - a deduced bind constructor (Boot 3+).
+.decl SpringBoot_BindConstructor(?ctor:Method, ?class:ClassType)
+
+SpringBoot_BindConstructor(?ctor, ?class) :-
+  SpringBoot_RegisteredProperties(?class),
+  ConstructorOf(?ctor, ?class),
+  SpringBoot_Annotation("constructor-binding", ?ann),
+  MethodCarries(?ctor, ?ann).
+
+SpringBoot_BindConstructor(?ctor, ?class) :-
+  SpringBoot_RegisteredProperties(?class),
+  SpringBoot_Annotation("constructor-binding", ?ann),
+  TypeCarries(?class, ?ann),
+  OnlyConstructor(?ctor, ?class).
+
+SpringBoot_BindConstructor(?ctor, ?class) :- SpringBoot_DeducedBindConstructor(?ctor, ?class).
+
+.decl SpringBoot_HasBindConstructor(?class:ClassType)
+
+SpringBoot_HasBindConstructor(?class) :- SpringBoot_BindConstructor(_, ?class).
+
+// Spring Boot: registered classes with no bind constructor (JavaBean binding).
+.decl SpringBoot_JavaBeanProperties(?class:ClassType)
+
+SpringBoot_JavaBeanProperties(?class) :-
+  SpringBoot_RegisteredProperties(?class),
+  !SpringBoot_HasBindConstructor(?class).
+
+// Spring Boot: classes whose setters JavaBeanBinder invokes:
+//   - JavaBean-bound registered classes;
+//   - deduced-constructor classes (kept for Boot 2.x, which creates them as plain beans);
+//   - other @ConfigurationProperties classes without @ConstructorBinding (e.g. @Component
+//     beans bound by ConfigurationPropertiesBindingPostProcessor);
+//   - the declared return class of @Bean @ConfigurationProperties methods.
+// Nested objects reached through getters are not followed here.
+.decl SpringBoot_SetterBound(?class:ClassType)
+
+SpringBoot_SetterBound(?class) :- SpringBoot_JavaBeanProperties(?class).
+
+SpringBoot_SetterBound(?class) :- SpringBoot_DeducedBindConstructor(_, ?class).
+
+SpringBoot_SetterBound(?class) :-
+  SpringBoot_PropertiesClass(?class),
+  !SpringBoot_RegisteredProperties(?class),
+  !SpringBoot_HasAnnotatedBinding(?class).
+
+SpringBoot_SetterBound(?class) :-
+  SpringBoot_Annotation("bean", ?bean),
+  MethodCarries(?method, ?bean),
+  SpringBoot_Annotation("configuration-properties", ?ann),
+  MethodCarries(?method, ?ann),
+  Method_ReturnType(?method, ?class),
+  ApplicationClass(?class),
+  isClassType(?class).
+
+
+
+
+// --------------------------------------------------------------------------
+// 4. Requests, offers and contract interface
+// --------------------------------------------------------------------------
+// Offers registered properties beans to Spring (with Boot's bean names), asks
+// Spring to create JavaBean-bound ones and emits Boot's own bind constructors
+// and setter entry points.
+
+// Registered @ConfigurationProperties classes are offered as beans by type and name.
+InjectionOffer("spring-boot", ?class) :- SpringBoot_RegisteredProperties(?class).
+
+InjectionOfferName("spring-boot", ?class, cat(?prefix, "-", ?class)) :-
+  SpringBoot_PropertiesPrefix(?class, ?prefix).
+
+InjectionOfferName("spring-boot", ?class, ?class) :-
+  SpringBoot_RegisteredProperties(?class),
+  !SpringBoot_HasPropertiesPrefix(?class).
+
+// JavaBean-bound classes are created and injected by Spring.
+// Deduced-constructor classes are included too for Boot 2.x compatibility.
+DICreationRequest("spring-boot", ?class) :- SpringBoot_JavaBeanProperties(?class).
+DICreationRequest("spring-boot", ?class) :- SpringBoot_DeducedBindConstructor(_, ?class).
+
+// Constructor-bound classes are created by Boot's binder via their bind constructor.
+// No DICreationRequest is emitted (so @PostConstruct / @Autowired fields on them are
+// not modelled), otherwise Spring would also autowire their bind constructor parameters.
+FrameworkCreatedType("spring-boot", ?class) :- SpringBoot_BindConstructor(_, ?class).
+EntryPoint("spring-boot", ?ctor) :- SpringBoot_BindConstructor(?ctor, _).
+
+// Public and package-private setters of setter-bound classes are invoked by JavaBeanBinder
+// (JavaBeanBinder$BeanProperties.isCandidate excludes private and protected methods).
+EntryPoint("spring-boot", ?run) :-
+  SpringBoot_SetterBound(?class),
+  SetterPropertyName(?method, _),
+  !Method_Modifier("private", ?method),
+  !Method_Modifier("protected", ?method),
+  MethodRunOn(?method, ?class, ?run).
