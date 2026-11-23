@@ -208,7 +208,7 @@ ImpreciseDynamicCallGraphEdge(?immutableDCTX, ?toMethod, ?invocation, ?immutable
    SanitizedDynamicCallGraphEdge(?immutableDCTX, ?toMethod, ?invocation, ?immutableDCTX, ?fromMethod),
    isImmutableDCTX(?immutableDCTX),
    SanitizedDynamicCallGraphEdge(?ctxTo, ?toMethod, ?invocation, ?ctxFrom, ?fromMethod),
-   !(?ctxFrom = ?immutableDCTX,  ?ctxTo = ?immutableDCTX).
+   (?ctxFrom != ?immutableDCTX ; ?ctxTo != ?immutableDCTX).
 
 // Recording context for static methods is problematic
 ImpreciseDynamicCallGraphEdge(?ctxTo, ?toMethod, ?invocation, ?ctxFrom, ?fromMethod) :-
