@@ -6,7 +6,9 @@
 # times Doop reports and the engine's peak RSS, and prints a median summary
 # table (speedup and memory cost of FlowLog over Souffle per bench and job
 # count). Two flag profiles are built in: main-method (closed program, --main)
-# and open-program (--open-programs jackee).
+# and open-program (--open-programs jackee). --choice-bound adds Doop's flag of
+# the same name (the capped, choice-domain points-to) to every run and becomes
+# part of the run id, like the analysis and the profile.
 #
 # Usage: bin/bench-engines.sh [options]      (run from anywhere; see --help)
 #
@@ -46,6 +48,7 @@ JDK_HOME="${JAVA_HOME:-}"
 CARGO_ROOT="${CARGO_HOME:-$HOME/.cargo}"
 RUNDIR=""
 PROFILE="main-method"
+CHOICE_BOUND=""
 
 declare -A FLAGS_MAIN_METHOD=(
   [avrora]="--main avrora.Main --regex 'avrora.*:cck.*:jintgen.*'"
@@ -105,6 +108,7 @@ usage: $(basename "$0") [options]
   --jdk-home DIR            ${JDK_HOME:-<unset>}   (env JAVA_HOME; required)
   --cargo-root DIR          $CARGO_ROOT   (env CARGO_HOME)
   --profile NAME            $PROFILE   (main-method | open-program)
+  --choice-bound            ${CHOICE_BOUND:-off}   (run Doop with --choice-bound; part of the run id)
   --rundir DIR              \$DOOP_HOME/out/engine-bench/<timestamp>
   -h, --help
 EOF
@@ -131,6 +135,7 @@ while [ $# -gt 0 ]; do
     --jdk-home)         need "$1" "${2:-}"; JDK_HOME="$2"; shift 2 ;;
     --cargo-root)       need "$1" "${2:-}"; CARGO_ROOT="$2"; shift 2 ;;
     --profile)          need "$1" "${2:-}"; PROFILE="$2"; shift 2 ;;
+    --choice-bound)     CHOICE_BOUND="choice-bound"; shift ;;
     --rundir)           need "$1" "${2:-}"; RUNDIR="$2"; shift 2 ;;
     -h|--help)          usage; exit 0 ;;
     *)                  usage >&2; die "unknown argument: $1" ;;
@@ -188,7 +193,7 @@ printf 'bench\tjobs\tengine\trep\tid\texec_sec\tcompile_sec\tpeak_rss_mb\tstatus
 
 {
   echo "stamp=$STAMP"
-  echo "analysis=$ANALYSIS platform=$PLATFORM stats=$STATS jobs=$JOBS reps=$REPS timeout=$TIMEOUT database=$DATABASE"
+  echo "analysis=$ANALYSIS choice_bound=${CHOICE_BOUND:-off} platform=$PLATFORM stats=$STATS jobs=$JOBS reps=$REPS timeout=$TIMEOUT database=$DATABASE"
   echo "benches=$BENCHES"
   echo "profile=$PROFILE"
   for b in $BENCHES; do echo "flags[$b]=$(profile_flags "$b")"; done
@@ -253,13 +258,14 @@ inputs_of() {
 
 run_one() {
   local bench="$1" jobs="$2" engine="$3" rep="$4"
-  local id="bench-${ANALYSIS}-${PROFILE}-${bench}-${engine}-s${STATS}-j${jobs}-r${rep}"
+  local id="bench-${ANALYSIS}${CHOICE_BOUND:+-$CHOICE_BOUND}-${PROFILE}-${bench}-${engine}-s${STATS}-j${jobs}-r${rep}"
   local outdir="$DOOP_HOME/out/$id"
   local rc out exec_sec compile_sec status f rssfile spid peak_rss peak_kb
   local -a cmd extra
 
   cmd=( ./doop -a "$ANALYSIS" --platform "$PLATFORM" --id "$id"
         --timeout "$TIMEOUT" --cache --stats "$STATS" --souffle-jobs "$jobs" )
+  [ -n "$CHOICE_BOUND" ] && cmd+=( --choice-bound )
 
   eval "extra=( $(profile_flags "$bench") )"
   [ ${#extra[@]} -gt 0 ] && cmd+=( "${extra[@]}" )
@@ -313,7 +319,7 @@ run_one() {
     "$bench" "$jobs" "$engine" "$rep" "${exec_sec:+${exec_sec}s}" "${peak_rss:+${peak_rss}MB}" "$status" "$dbnote"
 }
 
-echo "run $STAMP  analysis=$ANALYSIS profile=$PROFILE platform=$PLATFORM stats=$STATS jobs=$JOBS reps=$REPS database=$DATABASE"
+echo "run $STAMP  analysis=$ANALYSIS${CHOICE_BOUND:+ $CHOICE_BOUND} profile=$PROFILE platform=$PLATFORM stats=$STATS jobs=$JOBS reps=$REPS database=$DATABASE"
 echo "results -> $RUNDIR"
 echo
 
@@ -328,7 +334,7 @@ for bench in $BENCHES; do
 done
 
 echo
-awk -F'\t' -v reps="$REPS" -v hdr="$ANALYSIS  profile=$PROFILE  platform=$PLATFORM  stats=$STATS" '
+awk -F'\t' -v reps="$REPS" -v hdr="$ANALYSIS${CHOICE_BOUND:+ $CHOICE_BOUND}  profile=$PROFILE  platform=$PLATFORM  stats=$STATS" '
   NR==1 { next }
   { g=$1"\t"$2; if(!seen[g]++) order[++k]=g }
   $9=="ok" { key=$1"\t"$2"\t"$3; n[key]++; v[key,n[key]]=$6; m[key,n[key]]=$8 }
