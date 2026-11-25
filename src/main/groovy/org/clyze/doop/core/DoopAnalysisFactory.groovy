@@ -149,7 +149,20 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
 		// Initialize the environment used for executing commands
 		def commandsEnv = initExternalCommandsEnvironment(options)
-		createOutputDirectory(options)
+		File outDir = createOutputDirectory(options)
+
+		// Deployables (.war, Spring Boot jars) become the class path their class
+		// loader sees, before anything reads the inputs (app regex, jphantom,
+		// fact generation). The cache ID above is computed on the archives.
+		boolean cachedFacts = options.CACHE.value && (options.CACHE_DIR.value as File)?.exists()
+		if (!options.INPUT_ID.value && !cachedFacts && !options.PYTHON.value && !options.ANDROID.value) {
+			DeployableArchives.Result unpacked = DeployableArchives.unpack(
+				options.INPUTS.value as List<File>, options.LIBRARIES.value as List<File>, outDir)
+			if (unpacked.unpacked > 0) {
+				options.INPUTS.value = unpacked.inputs
+				options.LIBRARIES.value = unpacked.libraries
+			}
+		}
 
 		if (!options.INPUT_ID.value && !options.CACHE.value && !options.PYTHON.value) {
 			checkAppGlob(options)
@@ -585,14 +598,15 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 							JarFile jarFile = new JarFile(jarPath)
 							try { 
 								//Try to read the main class from the manifest contained in the jar
-								main = jarFile.manifest?.mainAttributes?.getValue(Attributes.Name.MAIN_CLASS) as String
+								// (for a deployable, the entry point its launcher runs)
+								main = DeployableArchives.entryPoint(jarPath, jarFile.manifest)
 							}
 							catch (ZipException ex) {
 								throw DoopErrorCodeException.error30("Could not read jar file ${jarPath}: ${ex.message}")
 							}
 							if (main)
 								recordAutoMainClass(options, main)
-							else {
+							else if (DeployableArchives.kind(jarPath) == null) {
 								//Check whether the jar contains a class with the same name
 								def jarName = FilenameUtils.getBaseName(jarFile.name)
 								if (jarFile.getJarEntry("${jarName}.class"))
