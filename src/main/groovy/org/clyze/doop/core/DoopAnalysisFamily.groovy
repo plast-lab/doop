@@ -1113,6 +1113,13 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forCacheID: true
 			),
 			new BooleanAnalysisOption(
+					id: "FULL_FACTS",
+					name: "full-facts",
+					group: GROUP_FACTS,
+					description: "Generate facts for every class of every input, library and platform archive, not only the classes the inputs reference (needed for frameworks, which reach their own classes reflectively). Unrelated to the --full mode Doop passes to Soot.",
+					forCacheID: true
+			),
+			new BooleanAnalysisOption(
 					id: "THOROUGH_FACT_GEN",
 					name: "thorough-fact-gen",
 					group: GROUP_FACTS,

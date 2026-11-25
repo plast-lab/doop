@@ -425,6 +425,11 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             }
         }
 
+        if (options.FULL_FACTS.value) {
+            params += ["--full-facts"]
+        }
+
+
         if (options.X_FACTS_SUBSET.value) {
             params += ["--facts-subset", options.X_FACTS_SUBSET.value.toString()]
         }

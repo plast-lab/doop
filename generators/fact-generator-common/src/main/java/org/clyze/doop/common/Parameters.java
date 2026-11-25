@@ -40,6 +40,10 @@ public class Parameters {
     public Integer _cores = null;
     public String _rOutDir = null;
     public FactsSubSet _factsSubSet = null;
+    // Generate facts for every class of every input, dependency and platform archive,
+    // not only the classes the inputs reference (frameworks reach their own classes
+    // reflectively, so unreferenced library classes still matter).
+    public boolean _fullFacts = false;
     private boolean _noFacts = false;
     private boolean _decodeApk = false;
     public boolean _extractMoreStrings = false;
@@ -200,6 +204,9 @@ public class Parameters {
             } catch (NumberFormatException nfe) {
                 System.out.println("Invalid cores argument: " + args[i]);
             }
+            break;
+        case "--full-facts":
+            _fullFacts = true;
             break;
         case "--facts-subset":
             i = shift(args, i);

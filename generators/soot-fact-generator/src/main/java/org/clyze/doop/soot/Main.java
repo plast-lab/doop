@@ -199,7 +199,13 @@ public class Main {
 
         Set<SootClass> classes = ConcurrentHashMap.<SootClass>newKeySet();
         ClassAdder classAdder = (android != null) ? android : java;
-        if (sootParameters._factsSubSet == SootParameters.FactsSubSet.APP) {
+        if (sootParameters._fullFacts) {
+            // All classes; a facts subset, if also given, still prunes them below.
+            System.out.println("Full facts: all classes of all archives (application, dependencies, platform).");
+            classAdder.addAppClasses(classes, scene);
+            classAdder.addDepClasses(classes, scene);
+            classAdder.addLibClasses(classes, scene);
+        } else if (sootParameters._factsSubSet == SootParameters.FactsSubSet.APP) {
             System.out.println("WARNING: only application classes will be used.");
             classAdder.addAppClasses(classes, scene);
             // Add library classes, to be pruned later.
