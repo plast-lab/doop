@@ -39,7 +39,7 @@ tasks.withType(Test).configureEach {
 }
 
 // Warning: -Xss is restricted in recent Java versions.
-def factGenXmx = '12000m'
+def factGenXmx = System.getenv('DOOP_FACTGEN_XMX') ?: '12000m'
 def factGenStack = '1000m'
 def defaultFactGenJvmArgs = ["-DmaxHeapSize=${factGenXmx}", "-DstackSize=${factGenStack}"]
 

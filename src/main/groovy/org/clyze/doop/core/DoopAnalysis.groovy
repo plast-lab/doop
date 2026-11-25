@@ -611,7 +611,9 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                             throw new RuntimeException("Cannot find Soot-based front end.")
                         }
                     } else {
-                        String[] jvmArgs = [ "-Dfile.encoding=UTF-8" ] as String[]
+                        // DOOP_FACTGEN_JVM_ARGS: extra JVM options for the fact generator (e.g. GC logging).
+                        String extraJvm = System.getenv("DOOP_FACTGEN_JVM_ARGS")
+                        String[] jvmArgs = ([ "-Dfile.encoding=UTF-8" ] + (extraJvm ? extraJvm.tokenize(' ') : [])) as String[]
                         invokeFactGenerator('SOOT_FACT_GEN', Resource.SOOT_FACT_GENERATOR, jvmArgs, params, SOOT_MAIN)
                     }
                     // Check if fact generation must be restarted due to missing classes.
