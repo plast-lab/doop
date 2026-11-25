@@ -1,0 +1,67 @@
+// ===========================================================================
+// mock-provenance.dl -- DIAGNOSTIC ONLY: why each mock site / mock object exists.
+//
+// Mirrors the rules that grow MockSiteType (mocking-core.dl section 4, the mode
+// files, mocking-collections.dl) and tags each mock site type with the reason it
+// became one. Output-only: nothing reads these relations, so they cannot change
+// results (negations here only refer to lower strata).
+//
+//   entry-receiver / entry-param        an EntryPointMethod's this / formal
+//   root-receiver / root-param          other roots (tests, keep rules, ...)
+//   ctor-app-param / ctor-lib-param     a constructor of a mocked app / library class
+//   inheriting-receiver                 library root called on a concrete subclass
+//   field / static-field                environment-only field of a mocked class
+//   array-element                       element type of a mocked array
+//   object-downcast                     target of an app downcast from Object
+//   collection-object                   the Object mock behind collection contents
+//
+// Mock objects: core mocks (MockObjectForType) take their type's reasons; mocks
+// asserted directly by a precision layer (MockObject without MockObjectForType)
+// are "direct". --deepspatch adds its registry products itself:
+//   service-provider                    a ServiceLoader provider (META-INF/services)
+//   factory-product                     a reflective factory's product
+// ===========================================================================
+
+.decl MockSiteMethodKind(?method:Method, ?kind:symbol)
+MockSiteMethodKind(?m, "entry") :- MockSiteMethod(?m), mainAnalysis.EntryPointMethod(?m).
+MockSiteMethodKind(?m, "ctor-app") :-
+  MockSiteMethod(?m), !mainAnalysis.EntryPointMethod(?m),
+  Method_SimpleName(?m, "<init>"), Method_DeclaringType(?m, ?c), ApplicationClass(?c).
+MockSiteMethodKind(?m, "ctor-lib") :-
+  MockSiteMethod(?m), !mainAnalysis.EntryPointMethod(?m),
+  Method_SimpleName(?m, "<init>"), Method_DeclaringType(?m, ?c), !ApplicationClass(?c).
+MockSiteMethodKind(?m, "root") :-
+  MockSiteMethod(?m), !mainAnalysis.EntryPointMethod(?m), !Method_SimpleName(?m, "<init>").
+
+.decl MockSiteReason(?type:ReferenceType, ?reason:symbol)
+.output MockSiteReason
+
+MockSiteReason(?t, "entry-receiver") :-
+  MockSiteMethodKind(?m, "entry"), !Method_Modifier("static", ?m), Method_DeclaringType(?m, ?t).
+MockSiteReason(?t, "root-receiver") :-
+  MockSiteMethodKind(?m, "root"), !Method_Modifier("static", ?m), Method_DeclaringType(?m, ?t).
+MockSiteReason(?t, ?r) :-
+  MockSiteMethodKind(?m, ?k),
+  FormalParam(_, ?m, ?f), Var_Type(?f, ?t), isReferenceType(?t),
+  ( (?k = "entry", ?r = "entry-param") ; (?k = "root", ?r = "root-param") ;
+    (?k = "ctor-app", ?r = "ctor-app-param") ; (?k = "ctor-lib", ?r = "ctor-lib-param") ).
+MockSiteReason(?t, "inheriting-receiver") :- InheritingRootReceiver(_, ?t).
+MockSiteReason(?t, "field") :- InstanceFieldInClass(_, ?t, _), isReferenceType(?t).
+MockSiteReason(?t, "static-field") :- StaticFieldInClass(_, ?t, _), isReferenceType(?t).
+MockSiteReason(?t, "array-element") :-
+  MockedObject(_, ?a), isArrayType(?a), ComponentType(?a, ?t), isReferenceType(?t).
+MockSiteReason(?t, "object-downcast") :-
+  ObjectDowncast(?t, _, _), MockSiteType(?t), MockSiteType("java.lang.Object").
+MockSiteReason("java.lang.Object", "collection-object") :- CollectionContainer(_, _).
+
+// Per mock object: its reasons (via the types it stands in for), or "direct".
+.decl MockObjectReason(?value:Value, ?reason:symbol)
+.output MockObjectReason
+MockObjectReason(?v, ?r) :- MockObjectForType(?v, ?t), MockSiteReason(?t, ?r).
+MockObjectReason(?v, "direct") :- MockObject(?v, _), !MockObjectForType(?v, _).
+
+// Which roots seed mock sites, by entry-point provenance (jackee tags its entry
+// points in JackeeEntryPoint; other roots have none).
+.decl MockSiteMethodKindCount(?kind:symbol, ?n:number)
+.output MockSiteMethodKindCount
+MockSiteMethodKindCount(?k, ?n) :- MockSiteMethodKind(_, ?k), ?n = count : { MockSiteMethodKind(_, ?k) }.

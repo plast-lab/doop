@@ -171,12 +171,9 @@ class SouffleAnalysis extends DoopAnalysis {
 		// ANALYSES_WITHOUT_MAIN -- the layer references mainAnalysis.* and would fail to
 		// compile for them): it mocks receivers/arguments/fields/arrays for every
 		// EntryPointMethod -- the main method's args, JUnit/keep roots, and any
-		// open-programs entry points. Representative policy is the default.
+		// open-programs entry points.
 		if (!(getBaseName(analysis.name) in ANALYSES_WITHOUT_MAIN)) {
-			if (options.SOUND_MOCKING.value)
-				cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/main/mocking/mocking-all-concrete-subtypes.dl")
-			else
-				cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/main/mocking/mocking-representative-subtypes.dl")
+			cpp.includeAtEnd("$analysis", "${Doop.souffleLogicPath}/main/mocking/mocking-representative-subtypes.dl")
 
 			// Deep dispatch through Java service-provider registries (ServiceLoader /
 			// META-INF/services). Consumes the ServiceProvider facts emitted by fact

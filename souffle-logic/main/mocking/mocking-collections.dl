@@ -54,14 +54,28 @@ ObjectDowncast(?castType, ?from, ?to) :-
 // IS that condition. Its ORIGIN does not matter: whenever the Object mock exists
 // and gets downcast, we should specialize. A closed program that merely uses real
 // collections/objects (no open-world Object mock) has this false, so NONE of the
-// cast-target machinery fires. Static (no VarPointsTo) -> mock layer stays out of
-// the points-to SCC.
+// cast-target machinery fires. The mock site depends on VarPointsTo (positively
+// only), so mock creation is part of the points-to fixpoint.
 
 // Ensure a mock of each Object-downcast target exists to specialize to -- but
-// ONLY when the Object mock genuinely exists (guard). So the erased/Object-typed
-// values a real open-world mock flows through get specialized at their downcast,
-// while a closed program's ordinary downcasts never fabricate any mock.
+// ONLY at downcasts the Object mock reaches. So the erased/Object-typed values a
+// real open-world mock flows through get specialized at their downcast, while
+// downcasts no mock reaches never fabricate any mock.
+// Flow-based: only a downcast that the Object mock actually REACHES becomes a mock
+// site (not every Object downcast in the application once Object is mocked).
+#ifndef OPEN_PROGRAMS
+MockSiteType(?castType) :-
+  ObjectDowncast(?castType, ?from, _),
+  mainAnalysis.VarPointsTo(_, ?objMock, _, ?from),
+  ObjectMockValue(?objMock).
+#else
+// Open-programs profiles (jackee) compute site-resolution decisions
+// (PreciselyMocked*, SuppressedInstanceFieldStore) from mock values, so a
+// points-to-dependent mock site would put a negation inside the points-to
+// fixpoint (unstratifiable). Until those decisions are static, every Object
+// downcast is a mock site once the Object mock exists.
 MockSiteType(?castType) :- ObjectDowncast(?castType, _, _), MockSiteType("java.lang.Object").
+#endif
 
 // Specialize: when the single Object mock reaches the downcast, propagate mocks
 // of the cast target to the result. The base cast rule drops the Object mock
