@@ -1,0 +1,32 @@
+// ==========================================================================
+// Constructors helper:
+//
+// Basic facts specs and frameworks need to pick the constructor they call.
+// Spring: the annotated one, else the only one, else the no-arg one
+// Jakarta (JPA): the no-arg one
+// The pick itself stays in the spec or framework, since each uses its own annotation.
+// ==========================================================================
+
+
+// A constructor is a method named <init>
+.decl ConstructorOf(?ctor:Method, ?class:ClassType)
+
+ConstructorOf(?ctor, ?class) :-
+  Method_SimpleName(?ctor, "<init>"),
+  Method_DeclaringType(?ctor, ?class).
+
+
+.decl NoArgConstructor(?ctor:Method, ?class:ClassType)
+
+NoArgConstructor(?ctor, ?class) :-
+  ConstructorOf(?ctor, ?class),
+  !FormalParam(_, ?ctor, _).
+
+
+// Includes the default constructor Java adds when the class has none.
+.decl OnlyConstructor(?ctor:Method, ?class:ClassType)
+
+OnlyConstructor(?ctor, ?class) :-
+  ConstructorOf(?ctor, ?class),
+  ?n = count : { ConstructorOf(_, ?class) },
+  ?n = 1.

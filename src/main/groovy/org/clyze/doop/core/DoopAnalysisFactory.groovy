@@ -1,6 +1,7 @@
 package org.clyze.doop.core
 
 import groovy.util.logging.Log4j
+import java.security.MessageDigest
 import java.util.jar.Attributes
 import java.util.jar.JarFile
 import org.apache.commons.io.FileUtils
@@ -8,6 +9,7 @@ import org.apache.commons.io.FilenameUtils
 import org.clyze.analysis.*
 import org.clyze.doop.common.DoopErrorCodeException
 import org.clyze.doop.util.PackageUtil
+import org.clyze.doop.util.Resource
 import org.clyze.input.DefaultInputResolutionContext
 import org.clyze.input.InputResolutionContext
 import org.clyze.input.PlatformManager
@@ -248,6 +250,29 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		return CheckSum.checksum(id, HASH_ALGO)
 	}
 
+	/**
+	 * The checksum of the bundled fact generator JAR that the options select,
+	 * or null if it is not bundled (for example, when generators are linked).
+	 */
+	private static String factGeneratorChecksum(Map<String, AnalysisOption<?>> options) {
+		Resource generator = Resource.SOOT_FACT_GENERATOR
+		if (options.WALA_FACT_GEN.value || options.PYTHON.value)
+			generator = Resource.WALA_FACT_GENERATOR
+		else if (options.X_DEX_FACT_GEN.value)
+			generator = Resource.DEX_FACT_GENERATOR
+		URL url = DoopAnalysisFactory.class.classLoader.getResource(generator.filename)
+		if (url == null)
+			return null
+		MessageDigest digest = MessageDigest.getInstance(HASH_ALGO)
+		url.openStream().withCloseable { InputStream is ->
+			byte[] buffer = new byte[65536]
+			int n
+			while ((n = is.read(buffer)) > 0)
+				digest.update(buffer, 0, n)
+		}
+		return digest.digest().encodeHex().toString()
+	}
+
 	private static String generateCacheID(Map<String, AnalysisOption<?>> options) {
 		Collection<String> idComponents = options.values()
 			.findAll { it.forCacheID }
@@ -270,6 +295,12 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 				}
 			}
 		}
+
+		// Also the fact generator itself, so that facts written by an older
+		// generator (with fewer fact files) are not reused after it changes.
+		String generatorChecksum = factGeneratorChecksum(options)
+		if (generatorChecksum)
+			checksums += [generatorChecksum]
 
 		idComponents = checksums + idComponents
 

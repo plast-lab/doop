@@ -1,0 +1,146 @@
+// ==========================================================================
+// Annotations helper:
+//
+// Follows annotation chains (@RestController is annotated with @Controller,
+// which is annotated with @Component), so a spec or framework only names the annotation
+// at the end of the chain (aka the root, @Component).
+// Gives the values written on annotations (no defaults).
+// ==========================================================================
+
+
+
+
+// --------------------------------------------------------------------------
+// Chains
+// --------------------------------------------------------------------------
+
+// Every annotation used somewhere in the facts.
+.decl AnnotationType(?annotation:Annotation)
+
+AnnotationType(?annotation) :- Type_Annotation(_, ?annotation).
+AnnotationType(?annotation) :- Method_Annotation(_, ?annotation).
+AnnotationType(?annotation) :- Field_Annotation(_, ?annotation).
+AnnotationType(?annotation) :- Param_Annotation(_, _, ?annotation).
+
+
+// The annotation is the root itself or is annotated with it, directly or through a chain.
+// Spring: CarriesAnnotation(@Service, @Component), CarriesAnnotation(@GetMapping, @RequestMapping)
+.decl CarriesAnnotation(?annotation:Annotation, ?root:Annotation)
+
+CarriesAnnotation(?annotation, ?annotation) :-
+  AnnotationType(?annotation).
+
+CarriesAnnotation(?annotation, ?root) :-
+  AnnotationType(?annotation),
+  Type_Annotation(?annotation, ?meta),
+  CarriesAnnotation(?meta, ?root).
+
+
+
+
+// --------------------------------------------------------------------------
+// Shortcuts
+// --------------------------------------------------------------------------
+// The class, method, field or parameter has an annotation that carries the root.
+
+
+// Spring: TypeCarries(OrderController, @Component) because of @RestController
+// Checks only annotations declared directly on ?type (plus their meta-annotation chains),
+// matching Spring component scanning where non-@Inherited roots such as @Component are not
+// inherited from superclasses.
+.decl TypeCarries(?type:ReferenceType, ?root:Annotation)
+
+TypeCarries(?type, ?root) :-
+  Type_Annotation(?type, ?annotation),
+  CarriesAnnotation(?annotation, ?root).
+
+
+// Like TypeCarries, also following java.lang.annotation.Inherited down class inheritance
+// (classes only, never interfaces; e.g. @SpringBootTest or @RunWith on an abstract base test).
+.decl TypeCarriesInherited(?type:ReferenceType, ?root:Annotation)
+
+TypeCarriesInherited(?type, ?root) :-
+  TypeCarries(?type, ?root).
+
+TypeCarriesInherited(?sub, ?root) :-
+  basic.Subclass(?super, ?sub),
+  Type_Annotation(?super, ?annotation),
+  Type_Annotation(?annotation, "java.lang.annotation.Inherited"),
+  CarriesAnnotation(?annotation, ?root).
+
+
+.decl MethodCarries(?method:Method, ?root:Annotation)
+
+MethodCarries(?method, ?root) :-
+  Method_Annotation(?method, ?annotation),
+  CarriesAnnotation(?annotation, ?root).
+
+
+.decl FieldCarries(?field:Field, ?root:Annotation)
+
+FieldCarries(?field, ?root) :-
+  Field_Annotation(?field, ?annotation),
+  CarriesAnnotation(?annotation, ?root).
+
+
+.decl ParamCarries(?param:Var, ?root:Annotation)
+
+ParamCarries(?param, ?root) :-
+  Param_Annotation(?method, ?index, ?annotation),
+  FormalParam(?index, ?method, ?param),
+  CarriesAnnotation(?annotation, ?root).
+
+
+
+
+// --------------------------------------------------------------------------
+// Values
+// --------------------------------------------------------------------------
+// The values written on an annotation, one tuple per value: ?index is -1 for a single value
+// and 0, 1 ... for the items of an array. An element that is not written (its default)
+// or an empty array has no tuples, so a rule handles "not written" as the framework's default.
+
+
+.decl TypeAnnotationValue(?type:ReferenceType, ?annotation:Annotation, ?element:symbol,
+                          ?index:number, ?valueKind:symbol, ?value:symbol, ?extra:symbol)
+
+TypeAnnotationValue(?type, ?annotation, ?element, ?index, ?valueKind, ?value, ?extra) :-
+  AnnotationValue("type", ?type, ?annotation, ?element, ?index, ?valueKind, ?value, ?extra),
+  isReferenceType(?type).
+
+
+.decl MethodAnnotationValue(?method:Method, ?annotation:Annotation, ?element:symbol,
+                            ?index:number, ?valueKind:symbol, ?value:symbol, ?extra:symbol)
+
+MethodAnnotationValue(?method, ?annotation, ?element, ?index, ?valueKind, ?value, ?extra) :-
+  AnnotationValue("method", ?method, ?annotation, ?element, ?index, ?valueKind, ?value, ?extra),
+  isMethod(?method).
+
+
+.decl FieldAnnotationValue(?field:Field, ?annotation:Annotation, ?element:symbol,
+                           ?index:number, ?valueKind:symbol, ?value:symbol, ?extra:symbol)
+
+FieldAnnotationValue(?field, ?annotation, ?element, ?index, ?valueKind, ?value, ?extra) :-
+  AnnotationValue("field", ?field, ?annotation, ?element, ?index, ?valueKind, ?value, ?extra),
+  isField(?field).
+
+
+.decl ParamAnnotationValue(?param:Var, ?annotation:Annotation, ?element:symbol,
+                           ?index:number, ?valueKind:symbol, ?value:symbol, ?extra:symbol)
+
+ParamAnnotationValue(?param, ?annotation, ?element, ?index, ?valueKind, ?value, ?extra) :-
+  Param_Annotation(?method, _, _),
+  FormalParam(?position, ?method, ?param),
+  ?id = cat(?method, "::parameter#", to_string(?position)),
+  AnnotationValue("param", ?id, ?annotation, ?element, ?index, ?valueKind, ?value, ?extra).
+
+
+// The values of a nested annotation, by the id in the value of its parent (?valueKind "annotation").
+// Jackson: @JsonSubTypes({@Type(Dog.class), ...}) gives
+//   TypeAnnotationValue(Animal, @JsonSubTypes, "value", 0, "annotation", "...Animal@...JsonSubTypes.value[0]", @Type)
+//   NestedAnnotationValue("...Animal@...JsonSubTypes.value[0]", @Type, "value", -1, "class", "Dog", "-")
+.decl NestedAnnotationValue(?nested:symbol, ?annotation:Annotation, ?element:symbol,
+                            ?index:number, ?valueKind:symbol, ?value:symbol, ?extra:symbol)
+
+NestedAnnotationValue(?nested, ?annotation, ?element, ?index, ?valueKind, ?value, ?extra) :-
+  AnnotationValue("annotation", ?nested, ?annotation, ?element, ?index, ?valueKind, ?value, ?extra).

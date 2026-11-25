@@ -1,0 +1,73 @@
+// ==========================================================================
+// Spring Messaging (Kafka, AMQP/RabbitMQ, JMS, STOMP/RSocket and Cloud Stream):
+//
+// Models listener and message-handler methods that Spring's messaging containers
+// invoke on beans when messages arrive from a broker, queue or STOMP endpoint.
+// ==========================================================================
+
+
+Owner("spring-messaging").
+
+
+
+
+// --------------------------------------------------------------------------
+// 1. Annotations
+// --------------------------------------------------------------------------
+// Method-level listener annotations (including repeatable containers such as
+// @KafkaListeners) plus class-level Kafka/Rabbit listeners paired with
+// @KafkaHandler / @RabbitHandler methods.
+
+.decl SpringMessaging_Annotation(?role:symbol, ?annotation:Annotation)
+
+// Method-level listeners (Kafka, RabbitMQ, JMS, STOMP/RSocket, legacy Cloud Stream).
+SpringMessaging_Annotation("listener-method", "org.springframework.kafka.annotation.KafkaListener").
+SpringMessaging_Annotation("listener-method", "org.springframework.kafka.annotation.KafkaListeners").
+SpringMessaging_Annotation("listener-method", "org.springframework.kafka.annotation.DltHandler").
+SpringMessaging_Annotation("listener-method", "org.springframework.amqp.rabbit.annotation.RabbitListener").
+SpringMessaging_Annotation("listener-method", "org.springframework.amqp.rabbit.annotation.RabbitListeners").
+SpringMessaging_Annotation("listener-method", "org.springframework.jms.annotation.JmsListener").
+SpringMessaging_Annotation("listener-method", "org.springframework.jms.annotation.JmsListeners").
+SpringMessaging_Annotation("listener-method", "org.springframework.messaging.handler.annotation.MessageMapping").
+SpringMessaging_Annotation("listener-method", "org.springframework.messaging.simp.annotation.SubscribeMapping").
+SpringMessaging_Annotation("listener-method", "org.springframework.messaging.handler.annotation.MessageExceptionHandler").
+SpringMessaging_Annotation("listener-method", "org.springframework.messaging.rsocket.annotation.ConnectMapping").
+SpringMessaging_Annotation("listener-method", "org.springframework.messaging.rsocket.service.RSocketExchange").
+SpringMessaging_Annotation("listener-method", "org.springframework.cloud.stream.annotation.StreamListener").
+
+// Class-level listeners whose handler methods carry @KafkaHandler / @RabbitHandler.
+SpringMessaging_Annotation("class-listener", "org.springframework.kafka.annotation.KafkaListener").
+SpringMessaging_Annotation("class-listener", "org.springframework.kafka.annotation.KafkaListeners").
+SpringMessaging_Annotation("class-listener", "org.springframework.amqp.rabbit.annotation.RabbitListener").
+SpringMessaging_Annotation("class-listener", "org.springframework.amqp.rabbit.annotation.RabbitListeners").
+SpringMessaging_Annotation("class-handler", "org.springframework.kafka.annotation.KafkaHandler").
+SpringMessaging_Annotation("class-handler", "org.springframework.amqp.rabbit.annotation.RabbitHandler").
+
+
+
+
+// --------------------------------------------------------------------------
+// 2. Contract interface
+// --------------------------------------------------------------------------
+// Marks non-static listener and message-handler methods on concrete application
+// classes as entry points (walking superclasses and interfaces for both method
+// annotations and class-level Kafka/Rabbit listener annotations).
+
+EntryPoint("spring-messaging", ?run) :-
+  ApplicationClass(?class),
+  ConcreteClassType(?class),
+  SpringMessaging_Annotation("listener-method", ?ann),
+  MethodCarries(?method, ?ann),
+  !Method_Modifier("static", ?method),
+  MethodRunOn(?method, ?class, ?run).
+
+EntryPoint("spring-messaging", ?run) :-
+  ApplicationClass(?class),
+  ConcreteClassType(?class),
+  basic.SubtypeOf(?class, ?listenerOwner),
+  SpringMessaging_Annotation("class-listener", ?classAnn),
+  TypeCarries(?listenerOwner, ?classAnn),
+  SpringMessaging_Annotation("class-handler", ?handlerAnn),
+  MethodCarries(?method, ?handlerAnn),
+  !Method_Modifier("static", ?method),
+  MethodRunOn(?method, ?class, ?run).

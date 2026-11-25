@@ -1,0 +1,162 @@
+// ==========================================================================
+// Jakarta Servlet (jakarta.servlet and javax.servlet):
+//
+// Models how a servlet container instantiates and invokes web components:
+//   - Servlets, filters, container-registered listeners, initializers and
+//     HTTP upgrade handlers are created by the container via their no-arg
+//     constructor and have their servlet API methods called.
+//   - All of those except ServletContainerInitializer also support DI on
+//     Jakarta EE servers, so they are requested via DICreationRequest.
+//   - Listeners created by application code and handed to the container
+//     (async, non-blocking IO and session-attribute listeners) only have
+//     their callback methods marked as entry points.
+//
+// Sections:
+//   1. Servlet API types
+//   2. Components
+//   3. Requests
+//   4. Contract interface
+// ==========================================================================
+
+
+Owner("jakarta-servlet").
+
+
+
+
+// --------------------------------------------------------------------------
+// 1. Servlet API types
+// --------------------------------------------------------------------------
+// Splits the Servlet API interfaces and base classes into two groups:
+// types the container instantiates itself and listener types the application
+// creates with `new` and hands over to the container.
+
+// Container-created types: registered by web.xml, @WebServlet/@WebFilter/@WebListener
+// or ServletContext.add*, loaded via ServiceLoader (ServletContainerInitializer) or
+// instantiated for HttpServletRequest.upgrade (HttpUpgradeHandler).
+.decl JakartaServlet_CreatedApiName(?suffix:symbol)
+
+JakartaServlet_CreatedApiName("servlet.Servlet").
+JakartaServlet_CreatedApiName("servlet.GenericServlet").
+JakartaServlet_CreatedApiName("servlet.http.HttpServlet").
+JakartaServlet_CreatedApiName("servlet.Filter").
+JakartaServlet_CreatedApiName("servlet.http.HttpFilter").
+JakartaServlet_CreatedApiName("servlet.ServletContextListener").
+JakartaServlet_CreatedApiName("servlet.ServletContextAttributeListener").
+JakartaServlet_CreatedApiName("servlet.ServletRequestListener").
+JakartaServlet_CreatedApiName("servlet.ServletRequestAttributeListener").
+JakartaServlet_CreatedApiName("servlet.http.HttpSessionListener").
+JakartaServlet_CreatedApiName("servlet.http.HttpSessionAttributeListener").
+JakartaServlet_CreatedApiName("servlet.http.HttpSessionIdListener").
+JakartaServlet_CreatedApiName("servlet.ServletContainerInitializer").
+JakartaServlet_CreatedApiName("servlet.http.HttpUpgradeHandler").
+
+// Program-created listeners handed to the container via AsyncContext.addListener,
+// ServletInputStream.setReadListener, ServletOutputStream.setWriteListener or
+// HttpSession.setAttribute.
+// AsyncContext.createListener(Class) can also instantiate an AsyncListener,
+// which is not modelled here.
+.decl JakartaServlet_HandedOverApiName(?suffix:symbol)
+
+JakartaServlet_HandedOverApiName("servlet.AsyncListener").
+JakartaServlet_HandedOverApiName("servlet.ReadListener").
+JakartaServlet_HandedOverApiName("servlet.WriteListener").
+JakartaServlet_HandedOverApiName("servlet.http.HttpSessionBindingListener").
+JakartaServlet_HandedOverApiName("servlet.http.HttpSessionActivationListener").
+
+.decl JakartaServlet_CreatedApiType(?type:ReferenceType)
+
+JakartaServlet_CreatedApiType(?type) :-
+  JakartaServlet_CreatedApiName(?suffix),
+  JakartaOrJavaxName(?suffix, ?type).
+
+.decl JakartaServlet_ApiType(?type:ReferenceType)
+
+JakartaServlet_ApiType(?type) :- JakartaServlet_CreatedApiType(?type).
+
+JakartaServlet_ApiType(?type) :-
+  JakartaServlet_HandedOverApiName(?suffix),
+  JakartaOrJavaxName(?suffix, ?type).
+
+
+
+
+// --------------------------------------------------------------------------
+// 2. Components
+// --------------------------------------------------------------------------
+// Classifies concrete application implementations of the Servlet API types
+// into all servlet components, container-created components and components
+// eligible for dependency injection.
+
+// Jakarta: concrete application classes implementing any servlet API type.
+.decl JakartaServlet_Component(?class:ClassType)
+
+JakartaServlet_Component(?class) :-
+  ApplicationClass(?class),
+  ConcreteClassType(?class),
+  JakartaServlet_ApiType(?apiType),
+  basic.SubtypeOf(?class, ?apiType).
+
+// Jakarta: components the container instantiates. A class implementing both
+// a container-created type and a handed-over listener is still container-created.
+.decl JakartaServlet_CreatedComponent(?class:ClassType)
+
+JakartaServlet_CreatedComponent(?class) :-
+  JakartaServlet_Component(?class),
+  JakartaServlet_CreatedApiType(?apiType),
+  basic.SubtypeOf(?class, ?apiType).
+
+// Jakarta: ServletContainerInitializer implementations (loaded via ServiceLoader).
+.decl JakartaServlet_Initializer(?class:ClassType)
+
+JakartaServlet_Initializer(?class) :-
+  JakartaServlet_CreatedComponent(?class),
+  JakartaOrJavaxName("servlet.ServletContainerInitializer", ?sci),
+  basic.SubtypeOf(?class, ?sci).
+
+// Jakarta EE Platform spec ("Component classes supporting injection"):
+// servlets, filters, listeners and upgrade handlers support DI;
+// ServletContainerInitializer classes do not.
+.decl JakartaServlet_InjectedComponent(?class:ClassType)
+
+JakartaServlet_InjectedComponent(?class) :-
+  JakartaServlet_CreatedComponent(?class),
+  !JakartaServlet_Initializer(?class).
+
+
+
+
+// --------------------------------------------------------------------------
+// 3. Requests
+// --------------------------------------------------------------------------
+// Asks the application's DI framework (e.g. CDI or Spring) to create and
+// inject into container-managed servlet components.
+
+DICreationRequest("jakarta-servlet", ?class) :-
+  JakartaServlet_InjectedComponent(?class).
+
+
+
+
+// --------------------------------------------------------------------------
+// 4. Contract interface
+// --------------------------------------------------------------------------
+// Projects servlet container creation (no-arg constructor fallback when no DI
+// container manages the component) and servlet API entry points.
+
+// Jakarta: ServletContext.createServlet/createFilter/createListener require
+// a zero-argument constructor when the container instantiates components itself.
+FrameworkCreatedType("jakarta-servlet", ?class) :-
+  JakartaServlet_CreatedComponent(?class).
+
+EntryPoint("jakarta-servlet", ?ctor) :-
+  JakartaServlet_CreatedComponent(?class),
+  NoArgConstructor(?ctor, ?class).
+
+// Jakarta: servlet API methods (init, service, doGet, doFilter, listener callbacks...)
+// running on the component. Handed-over listeners have no FrameworkCreatedType row,
+// so their `this` is the objects created by the application.
+EntryPoint("jakarta-servlet", ?run) :-
+  JakartaServlet_Component(?class),
+  JakartaServlet_ApiType(?apiType),
+  ApiMethodRunOn(?apiType, ?class, ?run).

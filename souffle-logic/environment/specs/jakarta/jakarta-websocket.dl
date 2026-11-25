@@ -1,0 +1,176 @@
+// ==========================================================================
+// Jakarta WebSocket (jakarta.websocket and javax.websocket):
+//
+// Models what every WebSocket container (Tomcat, Jetty, Undertow, Tyrus) does:
+//   - creates annotated endpoints (@ServerEndpoint, @ClientEndpoint) and
+//     programmatic Endpoint subclasses via their no-arg constructor and asks
+//     the DI container to create and inject into them (Jakarta EE Platform spec);
+//   - calls @OnOpen, @OnMessage, @OnClose and @OnError lifecycle methods on
+//     annotated endpoints and Endpoint methods on programmatic ones;
+//   - creates Decoder, Encoder and Configurator helper classes named on
+//     @ServerEndpoint / @ClientEndpoint and calls their API methods.
+//
+// Sections:
+//   1. Annotations and API types
+//   2. Endpoints and helper classes
+//   3. Requests and contract interface
+// ==========================================================================
+
+
+Owner("jakarta-websocket").
+
+
+
+
+// --------------------------------------------------------------------------
+// 1. Annotations and API types
+// --------------------------------------------------------------------------
+// Lookup tables for Jakarta/javax WebSocket annotations and base types.
+
+.decl JakartaWebSocket_Annotation(?role:symbol, ?annotation:Annotation)
+
+JakartaWebSocket_Annotation("endpoint", ?ann) :- JakartaOrJavaxName("websocket.server.ServerEndpoint", ?ann).
+JakartaWebSocket_Annotation("endpoint", ?ann) :- JakartaOrJavaxName("websocket.ClientEndpoint", ?ann).
+
+JakartaWebSocket_Annotation("callback", ?ann) :-
+  ( ?name = "OnOpen" ; ?name = "OnMessage" ; ?name = "OnClose" ; ?name = "OnError" ),
+  JakartaOrJavaxName(cat("websocket.", ?name), ?ann).
+
+
+.decl JakartaWebSocket_EndpointBase(?type:ReferenceType)
+JakartaWebSocket_EndpointBase(?type) :- JakartaOrJavaxName("websocket.Endpoint", ?type).
+
+.decl JakartaWebSocket_AppConfigApi(?type:ReferenceType)
+JakartaWebSocket_AppConfigApi(?type) :- JakartaOrJavaxName("websocket.server.ServerApplicationConfig", ?type).
+
+.decl JakartaWebSocket_MessageHandlerApi(?type:ReferenceType)
+JakartaWebSocket_MessageHandlerApi(?type) :-
+  ( ?suffix = "websocket.MessageHandler$Whole"
+  ; ?suffix = "websocket.MessageHandler$Partial" ),
+  JakartaOrJavaxName(?suffix, ?type).
+
+.decl JakartaWebSocket_HelperApi(?type:ReferenceType)
+JakartaWebSocket_HelperApi(?type) :-
+  ( ?suffix = "websocket.Decoder"
+  ; ?suffix = "websocket.Decoder$Text"
+  ; ?suffix = "websocket.Decoder$Binary"
+  ; ?suffix = "websocket.Decoder$TextStream"
+  ; ?suffix = "websocket.Decoder$BinaryStream"
+  ; ?suffix = "websocket.Encoder"
+  ; ?suffix = "websocket.Encoder$Text"
+  ; ?suffix = "websocket.Encoder$Binary"
+  ; ?suffix = "websocket.Encoder$TextStream"
+  ; ?suffix = "websocket.Encoder$BinaryStream"
+  ; ?suffix = "websocket.server.ServerEndpointConfig$Configurator"
+  ; ?suffix = "websocket.ClientEndpointConfig$Configurator" ),
+  JakartaOrJavaxName(?suffix, ?type).
+
+
+
+
+// --------------------------------------------------------------------------
+// 2. Endpoints and helper classes
+// --------------------------------------------------------------------------
+// Identifies annotated endpoints, programmatic Endpoint subclasses and any
+// concrete Decoder, Encoder or Configurator classes listed on an endpoint.
+
+.decl JakartaWebSocket_AnnotatedEndpoint(?class:ClassType)
+
+JakartaWebSocket_AnnotatedEndpoint(?class) :-
+  ApplicationClass(?class),
+  ConcreteClassType(?class),
+  JakartaWebSocket_Annotation("endpoint", ?ann),
+  TypeCarries(?class, ?ann).
+
+.decl JakartaWebSocket_ProgrammaticEndpoint(?class:ClassType)
+
+JakartaWebSocket_ProgrammaticEndpoint(?class) :-
+  ApplicationClass(?class),
+  ConcreteClassType(?class),
+  JakartaWebSocket_EndpointBase(?base),
+  basic.SubtypeOf(?class, ?base).
+
+.decl JakartaWebSocket_Endpoint(?class:ClassType)
+
+JakartaWebSocket_Endpoint(?class) :- JakartaWebSocket_AnnotatedEndpoint(?class).
+JakartaWebSocket_Endpoint(?class) :- JakartaWebSocket_ProgrammaticEndpoint(?class).
+
+// Concrete Decoder, Encoder and Configurator classes named on @ServerEndpoint / @ClientEndpoint.
+.decl JakartaWebSocket_HelperClass(?class:ClassType)
+
+JakartaWebSocket_HelperClass(?class) :-
+  JakartaWebSocket_AnnotatedEndpoint(?endpoint),
+  JakartaWebSocket_Annotation("endpoint", ?ann),
+  ( ?el = "decoders" ; ?el = "encoders" ; ?el = "configurator" ),
+  TypeAnnotationValue(?endpoint, ?ann, ?el, _, "class", ?class, _),
+  ConcreteClassType(?class).
+
+
+
+
+// Concrete ServerApplicationConfig implementations discovered at startup.
+.decl JakartaWebSocket_AppConfig(?class:ClassType)
+
+JakartaWebSocket_AppConfig(?class) :-
+  ApplicationClass(?class),
+  ConcreteClassType(?class),
+  JakartaWebSocket_AppConfigApi(?api),
+  basic.SubtypeOf(?class, ?api).
+
+
+
+
+// --------------------------------------------------------------------------
+// 3. Requests and contract interface
+// --------------------------------------------------------------------------
+// Endpoints support DI (DICreationRequest) with a no-arg constructor fallback;
+// helpers (decoders, encoders and configurators) and ServerApplicationConfig
+// classes are instantiated directly; MessageHandler callbacks run on instances
+// created by application code inside Endpoint.onOpen.
+// Known limits: un-annotated overrides of @OnOpen/@OnMessage callbacks and
+// distinguishing anonymous Endpoint subclasses are not modelled here.
+
+DICreationRequest("jakarta-websocket", ?class) :- JakartaWebSocket_Endpoint(?class).
+
+FrameworkCreatedType("jakarta-websocket", ?class) :- JakartaWebSocket_Endpoint(?class).
+FrameworkCreatedType("jakarta-websocket", ?class) :- JakartaWebSocket_HelperClass(?class).
+FrameworkCreatedType("jakarta-websocket", ?class) :- JakartaWebSocket_AppConfig(?class).
+
+EntryPoint("jakarta-websocket", ?ctor) :-
+  ( JakartaWebSocket_Endpoint(?class)
+  ; JakartaWebSocket_HelperClass(?class)
+  ; JakartaWebSocket_AppConfig(?class) ),
+  NoArgConstructor(?ctor, ?class).
+
+// Annotated endpoint callbacks (@OnOpen, @OnMessage, @OnClose and @OnError).
+EntryPoint("jakarta-websocket", ?run) :-
+  JakartaWebSocket_AnnotatedEndpoint(?class),
+  JakartaWebSocket_Annotation("callback", ?ann),
+  MethodCarries(?method, ?ann),
+  !Method_Modifier("static", ?method),
+  MethodRunOn(?method, ?class, ?run).
+
+// Programmatic Endpoint methods (onOpen, onClose and onError).
+EntryPoint("jakarta-websocket", ?run) :-
+  JakartaWebSocket_ProgrammaticEndpoint(?class),
+  JakartaWebSocket_EndpointBase(?base),
+  ApiMethodRunOn(?base, ?class, ?run).
+
+// Programmatic MessageHandler.Whole / MessageHandler.Partial onMessage callbacks.
+EntryPoint("jakarta-websocket", ?run) :-
+  ApplicationClass(?class),
+  ConcreteClassType(?class),
+  JakartaWebSocket_MessageHandlerApi(?api),
+  ApiMethodRunOn(?api, ?class, ?run).
+
+// ServerApplicationConfig discovery callbacks (getEndpointConfigs, getAnnotatedEndpointClasses).
+EntryPoint("jakarta-websocket", ?run) :-
+  JakartaWebSocket_AppConfig(?class),
+  JakartaWebSocket_AppConfigApi(?api),
+  ApiMethodRunOn(?api, ?class, ?run).
+
+// Decoder, Encoder and Configurator API callbacks.
+EntryPoint("jakarta-websocket", ?run) :-
+  JakartaWebSocket_HelperClass(?class),
+  JakartaWebSocket_HelperApi(?api),
+  ApiMethodRunOn(?api, ?class, ?run).

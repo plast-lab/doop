@@ -1,0 +1,92 @@
+// ==========================================================================
+// Spring Security (Spring Security 5.x to 7.x):
+//
+// Models the authentication, authorization and web-security callbacks that
+// Spring Security invokes on concrete application implementations (such as
+// UserDetailsService, AuthenticationProvider, auth handlers, AuthorizationManager
+// and 5.x WebSecurityConfigurerAdapter).
+//
+// Filters extending OncePerRequestFilter / GenericFilterBean live in spring-web.dl
+// because those base classes belong to spring-web and are used outside Security too.
+// ==========================================================================
+
+
+Owner("spring-security").
+
+
+
+
+// --------------------------------------------------------------------------
+// 1. Security API interfaces and template classes
+// --------------------------------------------------------------------------
+// Core Spring Security callback interfaces (all API methods invoked) and abstract
+// base classes (specific template hooks only, avoiding setters and utility methods).
+
+.decl SpringSecurity_CallbackInterface(?iface:ReferenceType)
+
+// Authentication and user lookup.
+SpringSecurity_CallbackInterface("org.springframework.security.core.userdetails.UserDetailsService").
+SpringSecurity_CallbackInterface("org.springframework.security.core.userdetails.AuthenticationUserDetailsService").
+SpringSecurity_CallbackInterface("org.springframework.security.authentication.AuthenticationProvider").
+SpringSecurity_CallbackInterface("org.springframework.security.authentication.AuthenticationManager").
+
+// Web authentication, logout and access-denied handlers.
+SpringSecurity_CallbackInterface("org.springframework.security.web.AuthenticationEntryPoint").
+SpringSecurity_CallbackInterface("org.springframework.security.web.authentication.AuthenticationSuccessHandler").
+SpringSecurity_CallbackInterface("org.springframework.security.web.authentication.AuthenticationFailureHandler").
+SpringSecurity_CallbackInterface("org.springframework.security.web.access.AccessDeniedHandler").
+SpringSecurity_CallbackInterface("org.springframework.security.web.authentication.logout.LogoutHandler").
+SpringSecurity_CallbackInterface("org.springframework.security.web.authentication.logout.LogoutSuccessHandler").
+
+// Authorization (AuthorizationManager 5.5+; PermissionEvaluator for @PreAuthorize hasPermission).
+SpringSecurity_CallbackInterface("org.springframework.security.authorization.AuthorizationManager").
+SpringSecurity_CallbackInterface("org.springframework.security.access.PermissionEvaluator").
+
+
+// Specific template hooks on abstract base classes (WebSecurityConfigurerAdapter removed in 6.0;
+// absent 5.x classes simply match nothing on 6+/7+).
+.decl SpringSecurity_TemplateHook(?base:ReferenceType, ?methodName:symbol)
+
+SpringSecurity_TemplateHook("org.springframework.security.web.authentication.AbstractAuthenticationProcessingFilter", "attemptAuthentication").
+SpringSecurity_TemplateHook("org.springframework.security.web.authentication.AbstractAuthenticationProcessingFilter", "successfulAuthentication").
+SpringSecurity_TemplateHook("org.springframework.security.web.authentication.AbstractAuthenticationProcessingFilter", "unsuccessfulAuthentication").
+
+SpringSecurity_TemplateHook("org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter", "configure").
+SpringSecurity_TemplateHook("org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter", "init").
+SpringSecurity_TemplateHook("org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter", "userDetailsService").
+SpringSecurity_TemplateHook("org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter", "authenticationManager").
+
+SpringSecurity_TemplateHook("org.springframework.security.config.annotation.method.configuration.GlobalMethodSecurityConfiguration", "configure").
+SpringSecurity_TemplateHook("org.springframework.security.config.annotation.method.configuration.GlobalMethodSecurityConfiguration", "createExpressionHandler").
+SpringSecurity_TemplateHook("org.springframework.security.config.annotation.method.configuration.GlobalMethodSecurityConfiguration", "accessDecisionManager").
+SpringSecurity_TemplateHook("org.springframework.security.config.annotation.method.configuration.GlobalMethodSecurityConfiguration", "customMethodSecurityMetadataSource").
+SpringSecurity_TemplateHook("org.springframework.security.config.annotation.method.configuration.GlobalMethodSecurityConfiguration", "authenticationManager").
+SpringSecurity_TemplateHook("org.springframework.security.config.annotation.method.configuration.GlobalMethodSecurityConfiguration", "runAsManager").
+SpringSecurity_TemplateHook("org.springframework.security.config.annotation.method.configuration.GlobalMethodSecurityConfiguration", "afterInvocationManager").
+
+
+
+
+// --------------------------------------------------------------------------
+// 2. Contract interface
+// --------------------------------------------------------------------------
+// Marks security callback methods on concrete application implementations as
+// entry points. Components registered as beans are created by spring.dl;
+// servlet filters also get FrameworkCreatedType from jakarta-servlet.dl.
+
+EntryPoint("spring-security", ?run) :-
+  ApplicationClass(?class),
+  ConcreteClassType(?class),
+  SpringSecurity_CallbackInterface(?iface),
+  ApiMethodRunOn(?iface, ?class, ?run).
+
+EntryPoint("spring-security", ?run) :-
+  ApplicationClass(?class),
+  ConcreteClassType(?class),
+  SpringSecurity_TemplateHook(?base, ?name),
+  basic.SubtypeOf(?class, ?base),
+  Method_DeclaringType(?baseMethod, ?base),
+  Method_SimpleName(?baseMethod, ?name),
+  !Method_Modifier("private", ?baseMethod),
+  !Method_Modifier("static", ?baseMethod),
+  MethodRunOn(?baseMethod, ?class, ?run).

@@ -1,0 +1,114 @@
+// ==========================================================================
+// Jakarta Interceptors (jakarta.interceptor and javax.interceptor):
+//
+// Models interceptor classes declared with @Interceptor or referenced through
+// @Interceptors(...) on a type, method or constructor:
+//   - creates interceptor classes via their no-arg constructor and requests
+//     them from the DI container (Jakarta Interceptors & Platform specs);
+//   - calls @AroundInvoke, @AroundConstruct and @AroundTimeout methods (plus
+//     target-class self-interceptors and 1-parameter @PostConstruct /
+//     @PreDestroy interceptor lifecycle callbacks).
+//
+// Sections:
+//   1. Annotations
+//   2. Interceptor classes
+//   3. Requests and contract interface
+// ==========================================================================
+
+
+Owner("jakarta-interceptors").
+
+
+
+
+// --------------------------------------------------------------------------
+// 1. Annotations
+// --------------------------------------------------------------------------
+// Lookup table for Jakarta/javax Interceptor and lifecycle annotations.
+
+.decl JakartaInterceptors_Annotation(?role:symbol, ?annotation:Annotation)
+
+JakartaInterceptors_Annotation("interceptor", ?ann) :- JakartaOrJavaxName("interceptor.Interceptor", ?ann).
+JakartaInterceptors_Annotation("interceptors", ?ann) :- JakartaOrJavaxName("interceptor.Interceptors", ?ann).
+
+JakartaInterceptors_Annotation("around", ?ann) :-
+  ( ?name = "AroundInvoke" ; ?name = "AroundConstruct" ; ?name = "AroundTimeout" ),
+  JakartaOrJavaxName(cat("interceptor.", ?name), ?ann).
+
+JakartaInterceptors_Annotation("self-around", ?ann) :-
+  ( ?name = "AroundInvoke" ; ?name = "AroundTimeout" ),
+  JakartaOrJavaxName(cat("interceptor.", ?name), ?ann).
+
+JakartaInterceptors_Annotation("lifecycle", ?ann) :-
+  ( ?name = "PostConstruct" ; ?name = "PreDestroy" ),
+  JakartaOrJavaxName(cat("annotation.", ?name), ?ann).
+
+
+
+
+// --------------------------------------------------------------------------
+// 2. Interceptor classes
+// --------------------------------------------------------------------------
+// Discovers concrete interceptor classes carrying @Interceptor or listed in
+// @Interceptors({...}) on any class, method or constructor.
+
+.decl JakartaInterceptors_Class(?class:ClassType)
+
+JakartaInterceptors_Class(?class) :-
+  ApplicationClass(?class),
+  ConcreteClassType(?class),
+  JakartaInterceptors_Annotation("interceptor", ?ann),
+  TypeCarries(?class, ?ann).
+
+JakartaInterceptors_Class(?class) :-
+  JakartaInterceptors_Annotation("interceptors", ?ann),
+  ( TypeAnnotationValue(_, ?ann, "value", _, "class", ?class, _)
+  ; MethodAnnotationValue(_, ?ann, "value", _, "class", ?class, _) ),
+  ConcreteClassType(?class).
+
+
+
+
+// --------------------------------------------------------------------------
+// 3. Requests and contract interface
+// --------------------------------------------------------------------------
+// Interceptors support DI (DICreationRequest) with a no-arg constructor fallback.
+// Marks around-advice methods and 1-arg InvocationContext lifecycle callbacks.
+// Known limit: an un-annotated subclass override of an interceptor method is still
+// kept as an entry point (conservative over-approximation of Interceptors 2.2 §5.2).
+
+DICreationRequest("jakarta-interceptors", ?class) :- JakartaInterceptors_Class(?class).
+
+FrameworkCreatedType("jakarta-interceptors", ?class) :- JakartaInterceptors_Class(?class).
+
+EntryPoint("jakarta-interceptors", ?ctor) :-
+  JakartaInterceptors_Class(?class),
+  NoArgConstructor(?ctor, ?class).
+
+// @AroundInvoke, @AroundConstruct and @AroundTimeout on interceptor classes.
+EntryPoint("jakarta-interceptors", ?run) :-
+  JakartaInterceptors_Class(?class),
+  JakartaInterceptors_Annotation("around", ?ann),
+  MethodCarries(?method, ?ann),
+  !Method_Modifier("static", ?method),
+  MethodRunOn(?method, ?class, ?run).
+
+// @AroundInvoke and @AroundTimeout declared directly on a target class (self-interceptor).
+EntryPoint("jakarta-interceptors", ?run) :-
+  ApplicationClass(?class),
+  ConcreteClassType(?class),
+  JakartaInterceptors_Annotation("self-around", ?ann),
+  MethodCarries(?method, ?ann),
+  !Method_Modifier("static", ?method),
+  MethodRunOn(?method, ?class, ?run).
+
+// 1-parameter @PostConstruct / @PreDestroy lifecycle callbacks on interceptor classes
+// (taking InvocationContext; 0-arg callbacks are handled by jakarta-annotation.dl).
+EntryPoint("jakarta-interceptors", ?run) :-
+  JakartaInterceptors_Class(?class),
+  JakartaInterceptors_Annotation("lifecycle", ?ann),
+  MethodCarries(?method, ?ann),
+  !Method_Modifier("static", ?method),
+  FormalParam(0, ?method, _),
+  !FormalParam(1, ?method, _),
+  MethodRunOn(?method, ?class, ?run).

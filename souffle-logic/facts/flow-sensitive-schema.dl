@@ -516,6 +516,35 @@
 .decl Param_Annotation(?method:Method, ?index:number, ?annotation:Annotation)
 .decl AnnotationElement(?annotationKind:symbol, ?element:symbol, ?parentId:symbol, ?id:symbol, ?name:symbol, ?value1:symbol, ?value2:symbol)
 
+// One value of an element of a runtime-visible annotation, with the annotation it belongs to.
+// ?kind: "type", "method", "field", "param" (?annotated is "<method>::parameter#i")
+// or "annotation" (?annotated is the id of a nested annotation).
+// ?index: the position in an array value, -1 for a single value.
+// ?valueKind: string, class, enum, annotation, boolean, int, long, char, byte, short, float, double.
+// An element that is not written (its default) or an empty array has no rows.
+// ?extra: the enum type (enum), the nested annotation type (annotation), else "-".
+.decl AnnotationValue(?kind:symbol, ?annotated:symbol, ?annotation:Annotation, ?element:symbol, ?index:number, ?valueKind:symbol, ?value:symbol, ?extra:symbol)
+
+// Parameter names: declared (MethodParameters attribute, javac -parameters)
+// and debug (LocalVariableTable attribute, javac -g).
+.decl Param_Name(?method:Method, ?index:number, ?name:symbol)
+.decl Param_DebugName(?method:Method, ?index:number, ?name:symbol)
+
+// Generic signatures. Type ids: a plain type keeps its usual id; a parameterized type is
+// written in Java form ("java.util.Map<java.lang.String,t.Gateway>"); a type variable is
+// "owner::name" (the class or method declaring it, "-" if not found).
+.decl GenericType(?type:symbol, ?erasure:Type)
+.decl GenericType_Argument(?type:symbol, ?index:number, ?argument:symbol, ?bound:symbol)
+.decl GenericArray(?array:symbol, ?component:symbol)
+.decl TypeVariable(?variable:symbol, ?declaredBy:symbol, ?name:symbol)
+.decl TypeVariable_Bound(?variable:symbol, ?index:number, ?bound:symbol)
+.decl Type_TypeParameter(?type:Type, ?index:number, ?variable:symbol)
+.decl Method_TypeParameter(?method:Method, ?index:number, ?variable:symbol)
+.decl Type_GenericSuperType(?type:Type, ?super:symbol)
+.decl Field_GenericType(?field:Field, ?type:symbol)
+.decl Method_GenericReturnType(?method:Method, ?type:symbol)
+.decl Method_GenericParamType(?method:Method, ?index:number, ?type:symbol)
+
 // The definition should appear outside the include, because a few rules negatively refer to it
 .decl isOpaqueMethod(?m:Method)
 

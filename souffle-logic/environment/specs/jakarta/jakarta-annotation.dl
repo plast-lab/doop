@@ -1,0 +1,60 @@
+// ==========================================================================
+// Jakarta Annotations (JSR-250 / jakarta.annotation and javax.annotation):
+//
+// Requests only:
+// - @PostConstruct and @PreDestroy ask whoever injects into an
+// object to call the method.
+// - @Resource asks whoever injects into an object to fill the field or
+// single-parameter setter.
+// ==========================================================================
+
+
+Owner("jakarta-annotation").
+
+
+
+
+// --------------------------------------------------------------------------
+// Annotations
+// --------------------------------------------------------------------------
+
+.decl JakartaAnnotation_Annotation(?role:symbol, ?annotation:Annotation)
+
+JakartaAnnotation_Annotation("post-construct", ?annotation) :- JakartaOrJavaxName("annotation.PostConstruct", ?annotation).
+
+JakartaAnnotation_Annotation("pre-destroy", ?annotation) :- JakartaOrJavaxName("annotation.PreDestroy", ?annotation).
+
+JakartaAnnotation_Annotation("resource", ?annotation) :- JakartaOrJavaxName("annotation.Resource", ?annotation).
+
+
+
+
+// --------------------------------------------------------------------------
+// Requests
+// --------------------------------------------------------------------------
+
+// Jakarta: non-static no-arg @PostConstruct and @PreDestroy methods
+// (PostConstruct Javadoc; static ones are a Spring extra in spring.dl).
+DICallbackRequest("jakarta-annotation", ?method) :-
+  ( JakartaAnnotation_Annotation("post-construct", ?ann)
+  ; JakartaAnnotation_Annotation("pre-destroy", ?ann) ),
+  MethodCarries(?method, ?ann),
+  !Method_Modifier("static", ?method),
+  !FormalParam(_, ?method, _).
+
+
+// Jakarta: non-static @Resource fields.
+SlotInjectionRequest("jakarta-annotation", ?field) :-
+  JakartaAnnotation_Annotation("resource", ?ann),
+  FieldCarries(?field, ?ann),
+  !Field_Modifier("static", ?field).
+
+
+// Jakarta: the single parameter of a non-static @Resource method.
+SlotInjectionRequest("jakarta-annotation", ?param) :-
+  JakartaAnnotation_Annotation("resource", ?ann),
+  MethodCarries(?method, ?ann),
+  !Method_Modifier("static", ?method),
+  !ConstructorOf(?method, _),
+  FormalParam(0, ?method, ?param),
+  !FormalParam(1, ?method, _).

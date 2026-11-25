@@ -1,0 +1,212 @@
+// ==========================================================================
+// Spring Data (Spring Data Commons 2.x to 4.x):
+//
+// Models Spring Data repository interfaces (extending Repository or carrying
+// @RepositoryDefinition, excluding @NoRepositoryBean) and custom repository
+// fragment implementations (*Impl by default, or repositoryImplementationPostfix).
+//
+// Sections:
+//   1. Annotations and framework types
+//   2. Repository interfaces and bean names
+//   3. Custom repository fragments
+//   4. Requests, offers and contract interface
+// ==========================================================================
+
+
+Owner("spring-data").
+
+
+
+
+// --------------------------------------------------------------------------
+// 1. Annotations and framework types
+// --------------------------------------------------------------------------
+// Static lookup tables for Spring Data repository markers and naming annotations.
+
+.decl SpringData_Annotation(?role:symbol, ?annotation:Annotation)
+
+SpringData_Annotation("repository-definition", "org.springframework.data.repository.RepositoryDefinition").
+SpringData_Annotation("no-repository-bean", "org.springframework.data.repository.NoRepositoryBean").
+SpringData_Annotation("component", "org.springframework.stereotype.Component").
+SpringData_Annotation("named", ?annotation) :- JakartaOrJavaxName("inject.Named", ?annotation).
+SpringData_Annotation("managed-bean", ?annotation) :- JakartaOrJavaxName("annotation.ManagedBean", ?annotation).
+
+
+
+
+// --------------------------------------------------------------------------
+// 2. Repository interfaces and bean names
+// --------------------------------------------------------------------------
+// Identifies application repository interfaces (RepositoryComponentProvider) and
+// computes their Spring bean names (RepositoryBeanNameGenerator).
+
+// Spring Data: application interfaces extending Repository or carrying
+// @RepositoryDefinition (directly, via meta-annotation or on a superinterface).
+.decl SpringData_RepositoryCandidate(?iface:InterfaceType)
+
+SpringData_RepositoryCandidate(?iface) :-
+  ApplicationClass(?iface),
+  isInterfaceType(?iface),
+  !basic.SubtypeOf(?iface, "java.lang.annotation.Annotation"),
+  basic.SubtypeOf(?iface, "org.springframework.data.repository.Repository").
+
+SpringData_RepositoryCandidate(?iface) :-
+  ApplicationClass(?iface),
+  isInterfaceType(?iface),
+  !basic.SubtypeOf(?iface, "java.lang.annotation.Annotation"),
+  basic.SubtypeOf(?iface, ?super),
+  SpringData_Annotation("repository-definition", ?ann),
+  TypeCarries(?super, ?ann).
+
+// Exclude base interfaces marked @NoRepositoryBean.
+.decl SpringData_NoRepositoryBean(?iface:InterfaceType)
+
+SpringData_NoRepositoryBean(?iface) :-
+  SpringData_RepositoryCandidate(?iface),
+  SpringData_Annotation("no-repository-bean", ?noRepo),
+  TypeCarries(?iface, ?noRepo).
+
+.decl SpringData_Repository(?iface:InterfaceType)
+
+SpringData_Repository(?iface) :-
+  SpringData_RepositoryCandidate(?iface),
+  !SpringData_NoRepositoryBean(?iface).
+
+// Spring Data: explicit single-String @Repository / @Component / @Named / @ManagedBean
+// value, else the decapitalized interface name without its package (outer.Inner for nested).
+.decl SpringData_ExplicitRepoName(?iface:InterfaceType, ?name:symbol)
+
+SpringData_ExplicitRepoName(?iface, ?name) :-
+  SpringData_Repository(?iface),
+  TypeAnnotationValue(?iface, ?ann, "value", -1, "string", ?name, _),
+  ?name != "",
+  ( ( SpringData_Annotation("component", ?root), CarriesAnnotation(?ann, ?root) )
+  ; SpringData_Annotation("named", ?ann)
+  ; SpringData_Annotation("managed-bean", ?ann) ).
+
+.decl SpringData_HasExplicitRepoName(?iface:InterfaceType)
+SpringData_HasExplicitRepoName(?iface) :- SpringData_ExplicitRepoName(?iface, _).
+
+.decl SpringData_RepoName(?iface:InterfaceType, ?name:symbol)
+SpringData_RepoName(?iface, ?name) :- SpringData_ExplicitRepoName(?iface, ?name).
+SpringData_RepoName(?iface, ?name) :-
+  SpringData_Repository(?iface),
+  !SpringData_HasExplicitRepoName(?iface),
+  DecapitalizedTypeName(?iface, ?name).
+
+
+
+
+// --------------------------------------------------------------------------
+// 3. Custom repository fragments
+// --------------------------------------------------------------------------
+// Finds custom fragment interfaces directly extended by a repository, matches
+// their concrete *Impl classes (modern fragment convention and legacy repo
+// convention) and computes the bean names Spring Data registers them under.
+
+// Default postfix "Impl" (DefaultRepositoryConfiguration) plus any
+// repositoryImplementationPostfix configured on an @Enable*Repositories annotation.
+.decl SpringData_ImplPostfix(?postfix:symbol)
+
+SpringData_ImplPostfix("Impl").
+SpringData_ImplPostfix(?postfix) :-
+  TypeAnnotationValue(_, _, "repositoryImplementationPostfix", _, "string", ?postfix, _),
+  ?postfix != "".
+
+// Non-repository application interfaces directly extended by a repository
+// (FragmentMetadata.getFragmentInterfaces reads direct interfaces only, so
+// superinterfaces of a fragment interface are not separate fragments).
+.decl SpringData_HasRepositoryDefinition(?iface:InterfaceType)
+
+SpringData_HasRepositoryDefinition(?iface) :-
+  ApplicationClass(?iface),
+  isInterfaceType(?iface),
+  SpringData_Annotation("repository-definition", ?ann),
+  TypeCarries(?iface, ?ann).
+
+.decl SpringData_FragmentInterface(?repo:InterfaceType, ?frag:InterfaceType)
+
+SpringData_FragmentInterface(?repo, ?frag) :-
+  SpringData_Repository(?repo),
+  DirectSuperinterface(?repo, ?frag),
+  ApplicationClass(?frag),
+  isInterfaceType(?frag),
+  !basic.SubtypeOf(?frag, "org.springframework.data.repository.Repository"),
+  !SpringData_HasRepositoryDefinition(?frag).
+
+// Modern fragment convention (Spring Data 2.x+): concrete class named <Fragment><Postfix>.
+.decl SpringData_ConventionImpl(?frag:InterfaceType, ?impl:ClassType)
+
+SpringData_ConventionImpl(?frag, ?impl) :-
+  SpringData_FragmentInterface(_, ?frag),
+  ApplicationClass(?impl),
+  ConcreteClassType(?impl),
+  basic.SubtypeOf(?impl, ?frag),
+  SpringData_ImplPostfix(?postfix),
+  TypeNameWithoutPackage(?frag, ?base),
+  TypeNameWithoutPackage(?impl, ?implName),
+  ?implName = cat(?base, ?postfix).
+
+// Legacy convention: concrete class named <Repository><Postfix> implementing the fragment.
+.decl SpringData_LegacyImpl(?repo:InterfaceType, ?impl:ClassType, ?postfix:symbol)
+
+SpringData_LegacyImpl(?repo, ?impl, ?postfix) :-
+  SpringData_FragmentInterface(?repo, ?frag),
+  ApplicationClass(?impl),
+  ConcreteClassType(?impl),
+  basic.SubtypeOf(?impl, ?frag),
+  SpringData_ImplPostfix(?postfix),
+  TypeNameWithoutPackage(?repo, ?base),
+  TypeNameWithoutPackage(?impl, ?implName),
+  ?implName = cat(?base, ?postfix).
+
+// Combined fragment implementations for each fragment interface.
+.decl SpringData_FragmentImpl(?frag:InterfaceType, ?impl:ClassType)
+
+SpringData_FragmentImpl(?frag, ?impl) :- SpringData_ConventionImpl(?frag, ?impl).
+SpringData_FragmentImpl(?frag, ?impl) :-
+  SpringData_LegacyImpl(?repo, ?impl, _),
+  SpringData_FragmentInterface(?repo, ?frag),
+  basic.SubtypeOf(?impl, ?frag).
+
+// Bean names Spring Data registers fragment implementations under:
+//   - convention: decapitalized <Fragment><Postfix> (ImplementationDetectionConfiguration.forFragment)
+//   - legacy: repository bean name + postfix (DefaultRepositoryConfiguration.getImplementationBeanName)
+.decl SpringData_ImplName(?impl:ClassType, ?name:symbol)
+
+SpringData_ImplName(?impl, ?name) :-
+  SpringData_ConventionImpl(_, ?impl),
+  DecapitalizedTypeName(?impl, ?name).
+
+SpringData_ImplName(?impl, cat(?repoName, ?postfix)) :-
+  SpringData_LegacyImpl(?repo, ?impl, ?postfix),
+  SpringData_RepoName(?repo, ?repoName).
+
+
+
+
+// --------------------------------------------------------------------------
+// 4. Requests, offers and contract interface
+// --------------------------------------------------------------------------
+// Publishes repository proxies (created and offered), requests Spring to create
+// and inject fragment implementations (also offered as beans) and marks fragment
+// interface methods as entry points.
+
+// Proxied repository interfaces are created by Spring Data and offered as beans.
+FrameworkCreatedType("spring-data", ?iface) :- SpringData_Repository(?iface).
+InjectionOffer("spring-data", ?iface) :- SpringData_Repository(?iface).
+InjectionOfferName("spring-data", ?iface, ?name) :- SpringData_RepoName(?iface, ?name).
+
+// Custom fragment implementations are registered as ordinary bean definitions
+// (RepositoryBeanDefinitionBuilder.potentiallyRegisterFragmentImplementation).
+DICreationRequest("spring-data", ?impl) :- SpringData_FragmentImpl(_, ?impl).
+InjectionOffer("spring-data", ?impl) :- SpringData_FragmentImpl(_, ?impl).
+InjectionOfferName("spring-data", ?impl, ?name) :- SpringData_ImplName(?impl, ?name).
+
+// Fragment interface methods (including inherited superinterface methods) are invoked
+// through the repository proxy.
+EntryPoint("spring-data", ?run) :-
+  SpringData_FragmentImpl(?frag, ?impl),
+  basic.SubtypeOf(?frag, ?superFrag),
+  isInterfaceType(?superFrag),
+  ApiMethodRunOn(?superFrag, ?impl, ?run).

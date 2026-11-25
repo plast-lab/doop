@@ -1,0 +1,270 @@
+// ==========================================================================
+// Jakarta REST (JAX-RS; jakarta.ws.rs and javax.ws.rs):
+//
+// Models what every REST runtime (Jersey, RESTEasy, CXF) does:
+//   - creates root resource classes (@Path), @Provider classes and Application
+//     subclasses using the JAX-RS constructor selection rule, and asks the DI
+//     container to create resources and providers (CDI/Spring integration);
+//   - calls resource methods (@GET, @POST and custom @HttpMethod annotations),
+//     sub-resource locators, provider interface methods and Application methods;
+//   - fills @Context and request-parameter (@QueryParam ...) fields, bean
+//     properties and constructor parameters directly (not via SlotInjectionRequest,
+//     since only the REST runtime honours these annotations).
+//
+// Sections:
+//   1. Annotations and API types
+//   2. Resources, providers, applications and resource methods
+//   3. Constructors
+//   4. Requests
+//   5. Contract interface
+// ==========================================================================
+
+
+Owner("jakarta-rest").
+
+
+
+
+// --------------------------------------------------------------------------
+// 1. Annotations and API types
+// --------------------------------------------------------------------------
+// Static lookup tables for JAX-RS routing, parameter and provider annotations
+// plus the standard provider interfaces and Application base class.
+
+.decl JakartaRest_Annotation(?role:symbol, ?annotation:Annotation)
+
+JakartaRest_Annotation("path", ?annotation) :- JakartaOrJavaxName("ws.rs.Path", ?annotation).
+JakartaRest_Annotation("http-method", ?annotation) :- JakartaOrJavaxName("ws.rs.HttpMethod", ?annotation).
+JakartaRest_Annotation("provider", ?annotation) :- JakartaOrJavaxName("ws.rs.ext.Provider", ?annotation).
+JakartaRest_Annotation("context", ?annotation) :- JakartaOrJavaxName("ws.rs.core.Context", ?annotation).
+
+// Parameter annotations the REST runtime injects into constructors, fields and setters
+// (JAX-RS spec "Constructors" and "Fields and Bean Properties"), including @Context.
+// @BeanParam aggregator POJOs and @FormParam are not modelled.
+JakartaRest_Annotation("injected", ?annotation) :- JakartaRest_Annotation("context", ?annotation).
+JakartaRest_Annotation("injected", ?annotation) :-
+  ( ?name = "QueryParam" ; ?name = "PathParam" ; ?name = "HeaderParam" ; ?name = "CookieParam" ; ?name = "MatrixParam" ),
+  JakartaOrJavaxName(cat("ws.rs.", ?name), ?annotation).
+
+
+// Standard provider interfaces (JAX-RS chapters "Providers", "Filters and Interceptors" and "Client API").
+.decl JakartaRest_ProviderApiName(?suffix:symbol)
+
+JakartaRest_ProviderApiName("ws.rs.ext.MessageBodyReader").
+JakartaRest_ProviderApiName("ws.rs.ext.MessageBodyWriter").
+JakartaRest_ProviderApiName("ws.rs.ext.ExceptionMapper").
+JakartaRest_ProviderApiName("ws.rs.ext.ContextResolver").
+JakartaRest_ProviderApiName("ws.rs.ext.ParamConverterProvider").
+JakartaRest_ProviderApiName("ws.rs.ext.ReaderInterceptor").
+JakartaRest_ProviderApiName("ws.rs.ext.WriterInterceptor").
+JakartaRest_ProviderApiName("ws.rs.container.ContainerRequestFilter").
+JakartaRest_ProviderApiName("ws.rs.container.ContainerResponseFilter").
+JakartaRest_ProviderApiName("ws.rs.container.DynamicFeature").
+JakartaRest_ProviderApiName("ws.rs.core.Feature").
+JakartaRest_ProviderApiName("ws.rs.client.ClientRequestFilter").
+JakartaRest_ProviderApiName("ws.rs.client.ClientResponseFilter").
+
+.decl JakartaRest_ProviderApiType(?type:ReferenceType)
+
+JakartaRest_ProviderApiType(?type) :-
+  JakartaRest_ProviderApiName(?suffix),
+  JakartaOrJavaxName(?suffix, ?type).
+
+.decl JakartaRest_ApplicationType(?type:ReferenceType)
+
+JakartaRest_ApplicationType(?type) :- JakartaOrJavaxName("ws.rs.core.Application", ?type).
+
+
+
+
+// --------------------------------------------------------------------------
+// 2. Resources, providers, applications and resource methods
+// --------------------------------------------------------------------------
+// Identifies the three component kinds the REST runtime manages (root resources,
+// @Provider classes and Application subclasses) plus annotated resource methods
+// and sub-resource locators.
+
+// Jakarta: root resource classes — concrete application classes with a class-level @Path
+// (class-level annotations are not inherited, spec "Annotation Inheritance").
+.decl JakartaRest_Resource(?class:ClassType)
+
+JakartaRest_Resource(?class) :-
+  ApplicationClass(?class),
+  ConcreteClassType(?class),
+  JakartaRest_Annotation("path", ?ann),
+  TypeCarries(?class, ?ann).
+
+// Jakarta: concrete provider interface implementations carrying @Provider.
+.decl JakartaRest_Provider(?class:ClassType)
+
+JakartaRest_Provider(?class) :-
+  ApplicationClass(?class),
+  ConcreteClassType(?class),
+  JakartaRest_Annotation("provider", ?ann),
+  TypeCarries(?class, ?ann),
+  JakartaRest_ProviderApiType(?iface),
+  basic.SubtypeOf(?class, ?iface).
+
+// Jakarta: concrete Application subclasses configuring the REST application.
+.decl JakartaRest_Application(?class:ClassType)
+
+JakartaRest_Application(?class) :-
+  ApplicationClass(?class),
+  ConcreteClassType(?class),
+  JakartaRest_ApplicationType(?app),
+  basic.SubtypeOf(?class, ?app).
+
+// Union of all classes the REST runtime creates and injects into.
+.decl JakartaRest_Component(?class:ClassType)
+
+JakartaRest_Component(?class) :- JakartaRest_Resource(?class).
+JakartaRest_Component(?class) :- JakartaRest_Provider(?class).
+JakartaRest_Component(?class) :- JakartaRest_Application(?class).
+
+// Jakarta: resource methods (carrying an @HttpMethod meta-annotation such as @GET)
+// and sub-resource locators (carrying method-level @Path).
+// Objects returned by sub-resource locators are handed over and not modelled here.
+.decl JakartaRest_ResourceMethod(?method:Method)
+
+JakartaRest_ResourceMethod(?method) :-
+  ( JakartaRest_Annotation("http-method", ?ann) ; JakartaRest_Annotation("path", ?ann) ),
+  MethodCarries(?method, ?ann),
+  !Method_Modifier("static", ?method),
+  !ConstructorOf(?method, _).
+
+
+
+
+// --------------------------------------------------------------------------
+// 3. Constructors
+// --------------------------------------------------------------------------
+// Implements the JAX-RS constructor selection rule (spec "Constructors"):
+//   - Resources: public constructor whose parameters all carry @Context (deprecated
+//     in Jakarta REST 4.0) or a request-param annotation (@QueryParam, @PathParam ...).
+//   - Providers: public constructor whose parameters all carry @Context.
+//   - With several suitable constructors, the ones with the highest arity win (all ties kept).
+//   - Application subclasses: public no-arg constructor.
+// In CDI/Spring environments the DI container selects instead (via DICreationRequest).
+
+.decl JakartaRest_InjectedParamAnnotation(?param:Var)
+
+JakartaRest_InjectedParamAnnotation(?param) :-
+  JakartaRest_Annotation("injected", ?ann),
+  ParamCarries(?param, ?ann).
+
+.decl JakartaRest_ContextParam(?param:Var)
+
+JakartaRest_ContextParam(?param) :-
+  JakartaRest_Annotation("context", ?ann),
+  ParamCarries(?param, ?ann).
+
+// Constructors that have at least one parameter the REST runtime cannot supply.
+.decl JakartaRest_UnsuppliedParam(?ctor:Method, ?class:ClassType)
+
+JakartaRest_UnsuppliedParam(?ctor, ?class) :-
+  JakartaRest_Resource(?class),
+  ConstructorOf(?ctor, ?class),
+  FormalParam(_, ?ctor, ?param),
+  !JakartaRest_InjectedParamAnnotation(?param).
+
+JakartaRest_UnsuppliedParam(?ctor, ?class) :-
+  JakartaRest_Provider(?class),
+  ConstructorOf(?ctor, ?class),
+  FormalParam(_, ?ctor, ?param),
+  !JakartaRest_ContextParam(?param).
+
+.decl JakartaRest_SuitableCtor(?ctor:Method, ?class:ClassType, ?arity:number)
+
+JakartaRest_SuitableCtor(?ctor, ?class, ?arity) :-
+  ( JakartaRest_Resource(?class) ; JakartaRest_Provider(?class) ),
+  ConstructorOf(?ctor, ?class),
+  Method_Modifier("public", ?ctor),
+  !JakartaRest_UnsuppliedParam(?ctor, ?class),
+  ?arity = count : { FormalParam(_, ?ctor, _) }.
+
+.decl JakartaRest_Constructor(?ctor:Method, ?class:ClassType)
+
+JakartaRest_Constructor(?ctor, ?class) :-
+  JakartaRest_SuitableCtor(?ctor, ?class, ?arity),
+  ?arity = max ?n : { JakartaRest_SuitableCtor(_, ?class, ?n) }.
+
+JakartaRest_Constructor(?ctor, ?class) :-
+  JakartaRest_Application(?class),
+  NoArgConstructor(?ctor, ?class),
+  Method_Modifier("public", ?ctor).
+
+
+
+
+// --------------------------------------------------------------------------
+// 4. Requests
+// --------------------------------------------------------------------------
+// In CDI-enabled (or Spring-integrated) environments, the DI container creates
+// and injects into JAX-RS resources and providers (spec "Constructors").
+
+DICreationRequest("jakarta-rest", ?class) :- JakartaRest_Resource(?class).
+DICreationRequest("jakarta-rest", ?class) :- JakartaRest_Provider(?class).
+
+
+
+
+// --------------------------------------------------------------------------
+// 5. Contract interface
+// --------------------------------------------------------------------------
+// Projects REST runtime creation, direct parameter/context injection and entry
+// points (constructors, resource methods, provider callbacks and Application methods).
+
+FrameworkCreatedType("jakarta-rest", ?class) :- JakartaRest_Component(?class).
+InjectionTarget("jakarta-rest", ?class) :- JakartaRest_Component(?class).
+
+EntryPoint("jakarta-rest", ?ctor) :- JakartaRest_Constructor(?ctor, _).
+InjectedParam("jakarta-rest", ?param) :- JakartaRest_Constructor(?ctor, _), FormalParam(_, ?ctor, ?param).
+
+// Jakarta: non-static fields and bean property setters annotated with @Context or a
+// request-param annotation. No InjectedWith: the engine mocks their declared types.
+InjectedField("jakarta-rest", ?field) :-
+  JakartaRest_Component(?class),
+  FieldOf(?field, ?class),
+  JakartaRest_Annotation("injected", ?ann),
+  FieldCarries(?field, ?ann),
+  !Field_Modifier("static", ?field).
+
+InjectedParam("jakarta-rest", ?param) :-
+  JakartaRest_Component(?class),
+  ParamOf(?param, ?class),
+  JakartaRest_Annotation("injected", ?ann),
+  MethodCarries(?method, ?ann),
+  FormalParam(0, ?method, ?param),
+  !FormalParam(1, ?method, _),
+  !Method_Modifier("static", ?method),
+  !ConstructorOf(?method, _).
+
+// Jakarta: resource methods and sub-resource locators running on root resources.
+// MethodRunOn covers methods inherited from superclasses and interfaces.
+EntryPoint("jakarta-rest", ?run) :-
+  JakartaRest_Resource(?class),
+  JakartaRest_ResourceMethod(?method),
+  MethodRunOn(?method, ?class, ?run).
+
+// Jakarta: @Context parameters of resource methods.
+InjectedParam("jakarta-rest", ?param) :-
+  JakartaRest_Resource(?class),
+  JakartaRest_ResourceMethod(?method),
+  MethodRunOn(?method, ?class, ?method),
+  FormalParam(_, ?method, ?param),
+  JakartaRest_ContextParam(?param).
+
+// Jakarta: provider interface methods on every concrete application implementation
+// (covers @Provider discovery as well as programmatic registration via Application.getClasses
+// or runtime register(new Filter())).
+EntryPoint("jakarta-rest", ?run) :-
+  ApplicationClass(?class),
+  ConcreteClassType(?class),
+  JakartaRest_ProviderApiType(?iface),
+  ApiMethodRunOn(?iface, ?class, ?run).
+
+// Jakarta: Application.getClasses, getSingletons and getProperties.
+EntryPoint("jakarta-rest", ?run) :-
+  JakartaRest_Application(?class),
+  JakartaRest_ApplicationType(?app),
+  ApiMethodRunOn(?app, ?class, ?run).

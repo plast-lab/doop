@@ -1,0 +1,430 @@
+// ==========================================================================
+// Jakarta Persistence (JPA; jakarta.persistence and javax.persistence):
+//
+// Models what every JPA provider (Hibernate, EclipseLink, OpenJPA) does:
+//   - creates entities and embeddables through their no-arg constructor
+//     (or record constructors for @Embeddable records in JPA 3.2), calls their
+//     lifecycle callbacks and calls property getters/setters under property access;
+//   - creates entity listeners and attribute converters, calls their methods and
+//     requests them from the DI container (JPA chapter 9);
+//   - requests injection for @PersistenceContext and @PersistenceUnit slots.
+// Provider-specific extras (e.g. Hibernate Integrators) belong in the provider's file.
+//
+// Sections:
+//   1. Annotations and API types
+//   2. Entities and embeddables
+//   3. Entity listeners and attribute converters
+//   4. Property access
+//   5. Requests
+//   6. Contract interface
+// ==========================================================================
+
+
+Owner("jakarta-persistence").
+
+
+
+
+// --------------------------------------------------------------------------
+// 1. Annotations and API types
+// --------------------------------------------------------------------------
+// Static lookup tables for JPA 2.x–4.0 annotations and AttributeConverter.
+
+.decl JakartaPersistence_Annotation(?role:symbol, ?annotation:Annotation)
+
+JakartaPersistence_Annotation("entity", ?annotation) :- JakartaOrJavaxName("persistence.Entity", ?annotation).
+JakartaPersistence_Annotation("embeddable", ?annotation) :- JakartaOrJavaxName("persistence.Embeddable", ?annotation).
+JakartaPersistence_Annotation("mapped-superclass", ?annotation) :- JakartaOrJavaxName("persistence.MappedSuperclass", ?annotation).
+JakartaPersistence_Annotation("entity-listeners", ?annotation) :- JakartaOrJavaxName("persistence.EntityListeners", ?annotation).
+JakartaPersistence_Annotation("entity-listener", ?annotation) :- JakartaOrJavaxName("persistence.EntityListener", ?annotation).
+JakartaPersistence_Annotation("converter", ?annotation) :- JakartaOrJavaxName("persistence.Converter", ?annotation).
+JakartaPersistence_Annotation("convert", ?annotation) :- JakartaOrJavaxName("persistence.Convert", ?annotation).
+JakartaPersistence_Annotation("converts", ?annotation) :- JakartaOrJavaxName("persistence.Converts", ?annotation).
+JakartaPersistence_Annotation("persistence-context", ?annotation) :- JakartaOrJavaxName("persistence.PersistenceContext", ?annotation).
+JakartaPersistence_Annotation("persistence-unit", ?annotation) :- JakartaOrJavaxName("persistence.PersistenceUnit", ?annotation).
+JakartaPersistence_Annotation("access", ?annotation) :- JakartaOrJavaxName("persistence.Access", ?annotation).
+JakartaPersistence_Annotation("id", ?annotation) :- JakartaOrJavaxName("persistence.Id", ?annotation).
+JakartaPersistence_Annotation("id", ?annotation) :- JakartaOrJavaxName("persistence.EmbeddedId", ?annotation).
+JakartaPersistence_Annotation("transient", ?annotation) :- JakartaOrJavaxName("persistence.Transient", ?annotation).
+
+// Entity and listener lifecycle callbacks (JPA chapter 3, "Lifecycle Callback Methods").
+// Includes JPA 2.x/3.x callbacks plus the JPA 4.0 additions (@PreMerge, @PreInsert ...);
+// annotations absent from a project's JPA version simply match nothing.
+JakartaPersistence_Annotation("callback", ?annotation) :-
+  ( ?name = "PrePersist" ; ?name = "PostPersist" ; ?name = "PreRemove" ; ?name = "PostRemove"
+  ; ?name = "PreUpdate" ; ?name = "PostUpdate" ; ?name = "PostLoad" ; ?name = "PreMerge"
+  ; ?name = "PreInsert" ; ?name = "PostInsert" ; ?name = "PreUpsert" ; ?name = "PostUpsert"
+  ; ?name = "PreDelete" ; ?name = "PostDelete" ),
+  JakartaOrJavaxName(cat("persistence.", ?name), ?annotation).
+
+// Persistence-unit lifecycle callbacks on @EntityListener classes (Jakarta Persistence 4.0).
+JakartaPersistence_Annotation("unit-callback", ?annotation) :-
+  ( ?name = "PostCreate" ; ?name = "PreClose" ),
+  JakartaOrJavaxName(cat("persistence.", ?name), ?annotation).
+
+
+.decl JakartaPersistence_ConverterInterface(?type:ReferenceType)
+
+JakartaPersistence_ConverterInterface(?type) :- JakartaOrJavaxName("persistence.AttributeConverter", ?type).
+
+
+
+
+// --------------------------------------------------------------------------
+// 2. Entities and embeddables
+// --------------------------------------------------------------------------
+// Identifies entity hierarchy classes (@Entity and @MappedSuperclass), concrete
+// instantiated types (@Entity and @Embeddable) and 0-arg entity lifecycle callbacks.
+
+// Jakarta: classes participating in an entity hierarchy (@Entity or @MappedSuperclass,
+// including abstract ones).
+.decl JakartaPersistence_EntityOrMappedSuperclass(?class:ClassType)
+
+JakartaPersistence_EntityOrMappedSuperclass(?class) :-
+  ApplicationClass(?class),
+  isClassType(?class),
+  ( JakartaPersistence_Annotation("entity", ?ann)
+  ; JakartaPersistence_Annotation("mapped-superclass", ?ann) ),
+  TypeCarries(?class, ?ann).
+
+// Jakarta: concrete @Entity and @Embeddable classes (JPA chapter 2, "The Entity Class").
+// Abstract entities and @MappedSuperclass types cannot be instantiated directly.
+.decl JakartaPersistence_Entity(?class:ClassType)
+
+JakartaPersistence_Entity(?class) :-
+  ApplicationClass(?class),
+  ConcreteClassType(?class),
+  JakartaPersistence_Annotation("entity", ?ann),
+  TypeCarries(?class, ?ann).
+
+.decl JakartaPersistence_Embeddable(?class:ClassType)
+
+JakartaPersistence_Embeddable(?class) :-
+  ApplicationClass(?class),
+  ConcreteClassType(?class),
+  JakartaPersistence_Annotation("embeddable", ?ann),
+  TypeCarries(?class, ?ann).
+
+.decl JakartaPersistence_EntityOrEmbeddable(?class:ClassType)
+
+JakartaPersistence_EntityOrEmbeddable(?class) :- JakartaPersistence_Entity(?class).
+JakartaPersistence_EntityOrEmbeddable(?class) :- JakartaPersistence_Embeddable(?class).
+
+// Jakarta: entity lifecycle callbacks declared on an entity or mapped superclass.
+// They are non-static, take no parameters and may have any visibility.
+.decl JakartaPersistence_EntityCallback(?method:Method)
+
+JakartaPersistence_EntityCallback(?method) :-
+  JakartaPersistence_Annotation("callback", ?ann),
+  MethodCarries(?method, ?ann),
+  Method_DeclaringType(?method, ?declaring),
+  JakartaPersistence_EntityOrMappedSuperclass(?declaring),
+  !Method_Modifier("static", ?method),
+  !FormalParam(_, ?method, _).
+
+
+
+
+// --------------------------------------------------------------------------
+// 3. Entity listeners and attribute converters
+// --------------------------------------------------------------------------
+// Discovers listener classes (@EntityListeners / @EntityListener), their 1-arg
+// callback methods and AttributeConverter classes (@Converter / @Convert / @Converts).
+// Unlike entities, both listeners and converters are DI-aware (JPA chapter 9).
+
+// Jakarta: classes named in @EntityListeners (on an entity, mapped superclass or
+// JPA 4.0 package-info) and classes annotated with @EntityListener (JPA 4.0).
+// Default listeners from orm.xml are not read.
+.decl JakartaPersistence_Listener(?class:ClassType)
+
+JakartaPersistence_Listener(?class) :-
+  JakartaPersistence_Annotation("entity-listeners", ?ann),
+  TypeAnnotationValue(_, ?ann, "value", _, "class", ?class, _),
+  ConcreteClassType(?class).
+
+JakartaPersistence_Listener(?class) :-
+  ApplicationClass(?class),
+  ConcreteClassType(?class),
+  JakartaPersistence_Annotation("entity-listener", ?ann),
+  TypeCarries(?class, ?ann).
+
+// Jakarta: non-static 1-parameter callbacks on entity listeners (taking the entity,
+// or the persistence unit object for JPA 4.0 @PostCreate / @PreClose).
+.decl JakartaPersistence_ListenerCallback(?method:Method)
+
+JakartaPersistence_ListenerCallback(?method) :-
+  ( JakartaPersistence_Annotation("callback", ?ann)
+  ; JakartaPersistence_Annotation("unit-callback", ?ann) ),
+  MethodCarries(?method, ?ann),
+  !Method_Modifier("static", ?method),
+  FormalParam(0, ?method, _),
+  !FormalParam(1, ?method, _).
+
+// Jakarta: converter classes referenced by @Convert(converter = ...) directly or
+// nested inside @Converts on a type, field or method.
+.decl JakartaPersistence_ConvertValue(?converter:ReferenceType)
+
+JakartaPersistence_ConvertValue(?converter) :-
+  JakartaPersistence_Annotation("convert", ?ann),
+  ( TypeAnnotationValue(_, ?ann, "converter", _, "class", ?converter, _)
+  ; FieldAnnotationValue(_, ?ann, "converter", _, "class", ?converter, _)
+  ; MethodAnnotationValue(_, ?ann, "converter", _, "class", ?converter, _) ).
+
+JakartaPersistence_ConvertValue(?converter) :-
+  JakartaPersistence_Annotation("converts", ?converts),
+  ( TypeAnnotationValue(_, ?converts, "value", _, "annotation", ?nested, _)
+  ; FieldAnnotationValue(_, ?converts, "value", _, "annotation", ?nested, _)
+  ; MethodAnnotationValue(_, ?converts, "value", _, "annotation", ?nested, _) ),
+  JakartaPersistence_Annotation("convert", ?ann),
+  NestedAnnotationValue(?nested, ?ann, "converter", _, "class", ?converter, _).
+
+// Jakarta: concrete AttributeConverter classes carrying @Converter or named in @Convert.
+.decl JakartaPersistence_Converter(?class:ClassType)
+
+JakartaPersistence_Converter(?class) :-
+  ApplicationClass(?class),
+  ConcreteClassType(?class),
+  JakartaPersistence_ConverterInterface(?iface),
+  basic.SubtypeOf(?class, ?iface),
+  JakartaPersistence_Annotation("converter", ?ann),
+  TypeCarries(?class, ?ann).
+
+JakartaPersistence_Converter(?class) :-
+  JakartaPersistence_ConvertValue(?class),
+  ConcreteClassType(?class),
+  JakartaPersistence_ConverterInterface(?iface),
+  basic.SubtypeOf(?class, ?iface).
+
+// Jakarta: listeners and converters support DI injection (JPA chapter 9).
+// When no DI container is plugged in, providers fall back to the no-arg constructor.
+.decl JakartaPersistence_ListenerOrConverter(?class:ClassType)
+
+JakartaPersistence_ListenerOrConverter(?class) :- JakartaPersistence_Listener(?class).
+JakartaPersistence_ListenerOrConverter(?class) :- JakartaPersistence_Converter(?class).
+
+
+
+
+// --------------------------------------------------------------------------
+// 4. Property access
+// --------------------------------------------------------------------------
+// Resolves each entity hierarchy's access type (FIELD vs PROPERTY) per JPA
+// chapter 2 ("Access Type") and collects persistent getters and setters for
+// property-access classes (plus individual getters marked @Access(PROPERTY)).
+// Field access writes fields reflectively and is not modelled here.
+// Per-attribute @Access(FIELD) inside a property-access class is ignored.
+
+// Direct superclass links within an entity/@MappedSuperclass hierarchy, grouped by root.
+.decl JakartaPersistence_MappedParent(?class:ClassType, ?parent:ClassType)
+
+JakartaPersistence_MappedParent(?class, ?parent) :-
+  JakartaPersistence_EntityOrMappedSuperclass(?class),
+  DirectSuperclass(?class, ?parent),
+  JakartaPersistence_EntityOrMappedSuperclass(?parent).
+
+.decl JakartaPersistence_HasMappedParent(?class:ClassType)
+
+JakartaPersistence_HasMappedParent(?class) :- JakartaPersistence_MappedParent(?class, _).
+
+.decl JakartaPersistence_InHierarchy(?root:ClassType, ?class:ClassType)
+
+JakartaPersistence_InHierarchy(?class, ?class) :-
+  JakartaPersistence_EntityOrMappedSuperclass(?class),
+  !JakartaPersistence_HasMappedParent(?class).
+
+JakartaPersistence_InHierarchy(?root, ?class) :-
+  JakartaPersistence_InHierarchy(?root, ?parent),
+  JakartaPersistence_MappedParent(?class, ?parent).
+
+// Explicit class-level @Access(FIELD) or @Access(PROPERTY) on JPA classes.
+.decl JakartaPersistence_ExplicitAccess(?class:ClassType, ?access:symbol)
+
+JakartaPersistence_ExplicitAccess(?class, ?access) :-
+  ( JakartaPersistence_EntityOrMappedSuperclass(?class)
+  ; JakartaPersistence_Embeddable(?class) ),
+  JakartaPersistence_Annotation("access", ?ann),
+  TypeAnnotationValue(?class, ?ann, "value", -1, "enum", ?access, _).
+
+.decl JakartaPersistence_HasExplicitAccess(?class:ClassType)
+
+JakartaPersistence_HasExplicitAccess(?class) :- JakartaPersistence_ExplicitAccess(?class, _).
+
+// Jakarta: a hierarchy defaults to property access when a class without explicit
+// @Access places @Id or @EmbeddedId on a getter. Mixed placement is undefined in JPA
+// and conservatively receives property access here.
+.decl JakartaPersistence_PropertyDefault(?root:ClassType)
+
+JakartaPersistence_PropertyDefault(?root) :-
+  JakartaPersistence_InHierarchy(?root, ?class),
+  !JakartaPersistence_HasExplicitAccess(?class),
+  Method_DeclaringType(?method, ?class),
+  JakartaPersistence_Annotation("id", ?ann),
+  MethodCarries(?method, ?ann).
+
+// JavaBeans-style non-static, non-private 0-arg getters (non-void getX, boolean/Boolean isX)
+// declared on entity, mapped superclass or embeddable classes, with their property suffix.
+// Package-private getters stay allowed because providers such as Hibernate access them reflectively.
+.decl JakartaPersistence_Getter(?getter:Method, ?class:ClassType, ?suffix:symbol)
+
+JakartaPersistence_Getter(?getter, ?class, ?suffix) :-
+  ( JakartaPersistence_EntityOrMappedSuperclass(?class)
+  ; JakartaPersistence_Embeddable(?class) ),
+  Method_DeclaringType(?getter, ?class),
+  !Method_Modifier("static", ?getter),
+  !Method_Modifier("private", ?getter),
+  !FormalParam(_, ?getter, _),
+  Method_ReturnType(?getter, ?ret),
+  ?ret != "void",
+  Method_SimpleName(?getter, ?name),
+  strlen(?name) > 3,
+  substr(?name, 0, 3) = "get",
+  ?suffix = substr(?name, 3, strlen(?name) - 3).
+
+JakartaPersistence_Getter(?getter, ?class, ?suffix) :-
+  ( JakartaPersistence_EntityOrMappedSuperclass(?class)
+  ; JakartaPersistence_Embeddable(?class) ),
+  Method_DeclaringType(?getter, ?class),
+  !Method_Modifier("static", ?getter),
+  !Method_Modifier("private", ?getter),
+  !FormalParam(_, ?getter, _),
+  ( Method_ReturnType(?getter, "boolean")
+  ; Method_ReturnType(?getter, "java.lang.Boolean") ),
+  Method_SimpleName(?getter, ?name),
+  strlen(?name) > 2,
+  substr(?name, 0, 2) = "is",
+  ?suffix = substr(?name, 2, strlen(?name) - 2).
+
+// Jakarta: classes using property access — explicit @Access(PROPERTY), the hierarchy's
+// default or an @Embeddable without @Access returned by a persistent getter.
+// Embeddables inside element collections (e.g. List<Address>) are not followed here.
+.decl JakartaPersistence_PropertyAccessClass(?class:ClassType)
+
+JakartaPersistence_PropertyAccessClass(?class) :-
+  JakartaPersistence_ExplicitAccess(?class, "PROPERTY").
+
+JakartaPersistence_PropertyAccessClass(?class) :-
+  JakartaPersistence_InHierarchy(?root, ?class),
+  !JakartaPersistence_HasExplicitAccess(?class),
+  JakartaPersistence_PropertyDefault(?root).
+
+JakartaPersistence_PropertyAccessClass(?embeddable) :-
+  JakartaPersistence_Embeddable(?embeddable),
+  !JakartaPersistence_HasExplicitAccess(?embeddable),
+  JakartaPersistence_PropertyGetter(?getter, _, _),
+  Method_ReturnType(?getter, ?embeddable).
+
+// Persistent getters (excluding @Transient, plus per-getter @Access(PROPERTY))
+// and their matching 1-arg setters (set<Suffix>).
+.decl JakartaPersistence_TransientMethod(?method:Method)
+
+JakartaPersistence_TransientMethod(?method) :-
+  JakartaPersistence_Annotation("transient", ?ann),
+  MethodCarries(?method, ?ann).
+
+.decl JakartaPersistence_PropertyGetter(?getter:Method, ?class:ClassType, ?suffix:symbol)
+
+JakartaPersistence_PropertyGetter(?getter, ?class, ?suffix) :-
+  JakartaPersistence_PropertyAccessClass(?class),
+  JakartaPersistence_Getter(?getter, ?class, ?suffix),
+  !JakartaPersistence_TransientMethod(?getter).
+
+JakartaPersistence_PropertyGetter(?getter, ?class, ?suffix) :-
+  JakartaPersistence_Getter(?getter, ?class, ?suffix),
+  JakartaPersistence_Annotation("access", ?ann),
+  MethodAnnotationValue(?getter, ?ann, "value", -1, "enum", "PROPERTY", _).
+
+.decl JakartaPersistence_PropertyAccessor(?accessor:Method, ?class:ClassType)
+
+JakartaPersistence_PropertyAccessor(?getter, ?class) :-
+  JakartaPersistence_PropertyGetter(?getter, ?class, _).
+
+JakartaPersistence_PropertyAccessor(?setter, ?class) :-
+  JakartaPersistence_PropertyGetter(_, ?class, ?suffix),
+  Method_DeclaringType(?setter, ?class),
+  Method_SimpleName(?setter, cat("set", ?suffix)),
+  !Method_Modifier("static", ?setter),
+  FormalParam(0, ?setter, _),
+  !FormalParam(1, ?setter, _).
+
+
+
+
+// --------------------------------------------------------------------------
+// 5. Requests
+// --------------------------------------------------------------------------
+// Publishes @PersistenceContext / @PersistenceUnit injection slots and asks the
+// DI container to create and inject into entity listeners and attribute converters.
+
+// Jakarta: non-static @PersistenceContext and @PersistenceUnit fields and single-param
+// setters (honoured by Jakarta EE containers and Spring's PersistenceAnnotationBeanPostProcessor).
+// No offers are emitted; slots get a mock EntityManager / EntityManagerFactory unless offered.
+SlotInjectionRequest("jakarta-persistence", ?field) :-
+  ( JakartaPersistence_Annotation("persistence-context", ?ann)
+  ; JakartaPersistence_Annotation("persistence-unit", ?ann) ),
+  FieldCarries(?field, ?ann),
+  !Field_Modifier("static", ?field).
+
+SlotInjectionRequest("jakarta-persistence", ?param) :-
+  ( JakartaPersistence_Annotation("persistence-context", ?ann)
+  ; JakartaPersistence_Annotation("persistence-unit", ?ann) ),
+  MethodCarries(?method, ?ann),
+  !Method_Modifier("static", ?method),
+  !ConstructorOf(?method, _),
+  FormalParam(0, ?method, ?param),
+  !FormalParam(1, ?method, _).
+
+// Jakarta: entity listeners and attribute converters are created by the DI container.
+DICreationRequest("jakarta-persistence", ?class) :-
+  JakartaPersistence_ListenerOrConverter(?class).
+
+
+
+
+// --------------------------------------------------------------------------
+// 6. Contract interface
+// --------------------------------------------------------------------------
+// Projects provider creation (entities, embeddables, listeners and converters),
+// lifecycle callbacks, converter methods and property accessors.
+// Note: entities instantiated by application code (`new Order()` then `persist`)
+// see only the provider's mock receiver until handed-over objects are modelled.
+
+FrameworkCreatedType("jakarta-persistence", ?class) :- JakartaPersistence_EntityOrEmbeddable(?class).
+FrameworkCreatedType("jakarta-persistence", ?class) :- JakartaPersistence_ListenerOrConverter(?class).
+
+// Jakarta: no-arg constructor for entities, embeddables, listeners and converters
+// (provider fallback alongside DICreationRequest for listeners and converters).
+EntryPoint("jakarta-persistence", ?ctor) :-
+  ( JakartaPersistence_EntityOrEmbeddable(?class)
+  ; JakartaPersistence_ListenerOrConverter(?class) ),
+  NoArgConstructor(?ctor, ?class).
+
+// Jakarta: constructors of @Embeddable records (JPA 3.2).
+EntryPoint("jakarta-persistence", ?ctor) :-
+  JakartaPersistence_Embeddable(?class),
+  basic.SubtypeOf(?class, "java.lang.Record"),
+  ConstructorOf(?ctor, ?class).
+
+// Jakarta: entity lifecycle callbacks (including those inherited from mapped superclasses).
+EntryPoint("jakarta-persistence", ?run) :-
+  JakartaPersistence_Entity(?class),
+  JakartaPersistence_EntityCallback(?method),
+  MethodRunOn(?method, ?class, ?run).
+
+// Jakarta: listener lifecycle callbacks on entity listeners.
+EntryPoint("jakarta-persistence", ?run) :-
+  JakartaPersistence_Listener(?class),
+  JakartaPersistence_ListenerCallback(?method),
+  MethodRunOn(?method, ?class, ?run).
+
+// Jakarta: AttributeConverter.convertToDatabaseColumn and convertToEntityAttribute.
+EntryPoint("jakarta-persistence", ?run) :-
+  JakartaPersistence_Converter(?class),
+  JakartaPersistence_ConverterInterface(?iface),
+  ApiMethodRunOn(?iface, ?class, ?run).
+
+// Jakarta: persistent property getters and setters on entities and embeddables.
+EntryPoint("jakarta-persistence", ?run) :-
+  JakartaPersistence_PropertyAccessor(?method, ?declaring),
+  JakartaPersistence_EntityOrEmbeddable(?class),
+  basic.SubtypeOf(?class, ?declaring),
+  MethodRunOn(?method, ?class, ?run).

@@ -1,0 +1,144 @@
+// ==========================================================================
+// JUnit (JUnit 4 and JUnit 5/6 Jupiter):
+//
+// Models how JUnit instantiates test classes and invokes test and lifecycle
+// methods:
+//   - JUnit 4: @Test, @Before, @After, @BeforeClass and @AfterClass;
+//   - JUnit 5/6 Jupiter: @Test, @ParameterizedTest, @RepeatedTest,
+//     @TestFactory, @TestTemplate, @BeforeEach, @AfterEach, @BeforeAll,
+//     @AfterAll, @Nested inner test classes and their enclosing host classes.
+// Spring's test integration (spring.dl) reads @SpringBootTest / @ExtendWith /
+// @RunWith separately to inject beans into the same test classes.
+//
+// Known limits: JUnit 5.13/6 @ClassTemplate/@ParameterizedClass, @MethodSource
+// argument providers, test-constructor parameter injection and sharing the outer
+// instance into @Nested constructors are not modelled here.
+//
+// Sections:
+//   1. Annotations
+//   2. Test classes and methods
+//   3. Contract interface
+// ==========================================================================
+
+
+Owner("junit").
+
+
+
+
+// --------------------------------------------------------------------------
+// 1. Annotations
+// --------------------------------------------------------------------------
+// Lookup table for JUnit 4 and JUnit 5/6 Jupiter test and lifecycle annotations.
+
+.decl JUnit_Annotation(?role:symbol, ?annotation:Annotation)
+
+// Test methods (Jupiter @RepeatedTest and @ParameterizedTest also carry @TestTemplate,
+// listed explicitly so they still match when junit-jupiter-api/params are not in -l).
+JUnit_Annotation("test", "org.junit.Test").
+JUnit_Annotation("test", "org.junit.jupiter.api.Test").
+JUnit_Annotation("test", "org.junit.jupiter.api.TestFactory").
+JUnit_Annotation("test", "org.junit.jupiter.api.TestTemplate").
+JUnit_Annotation("test", "org.junit.jupiter.api.RepeatedTest").
+JUnit_Annotation("test", "org.junit.jupiter.params.ParameterizedTest").
+
+// Instance lifecycle hooks (per test method or per class).
+JUnit_Annotation("lifecycle", "org.junit.Before").
+JUnit_Annotation("lifecycle", "org.junit.After").
+JUnit_Annotation("lifecycle", "org.junit.jupiter.api.BeforeEach").
+JUnit_Annotation("lifecycle", "org.junit.jupiter.api.AfterEach").
+
+// Class-level lifecycle hooks (may be static or instance under Lifecycle.PER_CLASS).
+JUnit_Annotation("class-lifecycle", "org.junit.BeforeClass").
+JUnit_Annotation("class-lifecycle", "org.junit.AfterClass").
+JUnit_Annotation("class-lifecycle", "org.junit.jupiter.api.BeforeAll").
+JUnit_Annotation("class-lifecycle", "org.junit.jupiter.api.AfterAll").
+
+JUnit_Annotation("nested", "org.junit.jupiter.api.Nested").
+
+
+
+
+// --------------------------------------------------------------------------
+// 2. Test classes and methods
+// --------------------------------------------------------------------------
+// Identifies concrete application classes containing at least one test method
+// (directly or inherited from an abstract base test class), @Nested inner test
+// classes and enclosing outer classes that host @Nested test classes.
+
+.decl JUnit_TestMethod(?class:ClassType, ?run:Method)
+
+JUnit_TestMethod(?class, ?run) :-
+  ApplicationClass(?class),
+  ConcreteClassType(?class),
+  JUnit_Annotation("test", ?ann),
+  MethodCarries(?method, ?ann),
+  !Method_Modifier("static", ?method),
+  MethodRunOn(?method, ?class, ?run).
+
+.decl JUnit_NestedClass(?class:ClassType)
+
+JUnit_NestedClass(?class) :-
+  ApplicationClass(?class),
+  ConcreteClassType(?class),
+  JUnit_Annotation("nested", ?ann),
+  TypeCarries(?class, ?ann).
+
+// Non-static @Nested inner class -> its enclosing outer class (javac passes the
+// outer instance as constructor parameter 0 and names the inner class Outer$Inner).
+.decl JUnit_EnclosingClass(?inner:ClassType, ?outer:ClassType)
+
+JUnit_EnclosingClass(?inner, ?outer) :-
+  JUnit_NestedClass(?inner),
+  ConstructorOf(?ctor, ?inner),
+  FormalParam(0, ?ctor, ?p),
+  Var_Type(?p, ?outer),
+  ApplicationClass(?outer),
+  ConcreteClassType(?outer),
+  strlen(?inner) > strlen(?outer),
+  substr(?inner, 0, strlen(?outer) + 1) = cat(?outer, "$").
+
+.decl JUnit_TestClass(?class:ClassType)
+
+JUnit_TestClass(?class) :- JUnit_TestMethod(?class, _).
+JUnit_TestClass(?class) :- JUnit_NestedClass(?class).
+JUnit_TestClass(?outer) :-
+  JUnit_TestClass(?inner),
+  JUnit_EnclosingClass(?inner, ?outer).
+
+
+
+
+// --------------------------------------------------------------------------
+// 3. Contract interface
+// --------------------------------------------------------------------------
+// Projects test class creation, constructor invocation and test/lifecycle entry points.
+
+FrameworkCreatedType("junit", ?class) :- JUnit_TestClass(?class).
+
+// JUnit 4 invokes the no-arg constructor; Jupiter invokes the sole constructor
+// (constructor parameter injection is not modelled here; parameters get type mocks).
+EntryPoint("junit", ?ctor) :-
+  JUnit_TestClass(?class),
+  ( NoArgConstructor(?ctor, ?class) ; OnlyConstructor(?ctor, ?class) ).
+
+// Test methods.
+EntryPoint("junit", ?run) :- JUnit_TestMethod(_, ?run).
+
+// Instance lifecycle hooks (@Before, @After, @BeforeEach, @AfterEach) and
+// non-static @BeforeAll / @AfterAll.
+EntryPoint("junit", ?run) :-
+  JUnit_TestClass(?class),
+  ( JUnit_Annotation("lifecycle", ?ann) ; JUnit_Annotation("class-lifecycle", ?ann) ),
+  MethodCarries(?method, ?ann),
+  !Method_Modifier("static", ?method),
+  MethodRunOn(?method, ?class, ?run).
+
+// Static class lifecycle hooks (@BeforeClass, @AfterClass, @BeforeAll, @AfterAll).
+EntryPoint("junit", ?method) :-
+  JUnit_TestClass(?class),
+  basic.SubtypeOf(?class, ?decl),
+  Method_DeclaringType(?method, ?decl),
+  JUnit_Annotation("class-lifecycle", ?ann),
+  MethodCarries(?method, ?ann),
+  Method_Modifier("static", ?method).

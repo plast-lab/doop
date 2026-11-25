@@ -1,0 +1,783 @@
+// ==========================================================================
+// Spring XML (Spring 3.x to 7.x):
+//
+// Models Spring XML bean definitions over Doop's XMLNode and XMLNodeAttribute
+// facts (BeanDefinitionParserDelegate):
+//   - <bean> definitions in application XML contexts (class beans, parent="..."
+//     inheritance of class/factory/properties/constructor-args/lifecycle,
+//     static and instance factory methods, FactoryBean<T> products, id/name
+//     splitting and <alias>, skipping abstract templates);
+//   - top-level <util:list>, <util:set> and <util:map> collection beans;
+//   - <property> setter wiring on class beans and factory-method products
+//     (ref attribute, nested <ref bean/local>, inline inner <bean>,
+//     <list>/<set>/<array>/<map> collections and literal values);
+//   - <constructor-arg> wiring for constructors and static/instance factory methods;
+//   - init-method and destroy-method lifecycle entry points.
+//
+// Known limits: p:/c: shortcut namespaces, XML autowire="byName/byType",
+// default-init-method / default-destroy-method on <beans>, XML primary /
+// autowire-candidate / <qualifier>, <lookup-method>, <constructor-arg>
+// collections and positional ordering, <alias> or factory-bean references to
+// Java @Component/@Bean beans, static init-method and destroy-method(boolean)
+// are not modelled here. XML DICreationRequest also runs Spring's constructor
+// rules alongside explicit <constructor-arg>.
+//
+// Sections:
+//   1. Application XML contexts, bean definitions and names
+//   2. Factory methods, FactoryBean products and util:* collections
+//   3. Requests and offers
+//   4. Property, constructor and lifecycle resolution
+//   5. Contract interface
+// ==========================================================================
+
+
+Owner("spring-xml").
+
+
+
+
+// --------------------------------------------------------------------------
+// 1. Application XML contexts, bean definitions and names
+// --------------------------------------------------------------------------
+// Restricts XML processing to Spring <beans> files in application contexts
+// (excluding library XML such as spring-jdbc's sql-error-codes.xml and non-Spring
+// XML such as Struts 2), resolves parent="..." inheritance and splits multi-valued
+// name="a,b;c" attributes. Every attribute lookup matches qName so p:name / p:id
+// shortcut attributes never collide with bean attributes.
+
+.decl SpringXml_BeansNamespace(?ns:symbol)
+SpringXml_BeansNamespace("http://www.springframework.org/schema/beans").
+SpringXml_BeansNamespace("").
+
+.decl SpringXml_UtilNamespace(?ns:symbol)
+SpringXml_UtilNamespace("http://www.springframework.org/schema/util").
+
+// XML files whose root element is a Spring <beans> document.
+.decl SpringXml_BeansFile(?file:symbol)
+SpringXml_BeansFile(?file) :-
+  XMLNode(?file, _, "-1", ?ns, "beans", _),
+  SpringXml_BeansNamespace(?ns).
+
+// Resource paths written in @ImportResource (on application classes) or <import resource="..."/>.
+.decl _SpringXml_ImportResourcePath(?path:symbol)
+
+_SpringXml_ImportResourcePath(?path) :-
+  ApplicationClass(?cls),
+  TypeAnnotationValue(?cls, "org.springframework.context.annotation.ImportResource", ?el, _, "string", ?path, _),
+  ( ?el = "value" ; ?el = "locations" ),
+  ?path != "".
+
+.decl _SpringXml_XmlImportPath(?fromFile:symbol, ?path:symbol)
+
+_SpringXml_XmlImportPath(?file, ?path) :-
+  SpringXml_BeansFile(?file),
+  XMLNode(?file, ?impNode, _, ?ns, "import", _),
+  SpringXml_BeansNamespace(?ns),
+  XMLNodeAttribute(?file, ?impNode, _, _, "resource", ?path),
+  ?path != "".
+
+.decl _SpringXml_ResourcePath(?path:symbol)
+_SpringXml_ResourcePath(?path) :- _SpringXml_ImportResourcePath(?path).
+_SpringXml_ResourcePath(?path) :- _SpringXml_XmlImportPath(_, ?path).
+
+// Extract the bare filename after the last "/" or ":" (strips "classpath:", "classpath*:"
+// and directory prefixes) and fold ASCII uppercase to lowercase to match ArtifactScanner's
+// lowercased JAR entry names (e.g. "classpath:applicationContext.xml" -> "applicationcontext.xml").
+.decl _SpringXml_PathPos(?path:symbol, ?i:number)
+_SpringXml_PathPos(?path, 0) :- _SpringXml_ResourcePath(?path).
+_SpringXml_PathPos(?path, ?i + 1) :- _SpringXml_PathPos(?path, ?i), ?i < strlen(?path).
+
+.decl _SpringXml_PathSepPos(?path:symbol, ?i:number)
+_SpringXml_PathSepPos(?path, ?i) :-
+  _SpringXml_PathPos(?path, ?i),
+  ?i < strlen(?path),
+  ?ch = substr(?path, ?i, 1),
+  ( ?ch = "/" ; ?ch = ":" ).
+
+.decl _SpringXml_RawFileName(?path:symbol, ?name:symbol)
+_SpringXml_RawFileName(?path, ?name) :-
+  _SpringXml_ResourcePath(?path),
+  _SpringXml_PathSepPos(?path, _),
+  ?last = max ?i : { _SpringXml_PathSepPos(?path, ?i) },
+  ?name = substr(?path, ?last + 1, strlen(?path) - ?last - 1),
+  ?name != "".
+_SpringXml_RawFileName(?path, ?path) :-
+  _SpringXml_ResourcePath(?path),
+  !_SpringXml_PathSepPos(?path, _).
+
+.decl _SpringXml_AsciiLower(?upper:symbol, ?lower:symbol)
+_SpringXml_AsciiLower("A", "a"). _SpringXml_AsciiLower("B", "b"). _SpringXml_AsciiLower("C", "c").
+_SpringXml_AsciiLower("D", "d"). _SpringXml_AsciiLower("E", "e"). _SpringXml_AsciiLower("F", "f").
+_SpringXml_AsciiLower("G", "g"). _SpringXml_AsciiLower("H", "h"). _SpringXml_AsciiLower("I", "i").
+_SpringXml_AsciiLower("J", "j"). _SpringXml_AsciiLower("K", "k"). _SpringXml_AsciiLower("L", "l").
+_SpringXml_AsciiLower("M", "m"). _SpringXml_AsciiLower("N", "n"). _SpringXml_AsciiLower("O", "o").
+_SpringXml_AsciiLower("P", "p"). _SpringXml_AsciiLower("Q", "q"). _SpringXml_AsciiLower("R", "r").
+_SpringXml_AsciiLower("S", "s"). _SpringXml_AsciiLower("T", "t"). _SpringXml_AsciiLower("U", "u").
+_SpringXml_AsciiLower("V", "v"). _SpringXml_AsciiLower("W", "w"). _SpringXml_AsciiLower("X", "x").
+_SpringXml_AsciiLower("Y", "y"). _SpringXml_AsciiLower("Z", "z").
+
+.decl _SpringXml_LowerStep(?raw:symbol, ?i:number, ?acc:symbol)
+_SpringXml_LowerStep(?raw, 0, "") :- _SpringXml_RawFileName(_, ?raw).
+_SpringXml_LowerStep(?raw, ?i + 1, cat(?acc, ?lo)) :-
+  _SpringXml_LowerStep(?raw, ?i, ?acc),
+  ?i < strlen(?raw),
+  ?ch = substr(?raw, ?i, 1),
+  _SpringXml_AsciiLower(?ch, ?lo).
+_SpringXml_LowerStep(?raw, ?i + 1, cat(?acc, ?ch)) :-
+  _SpringXml_LowerStep(?raw, ?i, ?acc),
+  ?i < strlen(?raw),
+  ?ch = substr(?raw, ?i, 1),
+  !_SpringXml_AsciiLower(?ch, _).
+
+.decl _SpringXml_ResourceFileName(?path:symbol, ?lower:symbol)
+_SpringXml_ResourceFileName(?path, ?lower) :-
+  _SpringXml_RawFileName(?path, ?raw),
+  _SpringXml_LowerStep(?raw, strlen(?raw), ?lower).
+
+// Boundary-checked filename match against ArtifactScanner's temp paths (".../spring_foo.xml"
+// or ".../foo.xml"), preventing "beans.xml" from matching "mybeans.xml".
+.decl _SpringXml_FileMatchesName(?file:symbol, ?lower:symbol)
+_SpringXml_FileMatchesName(?file, ?lower) :-
+  SpringXml_BeansFile(?file),
+  _SpringXml_ResourceFileName(_, ?lower),
+  ( contains(cat("/", ?lower), ?file)
+  ; contains(cat("_", ?lower), ?file)
+  ; ?file = ?lower ).
+
+// Application XML files: <beans> files defining at least one ApplicationClass bean,
+// files referenced by @ImportResource on an application class or files imported
+// recursively via <import resource="..."/> from an application XML file.
+.decl SpringXml_AppFile(?file:symbol)
+
+SpringXml_AppFile(?file) :-
+  SpringXml_BeansFile(?file),
+  XMLNode(?file, ?nodeId, _, ?ns, "bean", _),
+  SpringXml_BeansNamespace(?ns),
+  XMLNodeAttribute(?file, ?nodeId, _, _, "class", ?class),
+  ApplicationClass(?class).
+
+SpringXml_AppFile(?file) :-
+  _SpringXml_ImportResourcePath(?path),
+  _SpringXml_ResourceFileName(?path, ?lower),
+  _SpringXml_FileMatchesName(?file, ?lower).
+
+SpringXml_AppFile(?targetFile) :-
+  SpringXml_AppFile(?fromFile),
+  _SpringXml_XmlImportPath(?fromFile, ?path),
+  _SpringXml_ResourceFileName(?path, ?lower),
+  _SpringXml_FileMatchesName(?targetFile, ?lower).
+
+// All <bean> elements in application XML files (including abstract templates,
+// needed to resolve parent="..." inheritance).
+.decl SpringXml_AnyBeanNode(?file:symbol, ?nodeId:symbol)
+SpringXml_AnyBeanNode(?file, ?nodeId) :-
+  SpringXml_AppFile(?file),
+  XMLNode(?file, ?nodeId, _, ?ns, "bean", _),
+  SpringXml_BeansNamespace(?ns).
+
+.decl SpringXml_AbstractNode(?file:symbol, ?nodeId:symbol)
+SpringXml_AbstractNode(?file, ?nodeId) :-
+  SpringXml_AnyBeanNode(?file, ?nodeId),
+  XMLNodeAttribute(?file, ?nodeId, _, _, "abstract", "true").
+
+// Concrete (non-abstract) <bean> definitions.
+.decl SpringXml_BeanNode(?file:symbol, ?nodeId:symbol)
+SpringXml_BeanNode(?file, ?nodeId) :-
+  SpringXml_AnyBeanNode(?file, ?nodeId),
+  !SpringXml_AbstractNode(?file, ?nodeId).
+
+// Inner <bean> nodes nested inside <property>, <constructor-arg> or collections
+// (Spring creates and wires them locally without registering them as global beans).
+.decl SpringXml_InnerBeanNode(?file:symbol, ?nodeId:symbol)
+SpringXml_InnerBeanNode(?file, ?nodeId) :-
+  SpringXml_BeanNode(?file, ?nodeId),
+  XMLNode(?file, ?nodeId, ?parentId, _, _, _),
+  XMLNode(?file, ?parentId, _, _, ?parentTag, _),
+  ( ?parentTag = "property" ; ?parentTag = "constructor-arg"
+  ; ?parentTag = "list" ; ?parentTag = "set" ; ?parentTag = "array"
+  ; ?parentTag = "map" ; ?parentTag = "entry" ; ?parentTag = "key" ).
+
+// Multi-value name attribute splitting on BeanDefinitionParserDelegate delimiters (",; ").
+.decl _SpringXml_RawNameAttr(?raw:symbol)
+_SpringXml_RawNameAttr(?raw) :-
+  SpringXml_AnyBeanNode(?file, ?nodeId),
+  XMLNodeAttribute(?file, ?nodeId, _, _, "name", ?raw),
+  ?raw != "".
+
+.decl _SpringXml_NamePos(?raw:symbol, ?i:number)
+_SpringXml_NamePos(?raw, 0) :- _SpringXml_RawNameAttr(?raw).
+_SpringXml_NamePos(?raw, ?i + 1) :- _SpringXml_NamePos(?raw, ?i), ?i < strlen(?raw).
+
+.decl _SpringXml_NameSep(?raw:symbol, ?i:number)
+_SpringXml_NameSep(?raw, -1) :- _SpringXml_RawNameAttr(?raw).
+_SpringXml_NameSep(?raw, strlen(?raw)) :- _SpringXml_RawNameAttr(?raw).
+_SpringXml_NameSep(?raw, ?i) :-
+  _SpringXml_NamePos(?raw, ?i),
+  ?i < strlen(?raw),
+  ?ch = substr(?raw, ?i, 1),
+  ( ?ch = "," ; ?ch = ";" ; ?ch = " " ).
+
+.decl _SpringXml_HasSepBetween(?raw:symbol, ?a:number, ?b:number)
+_SpringXml_HasSepBetween(?raw, ?a, ?b) :-
+  _SpringXml_NameSep(?raw, ?a),
+  _SpringXml_NameSep(?raw, ?b),
+  _SpringXml_NameSep(?raw, ?m),
+  ?a < ?m,
+  ?m < ?b.
+
+.decl _SpringXml_SplitName(?raw:symbol, ?token:symbol)
+_SpringXml_SplitName(?raw, ?token) :-
+  _SpringXml_NameSep(?raw, ?a),
+  _SpringXml_NameSep(?raw, ?b),
+  ?a + 1 < ?b,
+  !_SpringXml_HasSepBetween(?raw, ?a, ?b),
+  ?token = substr(?raw, ?a + 1, ?b - ?a - 1).
+
+// Bean names (id, split name tokens and <alias name="..." alias="..."/>) for all
+// bean nodes (including abstract templates so child parent="..." lookups resolve).
+.decl SpringXml_AnyNodeName(?file:symbol, ?nodeId:symbol, ?name:symbol)
+
+SpringXml_AnyNodeName(?file, ?nodeId, ?name) :-
+  SpringXml_AnyBeanNode(?file, ?nodeId),
+  XMLNodeAttribute(?file, ?nodeId, _, _, "id", ?name),
+  ?name != "".
+
+SpringXml_AnyNodeName(?file, ?nodeId, ?name) :-
+  SpringXml_AnyBeanNode(?file, ?nodeId),
+  XMLNodeAttribute(?file, ?nodeId, _, _, "name", ?raw),
+  _SpringXml_SplitName(?raw, ?name).
+
+SpringXml_AnyNodeName(?file, ?nodeId, ?alias) :-
+  SpringXml_AnyNodeName(?file, ?nodeId, ?target),
+  SpringXml_AppFile(?aFile),
+  XMLNode(?aFile, ?aNode, _, ?ns, "alias", _),
+  SpringXml_BeansNamespace(?ns),
+  XMLNodeAttribute(?aFile, ?aNode, _, _, "name", ?target),
+  XMLNodeAttribute(?aFile, ?aNode, _, _, "alias", ?alias),
+  ?alias != "".
+
+// Parent-bean inheritance chain: (?file, ?nodeId) inherits from (?ancFile, ?ancNode)
+// (reflexive plus transitive along parent="...").
+.decl SpringXml_DirectParent(?file:symbol, ?nodeId:symbol, ?pFile:symbol, ?pNode:symbol)
+SpringXml_DirectParent(?file, ?nodeId, ?pFile, ?pNode) :-
+  SpringXml_AnyBeanNode(?file, ?nodeId),
+  XMLNodeAttribute(?file, ?nodeId, _, _, "parent", ?parentName),
+  SpringXml_AnyNodeName(?pFile, ?pNode, ?parentName).
+
+.decl SpringXml_InheritsFrom(?file:symbol, ?nodeId:symbol, ?ancFile:symbol, ?ancNode:symbol)
+SpringXml_InheritsFrom(?file, ?nodeId, ?file, ?nodeId) :-
+  SpringXml_AnyBeanNode(?file, ?nodeId).
+SpringXml_InheritsFrom(?file, ?nodeId, ?ancFile, ?ancNode) :-
+  SpringXml_DirectParent(?file, ?nodeId, ?pFile, ?pNode),
+  SpringXml_InheritsFrom(?pFile, ?pNode, ?ancFile, ?ancNode).
+
+// Effective bean attributes with child overriding parent (AbstractBeanDefinition.overrideFrom).
+.decl SpringXml_HasOwnAttr(?file:symbol, ?nodeId:symbol, ?attr:symbol)
+SpringXml_HasOwnAttr(?file, ?nodeId, ?attr) :-
+  SpringXml_AnyBeanNode(?file, ?nodeId),
+  XMLNodeAttribute(?file, ?nodeId, _, _, ?attr, ?v),
+  ( ?attr = "class" ; ?attr = "factory-method" ; ?attr = "factory-bean"
+  ; ?attr = "init-method" ; ?attr = "destroy-method" ),
+  ?v != "".
+
+.decl SpringXml_EffectiveAttr(?file:symbol, ?nodeId:symbol, ?attr:symbol, ?val:symbol)
+SpringXml_EffectiveAttr(?file, ?nodeId, ?attr, ?val) :-
+  SpringXml_AnyBeanNode(?file, ?nodeId),
+  XMLNodeAttribute(?file, ?nodeId, _, _, ?attr, ?val),
+  ( ?attr = "class" ; ?attr = "factory-method" ; ?attr = "factory-bean"
+  ; ?attr = "init-method" ; ?attr = "destroy-method" ),
+  ?val != "".
+SpringXml_EffectiveAttr(?file, ?nodeId, ?attr, ?val) :-
+  SpringXml_DirectParent(?file, ?nodeId, ?pFile, ?pNode),
+  !SpringXml_HasOwnAttr(?file, ?nodeId, ?attr),
+  SpringXml_EffectiveAttr(?pFile, ?pNode, ?attr, ?val).
+
+.decl SpringXml_NodeClass(?file:symbol, ?nodeId:symbol, ?class:ReferenceType)
+SpringXml_NodeClass(?file, ?nodeId, ?class) :-
+  SpringXml_EffectiveAttr(?file, ?nodeId, "class", ?class),
+  isClassOrInterfaceType(?class).
+
+.decl SpringXml_HasFactoryMethod(?file:symbol, ?nodeId:symbol)
+SpringXml_HasFactoryMethod(?file, ?nodeId) :-
+  SpringXml_BeanNode(?file, ?nodeId),
+  SpringXml_EffectiveAttr(?file, ?nodeId, "factory-method", _).
+
+.decl SpringXml_HasFactoryBean(?file:symbol, ?nodeId:symbol)
+SpringXml_HasFactoryBean(?file, ?nodeId) :-
+  SpringXml_BeanNode(?file, ?nodeId),
+  SpringXml_EffectiveAttr(?file, ?nodeId, "factory-bean", _).
+
+// Ordinary class-instantiated <bean> definitions (no factory-method / factory-bean).
+.decl SpringXml_ClassBean(?file:symbol, ?nodeId:symbol, ?class:ClassType)
+SpringXml_ClassBean(?file, ?nodeId, ?class) :-
+  SpringXml_BeanNode(?file, ?nodeId),
+  !SpringXml_HasFactoryMethod(?file, ?nodeId),
+  !SpringXml_HasFactoryBean(?file, ?nodeId),
+  SpringXml_NodeClass(?file, ?nodeId, ?class),
+  ConcreteClassType(?class).
+
+// Effective <constructor-arg> children (own plus inherited from parent="...").
+.decl SpringXml_CtorArg(?file:symbol, ?beanNode:symbol, ?argFile:symbol, ?argNode:symbol)
+SpringXml_CtorArg(?file, ?beanNode, ?ancFile, ?argNode) :-
+  SpringXml_BeanNode(?file, ?beanNode),
+  SpringXml_InheritsFrom(?file, ?beanNode, ?ancFile, ?ancNode),
+  XMLNode(?ancFile, ?argNode, ?ancNode, _, "constructor-arg", _).
+
+.decl SpringXml_CtorArgCount(?file:symbol, ?beanNode:symbol, ?n:number)
+SpringXml_CtorArgCount(?file, ?beanNode, ?n) :-
+  SpringXml_CtorArg(?file, ?beanNode, _, _),
+  ?n = count : { SpringXml_CtorArg(?file, ?beanNode, _, _) }.
+
+.decl SpringXml_HasCtorArg(?file:symbol, ?beanNode:symbol)
+SpringXml_HasCtorArg(?file, ?beanNode) :- SpringXml_CtorArg(?file, ?beanNode, _, _).
+
+
+
+
+// --------------------------------------------------------------------------
+// 2. Factory methods, FactoryBean products and util:* collections
+// --------------------------------------------------------------------------
+// Resolves static factory methods (class + factory-method, matching arity and
+// covering inherited static methods for Spring <= 6), instance factory methods
+// (factory-bean + factory-method, paired directly with the factory bean's class),
+// FactoryBean<T>.getObject() products and top-level <util:list/set/map> beans.
+
+.decl SpringXml_StaticFactoryMethod(?file:symbol, ?nodeId:symbol, ?ownerClass:ReferenceType, ?method:Method)
+SpringXml_StaticFactoryMethod(?file, ?nodeId, ?class, ?method) :-
+  SpringXml_BeanNode(?file, ?nodeId),
+  !SpringXml_HasFactoryBean(?file, ?nodeId),
+  SpringXml_NodeClass(?file, ?nodeId, ?class),
+  SpringXml_EffectiveAttr(?file, ?nodeId, "factory-method", ?mName),
+  basic.SubtypeOf(?class, ?decl),
+  Method_DeclaringType(?method, ?decl),
+  Method_SimpleName(?method, ?mName),
+  Method_Modifier("static", ?method),
+  ( ( SpringXml_CtorArgCount(?file, ?nodeId, ?n), Method_Arity(?method, ?n) )
+  ; ( !SpringXml_HasCtorArg(?file, ?nodeId), Method_Arity(?method, 0) ) ).
+
+// Concrete product class of a <bean> (class bean itself, or concrete return/allocated
+// class of a factory method) so instance factory-bean chains, properties and init/destroy
+// callbacks work on factory-method products too.
+.decl SpringXml_FactoryMethod(?file:symbol, ?nodeId:symbol, ?method:Method)
+.decl SpringXml_InstanceFactoryMethod(?file:symbol, ?nodeId:symbol, ?fbClass:ClassType, ?run:Method)
+.decl SpringXml_ProductClass(?file:symbol, ?nodeId:symbol, ?class:ClassType)
+
+SpringXml_ProductClass(?file, ?nodeId, ?class) :- SpringXml_ClassBean(?file, ?nodeId, ?class).
+SpringXml_ProductClass(?file, ?nodeId, ?class) :-
+  SpringXml_FactoryMethod(?file, ?nodeId, ?method),
+  Method_ReturnType(?method, ?class),
+  ConcreteClassType(?class).
+SpringXml_ProductClass(?file, ?nodeId, ?class) :-
+  SpringXml_FactoryMethod(?file, ?nodeId, ?method),
+  Method_ReturnType(?method, ?retType),
+  Instruction_Method(?insn, ?method),
+  AssignHeapAllocation_Heap(?insn, ?heap),
+  isNormalHeap(?heap),
+  HeapAllocation_Type(?heap, ?class),
+  ConcreteClassType(?class),
+  basic.SubtypeOf(?class, ?retType).
+
+SpringXml_InstanceFactoryMethod(?file, ?nodeId, ?fbClass, ?run) :-
+  SpringXml_BeanNode(?file, ?nodeId),
+  SpringXml_EffectiveAttr(?file, ?nodeId, "factory-bean", ?fbName),
+  SpringXml_EffectiveAttr(?file, ?nodeId, "factory-method", ?mName),
+  SpringXml_AnyNodeName(?fbFile, ?fbNode, ?fbName),
+  SpringXml_ProductClass(?fbFile, ?fbNode, ?fbClass),
+  Method_SimpleName(?method, ?mName),
+  !Method_Modifier("static", ?method),
+  MethodRunOn(?method, ?fbClass, ?run),
+  ( ( SpringXml_CtorArgCount(?file, ?nodeId, ?n), Method_Arity(?run, ?n) )
+  ; ( !SpringXml_HasCtorArg(?file, ?nodeId), Method_Arity(?run, 0) ) ).
+
+SpringXml_FactoryMethod(?file, ?nodeId, ?method) :- SpringXml_StaticFactoryMethod(?file, ?nodeId, _, ?method).
+SpringXml_FactoryMethod(?file, ?nodeId, ?method) :- SpringXml_InstanceFactoryMethod(?file, ?nodeId, _, ?method).
+
+// FactoryBean<T>.getObject() method for XML-declared FactoryBeans (preferring a
+// covariant override over a synthetic bridge method).
+.decl SpringXml_FactoryBeanRawGetObject(?fb:ClassType, ?run:Method)
+SpringXml_FactoryBeanRawGetObject(?fb, ?run) :-
+  SpringXml_ClassBean(_, _, ?fb),
+  basic.SubtypeOf(?fb, "org.springframework.beans.factory.FactoryBean"),
+  Method_DeclaringType(?ifaceMethod, "org.springframework.beans.factory.FactoryBean"),
+  Method_SimpleName(?ifaceMethod, "getObject"),
+  !FormalParam(_, ?ifaceMethod, _),
+  MethodRunOn(?ifaceMethod, ?fb, ?run).
+
+.decl SpringXml_FactoryBeanGetObject(?fb:ClassType, ?getObj:Method)
+SpringXml_FactoryBeanGetObject(?fb, ?real) :-
+  SpringXml_FactoryBeanRawGetObject(?fb, ?bridge),
+  basic.Method_CovariantBridge(?bridge, ?real).
+SpringXml_FactoryBeanGetObject(?fb, ?run) :-
+  SpringXml_FactoryBeanRawGetObject(?fb, ?run),
+  !basic.Method_CovariantBridge(?run, _).
+
+.decl SpringXml_IsFactoryBeanClass(?class:ClassType)
+SpringXml_IsFactoryBeanClass(?fb) :- SpringXml_FactoryBeanGetObject(?fb, _).
+
+// Source produced by an XML <bean> node (class itself, or factory method).
+.decl SpringXml_NodeSource(?file:symbol, ?nodeId:symbol, ?source:Source)
+SpringXml_NodeSource(?file, ?nodeId, ?class) :- SpringXml_ClassBean(?file, ?nodeId, ?class).
+SpringXml_NodeSource(?file, ?nodeId, ?method) :- SpringXml_FactoryMethod(?file, ?nodeId, ?method).
+
+// Effective product source of an inner <bean> (FactoryBean's getObject() only for
+// FactoryBeans, else the node's own source).
+.decl SpringXml_InnerBeanEffectiveSource(?file:symbol, ?nodeId:symbol, ?source:Source)
+SpringXml_InnerBeanEffectiveSource(?file, ?nodeId, ?getObj) :-
+  SpringXml_InnerBeanNode(?file, ?nodeId),
+  SpringXml_ClassBean(?file, ?nodeId, ?fb),
+  SpringXml_FactoryBeanGetObject(?fb, ?getObj).
+SpringXml_InnerBeanEffectiveSource(?file, ?nodeId, ?source) :-
+  SpringXml_InnerBeanNode(?file, ?nodeId),
+  SpringXml_NodeSource(?file, ?nodeId, ?source),
+  !SpringXml_IsFactoryBeanClass(?source).
+
+// Top-level <util:list>, <util:set> and <util:map> collection beans.
+.decl SpringXml_UtilDefaultClass(?tag:symbol, ?attr:symbol, ?defaultClass:ClassType)
+SpringXml_UtilDefaultClass("list", "list-class", "java.util.ArrayList").
+SpringXml_UtilDefaultClass("set", "set-class", "java.util.HashSet").
+SpringXml_UtilDefaultClass("map", "map-class", "java.util.HashMap").
+
+.decl SpringXml_UtilExplicitClass(?file:symbol, ?nodeId:symbol, ?class:ClassType)
+SpringXml_UtilExplicitClass(?file, ?nodeId, ?class) :-
+  SpringXml_AppFile(?file),
+  XMLNode(?file, ?nodeId, _, ?ns, ?tag, _),
+  SpringXml_UtilNamespace(?ns),
+  SpringXml_UtilDefaultClass(?tag, ?attr, _),
+  XMLNodeAttribute(?file, ?nodeId, _, _, ?attr, ?class),
+  ConcreteClassType(?class).
+
+.decl SpringXml_HasUtilExplicitClass(?file:symbol, ?nodeId:symbol)
+SpringXml_HasUtilExplicitClass(?file, ?nodeId) :- SpringXml_UtilExplicitClass(?file, ?nodeId, _).
+
+.decl SpringXml_UtilBean(?file:symbol, ?nodeId:symbol, ?class:ClassType, ?name:symbol)
+SpringXml_UtilBean(?file, ?nodeId, ?class, ?name) :-
+  SpringXml_UtilExplicitClass(?file, ?nodeId, ?class),
+  XMLNodeAttribute(?file, ?nodeId, _, _, "id", ?name),
+  ?name != "".
+SpringXml_UtilBean(?file, ?nodeId, ?defaultClass, ?name) :-
+  SpringXml_AppFile(?file),
+  XMLNode(?file, ?nodeId, _, ?ns, ?tag, _),
+  SpringXml_UtilNamespace(?ns),
+  SpringXml_UtilDefaultClass(?tag, _, ?defaultClass),
+  !SpringXml_HasUtilExplicitClass(?file, ?nodeId),
+  ConcreteClassType(?defaultClass),
+  XMLNodeAttribute(?file, ?nodeId, _, _, "id", ?name),
+  ?name != "".
+
+
+
+
+// --------------------------------------------------------------------------
+// 3. Requests and offers
+// --------------------------------------------------------------------------
+// Offers top-level XML beans (and util:* collections) with their names to Spring
+// and requests DI creation for XML class beans (for @Autowired / @PostConstruct).
+// Inner beans are wired directly to their enclosing slot and are not global offers.
+// For FactoryBeans, getObject() gets ?name and the factory itself gets "&?name".
+
+DICreationRequest("spring-xml", ?class) :- SpringXml_ClassBean(_, _, ?class).
+
+InjectionOffer("spring-xml", ?source) :-
+  SpringXml_NodeSource(?file, ?nodeId, ?source),
+  !SpringXml_InnerBeanNode(?file, ?nodeId).
+
+InjectionOfferName("spring-xml", ?source, ?name) :-
+  SpringXml_NodeSource(?file, ?nodeId, ?source),
+  !SpringXml_InnerBeanNode(?file, ?nodeId),
+  !SpringXml_IsFactoryBeanClass(?source),
+  SpringXml_AnyNodeName(?file, ?nodeId, ?name).
+
+InjectionOfferName("spring-xml", ?fb, cat("&", ?name)) :-
+  SpringXml_ClassBean(?file, ?nodeId, ?fb),
+  !SpringXml_InnerBeanNode(?file, ?nodeId),
+  SpringXml_IsFactoryBeanClass(?fb),
+  SpringXml_AnyNodeName(?file, ?nodeId, ?name).
+
+InjectionOffer("spring-xml", ?getObj) :-
+  SpringXml_ClassBean(?file, ?nodeId, ?fb),
+  !SpringXml_InnerBeanNode(?file, ?nodeId),
+  SpringXml_FactoryBeanGetObject(?fb, ?getObj).
+
+InjectionOfferName("spring-xml", ?getObj, ?name) :-
+  SpringXml_ClassBean(?file, ?nodeId, ?fb),
+  !SpringXml_InnerBeanNode(?file, ?nodeId),
+  SpringXml_FactoryBeanGetObject(?fb, ?getObj),
+  SpringXml_AnyNodeName(?file, ?nodeId, ?name).
+
+InjectionOffer("spring-xml", ?class) :- SpringXml_UtilBean(_, _, ?class, _).
+InjectionOfferName("spring-xml", ?class, ?name) :- SpringXml_UtilBean(_, _, ?class, ?name).
+
+
+
+
+// --------------------------------------------------------------------------
+// 4. Property, constructor and lifecycle resolution
+// --------------------------------------------------------------------------
+// Resolves <property>, <constructor-arg> (for constructors and static/instance
+// factory methods) and init-method / destroy-method callbacks against accumulated
+// InjectionOfferNames.
+
+// Effective erased type of an offered or inner-bean source (including FactoryBean<T>
+// products for both top-level and inner XML FactoryBeans).
+.decl SpringXml_SourceType(?source:Source, ?type:Type)
+
+SpringXml_SourceType(?source, ?type) :-
+  ( InjectionOffer(_, ?source) ; SpringXml_InnerBeanEffectiveSource(_, _, ?source) ),
+  SourceType(?source, ?type).
+
+SpringXml_SourceType(?getObj, ?prodType) :-
+  ( ( InjectionOffer(_, ?fb), isClassType(?fb) )
+  ; SpringXml_ClassBean(_, _, ?fb) ),
+  basic.SubtypeOf(?fb, "org.springframework.beans.factory.FactoryBean"),
+  Method_DeclaringType(?ifaceMethod, "org.springframework.beans.factory.FactoryBean"),
+  Method_SimpleName(?ifaceMethod, "getObject"),
+  !FormalParam(_, ?ifaceMethod, _),
+  MethodRunOn(?ifaceMethod, ?fb, ?run),
+  ( ( basic.Method_CovariantBridge(?run, ?getObj) )
+  ; ( !basic.Method_CovariantBridge(?run, _), ?getObj = ?run ) ),
+  TypeSuperArg(?fb, "org.springframework.beans.factory.FactoryBean", 0, ?prodFull, "="),
+  ?prodFull != "-",
+  !ContainsTypeVariable(?prodFull),
+  GenericErasure(?prodFull, ?prodType).
+
+// Type-compatibility check for explicit XML refs: class/interface sources must be
+// subtypes of the slot type (required by the injection contract), while method/field
+// sources (such as a raw Object FactoryBean or factory method) also match supertypes.
+.decl SpringXml_RefTypeFits(?source:Source, ?slotType:Type) inline
+SpringXml_RefTypeFits(?source, ?slotType) :-
+  isClassOrInterfaceType(?source),
+  basic.SubtypeOf(?source, ?slotType).
+SpringXml_RefTypeFits(?source, ?slotType) :-
+  ( isMethod(?source) ; isField(?source) ),
+  SpringXml_SourceType(?source, ?sType),
+  ( basic.SubtypeOf(?sType, ?slotType) ; basic.SubtypeOf(?slotType, ?sType) ).
+
+// Bean reference name inside a <property> or <constructor-arg> element
+// (either ref="..." attribute or child <ref bean="..." / local="..."/>).
+.decl SpringXml_DirectRef(?file:symbol, ?elemNode:symbol, ?refName:symbol)
+
+SpringXml_DirectRef(?file, ?elemNode, ?refName) :-
+  XMLNodeAttribute(?file, ?elemNode, _, _, "ref", ?refName),
+  ?refName != "".
+
+SpringXml_DirectRef(?file, ?elemNode, ?refName) :-
+  XMLNode(?file, ?refNode, ?elemNode, _, "ref", _),
+  ( XMLNodeAttribute(?file, ?refNode, _, _, "bean", ?refName)
+  ; XMLNodeAttribute(?file, ?refNode, _, _, "local", ?refName) ),
+  ?refName != "".
+
+// References and inner <bean>s inside <list>, <set>, <array> or <map> of a <property>.
+.decl SpringXml_CollectionRef(?file:symbol, ?propNode:symbol, ?refName:symbol)
+
+SpringXml_CollectionRef(?file, ?propNode, ?refName) :-
+  XMLNode(?file, ?collNode, ?propNode, _, ?collTag, _),
+  ( ?collTag = "list" ; ?collTag = "set" ; ?collTag = "array" ),
+  XMLNode(?file, ?refNode, ?collNode, _, "ref", _),
+  ( XMLNodeAttribute(?file, ?refNode, _, _, "bean", ?refName)
+  ; XMLNodeAttribute(?file, ?refNode, _, _, "local", ?refName) ),
+  ?refName != "".
+
+SpringXml_CollectionRef(?file, ?propNode, ?refName) :-
+  XMLNode(?file, ?mapNode, ?propNode, _, "map", _),
+  XMLNode(?file, ?entryNode, ?mapNode, _, "entry", _),
+  ( XMLNodeAttribute(?file, ?entryNode, _, _, "value-ref", ?refName)
+  ; ( XMLNode(?file, ?refNode, ?entryNode, _, "ref", _),
+      ( XMLNodeAttribute(?file, ?refNode, _, _, "bean", ?refName)
+      ; XMLNodeAttribute(?file, ?refNode, _, _, "local", ?refName) ) ) ),
+  ?refName != "".
+
+.decl SpringXml_CollectionInnerBean(?file:symbol, ?propNode:symbol, ?source:Source)
+
+SpringXml_CollectionInnerBean(?file, ?propNode, ?source) :-
+  XMLNode(?file, ?collNode, ?propNode, _, ?collTag, _),
+  ( ?collTag = "list" ; ?collTag = "set" ; ?collTag = "array" ),
+  XMLNode(?file, ?innerNode, ?collNode, _, "bean", _),
+  SpringXml_InnerBeanEffectiveSource(?file, ?innerNode, ?source).
+
+SpringXml_CollectionInnerBean(?file, ?propNode, ?source) :-
+  XMLNode(?file, ?mapNode, ?propNode, _, "map", _),
+  XMLNode(?file, ?entryNode, ?mapNode, _, "entry", _),
+  XMLNode(?file, ?innerNode, ?entryNode, _, "bean", _),
+  SpringXml_InnerBeanEffectiveSource(?file, ?innerNode, ?source).
+
+// Property setter parameter on class beans and factory-method products (including
+// <property> elements inherited via parent="...").
+.decl SpringXml_PropertySlot(?propFile:symbol, ?propNode:symbol, ?class:ClassType, ?param:Var)
+
+SpringXml_PropertySlot(?ancFile, ?propNode, ?class, ?param) :-
+  SpringXml_BeanNode(?file, ?beanNode),
+  SpringXml_ProductClass(?file, ?beanNode, ?class),
+  SpringXml_InheritsFrom(?file, ?beanNode, ?ancFile, ?ancNode),
+  XMLNode(?ancFile, ?propNode, ?ancNode, _, "property", _),
+  XMLNodeAttribute(?ancFile, ?propNode, _, _, "name", ?propName),
+  SetterPropertyName(?setter, ?propName),
+  MethodRunOn(?setter, ?class, ?run),
+  FormalParam(0, ?run, ?param).
+
+// Resolved property wiring (direct ref or inline inner <bean>).
+.decl SpringXml_PropertyWired(?class:ClassType, ?param:Var, ?source:Source)
+
+SpringXml_PropertyWired(?class, ?param, ?source) :-
+  SpringXml_PropertySlot(?propFile, ?propNode, ?class, ?param),
+  SpringXml_DirectRef(?propFile, ?propNode, ?refName),
+  InjectionOfferName(_, ?source, ?refName),
+  SlotType(?param, ?pType),
+  SpringXml_RefTypeFits(?source, ?pType).
+
+SpringXml_PropertyWired(?class, ?param, ?source) :-
+  SpringXml_PropertySlot(?propFile, ?propNode, ?class, ?param),
+  XMLNode(?propFile, ?innerNode, ?propNode, _, "bean", _),
+  SpringXml_InnerBeanEffectiveSource(?propFile, ?innerNode, ?source),
+  SlotType(?param, ?pType),
+  SpringXml_RefTypeFits(?source, ?pType).
+
+// Resolved collection/map property wiring (for array slots, checks element type fit).
+.decl SpringXml_CollectionSlotFits(?param:Var, ?source:Source) inline
+SpringXml_CollectionSlotFits(?param, ?source) :-
+  SlotType(?param, ?pType),
+  !isArrayType(?pType),
+  isSource(?source).
+SpringXml_CollectionSlotFits(?param, ?source) :-
+  SlotType(?param, ?arrType),
+  ComponentType(?arrType, ?elemType),
+  SpringXml_RefTypeFits(?source, ?elemType).
+
+.decl SpringXml_CollectionWired(?class:ClassType, ?param:Var, ?source:Source)
+
+SpringXml_CollectionWired(?class, ?param, ?source) :-
+  SpringXml_PropertySlot(?propFile, ?propNode, ?class, ?param),
+  SpringXml_CollectionRef(?propFile, ?propNode, ?refName),
+  InjectionOfferName(_, ?source, ?refName),
+  SpringXml_CollectionSlotFits(?param, ?source).
+
+SpringXml_CollectionWired(?class, ?param, ?source) :-
+  SpringXml_PropertySlot(?propFile, ?propNode, ?class, ?param),
+  SpringXml_CollectionInnerBean(?propFile, ?propNode, ?source),
+  SpringXml_CollectionSlotFits(?param, ?source).
+
+// Constructor of an XML class bean matching the declared <constructor-arg> arity.
+.decl SpringXml_BeanConstructor(?file:symbol, ?beanNode:symbol, ?class:ClassType, ?ctor:Method)
+
+SpringXml_BeanConstructor(?file, ?beanNode, ?class, ?ctor) :-
+  SpringXml_ClassBean(?file, ?beanNode, ?class),
+  SpringXml_CtorArgCount(?file, ?beanNode, ?n),
+  ConstructorOf(?ctor, ?class),
+  Method_Arity(?ctor, ?n).
+
+SpringXml_BeanConstructor(?file, ?beanNode, ?class, ?ctor) :-
+  SpringXml_ClassBean(?file, ?beanNode, ?class),
+  !SpringXml_HasCtorArg(?file, ?beanNode),
+  NoArgConstructor(?ctor, ?class).
+
+// Executable receiving <constructor-arg> values: class-bean constructor, static
+// factory method (when declaring type is a class) or instance factory method.
+.decl SpringXml_CtorArgTarget(?file:symbol, ?beanNode:symbol, ?class:ClassType, ?method:Method)
+
+SpringXml_CtorArgTarget(?file, ?beanNode, ?class, ?ctor) :-
+  SpringXml_BeanConstructor(?file, ?beanNode, ?class, ?ctor).
+
+SpringXml_CtorArgTarget(?file, ?beanNode, ?declClass, ?method) :-
+  SpringXml_StaticFactoryMethod(?file, ?beanNode, _, ?method),
+  Method_DeclaringType(?method, ?declClass),
+  isClassType(?declClass).
+
+SpringXml_CtorArgTarget(?file, ?beanNode, ?fbClass, ?run) :-
+  SpringXml_InstanceFactoryMethod(?file, ?beanNode, ?fbClass, ?run).
+
+.decl SpringXml_CtorArgParam(?param:Var)
+SpringXml_CtorArgParam(?param) :-
+  SpringXml_CtorArgTarget(_, _, _, ?method),
+  FormalParam(_, ?method, ?param).
+
+.decl SpringXml_CtorArgHasIndexOrName(?argFile:symbol, ?argNode:symbol)
+SpringXml_CtorArgHasIndexOrName(?argFile, ?argNode) :-
+  SpringXml_CtorArg(_, _, ?argFile, ?argNode),
+  ( XMLNodeAttribute(?argFile, ?argNode, _, _, "index", _)
+  ; XMLNodeAttribute(?argFile, ?argNode, _, _, "name", _) ).
+
+// Candidate source supplied by a <constructor-arg> (direct ref or inline inner <bean>).
+.decl SpringXml_CtorArgSource(?argFile:symbol, ?argNode:symbol, ?source:Source)
+
+SpringXml_CtorArgSource(?argFile, ?argNode, ?source) :-
+  SpringXml_CtorArg(_, _, ?argFile, ?argNode),
+  SpringXml_DirectRef(?argFile, ?argNode, ?refName),
+  InjectionOfferName(_, ?source, ?refName).
+
+SpringXml_CtorArgSource(?argFile, ?argNode, ?source) :-
+  SpringXml_CtorArg(_, _, ?argFile, ?argNode),
+  XMLNode(?argFile, ?innerNode, ?argNode, _, "bean", _),
+  SpringXml_InnerBeanEffectiveSource(?argFile, ?innerNode, ?source).
+
+.decl SpringXml_CtorArgWired(?class:ClassType, ?param:Var, ?source:Source)
+
+SpringXml_CtorArgWired(?class, ?param, ?source) :-
+  SpringXml_CtorArgTarget(?file, ?beanNode, ?class, ?method),
+  SpringXml_CtorArg(?file, ?beanNode, ?argFile, ?argNode),
+  XMLNodeAttribute(?argFile, ?argNode, _, _, "index", ?idxStr),
+  FormalParam(?idx, ?method, ?param),
+  to_string(?idx) = ?idxStr,
+  SpringXml_CtorArgSource(?argFile, ?argNode, ?source),
+  SlotType(?param, ?pType),
+  SpringXml_RefTypeFits(?source, ?pType).
+
+SpringXml_CtorArgWired(?class, ?param, ?source) :-
+  SpringXml_CtorArgTarget(?file, ?beanNode, ?class, ?method),
+  SpringXml_CtorArg(?file, ?beanNode, ?argFile, ?argNode),
+  XMLNodeAttribute(?argFile, ?argNode, _, _, "name", ?pName),
+  FormalParam(?idx, ?method, ?param),
+  ( Param_Name(?method, ?idx, ?pName) ; Param_DebugName(?method, ?idx, ?pName) ),
+  SpringXml_CtorArgSource(?argFile, ?argNode, ?source),
+  SlotType(?param, ?pType),
+  SpringXml_RefTypeFits(?source, ?pType).
+
+SpringXml_CtorArgWired(?class, ?param, ?source) :-
+  SpringXml_CtorArgTarget(?file, ?beanNode, ?class, ?method),
+  SpringXml_CtorArg(?file, ?beanNode, ?argFile, ?argNode),
+  !SpringXml_CtorArgHasIndexOrName(?argFile, ?argNode),
+  SpringXml_CtorArgSource(?argFile, ?argNode, ?source),
+  FormalParam(_, ?method, ?param),
+  SlotType(?param, ?pType),
+  SpringXml_RefTypeFits(?source, ?pType).
+
+// init-method and destroy-method lifecycle callbacks on XML class beans and
+// factory-method products (including callbacks inherited via parent="...").
+.decl SpringXml_LifecycleMethod(?run:Method)
+
+SpringXml_LifecycleMethod(?run) :-
+  SpringXml_BeanNode(?file, ?beanNode),
+  SpringXml_ProductClass(?file, ?beanNode, ?class),
+  ( SpringXml_EffectiveAttr(?file, ?beanNode, "init-method", ?mName)
+  ; SpringXml_EffectiveAttr(?file, ?beanNode, "destroy-method", ?mName) ),
+  Method_SimpleName(?method, ?mName),
+  !Method_Modifier("static", ?method),
+  !FormalParam(_, ?method, _),
+  MethodRunOn(?method, ?class, ?run).
+
+// Targets receiving XML property or constructor-arg injection.
+.decl SpringXml_Target(?class:ClassType)
+SpringXml_Target(?class) :- SpringXml_ClassBean(_, _, ?class).
+SpringXml_Target(?class) :- SpringXml_PropertySlot(_, _, ?class, _).
+SpringXml_Target(?class) :- SpringXml_CtorArgTarget(_, _, ?class, _).
+
+
+
+
+// --------------------------------------------------------------------------
+// 5. Contract interface
+// --------------------------------------------------------------------------
+// Pure projections of XML bean creation, constructors, factory methods,
+// lifecycle callbacks and explicit property / constructor-arg wiring.
+
+FrameworkCreatedType("spring-xml", ?class) :- SpringXml_ClassBean(_, _, ?class).
+FrameworkCreatedType("spring-xml", ?class) :- SpringXml_UtilBean(_, _, ?class, _).
+InjectionTarget("spring-xml", ?class) :- SpringXml_Target(?class).
+
+EntryPoint("spring-xml", ?ctor) :- SpringXml_BeanConstructor(_, _, _, ?ctor).
+EntryPoint("spring-xml", ?method) :- SpringXml_FactoryMethod(_, _, ?method).
+EntryPoint("spring-xml", ?run) :- SpringXml_LifecycleMethod(?run).
+
+InjectedParam("spring-xml", ?param) :- SpringXml_CtorArgParam(?param).
+InjectedParam("spring-xml", ?param) :- SpringXml_PropertySlot(_, _, _, ?param).
+InjectedWith("spring-xml", ?class, ?param, ?source) :- SpringXml_PropertyWired(?class, ?param, ?source).
+HolderInjectedWith("spring-xml", ?class, ?param, ?source) :- SpringXml_CollectionWired(?class, ?param, ?source).
+InjectedWith("spring-xml", ?class, ?param, ?source) :- SpringXml_CtorArgWired(?class, ?param, ?source).

@@ -17,6 +17,7 @@ import org.clyze.doop.common.BasicJavaSupport;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.common.InstrInfo;
 import org.clyze.doop.common.JavaFactWriter;
+import org.clyze.doop.common.ParameterNames;
 import org.clyze.doop.common.Phantoms;
 import org.clyze.doop.common.PredicateFile;
 import org.clyze.doop.common.SessionCounter;
@@ -27,6 +28,7 @@ import soot.Local;
 import soot.NullType;
 import soot.PrimType;
 import soot.RefType;
+import soot.Scene;
 import soot.SootClass;
 import soot.SootField;
 import soot.SootMethod;
@@ -103,8 +105,13 @@ import soot.tagkit.AnnotationFloatElem;
 import soot.tagkit.AnnotationIntElem;
 import soot.tagkit.AnnotationLongElem;
 import soot.tagkit.AnnotationStringElem;
+import soot.tagkit.AnnotationConstants;
 import soot.tagkit.AnnotationTag;
 import soot.tagkit.ConstantValueTag;
+import soot.tagkit.EnclosingMethodTag;
+import soot.tagkit.Host;
+import soot.tagkit.InnerClassTag;
+import soot.tagkit.SignatureTag;
 import soot.tagkit.DoubleConstantValueTag;
 import soot.tagkit.FloatConstantValueTag;
 import soot.tagkit.IntegerConstantValueTag;
@@ -196,6 +203,16 @@ class FactWriter extends JavaFactWriter {
         this.phantoms = phantoms;
     }
 
+    // Parameter names read from the class files (set before facts are written).
+    private ParameterNames parameterNames;
+
+    // Fields whose annotation values and generic type are already written.
+    private final Collection<String> fieldExtrasWritten = ConcurrentHashMap.newKeySet();
+
+    void setParameterNames(ParameterNames parameterNames) {
+        this.parameterNames = parameterNames;
+    }
+
     public String methodSig(SootMethod m, String methodRaw) {
         if (methodRaw == null)
             methodRaw = _rep.signature(m);
@@ -234,7 +251,191 @@ class FactWriter extends JavaFactWriter {
                     }
 
         }
+        writeMethodExtras(m, methodId);
         return methodId;
+    }
+
+    /**
+     * Annotation values with their annotation, parameter names and the
+     * generic signature of a method.
+     */
+    private void writeMethodExtras(SootMethod m, String methodId) {
+        for (AnnotationTag aTag : runtimeAnnotations(m))
+            writeAnnotationValues("method", methodId, aTag);
+        for (Tag t : m.getTags())
+            if (t instanceof VisibilityParameterAnnotationTag
+                && ((VisibilityParameterAnnotationTag) t).getKind() == AnnotationConstants.RUNTIME_VISIBLE) {
+                List<VisibilityAnnotationTag> perParam = ((VisibilityParameterAnnotationTag) t).getVisibilityAnnotations();
+                for (int i = 0; i < perParam.size(); i++)
+                    if (perParam.get(i) != null && perParam.get(i).getAnnotations() != null)
+                        for (AnnotationTag aTag : perParam.get(i).getAnnotations())
+                            writeAnnotationValues("param", methodId + "::parameter#" + i, aTag);
+            }
+
+        if (parameterNames != null) {
+            String key = ParameterNames.key(m.getDeclaringClass().getName(), m.getName(), ASMBackendUtils.toTypeDesc(m.makeRef()));
+            String[] declared = parameterNames.getDeclaredNames(key);
+            if (declared != null && declared.length == m.getParameterCount())
+                for (int i = 0; i < declared.length; i++)
+                    if (declared[i] != null && !declared[i].isEmpty())
+                        writeParamName(methodId, i, declared[i]);
+            String[] debug = parameterNames.getDebugNames(key);
+            if (debug != null && debug.length == m.getParameterCount())
+                for (int i = 0; i < debug.length; i++)
+                    if (debug[i] != null && !debug[i].isEmpty())
+                        writeParamDebugName(methodId, i, debug[i]);
+        }
+
+        SignatureTag sigTag = (SignatureTag) m.getTag(SignatureTag.NAME);
+        if (sigTag != null) {
+            try {
+                writeMethodGenericSignature(methodId, sigTag.getSignature(), m.getParameterCount(),
+                        name -> typeVariableId(name, m, methodId));
+            } catch (RuntimeException ex) {
+                System.err.println("WARNING: could not read the generic signature of " + methodId + ": " + ex.getMessage());
+            }
+        }
+    }
+
+    /** Annotations that are visible at runtime (what reflection, and so frameworks, see). */
+    private static List<AnnotationTag> runtimeAnnotations(Host host) {
+        List<AnnotationTag> result = new ArrayList<>();
+        for (Tag t : host.getTags())
+            if (t instanceof VisibilityAnnotationTag
+                && ((VisibilityAnnotationTag) t).getVisibility() == AnnotationConstants.RUNTIME_VISIBLE
+                && ((VisibilityAnnotationTag) t).getAnnotations() != null)
+                result.addAll(((VisibilityAnnotationTag) t).getAnnotations());
+        return result;
+    }
+
+    /** Receives one value of an annotation element. */
+    private interface AnnotationValueSink {
+        void accept(String element, int index, String valueKind, String value, String extra);
+    }
+
+    private void writeAnnotationValues(String kind, String annotated, AnnotationTag aTag) {
+        String annotation = getAnnotationType(aTag);
+        AnnotationValueSink sink = (el, index, valueKind, value, extra) ->
+                writeAnnotationValue(kind, annotated, annotation, el, index, valueKind, value, extra);
+        for (AnnotationElem e : aTag.getElems())
+            writeAnnotationElemValues(e.getName(), e, annotated + "@" + annotation, sink);
+    }
+
+    /** Write the value of one element: each item of an array value, else the single value. */
+    private void writeAnnotationElemValues(String element, AnnotationElem e, String nestedPrefix, AnnotationValueSink sink) {
+        if (e instanceof AnnotationArrayElem) {
+            int index = 0;
+            for (AnnotationElem item : ((AnnotationArrayElem) e).getValues())
+                writeOneAnnotationValue(element, index++, item, nestedPrefix, sink);
+        } else
+            writeOneAnnotationValue(element, -1, e, nestedPrefix, sink);
+    }
+
+    private void writeOneAnnotationValue(String element, int index, AnnotationElem e, String nestedPrefix, AnnotationValueSink sink) {
+        if (e instanceof AnnotationStringElem)
+            sink.accept(element, index, "string", ((AnnotationStringElem) e).getValue(), null);
+        else if (e instanceof AnnotationBooleanElem)
+            sink.accept(element, index, "boolean", String.valueOf(((AnnotationBooleanElem) e).getValue()), null);
+        else if (e instanceof AnnotationIntElem) {
+            int v = ((AnnotationIntElem) e).getValue();
+            switch (e.getKind()) {
+                case 'Z': sink.accept(element, index, "boolean", v != 0 ? "true" : "false", null); break;
+                case 'B': sink.accept(element, index, "byte", str(v), null); break;
+                case 'C': sink.accept(element, index, "char", String.valueOf((char) v), null); break;
+                case 'S': sink.accept(element, index, "short", str(v), null); break;
+                default:  sink.accept(element, index, "int", str(v), null);
+            }
+        } else if (e instanceof AnnotationLongElem)
+            sink.accept(element, index, "long", String.valueOf(((AnnotationLongElem) e).getValue()), null);
+        else if (e instanceof AnnotationFloatElem)
+            sink.accept(element, index, "float", String.valueOf(((AnnotationFloatElem) e).getValue()), null);
+        else if (e instanceof AnnotationDoubleElem)
+            sink.accept(element, index, "double", String.valueOf(((AnnotationDoubleElem) e).getValue()), null);
+        else if (e instanceof AnnotationEnumElem) {
+            AnnotationEnumElem enumElem = (AnnotationEnumElem) e;
+            sink.accept(element, index, "enum", enumElem.getConstantName(), TypeUtils.raiseTypeId(enumElem.getTypeName()));
+        } else if (e instanceof AnnotationClassElem)
+            sink.accept(element, index, "class", TypeUtils.raiseTypeId(((AnnotationClassElem) e).getDesc()), null);
+        else if (e instanceof AnnotationAnnotationElem) {
+            AnnotationTag inner = ((AnnotationAnnotationElem) e).getValue();
+            String innerType = getAnnotationType(inner);
+            String nestedId = nestedPrefix + "." + element + (index >= 0 ? "[" + index + "]" : "");
+            sink.accept(element, index, "annotation", nestedId, innerType);
+            AnnotationValueSink innerSink = (el, i, valueKind, value, extra) ->
+                    writeAnnotationValue("annotation", nestedId, innerType, el, i, valueKind, value, extra);
+            for (AnnotationElem innerElem : inner.getElems())
+                writeAnnotationElemValues(innerElem.getName(), innerElem, nestedId, innerSink);
+        } else
+            System.err.println("WARNING: unknown annotation element, type: '" + e.getClass() + "', name: '" + e.getName() + "'");
+    }
+
+    // Type parameter names of classes and methods, by id (read from their signatures).
+    private final Map<String, List<String>> typeParameterNamesCache = new ConcurrentHashMap<>();
+
+    private List<String> typeParameterNamesOf(String id, Host host) {
+        return typeParameterNamesCache.computeIfAbsent(id, k -> {
+            SignatureTag tag = (SignatureTag) host.getTag(SignatureTag.NAME);
+            if (tag == null)
+                return Collections.emptyList();
+            try {
+                return typeParameterNames(tag.getSignature());
+            } catch (RuntimeException ex) {
+                return Collections.emptyList();
+            }
+        });
+    }
+
+    /**
+     * The id of a type variable used in a signature: "owner::name", where the owner is the
+     * method or class that declares it. The search follows Java's scoping: the method
+     * itself, then its class, then the classes and methods enclosing it (a member class
+     * that is not static sees its outer class's variables; a local or anonymous class sees
+     * those of its enclosing method and class). "-::name" if no declaration is found.
+     */
+    private String typeVariableId(String name, SootMethod m, String methodId) {
+        if (m != null && typeParameterNamesOf(methodId, m).contains(name))
+            return methodId + "::" + name;
+        SootClass c = m != null ? m.getDeclaringClass() : null;
+        return typeVariableIdInClass(name, c);
+    }
+
+    private String typeVariableIdInClass(String name, SootClass c) {
+        while (c != null) {
+            String classId = c.getName();
+            if (typeParameterNamesOf(classId, c).contains(name))
+                return classId + "::" + name;
+            // A local or anonymous class: its enclosing method first.
+            EnclosingMethodTag enclosing = (EnclosingMethodTag) c.getTag(EnclosingMethodTag.NAME);
+            if (enclosing != null && enclosing.getEnclosingMethod() != null && c.hasOuterClass()) {
+                SootClass outer = c.getOuterClassUnsafe();
+                for (SootMethod om : outer.getMethods())
+                    if (om.getName().equals(enclosing.getEnclosingMethod())
+                        && ASMBackendUtils.toTypeDesc(om.makeRef()).equals(enclosing.getEnclosingMethodSig())) {
+                        String omId = methodSig(om, null);
+                        if (typeParameterNamesOf(omId, om).contains(name))
+                            return omId + "::" + name;
+                    }
+            }
+            c = enclosingClassForTypeVariables(c);
+        }
+        return "-::" + name;
+    }
+
+    /** The class whose type variables a class can use, or null. */
+    private static SootClass enclosingClassForTypeVariables(SootClass c) {
+        String internalName = c.getName().replace('.', '/');
+        for (Tag t : c.getTags())
+            if (t instanceof InnerClassTag) {
+                InnerClassTag ict = (InnerClassTag) t;
+                if (internalName.equals(ict.getInnerClass())) {
+                    if ((ict.getAccessFlags() & 0x0008) != 0)     // static member class
+                        return null;
+                    if (ict.getOuterClass() != null)
+                        return Scene.v().getSootClassUnsafe(ict.getOuterClass().replace('/', '.'));
+                }
+            }
+        // Local and anonymous classes (EnclosingMethod attribute).
+        return c.hasOuterClass() ? c.getOuterClassUnsafe() : null;
     }
 
     void writeAndroidEntryPoint(SootMethod m) {
@@ -254,6 +455,16 @@ class FactWriter extends JavaFactWriter {
             for (AnnotationTag aTag : vTag.getAnnotations()) {
                 _db.add(TYPE_ANNOTATION, classStr, getAnnotationType(aTag));
                 writeAnnotationElements("type", classStr, null, aTag.getElems());
+            }
+        }
+        for (AnnotationTag aTag : runtimeAnnotations(c))
+            writeAnnotationValues("type", classStr, aTag);
+        SignatureTag sigTag = (SignatureTag) c.getTag(SignatureTag.NAME);
+        if (sigTag != null) {
+            try {
+                writeClassGenericSignature(classStr, sigTag.getSignature(), name -> typeVariableIdInClass(name, c));
+            } catch (RuntimeException ex) {
+                System.err.println("WARNING: could not read the generic signature of " + classStr + ": " + ex.getMessage());
             }
         }
         _db.add(TYPE_SIMPLENAME, classStr, c.getShortName());
@@ -681,6 +892,19 @@ class FactWriter extends JavaFactWriter {
             for (AnnotationTag aTag : vTag.getAnnotations()) {
                 _db.add(FIELD_ANNOTATION, fieldId, getAnnotationType(aTag));
                 writeAnnotationElements("field", fieldId, null, aTag.getElems());
+            }
+        }
+        // writeField() also runs for every field access; write these once per field.
+        if (!fieldExtrasWritten.add(fieldId))
+            return fieldId;
+        for (AnnotationTag aTag : runtimeAnnotations(f))
+            writeAnnotationValues("field", fieldId, aTag);
+        SignatureTag sigTag = (SignatureTag) f.getTag(SignatureTag.NAME);
+        if (sigTag != null) {
+            try {
+                writeFieldGenericSignature(fieldId, sigTag.getSignature(), name -> typeVariableIdInClass(name, f.getDeclaringClass()));
+            } catch (RuntimeException ex) {
+                System.err.println("WARNING: could not read the generic signature of " + fieldId + ": " + ex.getMessage());
             }
         }
         return fieldId;

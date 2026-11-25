@@ -1,0 +1,225 @@
+// ==========================================================================
+// Generics helper:
+//
+// Resolves generic type arguments across class and interface inheritance
+// (e.g. UserRepo extends BaseRepo<User> -> Repo<User>), substitutes top-level
+// inherited type variables on slots per target class (e.g. BaseService<R> on
+// UserService) and provides inline compatibility checks for DI candidate narrowing.
+//
+// Sections:
+//   1. Erasure and type-variable detection
+//   2. Generic supertype argument resolution
+//   3. Slot and source generic views
+//   4. Compatibility check
+// ==========================================================================
+
+
+
+
+// --------------------------------------------------------------------------
+// 1. Erasure and type-variable detection
+// --------------------------------------------------------------------------
+// Maps any type id (plain type, GenericType, TypeVariable or GenericArray) to
+// its erased Doop Type (JLS 4.6: leftmost bound 0 for type variables, recursive
+// for chained bounds <A, B extends A>) and detects unresolved type variables
+// including generic arrays such as T[].
+
+.decl ContainsTypeVariable(?type:symbol)
+
+ContainsTypeVariable(?tv) :- TypeVariable(?tv, _, _).
+
+ContainsTypeVariable(?arr) :-
+  GenericArray(?arr, ?comp),
+  ContainsTypeVariable(?comp).
+
+
+.decl GenericErasure(?type:symbol, ?erasure:Type)
+
+GenericErasure(?type, ?type) :- isType(?type).
+
+GenericErasure(?type, ?erasure) :- GenericType(?type, ?erasure).
+
+GenericErasure(?tv, ?erasure) :-
+  TypeVariable_Bound(?tv, 0, ?bound),
+  GenericErasure(?bound, ?erasure).
+
+GenericErasure(?arr, ?erasedArr) :-
+  GenericArray(?arr, ?comp),
+  GenericErasure(?comp, ?compEr),
+  ?erasedArr = cat(?compEr, "[]"),
+  isType(?erasedArr).
+
+
+
+
+// --------------------------------------------------------------------------
+// 2. Generic supertype argument resolution
+// --------------------------------------------------------------------------
+// Computes TypeSuperArg(?sub, ?super, ?index, ?arg, ?bound): when ?sub is
+// viewed as its supertype ?super, ?super's ?index-th type parameter is bound
+// to (?arg, ?bound). Walks both generic signatures (Type_GenericSuperType)
+// and plain inheritance links (DirectSuperclass / DirectSuperinterface).
+
+.decl _Generics_DirectSuper(?sub:ReferenceType, ?mid:ReferenceType)
+
+_Generics_DirectSuper(?sub, ?mid) :- DirectSuperclass(?sub, ?mid).
+_Generics_DirectSuper(?sub, ?mid) :- DirectSuperinterface(?sub, ?mid).
+
+
+.decl TypeSuperArg(?sub:ReferenceType, ?super:ReferenceType, ?index:number, ?arg:symbol, ?bound:symbol)
+
+// Base step: direct generic superclass or superinterface.
+TypeSuperArg(?sub, ?super, ?index, ?arg, ?bound) :-
+  Type_GenericSuperType(?sub, ?gSuper),
+  GenericType(?gSuper, ?super),
+  isReferenceType(?super),
+  GenericType_Argument(?gSuper, ?index, ?arg, ?bound).
+
+// Inductive step (pass-through): mid passes its own type parameter ?var to super
+// (JLS 8.1.4 / 9.1.3 forbid top-level wildcards in direct supertype arguments).
+TypeSuperArg(?sub, ?super, ?sIdx, ?subArg, ?subBound) :-
+  TypeSuperArg(?sub, ?mid, ?mIdx, ?subArg, ?subBound),
+  Type_TypeParameter(?mid, ?mIdx, ?var),
+  TypeSuperArg(?mid, ?super, ?sIdx, ?var, "=").
+
+// Inductive step (concrete propagation): arguments free of type variables propagate down
+// through both generic and plain inheritance (e.g. SpecialUserRepo extends UserRepo).
+TypeSuperArg(?sub, ?super, ?index, ?arg, ?bound) :-
+  _Generics_DirectSuper(?sub, ?mid),
+  TypeSuperArg(?mid, ?super, ?index, ?arg, ?bound),
+  !ContainsTypeVariable(?arg).
+
+
+// Given a parameterized type id ?gType (e.g. a @Bean return type BaseRepo<User>),
+// its type arguments when viewed as ?super (either ?gType itself or an ancestor of its erasure).
+.decl GenericArgOnSuper(?gType:symbol, ?super:ReferenceType, ?index:number, ?arg:symbol, ?bound:symbol)
+
+GenericArgOnSuper(?gType, ?erasure, ?index, ?arg, ?bound) :-
+  GenericType(?gType, ?erasure),
+  isReferenceType(?erasure),
+  GenericType_Argument(?gType, ?index, ?arg, ?bound).
+
+GenericArgOnSuper(?gType, ?super, ?sIdx, ?arg, ?bound) :-
+  GenericType(?gType, ?mid),
+  isReferenceType(?mid),
+  GenericType_Argument(?gType, ?mIdx, ?arg, ?bound),
+  Type_TypeParameter(?mid, ?mIdx, ?var),
+  TypeSuperArg(?mid, ?super, ?sIdx, ?var, "=").
+
+GenericArgOnSuper(?gType, ?super, ?sIdx, ?arg, ?bound) :-
+  GenericType(?gType, ?mid),
+  isReferenceType(?mid),
+  TypeSuperArg(?mid, ?super, ?sIdx, ?arg, ?bound),
+  !ContainsTypeVariable(?arg).
+
+
+
+
+// --------------------------------------------------------------------------
+// 3. Slot and source generic views
+// --------------------------------------------------------------------------
+// Resolves top-level inherited type-variable slots per target class (BaseService<R>
+// on UserService) and exposes an inline view of source generic arguments on ?super.
+
+.decl _Generics_SlotResolvedVar(?class:ClassType, ?slot:Slot, ?resolved:symbol)
+
+_Generics_SlotResolvedVar(?class, ?slot, ?resolved) :-
+  SlotOf(?slot, ?class),
+  SlotFullType(?slot, ?var),
+  TypeVariable(?var, ?declClass, _),
+  isReferenceType(?declClass),
+  Type_TypeParameter(?declClass, ?idx, ?var),
+  TypeSuperArg(?class, ?declClass, ?idx, ?resolved, ?bound),
+  ( ?bound = "=" ; ?bound = "extends" ),
+  ?resolved != "-",
+  !ContainsTypeVariable(?resolved).
+
+.decl _Generics_HasSlotResolvedVar(?class:ClassType, ?slot:Slot)
+_Generics_HasSlotResolvedVar(?class, ?slot) :- _Generics_SlotResolvedVar(?class, ?slot, _).
+
+
+// Full type of ?slot on an object of ?class, with top-level class type variables substituted.
+.decl SlotResolvedFullType(?class:ClassType, ?slot:Slot, ?fullType:symbol)
+
+SlotResolvedFullType(?class, ?slot, ?resolved) :-
+  _Generics_SlotResolvedVar(?class, ?slot, ?resolved).
+
+SlotResolvedFullType(?class, ?slot, ?fullType) :-
+  SlotOf(?slot, ?class),
+  !_Generics_HasSlotResolvedVar(?class, ?slot),
+  SlotFullType(?slot, ?fullType).
+
+
+// Inline view of a Source's generic arguments on ?super (evaluated only for offered sources).
+.decl SourceGenericArg(?source:Source, ?super:ReferenceType, ?index:number, ?arg:symbol, ?bound:symbol) inline
+
+SourceGenericArg(?type, ?super, ?index, ?arg, ?bound) :-
+  isClassOrInterfaceType(?type),
+  TypeSuperArg(?type, ?super, ?index, ?arg, ?bound).
+
+SourceGenericArg(?source, ?super, ?index, ?arg, ?bound) :-
+  ( isMethod(?source) ; isField(?source) ),
+  SourceFullType(?source, ?fullType),
+  GenericArgOnSuper(?fullType, ?super, ?index, ?arg, ?bound).
+
+SourceGenericArg(?source, ?super, ?index, ?arg, ?bound) :-
+  ( isMethod(?source) ; isField(?source) ),
+  SourceType(?source, ?srcType),
+  isReferenceType(?srcType),
+  TypeSuperArg(?srcType, ?super, ?index, ?arg, ?bound).
+
+
+
+
+// --------------------------------------------------------------------------
+// 4. Compatibility check
+// --------------------------------------------------------------------------
+// Inline demand-driven mismatch predicates (zero cartesian materialization).
+// Only rejects provably incompatible concrete arguments; raw types, unbounded
+// wildcards ("*") and unresolved type variables (including T[]) stay compatible.
+
+// Leaf-level erasure mismatch between two concrete generic arguments.
+.decl GenericArgErasureMismatch(?expected:symbol, ?eBound:symbol, ?actual:symbol, ?aBound:symbol) inline
+
+GenericArgErasureMismatch(?e, "=", ?a, "=") :-
+  ?e != "-",
+  ?a != "-",
+  !ContainsTypeVariable(?e),
+  !ContainsTypeVariable(?a),
+  GenericErasure(?e, ?eEr),
+  GenericErasure(?a, ?aEr),
+  ?eEr != ?aEr.
+
+GenericArgErasureMismatch(?e, "extends", ?a, ?aBound) :-
+  ( ?aBound = "=" ; ?aBound = "extends" ),
+  ?e != "-",
+  ?a != "-",
+  !ContainsTypeVariable(?e),
+  !ContainsTypeVariable(?a),
+  GenericErasure(?e, ?eEr),
+  GenericErasure(?a, ?aEr),
+  !basic.SubtypeOf(?aEr, ?eEr).
+
+GenericArgErasureMismatch(?e, "super", ?a, "=") :-
+  ?e != "-",
+  ?a != "-",
+  !ContainsTypeVariable(?e),
+  !ContainsTypeVariable(?a),
+  GenericErasure(?e, ?eEr),
+  GenericErasure(?a, ?aEr),
+  !basic.SubtypeOf(?eEr, ?aEr).
+
+
+// Full argument mismatch (erasure mismatch, or same erasure with a nested argument mismatch
+// such as Repo<Box<User>> vs Repo<Box<Order>>).
+.decl GenericArgMismatch(?expected:symbol, ?eBound:symbol, ?actual:symbol, ?aBound:symbol) inline
+
+GenericArgMismatch(?e, ?eBound, ?a, ?aBound) :-
+  GenericArgErasureMismatch(?e, ?eBound, ?a, ?aBound).
+
+GenericArgMismatch(?e, "=", ?a, "=") :-
+  GenericType(?e, ?er),
+  GenericType(?a, ?er),
+  GenericType_Argument(?e, ?k, ?e2, ?eb2),
+  GenericType_Argument(?a, ?k, ?a2, ?ab2),
+  GenericArgErasureMismatch(?e2, ?eb2, ?a2, ?ab2).
