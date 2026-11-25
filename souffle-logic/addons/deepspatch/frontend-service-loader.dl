@@ -35,6 +35,34 @@ DispatchableProvider(?iface, ?provider) :-
 DispatchProduct(?iface, ?iface, ?provider) :-
   DispatchableProvider(?iface, ?provider).
 
+// --- Provider construction ----------------------------------------------------
+// The loader creates a provider with its public no-arg constructor, so run that
+// constructor (in every mocking mode) with `this` bound to the provider object:
+// the constructor initialises the fields. The provider's fields are therefore not
+// filled with field mocks (ConstructedMockClass), which would otherwise pull the
+// types of every field, transitively, into the mock-site closure (pmd: the 2 mock
+// sites of main became 582, and every application downcast from Object a mock
+// site). Its other constructors are not run.
+ConstructedMockClass(?provider) :-
+  DispatchableProvider(_, ?provider).
+
+MockSiteMethod(?ctor) :-
+  DispatchableProvider(_, ?provider),
+  Method_SimpleName(?ctor, "<init>"),
+  Method_DeclaringType(?ctor, ?provider),
+  !FormalParam(_, ?ctor, _).
+
+CtorNotRun(?ctor) :-
+  DispatchableProvider(_, ?provider),
+  Method_SimpleName(?ctor, "<init>"),
+  Method_DeclaringType(?ctor, ?provider),
+  FormalParam(_, ?ctor, _).
+
+// Provenance (output-only, main/mocking/mock-provenance.dl).
+MockObjectReason(?mock, "service-provider") :-
+  DispatchableProvider(_, ?provider),
+  ProviderMockValue(?provider, ?mock).
+
 // Service-loader factory methods: load(Class[,ClassLoader]) whose result iterates
 // the providers of the requested interface. The standard JDK loader, plus
 // API-compatible reimplementations that honour the META-INF/services contract.
