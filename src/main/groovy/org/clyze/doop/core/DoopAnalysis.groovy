@@ -315,10 +315,22 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                     log.info "Facts will not be cached."
                 else {
                     log.info "Caching facts in $cacheDir"
-                    deleteQuietly(cacheDir)
-                    cacheDir.mkdirs()
-                    FileOps.copyDirContentsWithRetry(factsDir, cacheDir)
-                    new File(cacheDir, "meta").withWriter { BufferedWriter w -> w.write(cacheMeta()) }
+                    // Copy next to the entry and rename it into place when complete: a
+                    // failed copy (e.g. a full disk) must not leave an entry that later
+                    // runs reuse as if it held all the facts.
+                    File partial = new File(cacheDir.parentFile, cacheDir.name + ".partial")
+                    deleteQuietly(partial)
+                    try {
+                        partial.mkdirs()
+                        copyDirectory(factsDir, partial)
+                        new File(partial, "meta").withWriter { BufferedWriter w -> w.write(cacheMeta()) }
+                        deleteQuietly(cacheDir)
+                        Files.move(partial.toPath(), cacheDir.toPath(), StandardCopyOption.ATOMIC_MOVE)
+                    } catch (IOException ex) {
+                        deleteQuietly(partial)
+                        log.error "ERROR: could not cache the facts in ${cacheDir}: ${ex}"
+                        throw ex
+                    }
                 }
             } else {
                 log.warn "WARNING: Imported facts are not cached."
