@@ -145,3 +145,6 @@ VarPointsTo(?immHCtx, ?classVal, ?ctx, ?to) :-
   ReachableContext(?ctx, ?method),
   ReifiedClass(?type, ?classVal),
   isImmutableHContext(?immHCtx).
+
+// Classes named in the input configuration files (after NewInstanceMockObj).
+#include "light-config-class-names.dl"

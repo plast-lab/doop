@@ -1,0 +1,97 @@
+// Light reflection: classes named in the program's own configuration files.
+//
+// Programs load classes by names they read from their configuration: pmd
+// builds every rule from <rule class="..."/> in the category XMLs inside its
+// jar (ResourceLoader.loadRuleFromClassPath: classLoader.loadClass(name)
+// .newInstance()); servlet containers, Spring XML, JAXP factories do the same.
+// The name flows through an XML parser, so it is never a string constant the
+// light-Class rules can match.
+//
+// Model: a Class.forName / ClassLoader.loadClass call whose name argument
+// points to a string that is not a constant may return the class object of any
+// class named by an attribute value in the input XML files (the facts the fact
+// generator extracts from the inputs' *.xml). Class.newInstance() on a class
+// object then creates an object of that class and runs its no-arg
+// constructor, as the glue does for Constructor.newInstance.
+//
+// Constant names are still the light-Class rules' (ClassLoader.loadClass added
+// here alongside Class.forName).
+
+// ---- class names read from configuration ----
+.decl ConfigNamedClass(?type:ReferenceType)
+ConfigNamedClass(?type) :-
+  XMLNodeAttribute(_, _, _, _, _, ?name),
+  isClassType(?name),
+  ?type = ?name.
+.output ConfigNamedClass
+
+// ---- the lookups ----
+.decl ClassLookupByName(?invocation:MethodInvocation, ?inmethod:Method, ?name:Var)
+ClassLookupByName(?invocation, ?inmethod, ?name) :-
+  java_lang_Class_forName(?invocation, ?inmethod),
+  ActualParam(0, ?invocation, ?name).
+ClassLookupByName(?invocation, ?inmethod, ?name) :-
+  ( ?sig = "<java.lang.ClassLoader: java.lang.Class loadClass(java.lang.String)>" ;
+    ?sig = "<java.lang.ClassLoader: java.lang.Class loadClass(java.lang.String,boolean)>" ),
+  isMethod(?sig),
+  MethodInvocation_Method(?invocation, ?sig),
+  Instruction_Method(?invocation, ?inmethod),
+  ActualParam(0, ?invocation, ?name).
+
+// Constant names through ClassLoader.loadClass (Class.forName: light-Class.dl).
+VarPointsTo(?hctx, ?classValue, ?ctx, ?return) :-
+  ClassLookupByName(?invocation, ?inmethod, ?name),
+  !java_lang_Class_forName(?invocation, _),
+  ReachableContext(?ctx, ?inmethod),
+  VarPointsTo(_, ?string, ?ctx, ?name),
+  isStringConstant(?string),
+  isReferenceType(?type),
+  ord(?type) = ord(?string),
+  ReifiedClass(?type, ?classValue),
+  AssignReturnValue(?invocation, ?return),
+  isImmutableHContext(?hctx).
+
+// Names that are not constants: the classes the configuration names.
+.decl ClassLookupByUnknownName(?ctx:configuration.Context, ?invocation:MethodInvocation)
+ClassLookupByUnknownName(?ctx, ?invocation) :-
+  ClassLookupByName(?invocation, ?inmethod, ?name),
+  ReachableContext(?ctx, ?inmethod),
+  VarPointsTo(_, ?string, ?ctx, ?name),
+  Value_Type(?string, "java.lang.String"),
+  !isStringConstant(?string).
+.output ClassLookupByUnknownName
+
+VarPointsTo(?hctx, ?classValue, ?ctx, ?return) :-
+  ClassLookupByUnknownName(?ctx, ?invocation),
+  ConfigNamedClass(?type),
+  ReifiedClass(?type, ?classValue),
+  AssignReturnValue(?invocation, ?return),
+  isImmutableHContext(?hctx).
+
+InitializedClass(?type) :-
+  ClassLookupByUnknownName(_, _),
+  ConfigNamedClass(?type).
+
+// ---- Class.newInstance() ----
+.decl java_lang_Class_newInstance(?invocation:MethodInvocation, ?to:Var, ?from:Var)
+java_lang_Class_newInstance(?invocation, ?to, ?from) :-
+  isMethod("<java.lang.Class: java.lang.Object newInstance()>"),
+  MethodInvocation_Method(?invocation, "<java.lang.Class: java.lang.Object newInstance()>"),
+  Instruction_Method(?invocation, ?method),
+  Reachable(?method),
+  AssignReturnValue(?invocation, ?to),
+  VirtualMethodInvocation_Base(?invocation, ?from).
+
+MockValueConsMacro(NewInstanceMockObj(?type), ?type),
+VarPointsTo(?hctx, NewInstanceMockObj(?type), ?ctx, ?newVar),
+ReachableContext(?calleeCtx, ?init),
+VarPointsTo(?hctx, NewInstanceMockObj(?type), ?calleeCtx, ?thisVar) :-
+  java_lang_Class_newInstance(_, ?newVar, ?classVar),
+  VarPointsTo(?hctx, ?classVal, ?ctx, ?classVar),
+  ReifiedClass(?type, ?classVal),
+  isClassType(?type),
+  !ClassModifier("abstract", ?type),
+  basic.ClassConstructor(?init, ?type),
+  Method_Descriptor(?init, "void()"),
+  ThisVar(?init, ?thisVar),
+  isImmutableContext(?calleeCtx).
