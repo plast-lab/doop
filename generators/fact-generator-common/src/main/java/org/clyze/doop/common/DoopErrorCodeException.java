@@ -153,6 +153,12 @@ public class DoopErrorCodeException extends Exception {
         return new DoopErrorCodeException(35, msg);
     }
 
+    // Fact generation lost work (a worker died on a JVM Error such as
+    // OutOfMemoryError): the facts would be silently incomplete.
+    public static DoopErrorCodeException error36(String msg) {
+        return new DoopErrorCodeException(36, new RuntimeException(msg), true);
+    }
+
     private DoopErrorCodeException(int errorCode, Throwable original) {
         super(PREFIX + errorCode, original);
         this.errorCode = errorCode;

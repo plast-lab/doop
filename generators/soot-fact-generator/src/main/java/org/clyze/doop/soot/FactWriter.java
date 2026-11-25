@@ -137,6 +137,7 @@ import static org.clyze.doop.common.PredicateFile.BREAKPOINT_STMT;
 import static org.clyze.doop.common.PredicateFile.CLASS_TYPE;
 import static org.clyze.doop.common.PredicateFile.DIRECT_SUPER_CLASS;
 import static org.clyze.doop.common.PredicateFile.DIRECT_SUPER_IFACE;
+import static org.clyze.doop.common.PredicateFile.GENERIC_SUPERTYPE_ARG;
 import static org.clyze.doop.common.PredicateFile.EMPTY_ARRAY;
 import static org.clyze.doop.common.PredicateFile.ENTER_MONITOR;
 import static org.clyze.doop.common.PredicateFile.EXIT_MONITOR;
@@ -189,7 +190,6 @@ class FactWriter extends JavaFactWriter {
     private final Phantoms phantoms;
     private final Collection<Object> seenPhantoms = ConcurrentHashMap.newKeySet();
     private final Map<Unit, Collection<InstrInfo>> expandedPhiNodes = new ConcurrentHashMap<>();
-
     FactWriter(Database db, SootParameters params, Representation rep, Phantoms phantoms) {
         super(db, params);
         this._rep = rep;
@@ -317,6 +317,57 @@ class FactWriter extends JavaFactWriter {
 
     void writeDirectSuperclass(SootClass sub, SootClass sup) {
         _db.add(DIRECT_SUPER_CLASS, writeType(sub), writeType(sup));
+    }
+
+    /**
+     * Type arguments of a class's generic supertypes, from its Signature attribute:
+     * for {@code interface OwnerRepository extends JpaRepository<Owner, Integer>} this writes
+     * (OwnerRepository, JpaRepository, 0, Owner) and (..., 1, java.lang.Integer). A type
+     * variable argument is written as "T:Name", a wildcard as "?", "+Bound" or "-Bound".
+     */
+    void writeGenericSuperTypeArgs(SootClass clazz) {
+        soot.tagkit.Tag tag = clazz.getTag("SignatureTag");
+        if (!(tag instanceof soot.tagkit.SignatureTag))
+            return;
+        String sig = ((soot.tagkit.SignatureTag) tag).getSignature();
+        String cls = writeType(clazz);
+        try {
+            new org.objectweb.asm.signature.SignatureReader(sig).accept(new org.objectweb.asm.signature.SignatureVisitor(org.objectweb.asm.Opcodes.ASM9) {
+                @Override public org.objectweb.asm.signature.SignatureVisitor visitSuperclass() { return new SuperTypeArgs(cls); }
+                @Override public org.objectweb.asm.signature.SignatureVisitor visitInterface() { return new SuperTypeArgs(cls); }
+            });
+        } catch (RuntimeException ex) {
+            System.err.println("WARNING: cannot parse generic signature of " + cls + ": " + sig);
+        }
+    }
+
+    /** Collects the top-level type arguments of one supertype in a class signature. */
+    private class SuperTypeArgs extends org.objectweb.asm.signature.SignatureVisitor {
+        private final String cls;
+        private String superType = null;
+        private int index = 0;
+        SuperTypeArgs(String cls) { super(org.objectweb.asm.Opcodes.ASM9); this.cls = cls; }
+        @Override public void visitClassType(String name) { superType = name.replace('/', '.'); }
+        @Override public void visitInnerClassType(String name) { superType = superType + "$" + name; index = 0; }
+        @Override public void visitTypeArgument() { emit("?"); }
+        @Override public org.objectweb.asm.signature.SignatureVisitor visitTypeArgument(char wildcard) {
+            final String prefix = (wildcard == '=') ? "" : String.valueOf(wildcard);
+            final int argIndex = index++;
+            return new org.objectweb.asm.signature.SignatureVisitor(org.objectweb.asm.Opcodes.ASM9) {
+                private int depth = 0;
+                private String arrays = "";
+                @Override public org.objectweb.asm.signature.SignatureVisitor visitArrayType() { arrays += "[]"; return this; }
+                @Override public void visitBaseType(char d) { if (depth == 0) write(argIndex, prefix + org.objectweb.asm.Type.getType(String.valueOf(d)).getClassName() + arrays); }
+                @Override public void visitTypeVariable(String n) { if (depth == 0) write(argIndex, prefix + "T:" + n + arrays); }
+                @Override public void visitClassType(String n) { if (depth++ == 0) write(argIndex, prefix + n.replace('/', '.') + arrays); }
+                @Override public void visitEnd() { depth--; }
+            };
+        }
+        private void emit(String arg) { write(index++, arg); }
+        private void write(int i, String arg) {
+            if (superType != null)
+                _db.add(GENERIC_SUPERTYPE_ARG, cls, superType, String.valueOf(i), arg);
+        }
     }
 
     void writeDirectSuperinterface(SootClass clazz, SootClass iface) {
@@ -1067,6 +1118,7 @@ class FactWriter extends JavaFactWriter {
             writeDynamicInvoke((DynamicInvokeExpr) expr, ii.index, insn, methodId);
         else {
             String methodSig = invokeMethodSig(insn, declClass, simpleName, exprMethodRef, expr);
+            ensureMethodFact(expr);
             if (expr instanceof StaticInvokeExpr)
                 _db.add(STATIC_METHOD_INV, insn, str(ii.index), methodSig, methodId);
             else if (expr instanceof VirtualInvokeExpr || expr instanceof InterfaceInvokeExpr)
@@ -1087,6 +1139,55 @@ class FactWriter extends JavaFactWriter {
             return Representation.signature(exprMethodRef);
         } else
             return _rep.signature(expr.getMethod());
+    }
+
+    // The invoked method may have been resolved to a receiver type that only
+    // inherits it (e.g. a method reference whose declaring class does not
+    // declare the method itself). Such a SootMethod is never visited by
+    // FactGenerator.generate(), so no _Method fact is emitted for its signature
+    // and the logic cannot derive the invocation's simple name/descriptor for
+    // dispatch. Emit the fact here when needed.
+    private void ensureMethodFact(InvokeExpr expr) {
+        if (expr instanceof DynamicInvokeExpr)
+            return;
+        SootMethod m;
+        try {
+            m = expr.getMethod();
+        } catch (RuntimeException e) {
+            return;
+        }
+        SootClass dc = m.getDeclaringClass();
+        // The resolved SootMethod may itself be a phantom placeholder that Soot
+        // attached to a real class (e.g. an invokeinterface whose ref class only
+        // inherits the method): FactGenerator.generate() skips phantom methods,
+        // so no _Method fact would ever be emitted for this signature.
+        // Alternatively it can be an unresolved-call stub synthesized by Soot
+        // (createUnresolvedErrorMethod: a concrete method whose body only throws
+        // NoSuchMethodError) and attached to its declaring class during body
+        // conversion. (Methods Soot attaches during body conversion are
+        // declared by the declarations pass, which runs after all bodies.)
+        if (m.isPhantom() || dc.isPhantom() || !dc.declaresMethod(m.getSubSignature()) || isUnresolvedCallStub(m)) {
+            // No body will ever be generated for such a placeholder: mark it
+            // abstract so the logic cannot select it as a dispatch target
+            // (MethodImplemented excludes abstract).
+            writeMethodModifier(writeMethod(m), "abstract");
+        }
+    }
+
+    // True when this method is a stand-in synthesized by Soot for an
+    // unresolvable call: a concrete method whose body only throws
+    // NoSuchMethodError. Such stubs are attached to their declaring class
+    // during body conversion and may postdate that class's fact-generation
+    // pass, so they would otherwise never get a _Method fact.
+    private static boolean isUnresolvedCallStub(SootMethod m) {
+        try {
+            if (m.isAbstract() || m.isNative() || !m.hasActiveBody())
+                return false;
+            String body = m.getActiveBody().getUnits().toString();
+            return body.contains("NoSuchMethodError") && body.contains("does not exist!");
+        } catch (Throwable t) {
+            return false;
+        }
     }
 
     private String getBootstrapSig(DynamicInvokeExpr di) {

@@ -33,7 +33,7 @@ class Main {
 	static void main(String[] args) {
 		try {
 			main2(args)
-		} catch (e) {
+		} catch (Throwable e) {
 			log.error "ERROR: ${describeError(e)}"
 //			if (!(e instanceof DoopErrorCodeException))
 //				Help.usage(null, CommandLineAnalysisFactory.createCliBuilder())
@@ -153,7 +153,12 @@ class Main {
 			} finally {
 				executorService.shutdownNow()
 			}
-		} catch (e) {
+		} catch (Throwable e) {
+			// Failures of the analysis thread arrive wrapped by the executor; a
+			// Throwable variable, since the cause may be an Error (e.g. a
+			// StackOverflowError in a stage), which an Exception variable cannot hold.
+			if (e instanceof java.util.concurrent.ExecutionException && e.cause)
+				e = e.cause
 			// DoopErrorCodeException is a special wrapper that must
 			// be propagated above, so we don't extract its cause yet.
 			if (e instanceof DoopErrorCodeException) {
