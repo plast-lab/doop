@@ -48,8 +48,7 @@ class SimpleAnalysisTests extends ServerAnalysisTests {
 	def "Server analysis test 013-enums (reflection, jphantom, default stats)"() {
 		when:
 		Analysis analysis = analyzeTest('013-enums', ['--reflection-classic', '--generate-jimple',
-													  '--no-standard-exports', '--exclude-implicitly-reachable-code',
-													  '--run-jphantom'] + testExports + souffleInterpreter)
+													  '--no-standard-exports', '--exclude-implicitly-reachable-code'] + testExports + souffleInterpreter)
 
 		then:
 		varPointsToQ(analysis, '<Main: void main(java.lang.String[])>/enumConsts#_93', '<Enums array for Main$UndeletablePrefKey>')

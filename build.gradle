@@ -181,7 +181,7 @@ dependencies {
     implementation "com.github.plast-lab:clue-common:${clueCommonVersion}"
     implementation "com.google.guava:guava:33.5.0-jre"
 
-    runtimeOnly "org.clyze:jphantom:1.3"                                    // JPhantom is a runtime dependency
+    runtimeOnly "com.github.anantoni:jphantom:1.4.5"                        // JPhantom (1.4.5: 1.4.4 + several runs in one JVM; 1.4.4: 1.4.3 + lenient contradictions between present classes, one member adder per class; 1.4.3: 1.4.2 + method-reference constants and package-info classes; 1.4.2: 1.4.1 + no stack overflow on heavily used missing annotations; 1.4.1: --classpath, several inputs, deterministic, modern class files) is a runtime dependency
     testImplementation "org.spockframework:spock-core:${spockVersion}"
     testRuntimeOnly "org.junit.platform:junit-platform-launcher:6.0.3"
 }
