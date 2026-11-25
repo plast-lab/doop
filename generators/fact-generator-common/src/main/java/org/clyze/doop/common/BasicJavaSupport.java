@@ -6,7 +6,9 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -37,6 +39,11 @@ public class BasicJavaSupport {
         return artScanner;
     }
 
+    /** The platform's archives (the JDK, android.jar), as given to the fact generator. */
+    public List<String> getPlatformLibs() {
+        return parameters.getPlatformLibs();
+    }
+
     public ExecutorService getExecutor() {
         return exec;
     }
@@ -45,6 +52,10 @@ public class BasicJavaSupport {
      * Helper method to read classes and resources from input archives.
      */
     public void preprocessInputs(Database db, Set<String> tmpDirs) throws IOException {
+        Collection<String> all = new ArrayList<>(parameters.getInputs());
+        all.addAll(parameters.getPlatformLibs());
+        all.addAll(parameters.getDependencies());
+        artScanner.nameArtifacts(all);
         for (String filename : parameters.getInputs()) {
             System.out.println("Preprocessing application: " + filename);
             preprocessInput(db, tmpDirs, classesInApplicationJars, filename);
@@ -83,7 +94,7 @@ public class BasicJavaSupport {
                 // .properties files (pom.properties, app config, per-profile copies) and
                 // keying by archive alone made them clobber each other in the map, so only
                 // one survived per jar (e.g. shopizer's config.cms.method was lost).
-                propertyProvider.addProperties(jarFile.getInputStream(entry), filename + "!" + entryName);
+                propertyProvider.addProperties(jarFile.getInputStream(entry), artScanner.artifactName(filename) + "!" + entryName);
             else if (entryName.startsWith("meta-inf/services/"))
                 // Java service-provider registry (JAR File Spec / java.util.ServiceLoader):
                 // the entry name below META-INF/services/ is the service-interface FQN, and
@@ -114,7 +125,7 @@ public class BasicJavaSupport {
                 File xmlTmpFile = ArtifactScanner.extractZipEntryAsFile("xml-file", jarFile, entry, entryName);
                 if (parameters._debug)
                     System.out.println("Processing XML entry (in " + filename + "): " + entryName);
-                XMLFactGenerator.processFile(xmlTmpFile, db, "", parameters._debug);
+                XMLFactGenerator.processArchiveEntry(xmlTmpFile, db, artScanner.artifactName(filename) + "!" + entryName, parameters._debug);
             }
         };
         if (isWar) {

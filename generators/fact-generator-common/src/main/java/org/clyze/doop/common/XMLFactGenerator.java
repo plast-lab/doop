@@ -46,11 +46,23 @@ public class XMLFactGenerator extends DefaultHandler {
     private Node lastStringNode = null;
     // Contains the inner data of an element.
     private String xmlData = null;
+    // Text of the open elements (innermost last), null once an element has a child:
+    // the text of a leaf element (e.g. web.xml's <servlet-class>) is recorded as
+    // XMLNodeData, as the text of <string> is (Android resources).
+    private final Stack<StringBuilder> texts = new Stack<>();
+    private final Stack<String> openIds = new Stack<>();
 
     private XMLFactGenerator(Database db, File xmlFile, String topDir, boolean debug) {
         this.db = db;
         this.xmlFile = xmlFile;
         this.relativePath = trimXMLPath(topDir);
+        this.debug = debug;
+    }
+
+    private XMLFactGenerator(Database db, File xmlFile, boolean debug, String label) {
+        this.db = db;
+        this.xmlFile = xmlFile;
+        this.relativePath = label;
         this.debug = debug;
     }
 
@@ -92,8 +104,20 @@ public class XMLFactGenerator extends DefaultHandler {
      * @param debug    if true, show debug messages
      */
     public static void processFile(File xmlFile, Database db, String topDir, boolean debug) {
+        parseWith(new XMLFactGenerator(db, xmlFile, topDir, debug), xmlFile, debug);
+    }
+
+    /**
+     * Process one XML file extracted from an archive, naming it in the facts by
+     * {@code label} (e.g. "archive.jar!entry.xml", as for .properties) instead of the temporary file's
+     * path, which changes on every run.
+     */
+    public static void processArchiveEntry(File xmlFile, Database db, String label, boolean debug) {
+        parseWith(new XMLFactGenerator(db, xmlFile, debug, label), xmlFile, debug);
+    }
+
+    private static void parseWith(XMLFactGenerator gen, File xmlFile, boolean debug) {
         try {
-            XMLFactGenerator gen = new XMLFactGenerator(db, xmlFile, topDir, debug);
             gen.parse(debug);
         } catch (ParserConfigurationException | SAXException | IOException ex) {
             String msg = ex.getMessage();
@@ -138,6 +162,10 @@ public class XMLFactGenerator extends DefaultHandler {
         for (int idx = 0; idx < attrs.getLength(); idx++)
             writeXMLNodeAttribute(relativePath, sNodeId, idx, attrs.getLocalName(idx), attrs.getQName(idx), attrs.getValue(idx));
         parents.push(nodeId);
+        if (!texts.isEmpty())
+            texts.set(texts.size() - 1, null);
+        texts.push(new StringBuilder());
+        openIds.push(sNodeId);
         if (qName.equals("string"))
             lastStringNode = new Node(relativePath, sNodeId);
     }
@@ -145,11 +173,17 @@ public class XMLFactGenerator extends DefaultHandler {
     @Override
     public void endElement(String uri, String localName, String qName) throws SAXException {
         parents.pop();
+        StringBuilder text = texts.pop();
+        String id = openIds.pop();
 
         if (lastStringNode != null) {
             if (xmlData != null)
                 db.add(XMLNodeData, lastStringNode.file, lastStringNode.nodeId, xmlData);
             lastStringNode = null;
+        } else if (text != null && !qName.equals("string")) {
+            String data = text.toString().trim();
+            if (!data.isEmpty())
+                db.add(XMLNodeData, relativePath, id, data);
         }
     }
 
@@ -163,6 +197,8 @@ public class XMLFactGenerator extends DefaultHandler {
     public void characters(char[] ch, int start, int length) throws SAXException {
         if (lastStringNode != null)
             xmlData = new String(ch, start, length);
+        if (!texts.isEmpty() && texts.peek() != null)
+            texts.peek().append(ch, start, length);
     }
 
     @Override

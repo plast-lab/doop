@@ -1,5 +1,14 @@
 package org.clyze.doop.common;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.TreeMap;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -39,6 +48,59 @@ import com.android.tools.smali.dexlib2.iface.MultiDexContainer;
 public class ArtifactScanner {
 
     private final Map<String, Set<ArtifactEntry>> artifactToClassMap = new ConcurrentHashMap<>();
+    private final Map<String, String> artifactNames = new ConcurrentHashMap<>();
+
+    /**
+     * Decides how facts name each input file. Facts name an input by its file
+     * name, not its path, so they do not depend on where the inputs (or Doop's
+     * derived copies, such as flattened multi-release jars) are stored. Files
+     * with the same name and the same contents share it. Files with the same
+     * name but different contents are told apart by a content hash
+     * ("name#hash"), with a warning.
+     *
+     * @param files  all input files (application, dependencies, platform)
+     */
+    public void nameArtifacts(Collection<String> files) throws IOException {
+        Map<String, List<String>> byName = new TreeMap<>();
+        for (String f : files)
+            byName.computeIfAbsent(new File(f).getName(), k -> new ArrayList<>()).add(f);
+        for (Map.Entry<String, List<String>> e : byName.entrySet()) {
+            List<String> same = e.getValue();
+            if (same.size() < 2)
+                continue;
+            Map<String, String> hashes = new LinkedHashMap<>();
+            for (String f : same)
+                hashes.put(f, contentHash(f));
+            if (new HashSet<>(hashes.values()).size() == 1)
+                continue;
+            for (Map.Entry<String, String> h : hashes.entrySet()) {
+                String name = e.getKey() + "#" + h.getValue();
+                artifactNames.put(h.getKey(), name);
+                System.err.println("WARNING: different inputs share the file name " + e.getKey() + ": " + h.getKey() + " is named " + name + " in the facts");
+            }
+        }
+    }
+
+    /** The name of an input file in the facts (see {@link #nameArtifacts}). */
+    public String artifactName(String path) {
+        return artifactNames.getOrDefault(path, new File(path).getName());
+    }
+
+    private static String contentHash(String file) throws IOException {
+        try (InputStream in = new FileInputStream(file)) {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            byte[] buf = new byte[1 << 16];
+            for (int n; (n = in.read(buf)) > 0; )
+                md.update(buf, 0, n);
+            StringBuilder sb = new StringBuilder();
+            byte[] d = md.digest();
+            for (int i = 0; i < 6; i++)
+                sb.append(String.format("%02x", d[i]));
+            return sb.toString();
+        } catch (NoSuchAlgorithmException ex) {
+            throw new IllegalStateException(ex);
+        }
+    }
     private final Logger logger = Logger.getLogger(getClass());
     private final Set<GenericFieldInfo> genericFields = ConcurrentHashMap.newKeySet();
 
@@ -91,7 +153,7 @@ public class ArtifactScanner {
 
     public void processClass(InputStream is, File f, Consumer<String> classProc) throws IOException {
         String className = BytecodeUtil.getClassName(new ClassReader(is));
-        String artifact = f.getName();
+        String artifact = artifactName(f.getPath());
         registerArtifactClass(artifact, className, "-", IOUtils.toByteArray(is).length);
         if (classProc != null)
             classProc.accept(className);
@@ -122,6 +184,12 @@ public class ArtifactScanner {
                     continue;
 
                 String entryName = entry.getName().toLowerCase();
+                // Classes under META-INF/versions/<N>/ are never loaded from
+                // here: multi-release jars are flattened for the analyzed
+                // platform before fact generation (DoopAnalysis), and in other
+                // jars these entries are plain data to the JVM.
+                if (entryName.endsWith(".class") && entryName.startsWith("meta-inf/versions/"))
+                    continue;
                 if (entryName.endsWith(".class")) {
                     try {
                         processClass(zipFile.getInputStream(entry), new File(zipFile.getName()), classProc);

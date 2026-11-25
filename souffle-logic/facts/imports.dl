@@ -286,9 +286,18 @@ AssignReturnValue(?invocation, ?to) :-
 // MainClass
 .input MainClass
 
+// GenericSuperTypeArgument: type arguments of a class's generic supertypes (Signature attribute):
+// (class, supertype, index, argument); a type-variable argument is "T:Name", a wildcard "?"/"+B"/"-B".
+.decl GenericSuperTypeArgument(?class:ReferenceType, ?superType:ReferenceType, ?index:number, ?argument:symbol)
+.input GenericSuperTypeArgument(filename="GenericSuperTypeArgument.facts")
+
 // ClassArtifact
 .decl _ClassArtifact(?artifact:symbol, ?className:ReferenceType, ?subArtifact:symbol, ?size:number)
 .input _ClassArtifact(filename="Class-Artifact.facts")
+
+// PlatformArtifact: the artifacts that are the platform (the JDK, android.jar)
+.decl _PlatformArtifact(?artifact:symbol)
+.input _PlatformArtifact(filename="Platform-Artifact.facts")
 
 // PackageArtifact
 .decl _PackageArtifact(?artifact:symbol, ?packageName:symbol)

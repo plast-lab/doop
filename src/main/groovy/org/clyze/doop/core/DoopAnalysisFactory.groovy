@@ -8,8 +8,13 @@ import org.apache.commons.io.FilenameUtils
 import org.clyze.analysis.*
 import org.clyze.doop.common.DoopErrorCodeException
 import org.clyze.doop.util.PackageUtil
+import org.clyze.doop.input.URLInputResolver
+import org.clyze.input.ChainResolver
 import org.clyze.input.DefaultInputResolutionContext
+import org.clyze.input.DirectoryResolver
+import org.clyze.input.FileResolver
 import org.clyze.input.InputResolutionContext
+import org.clyze.input.IvyResolver
 import org.clyze.input.PlatformManager
 import org.clyze.utils.CheckSum
 import org.clyze.utils.FileOps
@@ -717,7 +722,10 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 	}
 
 	static DefaultInputResolutionContext newJavaDefaultInputResolutionContext() {
-		return new DefaultInputResolutionContext(DefaultInputResolutionContext.defaultResolver(new File(Doop.doopTmp)))
+		// The library's default chain, with URL inputs downloaded under their own
+		// file name (see URLInputResolver).
+		return new DefaultInputResolutionContext(new ChainResolver(new FileResolver(), new DirectoryResolver(),
+				new URLInputResolver(new File(Doop.doopTmp)), new IvyResolver()))
 	}
 
 	static File resolveAsInput(String filePath) {
