@@ -1015,18 +1015,19 @@ class FactWriter extends JavaFactWriter {
     private void writeActualParams(Stmt stmt, InstrInfo ii, InvokeExpr expr,
                                    String invokeExprRepr, SessionCounter session) {
         String methodId = ii.methodId;
-        boolean isInvokedynamic = (expr instanceof DynamicInvokeExpr);
         int count = expr.getArgCount();
         for (int i = 0; i < count; i++) {
-            // Undo Soot's reverse order of invokedynamic arguments.
-            Value arg = isInvokedynamic ? expr.getArg(count-i-1) : expr.getArg(i);
+            // Soot >= 3.1.0 (b935b169dd7, 2018) gives invokedynamic arguments in
+            // bytecode order; un-reversing them here swapped e.g. the captured
+            // receiver and the next captured value of instance lambdas.
+            Value arg = expr.getArg(i);
             Value v = writeActualParam(stmt, ii, expr, session, arg, i);
             if (v instanceof Local)
                 writeActualParam(i, invokeExprRepr, _rep.local(methodId, (Local)v));
             else
                 throw new RuntimeException("Actual parameter is not a local: " + v + " " + v.getClass());
         }
-        if (isInvokedynamic) {
+        if (expr instanceof DynamicInvokeExpr) {
             DynamicInvokeExpr di = (DynamicInvokeExpr)expr;
             for (int j = 0; j < di.getBootstrapArgCount(); j++) {
                 Value v = di.getBootstrapArg(j);
@@ -1101,7 +1102,7 @@ class FactWriter extends JavaFactWriter {
 
     private void writeDynamicInvoke(DynamicInvokeExpr di, int index, String insn, String methodId) {
         SootMethodRef dynInfo = di.getMethodRef();
-        SigInfo dynSig = new SigInfo(dynInfo, true);
+        SigInfo dynSig = new SigInfo(dynInfo, false);  // bytecode order, like the arguments (see writeActualParams)
         for (int pIdx = 0; pIdx < dynSig.arity; pIdx++)
             writeInvokedynamicParameterType(insn, pIdx, dynInfo.getParameterType(pIdx).toString());
         writeInvokedynamic(insn, index, getBootstrapSig(di), dynInfo.getName(), dynSig.retType, dynSig.arity, dynSig.paramTypes, di.getHandleTag(), methodId);
