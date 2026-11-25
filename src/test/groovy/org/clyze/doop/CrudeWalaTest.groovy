@@ -13,7 +13,7 @@ class CrudeWalaTest extends DoopSpec {
 	@Unroll
 	def "Crude testing WALA fact generation and analysis"(def mode) {
 		when:
-		Main.main((String[])(["-i", Artifacts.ANTLR_JAR, "-a", "context-insensitive", "--id", "antlr-wala", "--dacapo", "--wala-fact-gen", "--platform", "java_8", "-Ldebug"] + testExports + mode))
+		Main.main2((String[])(["-i", Artifacts.ANTLR_JAR, "-a", "context-insensitive", "--id", "antlr-wala", "--dacapo", "--wala-fact-gen", "--platform", "java_8", "-Ldebug"] + testExports + mode))
 		Analysis analysis = Main.analysis
 
 		then:

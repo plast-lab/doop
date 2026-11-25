@@ -10,7 +10,7 @@ class DataFlowTest extends DoopSpec {
     @Unroll
     def "Data-flow/information-flow analysis test"() {
         when:
-        Main.main(['-i', Artifacts.DROIDBENCH_CLONE1,
+        Main.main2(['-i', Artifacts.DROIDBENCH_CLONE1,
                    '--id', 'data-flow-test',
                    '--platform', 'android_25_fulljars',
                    '--information-flow', 'android',

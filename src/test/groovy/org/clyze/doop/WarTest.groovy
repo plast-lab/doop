@@ -9,7 +9,7 @@ class WarTest extends DoopSpec {
     def "Test WAR support"() {
         when:
         // Some profiles may not support full stats or server logic.
-        Main.main((String[])(['-i', Artifacts.DAYTRADER_WAR,
+        Main.main2((String[])(['-i', Artifacts.DAYTRADER_WAR,
                               '-a', 'context-insensitive', '-Ldebug',
                               '--souffle-mode', 'interpreted',
                               '--open-programs', 'jackee',

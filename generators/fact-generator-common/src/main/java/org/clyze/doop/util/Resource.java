@@ -151,7 +151,15 @@ public enum Resource {
 class OutputConsumer implements Consumer<String> {
     public String error = null;
     public void accept(String line) {
-        if (line.contains(DoopErrorCodeException.PREFIX)) {
+        if (this.error != null)
+            return;
+        // JHelper.runJar() does not report the child's exit code, so a
+        // crashed generator JVM must be recognized from its output; otherwise
+        // Doop goes on to cache and analyze an empty facts directory.
+        if (line.contains(DoopErrorCodeException.PREFIX)
+            || line.contains("Exception in thread \"main\"")
+            || line.contains("Error: Could not find or load main class")
+            || line.contains("Error occurred during initialization of VM")) {
             this.error = line;
         }
     }

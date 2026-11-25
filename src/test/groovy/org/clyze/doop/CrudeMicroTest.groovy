@@ -19,7 +19,7 @@ class CrudeMicroTest extends DoopSpec {
         String id = 'antlr-micro'
         // First run 'micro' analysis.
         List<String> baseArgs = ['-i', Artifacts.ANTLR_JAR, '-a', 'micro', '--id', id, '--dacapo', '--stats', 'none', '--fact-gen-cores', '1', '--platform', 'java_7']
-        Main.main((String[])(baseArgs + souffleInterpreter))
+        Main.main2((String[])(baseArgs + souffleInterpreter))
         Analysis analysis = Main.analysis
         // Then, run 'self-contained' analysis on the same facts using a different output directory.
         File selfContainedIn  = new File(analysis.outDir, 'database')

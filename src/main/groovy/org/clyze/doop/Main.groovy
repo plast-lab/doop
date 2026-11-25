@@ -26,6 +26,10 @@ class Main {
 	// Allow access to the analysis object from external code
 	public static DoopAnalysis analysis
 
+	// Set when the analysis failed or timed out inside main2(), where the
+	// error is only logged; main() turns it into a non-zero exit status.
+	private static volatile boolean analysisFailed = false
+
 	static void main(String[] args) {
 		try {
 			main2(args)
@@ -33,6 +37,17 @@ class Main {
 			log.error "ERROR: ${describeError(e)}"
 //			if (!(e instanceof DoopErrorCodeException))
 //				Help.usage(null, CommandLineAnalysisFactory.createCliBuilder())
+			System.exit(1)
+		}
+		if (analysisFailed)
+			System.exit(1)
+	}
+
+	/** Forcibly stops every process started by this JVM (e.g. a running Souffle). */
+	private static void killChildProcesses() {
+		ProcessHandle.current().descendants().forEach { ProcessHandle ph ->
+			log.info "Stopping child process ${ph.pid()}"
+			ph.destroyForcibly()
 		}
 	}
 
@@ -45,6 +60,8 @@ class Main {
 	 *								   that identifies points of failure
 	 */
 	static void main2(String[] args) throws DoopErrorCodeException {
+		analysisFailed = false
+		analysis = null
 		Doop.initDoopWithLoggingFromEnv()
 
 		try {
@@ -117,16 +134,22 @@ class Main {
 							analysis.run()
 							new CommandLineAnalysisPostProcessor().process(analysis)
 						} catch (DoopErrorCodeException e) {
+							analysisFailed = true
 							log.error(e.message)
 							log.debug(e.message, e)
 						} catch (e) {
+							analysisFailed = true
 							log.error "Generic exception $e"
 							throw e
 						}
 					}
 				}).get(analysis.options.TIMEOUT.value as int, TimeUnit.MINUTES)
 			} catch (TimeoutException e) {
+				analysisFailed = true
 				log.error "Timeout has expired (${analysis.options.TIMEOUT.value} min)."
+				// Interrupting the analysis thread does not stop an external
+				// Souffle process, which would keep running (and holding memory).
+				killChildProcesses()
 			} finally {
 				executorService.shutdownNow()
 			}

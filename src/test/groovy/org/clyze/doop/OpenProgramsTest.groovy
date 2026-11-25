@@ -33,7 +33,7 @@ class OpenProgramsTest extends DoopSpec {
     def "Test all open-program profiles"(String profile) {
         when:
         // Some analyses do not support full stats or server logic.
-        Main.main((String[])(['-i', Artifacts.HELLO_JAR,
+        Main.main2((String[])(['-i', Artifacts.HELLO_JAR,
                               '-a', 'context-insensitive', '-Ldebug', '--dry-run',
                               '--souffle-force-recompile', '--souffle-mode', 'translated',
                               '--id', "dry-run-open-programs-${profile}", '--cache']))
