@@ -5,7 +5,7 @@
 //   1. Creation, 2. Entry and 3. Injection: the contract interface, the finished
 //      facts engines act on, each with the tuples the contract adds and its checks.
 //   4. Handoffs: internal relations between spec and framework files, never read by engines.
-// Owner, ContractProblem and CONTRACT_OWNER_CHECK are in environment.dl, before this file.
+// Owner, EnvironmentWarning and CONTRACT_OWNER_CHECK are in environment.dl, before this file.
 // ==========================================================================
 
 
@@ -79,7 +79,7 @@ FrameworkCreatedType(?owner, ?class) :-
 
 CONTRACT_OWNER_CHECK(FrameworkCreatedType, ?type, (?owner, ?type))
 
-ContractProblem(?owner, "FrameworkCreatedType", ?type, "Not a class or interface") :-
+EnvironmentWarning(?owner, "FrameworkCreatedType", ?type, "Not a class or interface") :-
   FrameworkCreatedType(?owner, ?type),
   !isClassOrInterfaceType(?type).
 
@@ -161,7 +161,7 @@ EntryPoint(?framework, ?run) :-
 
 CONTRACT_OWNER_CHECK(EntryPoint, ?method, (?owner, ?method))
 
-ContractProblem(?owner, "EntryPoint", ?method, "Not a method") :-
+EnvironmentWarning(?owner, "EntryPoint", ?method, "Not a method") :-
   EntryPoint(?owner, ?method),
   !isMethod(?method).
 
@@ -313,23 +313,23 @@ CONTRACT_OWNER_CHECK(InjectedWith, ?slot, (?owner, _, ?slot, _))
 CONTRACT_OWNER_CHECK(HolderInjectedWith, ?slot, (?owner, _, ?slot, _))
 
 
-ContractProblem(?owner, "InjectionTarget", ?class, "Not a class") :-
+EnvironmentWarning(?owner, "InjectionTarget", ?class, "Not a class") :-
   InjectionTarget(?owner, ?class),
   !isClassType(?class).
 
-ContractProblem(?owner, "InjectedField", ?field, "Not a field") :-
+EnvironmentWarning(?owner, "InjectedField", ?field, "Not a field") :-
   InjectedField(?owner, ?field),
   !isField(?field).
 
-ContractProblem(?owner, "InjectedParam", ?param, "Not a formal parameter") :-
+EnvironmentWarning(?owner, "InjectedParam", ?param, "Not a formal parameter") :-
   InjectedParam(?owner, ?param),
   !FormalParam(_, _, ?param).
 
-ContractProblem(?owner, "InjectedWith", ?source, "Source is not a class, interface, method or field") :-
+EnvironmentWarning(?owner, "InjectedWith", ?source, "Source is not a class, interface, method or field") :-
   InjectedWith(?owner, _, _, ?source),
   !isSource(?source).
 
-ContractProblem(?owner, "HolderInjectedWith", ?source, "Source is not a class, interface, method or field") :-
+EnvironmentWarning(?owner, "HolderInjectedWith", ?source, "Source is not a class, interface, method or field") :-
   HolderInjectedWith(?owner, _, _, ?source),
   !isSource(?source).
 
@@ -337,20 +337,20 @@ ContractProblem(?owner, "HolderInjectedWith", ?source, "Source is not a class, i
 // Only class and interface sources, since a method may declare a wider return type
 // (e.g. Object) and still return the right object.
 // Types missing from the facts can also show up here.
-ContractProblem(?owner, "InjectedWith", ?source, "Class or interface does not fit the type of the slot") :-
+EnvironmentWarning(?owner, "InjectedWith", ?source, "Class or interface does not fit the type of the slot") :-
   InjectedWith(?owner, _, ?slot, ?source),
   isClassOrInterfaceType(?source),
   SlotType(?slot, ?type),
   !basic.SubtypeOf(?source, ?type).
 
 // A primitive slot (int, boolean...) can never be a holder.
-ContractProblem(?owner, "HolderInjectedWith", ?slot, "Holder slot is not a reference type") :-
+EnvironmentWarning(?owner, "HolderInjectedWith", ?slot, "Holder slot is not a reference type") :-
   HolderInjectedWith(?owner, _, ?slot, _),
   SlotType(?slot, ?type),
   !isReferenceType(?type).
 
 // For array slots, a class or interface source must fit the array's component type.
-ContractProblem(?owner, "HolderInjectedWith", ?source, "Class or interface does not fit the array element type") :-
+EnvironmentWarning(?owner, "HolderInjectedWith", ?source, "Class or interface does not fit the array element type") :-
   HolderInjectedWith(?owner, _, ?slot, ?source),
   isClassOrInterfaceType(?source),
   SlotType(?slot, ?arrType),
@@ -362,21 +362,21 @@ ContractProblem(?owner, "HolderInjectedWith", ?source, "Class or interface does 
 // (its own InjectionTarget), so it never decides for the objects of another framework.
 // Static fields belong to no object, so a file may fill one without injecting into
 // objects of its class (e.g. Guice requestStaticInjection).
-ContractProblem(?owner, "InjectedWith", ?class, "Class is not one this file injects into") :-
+EnvironmentWarning(?owner, "InjectedWith", ?class, "Class is not one this file injects into") :-
   InjectedWith(?owner, ?class, ?slot, _),
   !InjectionTarget(?owner, ?class),
   !Field_Modifier("static", ?slot).
 
-ContractProblem(?owner, "InjectedWith", ?slot, "Slot is not in the class") :-
+EnvironmentWarning(?owner, "InjectedWith", ?slot, "Slot is not in the class") :-
   InjectedWith(?owner, ?class, ?slot, _),
   !SlotOf(?slot, ?class).
 
-ContractProblem(?owner, "HolderInjectedWith", ?class, "Class is not one this file injects into") :-
+EnvironmentWarning(?owner, "HolderInjectedWith", ?class, "Class is not one this file injects into") :-
   HolderInjectedWith(?owner, ?class, ?slot, _),
   !InjectionTarget(?owner, ?class),
   !Field_Modifier("static", ?slot).
 
-ContractProblem(?owner, "HolderInjectedWith", ?slot, "Slot is not in the class") :-
+EnvironmentWarning(?owner, "HolderInjectedWith", ?slot, "Slot is not in the class") :-
   HolderInjectedWith(?owner, ?class, ?slot, _),
   !SlotOf(?slot, ?class).
 
@@ -468,26 +468,26 @@ CONTRACT_OWNER_CHECK(Injectable, ?source, (?owner, ?source))
 CONTRACT_OWNER_CHECK(NamedInjectable, ?source, (?owner, ?source, _))
 
 
-ContractProblem(?owner, "InjectionPoint", ?slot, "Not a field or formal parameter") :-
+EnvironmentWarning(?owner, "InjectionPoint", ?slot, "Not a field or formal parameter") :-
   InjectionPoint(?owner, ?slot),
   !isField(?slot),
   !FormalParam(_, _, ?slot).
 
-ContractProblem(?owner, "LifecycleCallback", ?method, "Not a method") :-
+EnvironmentWarning(?owner, "LifecycleCallback", ?method, "Not a method") :-
   LifecycleCallback(?owner, ?method),
   !isMethod(?method).
 
-ContractProblem(?owner, "ManagedClass", ?class, "Not a class") :-
+EnvironmentWarning(?owner, "ManagedClass", ?class, "Not a class") :-
   ManagedClass(?owner, ?class),
   !isClassType(?class).
 
-ContractProblem(?owner, "Injectable", ?source, "Source is not a class, interface, method or field") :-
+EnvironmentWarning(?owner, "Injectable", ?source, "Source is not a class, interface, method or field") :-
   Injectable(?owner, ?source),
   !isSource(?source).
 
-ContractProblem(?owner, "NamedInjectable", ?source, "Source is not an injectable of this owner") :-
+EnvironmentWarning(?owner, "NamedInjectable", ?source, "Source is not an injectable of this owner") :-
   NamedInjectable(?owner, ?source, _),
   !Injectable(?owner, ?source).
 
-ContractProblem(?owner, "NamedInjectable", ?source, "Name is empty") :-
+EnvironmentWarning(?owner, "NamedInjectable", ?source, "Name is empty") :-
   NamedInjectable(?owner, ?source, "").

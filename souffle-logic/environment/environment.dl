@@ -61,16 +61,16 @@
 .decl Owner(?name:symbol)
 
 // Tuples the contract checks report as wrong, with their owner.
-// The checks list such tuples in the output (ContractProblem.csv) without failing,
+// The checks list such tuples in the output (EnvironmentWarning.csv) without failing,
 // so mistakes in spec and framework rules are visible.
-.decl ContractProblem(?owner:symbol, ?relation:symbol, ?value:symbol, ?problem:symbol)
-.output ContractProblem
+.decl EnvironmentWarning(?owner:symbol, ?relation:symbol, ?value:symbol, ?warning:symbol)
+.output EnvironmentWarning
 
 // Reports the tuples of a shared relation whose owner is not declared.
 // ?owner must be named in args; value is the column the report shows.
 // e.g. CONTRACT_OWNER_CHECK(InjectedWith, ?slot, (?owner, _, ?slot, _))
 #define CONTRACT_OWNER_CHECK(relation, value, args) \
-  ContractProblem(?owner, #relation, value, "Owner not declared") :- \
+  EnvironmentWarning(?owner, #relation, value, "Owner not declared") :- \
     relation args, \
     !Owner(?owner).
 
