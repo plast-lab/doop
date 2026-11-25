@@ -1,0 +1,6 @@
+Class.getMethod;<Base: void hello()>;Main.main;10;isAccessible=false;
+Method.invoke;<Base: void hello()>;Main.main;11;isAccessible=false;
+Class.getDeclaredMethod;<Base: void secret()>;Main.main;14;isAccessible=false;
+Method.invoke;<Base: void secret()>;Main.main;16;isAccessible=true;
+Class.forName;Plugin;Main.main;19;;
+Class.newInstance;Plugin;Main.main;19;;
