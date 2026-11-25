@@ -22,7 +22,8 @@
 // Maps any type id (plain type, GenericType, TypeVariable or GenericArray) to
 // its erased Doop Type (JLS 4.6: leftmost bound 0 for type variables, recursive
 // for chained bounds <A, B extends A>) and detects unresolved type variables
-// including generic arrays such as T[].
+// anywhere in a type id: bare (T), in generic arrays (T[]) and nested in
+// parameterized types (List<T>, Supplier<Box<T>>).
 
 .decl ContainsTypeVariable(?type:symbol)
 
@@ -31,6 +32,10 @@ ContainsTypeVariable(?tv) :- TypeVariable(?tv, _, _).
 ContainsTypeVariable(?arr) :-
   GenericArray(?arr, ?comp),
   ContainsTypeVariable(?comp).
+
+ContainsTypeVariable(?gType) :-
+  GenericType_Argument(?gType, _, ?arg, _),
+  ContainsTypeVariable(?arg).
 
 
 .decl GenericErasure(?type:symbol, ?erasure:Type)
@@ -59,6 +64,8 @@ GenericErasure(?arr, ?erasedArr) :-
 // viewed as its supertype ?super, ?super's ?index-th type parameter is bound
 // to (?arg, ?bound). Walks both generic signatures (Type_GenericSuperType)
 // and plain inheritance links (DirectSuperclass / DirectSuperinterface).
+// ?bound is always "=": JLS 8.1.4 / 9.1.3 forbid wildcards in direct supertype
+// arguments, and the inductive steps only copy bounds already in the relation.
 
 .decl _Generics_DirectSuper(?sub:ReferenceType, ?mid:ReferenceType)
 
@@ -118,21 +125,32 @@ GenericArgOnSuper(?gType, ?super, ?sIdx, ?arg, ?bound) :-
 // --------------------------------------------------------------------------
 // 3. Slot and source generic views
 // --------------------------------------------------------------------------
-// Resolves top-level inherited type-variable slots per target class (BaseService<R>
-// on UserService) and exposes an inline view of source generic arguments on ?super.
+// Resolves class-level type variables per target class (BaseService<R> on
+// UserService), applies that to top-level inherited type-variable slots and
+// exposes an inline view of source generic arguments on ?super.
+
+// Resolution of a class-level type variable ?var on ?class: the concrete argument
+// that ?class passes to ?var's declaring type. Wildcards ("-") and arguments that
+// still contain type variables are not resolutions. Method-level type variables are
+// excluded by the isReferenceType guard on the declaring owner (they cannot be
+// resolved per class).
+.decl TypeVariableOn(?class:ReferenceType, ?var:symbol, ?resolved:symbol)
+
+TypeVariableOn(?class, ?var, ?resolved) :-
+  TypeVariable(?var, ?declClass, _),
+  isReferenceType(?declClass),
+  Type_TypeParameter(?declClass, ?idx, ?var),
+  TypeSuperArg(?class, ?declClass, ?idx, ?resolved, "="),
+  ?resolved != "-",
+  !ContainsTypeVariable(?resolved).
+
 
 .decl _Generics_SlotResolvedVar(?class:ClassType, ?slot:Slot, ?resolved:symbol)
 
 _Generics_SlotResolvedVar(?class, ?slot, ?resolved) :-
   SlotOf(?slot, ?class),
   SlotFullType(?slot, ?var),
-  TypeVariable(?var, ?declClass, _),
-  isReferenceType(?declClass),
-  Type_TypeParameter(?declClass, ?idx, ?var),
-  TypeSuperArg(?class, ?declClass, ?idx, ?resolved, ?bound),
-  ( ?bound = "=" ; ?bound = "extends" ),
-  ?resolved != "-",
-  !ContainsTypeVariable(?resolved).
+  TypeVariableOn(?class, ?var, ?resolved).
 
 .decl _Generics_HasSlotResolvedVar(?class:ClassType, ?slot:Slot)
 _Generics_HasSlotResolvedVar(?class, ?slot) :- _Generics_SlotResolvedVar(?class, ?slot, _).

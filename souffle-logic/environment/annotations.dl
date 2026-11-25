@@ -1,5 +1,5 @@
 // ==========================================================================
-// Annotations helper:
+// Annotations logic and base environment relation:
 //
 // Follows annotation chains (@RestController is annotated with @Controller,
 // which is annotated with @Component), so a spec or framework only names the annotation
@@ -7,31 +7,34 @@
 // Gives the values written on annotations (no defaults).
 // ==========================================================================
 
+// --------------------------------------------------------------------------
+// Environment specific / special annotations
+// --------------------------------------------------------------------------
 
+// An annotation that has a special meaning for a given environment, under the owner's own role name.
+// Every owner feeds its whole lookup table here, so the same annotation may appear
+// under several owners with different roles. A reader always names the owner
+// (e.g. EnvironmentAnnotation("jakarta-annotation", "resource", ?ann)), never looks up by role alone
+// and never negates the relation. A role name is thus an interface: renaming one means checking
+// for readers that name its owner.
+// Rows exist whether or not the program uses the annotation.
+.decl EnvironmentAnnotation(?owner:symbol, ?role:symbol, ?annotation:Annotation)
 
+CONTRACT_OWNER_CHECK(EnvironmentAnnotation, ?annotation, (?owner, _, ?annotation))
 
 // --------------------------------------------------------------------------
 // Chains
 // --------------------------------------------------------------------------
-
-// Every annotation used somewhere in the facts.
-.decl AnnotationType(?annotation:Annotation)
-
-AnnotationType(?annotation) :- Type_Annotation(_, ?annotation).
-AnnotationType(?annotation) :- Method_Annotation(_, ?annotation).
-AnnotationType(?annotation) :- Field_Annotation(_, ?annotation).
-AnnotationType(?annotation) :- Param_Annotation(_, _, ?annotation).
-
 
 // The annotation is the root itself or is annotated with it, directly or through a chain.
 // Spring: CarriesAnnotation(@Service, @Component), CarriesAnnotation(@GetMapping, @RequestMapping)
 .decl CarriesAnnotation(?annotation:Annotation, ?root:Annotation)
 
 CarriesAnnotation(?annotation, ?annotation) :-
-  AnnotationType(?annotation).
+  isAnnotation(?annotation).
 
 CarriesAnnotation(?annotation, ?root) :-
-  AnnotationType(?annotation),
+  isAnnotation(?annotation),
   Type_Annotation(?annotation, ?meta),
   CarriesAnnotation(?meta, ?root).
 

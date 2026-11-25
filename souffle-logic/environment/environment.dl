@@ -5,7 +5,7 @@
 // application program (e.g. object creation, entry points, injection and taint).
 // Engines include this file and read only the contract interface.
 //
-//                       facts/ + basic/ + helpers/
+//                     facts/ + basic/ + shortcuts
 //                                   │
 //        ┌──────────────┬───────────┴───┬───────────────────┐
 //        ▼              ▼               ▼                   ▼
@@ -18,7 +18,7 @@
 //        └──────────────┼───────────────┘                   │
 //                       ▼                                   │
 //           ┌───────────────────────┐                       │
-//           │   requests & offers   │                       │
+//           │       handoffs        │                       │
 //           │ (accumulated context) │                       │
 //           └───────────┬───────────┘                       │
 //                       ▼                                   │
@@ -34,19 +34,20 @@
 //                               points-to  taint / ...
 //
 // Layout:
-//   contracts/   Shared relations:
-//                  - requests-offers.dl: internal handoff relations between specs
-//                    and frameworks for facts one file cannot finish alone (e.g. @Inject).
-//                  - creation.dl, entry.dl and injection.dl: the contract interface
-//                    (finished facts engines act on) and its auto rules.
-//   helpers/     Shared shortcuts over facts/ and basic/.
+//   contracts.dl     Shared relations: the contract interface (creation, entry, injection:
+//                    finished facts engines act on, with their auto rules) and the handoffs
+//                    (internal relations between specs and frameworks for facts one file
+//                    cannot finish alone, e.g. @Inject).
+//   annotations.dl   Annotation chains and values, and EnvironmentAnnotation.
+//   constructors.dl, members.dl, generics.dl, names.dl
+//                    Shared shortcuts over facts/ and basic/.
 //   specs/       Published standards (e.g. Jakarta) shared by all their
 //                implementations (e.g. Hibernate).
 //   frameworks/  Framework specific rules (e.g. spring.dl), grouped in
 //                subfolders when large (e.g. frameworks/spring/).
 //
 // Specs and frameworks dont read each other directly: they communicate through
-// requests and offers, never read from the contract interface and never negate shared
+// handoffs, never read from the contract interface and never negate shared
 // relations, so DI containers can safely use negation when choosing without breaking
 // stratification.
 // ==========================================================================
@@ -56,7 +57,7 @@
 // The name of each spec or framework.
 // Every tuple in the shared relations starts with its owner.
 // On the contract interface it is the framework that acts;
-// on a request or offer it is the one that makes it.
+// on a handoff it is the one that makes it.
 .decl Owner(?name:symbol)
 
 // Tuples the contract checks report as wrong, with their owner.
@@ -76,19 +77,16 @@
 
 
 // --- Contracts ---
-#include "contracts/creation.dl"
-#include "contracts/entry.dl"
-#include "contracts/injection.dl"
-#include "contracts/requests-offers.dl"
+#include "contracts.dl"
 
 
 
 // --- Helpers ---
-#include "helpers/annotations.dl"
-#include "helpers/constructors.dl"
-#include "helpers/members.dl"
-#include "helpers/generics.dl"
-#include "helpers/names.dl"
+#include "annotations.dl"
+#include "constructors.dl"
+#include "members.dl"
+#include "generics.dl"
+#include "names.dl"
 
 
 

@@ -1,0 +1,493 @@
+// ==========================================================================
+// Contracts:
+//
+// The shared relations of the environment layer, in four parts:
+//   1. Creation, 2. Entry and 3. Injection: the contract interface, the finished
+//      facts engines act on, each with the tuples the contract adds and its checks.
+//   4. Handoffs: internal relations between spec and framework files, never read by engines.
+// Owner, ContractProblem and CONTRACT_OWNER_CHECK are in environment.dl, before this file.
+// ==========================================================================
+
+
+
+
+// ==========================================================================
+// 1. Creation (contract interface):
+//
+// Classes and interfaces whose objects the framework creates instead of the program.
+// Framework here means any code outside the application program like
+// a DI container, a servlet container, a test runner etc...
+// ==========================================================================
+
+// --------------------------------------------------------------------------
+// Relation
+// --------------------------------------------------------------------------
+
+// A class or interface the framework creates objects of (no "new" in the application program).
+// For an interface or an abstract class, the framework creates an object of a class it makes at runtime,
+// so the type stands for that class (e.g. a Spring Data repository, a Spring bean with @Lookup methods).
+// The engine makes one mock object for it and that object is used whenever the
+// framework calls one of its methods or injects it somewhere.
+// Its methods without code (those of an interface) return a mock of their return type.
+// It doesn't say which constructor runs, which methods get called or where
+// the object gets injected. Specs and frameworks say those with EntryPoint and InjectedWith.
+// It doesn't say either that the framework fills the object's fields (that's InjectionTarget).
+// Spring: @Component (and @Service, @Controller etc.. via meta-annotations), Spring Data repositories
+// Jakarta: @Entity
+.decl FrameworkCreatedType(?owner:symbol, ?type:ReferenceType)
+
+
+
+
+
+
+
+// --------------------------------------------------------------------------
+// Tuples the contract adds
+// --------------------------------------------------------------------------
+// Always true when another tuple exists, whatever the framework, so specs and frameworks
+// don't need to repeat or ever forget them. Each belongs to the owner of the tuple it follows from
+// (for a handoff it is whoever injects into the object).
+
+
+// A class or interface given to a slot (directly or inside a holder) means
+// the mock object the engine made for it, so it must have one.
+FrameworkCreatedType(?owner, ?type) :-
+  InjectedWith(?owner, _, _, ?type),
+  isClassOrInterfaceType(?type).
+
+FrameworkCreatedType(?owner, ?type) :-
+  HolderInjectedWith(?owner, _, _, ?type),
+  isClassOrInterfaceType(?type).
+
+
+// A constructor only runs when an object of exactly its class is created
+// (with new or reflection), so if the framework calls it, it creates the object.
+FrameworkCreatedType(?owner, ?class) :-
+  EntryPoint(?owner, ?ctor),
+  ConstructorOf(?ctor, ?class).
+
+
+
+
+
+
+
+// --------------------------------------------------------------------------
+// Checks
+// --------------------------------------------------------------------------
+
+CONTRACT_OWNER_CHECK(FrameworkCreatedType, ?type, (?owner, ?type))
+
+ContractProblem(?owner, "FrameworkCreatedType", ?type, "Not a class or interface") :-
+  FrameworkCreatedType(?owner, ?type),
+  !isClassOrInterfaceType(?type).
+
+
+
+
+// ==========================================================================
+// 2. Entry (contract interface):
+//
+// Methods the framework calls although no code in the application program does.
+// ==========================================================================
+
+// --------------------------------------------------------------------------
+// Relation
+// --------------------------------------------------------------------------
+
+// A method the framework calls, without a call to it in the application program.
+// Its `this` is every one of these that applies:
+//   - the mock object for its class, when the class is a FrameworkCreatedType;
+//   - the objects the program creates of its class, when the framework injects into them
+//     (e.g. objects returned from Spring @Bean methods get their @PostConstruct called)
+//     or when nobody outside the program creates the class
+//     (e.g. a HandlerInterceptor the program creates with new and registers in code).
+// Its parameters get what InjectedWith says, or a mock of their type when
+// not known (e.g. a request body).
+// Spring: @GetMapping, @PostMapping, @Scheduled, @EventListener etc...
+// Jakarta: @GET, @POST, @PostConstruct etc...
+.decl EntryPoint(?owner:symbol, ?method:Method)
+
+
+
+
+
+
+
+// --------------------------------------------------------------------------
+// Tuples the contract adds
+// --------------------------------------------------------------------------
+// Always true when another tuple exists, whatever the framework, so specs and frameworks
+// don't need to repeat or ever forget them. Each belongs to the owner of the tuple it follows from
+// (for a handoff it is whoever injects into the object).
+
+
+// Only the caller of a method passes its arguments.
+// So if the framework fills a parameter, it also calls the method.
+EntryPoint(?owner, ?method) :-
+  InjectedParam(?owner, ?param),
+  FormalParam(_, ?method, ?param).
+
+
+// The framework calls a method to get what it puts into a slot (directly or inside a holder).
+EntryPoint(?owner, ?method) :-
+  InjectedWith(?owner, _, _, ?method),
+  isMethod(?method).
+
+EntryPoint(?owner, ?method) :-
+  HolderInjectedWith(?owner, _, _, ?method),
+  isMethod(?method).
+
+
+// Whoever injects into an object calls the methods the program asked for (LifecycleCallback, e.g. @PostConstruct),
+// whichever spec or framework wrote the request.
+// The tuple is the injecting framework's, the request only says why.
+// It's the method a call on the object runs, so an override without the annotation runs instead.
+EntryPoint(?framework, ?run) :-
+  InjectionTarget(?framework, ?class),
+  LifecycleCallback(_, ?method),
+  MethodRunOn(?method, ?class, ?run).
+
+
+
+
+
+
+
+// --------------------------------------------------------------------------
+// Checks
+// --------------------------------------------------------------------------
+
+CONTRACT_OWNER_CHECK(EntryPoint, ?method, (?owner, ?method))
+
+ContractProblem(?owner, "EntryPoint", ?method, "Not a method") :-
+  EntryPoint(?owner, ?method),
+  !isMethod(?method).
+
+
+
+
+// ==========================================================================
+// 3. Injection (contract interface):
+//
+// Classes the framework injects into, the fields and parameters it fills
+// and what it fills them with.
+// ==========================================================================
+
+// A field or a parameter the framework fills.
+// A parameter is its variable from FormalParam.
+.type Slot = Field | Var
+
+// What can go into a slot: a class or interface, a method or a field (see InjectedWith).
+.type Source = Type | Method | Field
+
+
+
+
+
+
+
+// --------------------------------------------------------------------------
+// Relations
+// --------------------------------------------------------------------------
+
+// A class whose objects get injected: the framework fills their injected fields and parameters.
+// It's separate from FrameworkCreatedType since a framework may inject into objects
+// it didn't create (e.g. Spring into the test classes JUnit creates) and may create
+// objects it never injects into (e.g. JPA entities).
+// The engine fills the injected slots only in objects of these classes and
+// also in the ones the program creates (e.g. objects returned from Spring @Bean methods).
+// It doesn't mean the class is put into slots, that's InjectedWith.
+// It may be abstract when the framework subclasses it at runtime (e.g. a Spring bean
+// with @Lookup methods).
+// Spring: @Component classes, @SpringBootTest classes
+// Jakarta: JPA entity listeners (not entities)
+.decl InjectionTarget(?owner:symbol, ?class:ClassType)
+
+
+// A field the framework fills, in the objects of the injection targets that have it.
+// Added by the contract from InjectionPoint, InjectedWith and HolderInjectedWith; written directly for
+// slots driven by one injector's own rules (e.g. Spring XML <property>).
+// Spring: XML <property> (direct); @Autowired (via InjectionPoint)
+// Jakarta: @Inject, @Resource (via InjectionPoint)
+.decl InjectedField(?owner:symbol, ?field:Field)
+
+
+// A parameter the framework fills with one of its objects.
+// Added by the contract from InjectionPoint, InjectedWith and HolderInjectedWith; written directly for
+// slots driven by one injector's own rules (e.g. chosen constructor, @Bean, @Produces).
+// Spring: chosen constructor, @Bean methods (direct); @Autowired setters (via InjectionPoint)
+// Jakarta: @Produces methods (direct); @Inject constructors and methods (via InjectionPoint)
+.decl InjectedParam(?owner:symbol, ?param:Var)
+
+
+// What the framework may put into a slot in the objects of a class it injects into,
+// after its own resolution logic (types, qualifiers, @Primary etc..).
+// The class is needed since a field declared once lives in the objects of every subclass
+// and may get something else in each (e.g. Spring uses generics as qualifiers,
+// so BaseService<R>.repo gets OwnerRepository in OwnerService and PetRepository in PetService).
+// Several tuples for one slot mean any of them.
+// Sources are:
+//   class or interface: the mock object the engine made for it (FrameworkCreatedType)
+//   method:             what the method returns when the framework calls it
+//   field:              the value of that field
+// A slot without tuples gets a mock of its type.
+.decl InjectedWith(?owner:symbol, ?class:ClassType, ?slot:Slot, ?source:Source)
+
+
+// What the framework puts inside a holder slot (collection, map, array or wrapper).
+// The holder's type is the slot's own type.
+// Separate from InjectedWith because:
+//   - InjectedWith assigns the source directly to the slot (slot = source), whereas
+//     HolderInjectedWith puts the source inside a holder (slot = Holder(source)),
+//     so a direct List bean and the elements inside a List cant be mixed up.
+//   - Several InjectedWith tuples mean "any one of them", while for collections, maps and arrays
+//     several HolderInjectedWith tuples are all in the holder together.
+// Spring: @Autowired List<Gateway>, Optional<Gateway>, ObjectProvider<Gateway>
+// Jakarta: @Inject Provider<Clock>
+.decl HolderInjectedWith(?owner:symbol, ?class:ClassType, ?slot:Slot, ?source:Source)
+
+
+
+
+
+
+
+// --------------------------------------------------------------------------
+// Tuples the contract adds
+// --------------------------------------------------------------------------
+// Always true when another tuple exists, whatever the framework, so specs and frameworks
+// don't need to repeat or ever forget them. Each belongs to the owner of the tuple it follows from
+// (for a handoff it is whoever injects into the object).
+
+
+// A field or parameter with an InjectedWith or HolderInjectedWith tuple is injected.
+InjectedField(?owner, ?slot) :-
+  ( InjectedWith(?owner, _, ?slot, _)
+  ; HolderInjectedWith(?owner, _, ?slot, _) ),
+  isField(?slot).
+
+InjectedParam(?owner, ?slot) :-
+  ( InjectedWith(?owner, _, ?slot, _)
+  ; HolderInjectedWith(?owner, _, ?slot, _) ),
+  isVar(?slot).
+
+
+// Whoever injects into an object fills the fields and parameters the program asked for
+// (InjectionPoint, e.g. @Inject), whichever spec or framework wrote the request.
+// The tuple is the injecting framework's, the request only says why.
+InjectedField(?framework, ?field) :-
+  InjectionTarget(?framework, ?class),
+  FieldOf(?field, ?class),
+  InjectionPoint(_, ?field).
+
+InjectedParam(?framework, ?param) :-
+  InjectionTarget(?framework, ?class),
+  ParamOf(?param, ?class),
+  InjectionPoint(_, ?param).
+
+// Constructor parameters only when the framework also creates the object,
+// since it doesn't call the constructor of objects the program creates (e.g. Spring @Bean results).
+InjectedParam(?framework, ?param) :-
+  InjectionTarget(?framework, ?class),
+  FrameworkCreatedType(?framework, ?class),
+  ConstructorOf(?ctor, ?class),
+  FormalParam(_, ?ctor, ?param),
+  InjectionPoint(_, ?param).
+
+
+
+
+
+
+
+// --------------------------------------------------------------------------
+// Checks
+// --------------------------------------------------------------------------
+
+CONTRACT_OWNER_CHECK(InjectionTarget, ?class, (?owner, ?class))
+CONTRACT_OWNER_CHECK(InjectedField, ?field, (?owner, ?field))
+CONTRACT_OWNER_CHECK(InjectedParam, ?param, (?owner, ?param))
+CONTRACT_OWNER_CHECK(InjectedWith, ?slot, (?owner, _, ?slot, _))
+CONTRACT_OWNER_CHECK(HolderInjectedWith, ?slot, (?owner, _, ?slot, _))
+
+
+ContractProblem(?owner, "InjectionTarget", ?class, "Not a class") :-
+  InjectionTarget(?owner, ?class),
+  !isClassType(?class).
+
+ContractProblem(?owner, "InjectedField", ?field, "Not a field") :-
+  InjectedField(?owner, ?field),
+  !isField(?field).
+
+ContractProblem(?owner, "InjectedParam", ?param, "Not a formal parameter") :-
+  InjectedParam(?owner, ?param),
+  !FormalParam(_, _, ?param).
+
+ContractProblem(?owner, "InjectedWith", ?source, "Source is not a class, interface, method or field") :-
+  InjectedWith(?owner, _, _, ?source),
+  !isSource(?source).
+
+ContractProblem(?owner, "HolderInjectedWith", ?source, "Source is not a class, interface, method or field") :-
+  HolderInjectedWith(?owner, _, _, ?source),
+  !isSource(?source).
+
+// An object of the class or interface must fit the type of the slot.
+// Only class and interface sources, since a method may declare a wider return type
+// (e.g. Object) and still return the right object.
+// Types missing from the facts can also show up here.
+ContractProblem(?owner, "InjectedWith", ?source, "Class or interface does not fit the type of the slot") :-
+  InjectedWith(?owner, _, ?slot, ?source),
+  isClassOrInterfaceType(?source),
+  SlotType(?slot, ?type),
+  !basic.SubtypeOf(?source, ?type).
+
+// A primitive slot (int, boolean...) can never be a holder.
+ContractProblem(?owner, "HolderInjectedWith", ?slot, "Holder slot is not a reference type") :-
+  HolderInjectedWith(?owner, _, ?slot, _),
+  SlotType(?slot, ?type),
+  !isReferenceType(?type).
+
+// For array slots, a class or interface source must fit the array's component type.
+ContractProblem(?owner, "HolderInjectedWith", ?source, "Class or interface does not fit the array element type") :-
+  HolderInjectedWith(?owner, _, ?slot, ?source),
+  isClassOrInterfaceType(?source),
+  SlotType(?slot, ?arrType),
+  ComponentType(?arrType, ?elemType),
+  !basic.SubtypeOf(?source, ?elemType).
+
+
+// A spec or framework says what goes into the slots only of the classes it injects into
+// (its own InjectionTarget), so it never decides for the objects of another framework.
+// Static fields belong to no object, so a file may fill one without injecting into
+// objects of its class (e.g. Guice requestStaticInjection).
+ContractProblem(?owner, "InjectedWith", ?class, "Class is not one this file injects into") :-
+  InjectedWith(?owner, ?class, ?slot, _),
+  !InjectionTarget(?owner, ?class),
+  !Field_Modifier("static", ?slot).
+
+ContractProblem(?owner, "InjectedWith", ?slot, "Slot is not in the class") :-
+  InjectedWith(?owner, ?class, ?slot, _),
+  !SlotOf(?slot, ?class).
+
+ContractProblem(?owner, "HolderInjectedWith", ?class, "Class is not one this file injects into") :-
+  HolderInjectedWith(?owner, ?class, ?slot, _),
+  !InjectionTarget(?owner, ?class),
+  !Field_Modifier("static", ?slot).
+
+ContractProblem(?owner, "HolderInjectedWith", ?slot, "Slot is not in the class") :-
+  HolderInjectedWith(?owner, ?class, ?slot, _),
+  !SlotOf(?slot, ?class).
+
+
+
+
+// ==========================================================================
+// 4. Handoffs (internal to environment/):
+//
+// What spec and framework files tell each other, so each file keeps only
+// what it knows and never reads another file. Engines never read these
+// relations, and rules writing them never read from the contract interface.
+// Two kinds:
+//   - injection points, lifecycle callbacks and managed classes: program elements
+//     that need whoever plays a role (e.g. whoever injects into the object) to act on them;
+//     readers ignore the owner.
+//   - injectables: sources whoever hands out objects may put into slots; readers ignore the owner.
+// What an owner's environment means by an annotation is EnvironmentAnnotation (annotations.dl),
+// read by naming the owner.
+// A tuple nobody reads changes nothing (e.g. @Inject in an application without a DI framework).
+// ==========================================================================
+
+// --------------------------------------------------------------------------
+// Injection points, lifecycle callbacks and managed classes
+// --------------------------------------------------------------------------
+
+// The program asks for this field or parameter to be injected by whoever injects into its object.
+// The contract turns it into InjectedField / InjectedParam on every InjectionTarget (part 3).
+// Spring: @Autowired
+// Jakarta: @Inject, @Resource
+.decl InjectionPoint(?owner:symbol, ?slot:Slot)
+
+
+// The program asks for this method to be called by whoever injects into its object,
+// as part of injection (after it, or before the object is discarded).
+// The contract turns it into EntryPoint on every InjectionTarget (part 2).
+// Callbacks other frameworks call are their own EntryPoints instead (e.g. JPA @PrePersist).
+// Jakarta: @PostConstruct, @PreDestroy
+.decl LifecycleCallback(?owner:symbol, ?method:Method)
+
+
+// A spec or library asks the application's DI framework to create objects of this class and inject
+// into them (the DI framework marks it FrameworkCreatedType and InjectionTarget and picks the constructor).
+// It neither offers the class nor replaces the library's own creation: a spec whose library also creates
+// the objects without DI writes FrameworkCreatedType itself (e.g. Hibernate creates entity listeners
+// when no bean container is plugged in) and a file that also offers the class writes Injectable
+// (e.g. Spring Data registers its *Impl fragments as beans).
+// Spring Data: custom repository implementations (OwnerRepositoryImpl)
+// Spring XML: class beans declared in application XML contexts
+// Jakarta: the component classes the Jakarta EE platform injects into, constructor included
+// (servlets, filters, listeners, WebSocket endpoints, interceptors, JPA entity listeners and converters).
+.decl ManagedClass(?owner:symbol, ?class:ClassType)
+
+
+
+
+// --------------------------------------------------------------------------
+// Injectables
+// --------------------------------------------------------------------------
+
+// Objects from this source are available to whoever hands out objects
+// (into the slots they fit).
+// Sources are the same as in InjectedWith (class or interface, method, field).
+// Each reader picks from them with its own rules (Spring calls them autowire candidates,
+// but drops some that are still injected by name, so offers are all of them).
+// Spring: its beans
+// Spring Data: repositories
+.decl Injectable(?owner:symbol, ?source:Source)
+
+
+// A name/alias for an offered source above.
+// It's optional and it can be multi-valued: an offer may have no name, one name or several.
+// Framework/specs use these names for name-based lookup (e.g. @Resource, @Qualifier).
+// Spring: bean names and @Bean aliases
+// Spring Data: decapitalized repository interface names (or @Repository("..."))
+.decl NamedInjectable(?owner:symbol, ?source:Source, ?name:symbol)
+
+
+
+
+// --------------------------------------------------------------------------
+// Checks
+// --------------------------------------------------------------------------
+
+CONTRACT_OWNER_CHECK(InjectionPoint, ?slot, (?owner, ?slot))
+CONTRACT_OWNER_CHECK(LifecycleCallback, ?method, (?owner, ?method))
+CONTRACT_OWNER_CHECK(ManagedClass, ?class, (?owner, ?class))
+CONTRACT_OWNER_CHECK(Injectable, ?source, (?owner, ?source))
+CONTRACT_OWNER_CHECK(NamedInjectable, ?source, (?owner, ?source, _))
+
+
+ContractProblem(?owner, "InjectionPoint", ?slot, "Not a field or formal parameter") :-
+  InjectionPoint(?owner, ?slot),
+  !isField(?slot),
+  !FormalParam(_, _, ?slot).
+
+ContractProblem(?owner, "LifecycleCallback", ?method, "Not a method") :-
+  LifecycleCallback(?owner, ?method),
+  !isMethod(?method).
+
+ContractProblem(?owner, "ManagedClass", ?class, "Not a class") :-
+  ManagedClass(?owner, ?class),
+  !isClassType(?class).
+
+ContractProblem(?owner, "Injectable", ?source, "Source is not a class, interface, method or field") :-
+  Injectable(?owner, ?source),
+  !isSource(?source).
+
+ContractProblem(?owner, "NamedInjectable", ?source, "Source is not an injectable of this owner") :-
+  NamedInjectable(?owner, ?source, _),
+  !Injectable(?owner, ?source).
+
+ContractProblem(?owner, "NamedInjectable", ?source, "Name is empty") :-
+  NamedInjectable(?owner, ?source, "").

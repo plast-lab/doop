@@ -11,7 +11,7 @@
 //   1. Annotations and framework types
 //   2. Beans, @Import, @Bean methods and test classes
 //   3. Bean names
-//   4. Requests and offers
+//   4. Handoffs
 //   5. Targets, constructors and slots
 //   6. Choosing
 //   7. Contract interface
@@ -27,32 +27,29 @@ Owner("spring").
 // --------------------------------------------------------------------------
 // 1. Annotations and framework types
 // --------------------------------------------------------------------------
-// Static lookup tables of the Spring and Jakarta annotations, holder types
-// and callback interfaces referenced by the rules below.
+// Static lookup tables of the Spring annotations, holder types and callback
+// interfaces referenced by the rules below. The Jakarta and JUnit annotations Spring
+// also honours (@Named, @ManagedBean, @Resource, @PostConstruct, @PreDestroy,
+// jakarta.inject.Qualifier, @Nested) are read from EnvironmentAnnotation under their owners.
 
 .decl Spring_Annotation(?role:symbol, ?annotation:Annotation)
+EnvironmentAnnotation("spring", ?role, ?annotation) :-
+  Spring_Annotation(?role, ?annotation).
 Spring_Annotation("component", "org.springframework.stereotype.Component").
-Spring_Annotation("named", ?annotation) :- JakartaOrJavaxName("inject.Named", ?annotation).
-Spring_Annotation("managed-bean", ?annotation) :- JakartaOrJavaxName("annotation.ManagedBean", ?annotation).
 Spring_Annotation("lookup", "org.springframework.beans.factory.annotation.Lookup").
 Spring_Annotation("import", "org.springframework.context.annotation.Import").
 Spring_Annotation("bean", "org.springframework.context.annotation.Bean").
 Spring_Annotation("autowired", "org.springframework.beans.factory.annotation.Autowired").
 Spring_Annotation("qualifier", "org.springframework.beans.factory.annotation.Qualifier").
-Spring_Annotation("inject-qualifier", ?annotation) :- JakartaOrJavaxName("inject.Qualifier", ?annotation).
 Spring_Annotation("primary", "org.springframework.context.annotation.Primary").
 Spring_Annotation("fallback", "org.springframework.context.annotation.Fallback").
 Spring_Annotation("value", "org.springframework.beans.factory.annotation.Value").
 Spring_Annotation("priority", ?annotation) :- JakartaOrJavaxName("annotation.Priority", ?annotation).
-Spring_Annotation("resource", ?annotation) :- JakartaOrJavaxName("annotation.Resource", ?annotation).
-Spring_Annotation("post-construct", ?annotation) :- JakartaOrJavaxName("annotation.PostConstruct", ?annotation).
-Spring_Annotation("pre-destroy", ?annotation) :- JakartaOrJavaxName("annotation.PreDestroy", ?annotation).
 Spring_Annotation("event-listener", "org.springframework.context.event.EventListener").
 Spring_Annotation("scheduled", "org.springframework.scheduling.annotation.Scheduled").
 Spring_Annotation("scheduled", "org.springframework.scheduling.annotation.Schedules").
 Spring_Annotation("extend-with", "org.junit.jupiter.api.extension.ExtendWith").
 Spring_Annotation("extensions", "org.junit.jupiter.api.extension.Extensions").
-Spring_Annotation("nested-test", "org.junit.jupiter.api.Nested").
 Spring_Annotation("run-with", "org.junit.runner.RunWith").
 
 // JUnit extension/runner classes that tell Spring to inject into a test class.
@@ -154,8 +151,8 @@ Spring_ScannedBean(?class) :-
   ApplicationClass(?class),
   Spring_InstantiableClass(?class),
   ( Spring_Annotation("component", ?ann)
-  ; Spring_Annotation("named", ?ann)
-  ; Spring_Annotation("managed-bean", ?ann) ),
+  ; EnvironmentAnnotation("jakarta-inject", "named", ?ann)
+  ; EnvironmentAnnotation("jakarta-annotation", "managed-bean", ?ann) ),
   TypeCarries(?class, ?ann).
 
 // Spring: classes listed in @Import on a bean class (recursive), on its superclasses
@@ -291,7 +288,7 @@ Spring_TestClass(?inner) :-
   Spring_TestClass(?outer),
   ApplicationClass(?inner),
   ConcreteClassType(?inner),
-  Spring_Annotation("nested-test", ?nestedAnn),
+  EnvironmentAnnotation("junit", "nested", ?nestedAnn),
   TypeCarries(?inner, ?nestedAnn),
   ConstructorOf(?ctor, ?inner),
   FormalParam(0, ?ctor, ?p),
@@ -307,7 +304,7 @@ Spring_TestClass(?inner) :-
 // --------------------------------------------------------------------------
 // Computes Spring's bean names and aliases for its own bean classes and @Bean methods
 // (explicit annotation values, decapitalized simple class names, FQCNs for @Import-only
-// classes and @Bean method names) before publishing them as InjectionOfferName.
+// classes and @Bean method names) before publishing them as NamedInjectable.
 
 // Explicit stereotype / @Named / @ManagedBean name on a bean class.
 // Only a single String value is a name (AnnotationBeanNameGenerator); an array value is not
@@ -318,8 +315,8 @@ Spring_ExplicitClassBeanName(?class, ?name) :-
   TypeAnnotationValue(?class, ?ann, "value", -1, "string", ?name, _),
   ?name != "",
   ( ( Spring_Annotation("component", ?root), CarriesAnnotation(?ann, ?root) )
-  ; Spring_Annotation("named", ?ann)
-  ; Spring_Annotation("managed-bean", ?ann) ).
+  ; EnvironmentAnnotation("jakarta-inject", "named", ?ann)
+  ; EnvironmentAnnotation("jakarta-annotation", "managed-bean", ?ann) ).
 
 .decl Spring_HasExplicitClassBeanName(?class:ClassType)
 Spring_HasExplicitClassBeanName(?class) :- Spring_ExplicitClassBeanName(?class, _).
@@ -358,7 +355,7 @@ Spring_BeanName(?method, ?name) :-
 
 
 // --------------------------------------------------------------------------
-// 4. Requests and offers
+// 4. Handoffs
 // --------------------------------------------------------------------------
 // Publishes Spring's own @Autowired slots and bean offers (with names) into the
 // shared request/offer tables so choosing below sees the combined context from
@@ -366,12 +363,12 @@ Spring_BeanName(?method, ?name) :-
 
 // Spring: @Autowired fields and parameters of non-static @Autowired methods.
 // Spring ignores @Autowired on static members.
-SlotInjectionRequest("spring", ?field) :-
+InjectionPoint("spring", ?field) :-
   Spring_Annotation("autowired", ?ann),
   FieldCarries(?field, ?ann),
   !Field_Modifier("static", ?field).
 
-SlotInjectionRequest("spring", ?param) :-
+InjectionPoint("spring", ?param) :-
   Spring_Annotation("autowired", ?ann),
   MethodCarries(?method, ?ann),
   !Method_Modifier("static", ?method),
@@ -379,7 +376,7 @@ SlotInjectionRequest("spring", ?param) :-
   FormalParam(_, ?method, ?param).
 
 // Spring: its beans and @Bean methods are offered to slots, along with their bean names.
-// DICreationRequest classes and test classes are not offered.
+// ManagedClass classes and test classes are not offered.
 // For FactoryBean<T> beans, the product getObject() receives the bean name and the factory
 // itself receives "&<name>" (BeanFactory.FACTORY_BEAN_PREFIX).
 .decl Spring_OwnFactoryBean(?fb:ClassType, ?ownerSource:Source)
@@ -409,17 +406,17 @@ Spring_FactoryBeanGetObject(?fb, ?run) :-
   Spring_FactoryBeanRawGetObject(?fb, ?run),
   !basic.Method_CovariantBridge(?run, _).
 
-InjectionOffer("spring", ?class) :- Spring_Bean(?class).
-InjectionOffer("spring", ?method) :- Spring_BeanMethod(?method).
-InjectionOffer("spring", ?getObj) :- Spring_FactoryBeanGetObject(_, ?getObj).
+Injectable("spring", ?class) :- Spring_Bean(?class).
+Injectable("spring", ?method) :- Spring_BeanMethod(?method).
+Injectable("spring", ?getObj) :- Spring_FactoryBeanGetObject(_, ?getObj).
 
-InjectionOfferName("spring", ?source, ?name) :-
+NamedInjectable("spring", ?source, ?name) :-
   Spring_BeanName(?source, ?name),
   !Spring_IsOwnFactoryBeanSource(?source).
-InjectionOfferName("spring", ?source, cat("&", ?name)) :-
+NamedInjectable("spring", ?source, cat("&", ?name)) :-
   Spring_BeanName(?source, ?name),
   Spring_IsOwnFactoryBeanSource(?source).
-InjectionOfferName("spring", ?getObj, ?name) :-
+NamedInjectable("spring", ?getObj, ?name) :-
   Spring_OwnFactoryBean(?fb, ?ownerSource),
   Spring_FactoryBeanGetObject(?fb, ?getObj),
   Spring_BeanName(?ownerSource, ?name).
@@ -430,19 +427,19 @@ InjectionOfferName("spring", ?getObj, ?name) :-
 // --------------------------------------------------------------------------
 // 5. Targets, constructors and slots
 // --------------------------------------------------------------------------
-// Determines which classes Spring creates and injects into (including DICreationRequest
+// Determines which classes Spring creates and injects into (including ManagedClass
 // classes from other files), picks which constructor Spring runs, collects every slot to
-// fill (from SlotInjectionRequest, constructors and @Bean methods) and unwraps holder types.
+// fill (from InjectionPoint, constructors and @Bean methods) and unwraps holder types.
 
 .decl Spring_Created(?class:ClassType)
 Spring_Created(?class) :- Spring_Bean(?class).
-Spring_Created(?class) :- DICreationRequest(_, ?class).
+Spring_Created(?class) :- ManagedClass(_, ?class).
 
 .decl Spring_Target(?class:ClassType)
 Spring_Target(?class) :- Spring_Bean(?class).
 Spring_Target(?class) :- Spring_BeanMethodProduct(_, ?class).
 Spring_Target(?class) :- Spring_TestClass(?class).
-Spring_Target(?class) :- DICreationRequest(_, ?class).
+Spring_Target(?class) :- ManagedClass(_, ?class).
 
 // Classes with a bean definition in the bean factory: Spring's beans, @Bean products and
 // classes another file both asks Spring to create and offers, since it registers them as beans
@@ -451,7 +448,7 @@ Spring_Target(?class) :- DICreationRequest(_, ?class).
 .decl Spring_RegisteredBean(?class:ClassType)
 Spring_RegisteredBean(?class) :- Spring_Bean(?class).
 Spring_RegisteredBean(?class) :- Spring_BeanMethodProduct(_, ?class).
-Spring_RegisteredBean(?class) :- DICreationRequest(_, ?class), InjectionOffer(_, ?class).
+Spring_RegisteredBean(?class) :- ManagedClass(_, ?class), Injectable(_, ?class).
 
 // Spring: constructor choice for created classes
 // (AutowiredAnnotationBeanPostProcessor.determineCandidateConstructors):
@@ -476,7 +473,7 @@ Spring_AutowiredCtor(?ctor, ?class) :-
   Spring_Created(?class),
   ConstructorOf(?ctor, ?class),
   FormalParam(_, ?ctor, ?param),
-  SlotInjectionRequest(_, ?param).
+  InjectionPoint(_, ?param).
 
 Spring_OptionalAutowiredCtor(?ctor) :-
   Spring_AutowiredCtor(?ctor, _),
@@ -520,19 +517,19 @@ Spring_ValueSlot(?param) :-
   FormalParam(_, ?method, ?param).
 
 // Slots Spring fills with beans in objects of its targets (@Value slots get a value instead).
-// Read from SlotInjectionRequest (not InjectedField/InjectedParam) so data flows one way.
+// Read from InjectionPoint (not InjectedField/InjectedParam) so data flows one way.
 .decl Spring_Slot(?class:ClassType, ?slot:Slot)
 
 Spring_Slot(?class, ?field) :-
   Spring_Target(?class),
   FieldOf(?field, ?class),
-  SlotInjectionRequest(_, ?field),
+  InjectionPoint(_, ?field),
   !Spring_ValueSlot(?field).
 
 Spring_Slot(?class, ?param) :-
   Spring_Target(?class),
   ParamOf(?param, ?class),
-  SlotInjectionRequest(_, ?param),
+  InjectionPoint(_, ?param),
   !Spring_ValueSlot(?param).
 
 // Constructor requests (e.g. @Inject) apply only when Spring also creates the object.
@@ -540,7 +537,7 @@ Spring_Slot(?class, ?param) :-
   Spring_Created(?class),
   ConstructorOf(?ctor, ?class),
   FormalParam(_, ?ctor, ?param),
-  SlotInjectionRequest(_, ?param),
+  InjectionPoint(_, ?param),
   !Spring_ValueSlot(?param).
 
 Spring_Slot(?class, ?param) :-
@@ -619,13 +616,7 @@ Spring_HolderElementFullType(?class, ?slot, ?resolved) :-
   Spring_MultiHolderSlot(?slot),
   SlotResolvedFullType(?class, ?slot, ?arrFull),
   GenericArray(?arrFull, ?var),
-  TypeVariable(?var, ?declClass, _),
-  isReferenceType(?declClass),
-  Type_TypeParameter(?declClass, ?idx, ?var),
-  TypeSuperArg(?class, ?declClass, ?idx, ?resolved, ?bound),
-  ( ?bound = "=" ; ?bound = "extends" ),
-  ?resolved != "-",
-  !ContainsTypeVariable(?resolved).
+  TypeVariableOn(?class, ?var, ?resolved).
 Spring_HolderElementFullType(?class, ?slot, ?comp) :-
   Spring_Slot(?class, ?slot),
   Spring_MultiHolderSlot(?slot),
@@ -642,13 +633,7 @@ Spring_HolderElementFullType(?class, ?slot, ?elemType) :-
 Spring_HolderElementFullType(?class, ?slot, ?resolved) :-
   Spring_Slot(?class, ?slot),
   Spring_HolderRawArg(?slot, ?var),
-  TypeVariable(?var, ?declClass, _),
-  isReferenceType(?declClass),
-  Type_TypeParameter(?declClass, ?idx, ?var),
-  TypeSuperArg(?class, ?declClass, ?idx, ?resolved, ?bound),
-  ( ?bound = "=" ; ?bound = "extends" ),
-  ?resolved != "-",
-  !ContainsTypeVariable(?resolved).
+  TypeVariableOn(?class, ?var, ?resolved).
 Spring_HolderElementFullType(?class, ?slot, ?arg) :-
   Spring_Slot(?class, ?slot),
   Spring_HolderRawArg(?slot, ?arg),
@@ -660,15 +645,15 @@ Spring_HolderElementFullType(?class, ?slot, ?arg) :-
 // --------------------------------------------------------------------------
 // 6. Choosing
 // --------------------------------------------------------------------------
-// Resolves each slot against all accumulated InjectionOffers in Spring's order:
+// Resolves each slot against all accumulated Injectables in Spring's order:
 // direct type match -> @Resource by-name -> holder unwrapping & fallback ->
 // generic type narrowing -> @Qualifier/@Named narrowing ->
 // @Primary / @Fallback / @Priority / slot-name tie-breaking
 // (multi-bean holders stop after @Qualifier and keep every matching offer).
 
 // 6a. Direct candidates (offers fitting the slot's own type).
-.decl Spring_HasInjectionOfferName(?source:Source)
-Spring_HasInjectionOfferName(?source) :- InjectionOfferName(_, ?source, _).
+.decl Spring_IsNamedInjectable(?source:Source)
+Spring_IsNamedInjectable(?source) :- NamedInjectable(_, ?source, _).
 
 // FactoryBean<T>.getObject() offers and their originating FactoryBean sources
 // (covering Spring's own beans, @Bean FactoryBean products and XML/other offers).
@@ -677,7 +662,7 @@ Spring_AnyFactoryBeanSource(?fb, ?ownerSource, ?getObj) :-
   Spring_OwnFactoryBean(?fb, ?ownerSource),
   Spring_FactoryBeanGetObject(?fb, ?getObj).
 Spring_AnyFactoryBeanSource(?fb, ?fb, ?real) :-
-  InjectionOffer(_, ?fb),
+  Injectable(_, ?fb),
   isClassType(?fb),
   basic.SubtypeOf(?fb, "org.springframework.beans.factory.FactoryBean"),
   Method_DeclaringType(?ifaceMethod, "org.springframework.beans.factory.FactoryBean"),
@@ -685,9 +670,9 @@ Spring_AnyFactoryBeanSource(?fb, ?fb, ?real) :-
   !FormalParam(_, ?ifaceMethod, _),
   MethodRunOn(?ifaceMethod, ?fb, ?bridge),
   basic.Method_CovariantBridge(?bridge, ?real),
-  InjectionOffer(_, ?real).
+  Injectable(_, ?real).
 Spring_AnyFactoryBeanSource(?fb, ?fb, ?run) :-
-  InjectionOffer(_, ?fb),
+  Injectable(_, ?fb),
   isClassType(?fb),
   basic.SubtypeOf(?fb, "org.springframework.beans.factory.FactoryBean"),
   Method_DeclaringType(?ifaceMethod, "org.springframework.beans.factory.FactoryBean"),
@@ -695,7 +680,7 @@ Spring_AnyFactoryBeanSource(?fb, ?fb, ?run) :-
   !FormalParam(_, ?ifaceMethod, _),
   MethodRunOn(?ifaceMethod, ?fb, ?run),
   !basic.Method_CovariantBridge(?run, _),
-  InjectionOffer(_, ?run).
+  Injectable(_, ?run).
 
 // A getObject() method shared by several FactoryBean owners (e.g. AbstractFactoryBean.getObject);
 // owner-specific annotations (@Primary, @Fallback, qualifiers, autowireCandidate) are not
@@ -744,16 +729,16 @@ Spring_FactoryBeanProductFullType(?getObj, ?prodFull) :-
 // allocated product class or FactoryBean<T> product type).
 .decl Spring_SourceEffectiveType(?source:Source, ?type:Type)
 Spring_SourceEffectiveType(?source, ?srcType) :-
-  InjectionOffer(_, ?source),
+  Injectable(_, ?source),
   SourceType(?source, ?srcType).
 Spring_SourceEffectiveType(?method, ?prodClass) :-
-  InjectionOffer(_, ?method),
+  Injectable(_, ?method),
   Spring_BeanMethodProduct(?method, ?prodClass).
 Spring_SourceEffectiveType(?getObj, ?prodType) :-
   Spring_FactoryBeanProductFullType(?getObj, ?prodFull),
   GenericErasure(?prodFull, ?prodType).
 
-// Offers whose type fits the slot's own type, whether or not they are autowire candidates.
+// Injectables whose type fits the slot's own type, whether or not they are autowire candidates.
 .decl Spring_TypeFit(?class:ClassType, ?slot:Slot, ?source:Source)
 
 Spring_TypeFit(?class, ?slot, ?source) :-
@@ -771,12 +756,12 @@ Spring_DirectCandidate(?class, ?slot, ?source) :-
 // else fall back to by-type / holder resolution (CommonAnnotationBeanPostProcessor.ResourceElement).
 .decl Spring_ResourceField(?field:Field)
 Spring_ResourceField(?field) :-
-  Spring_Annotation("resource", ?ann),
+  EnvironmentAnnotation("jakarta-annotation", "resource", ?ann),
   FieldCarries(?field, ?ann).
 
 .decl Spring_ResourceSetter(?method:Method, ?param:Var)
 Spring_ResourceSetter(?method, ?param) :-
-  Spring_Annotation("resource", ?ann),
+  EnvironmentAnnotation("jakarta-annotation", "resource", ?ann),
   MethodCarries(?method, ?ann),
   !Method_Modifier("static", ?method),
   !ConstructorOf(?method, _),
@@ -786,12 +771,12 @@ Spring_ResourceSetter(?method, ?param) :-
 .decl Spring_ResourceExplicitName(?slot:Slot, ?name:symbol)
 Spring_ResourceExplicitName(?field, ?name) :-
   Spring_ResourceField(?field),
-  Spring_Annotation("resource", ?ann),
+  EnvironmentAnnotation("jakarta-annotation", "resource", ?ann),
   FieldAnnotationValue(?field, ?ann, "name", _, "string", ?name, _),
   ?name != "".
 Spring_ResourceExplicitName(?param, ?name) :-
   Spring_ResourceSetter(?method, ?param),
-  Spring_Annotation("resource", ?ann),
+  EnvironmentAnnotation("jakarta-annotation", "resource", ?ann),
   MethodAnnotationValue(?method, ?ann, "name", _, "string", ?name, _),
   ?name != "".
 
@@ -815,7 +800,7 @@ Spring_ResourceName(?param, ?mname) :-
 Spring_ResourceMatch(?class, ?slot, ?source) :-
   Spring_TypeFit(?class, ?slot, ?source),
   Spring_ResourceName(?slot, ?name),
-  InjectionOfferName(_, ?source, ?name).
+  NamedInjectable(_, ?source, ?name).
 
 .decl Spring_HasResourceMatch(?class:ClassType, ?slot:Slot)
 Spring_HasResourceMatch(?class, ?slot) :- Spring_ResourceMatch(?class, ?slot, _).
@@ -870,10 +855,10 @@ Spring_SlotTargetFullType(?class, ?slot, ?fullType) :-
 // @Bean methods and their allocated product classes and FactoryBean<T> products).
 .decl Spring_SourceRawGenericArg(?source:Source, ?super:ReferenceType, ?index:number, ?arg:symbol, ?bound:symbol)
 Spring_SourceRawGenericArg(?source, ?super, ?index, ?arg, ?bound) :-
-  InjectionOffer(_, ?source),
+  Injectable(_, ?source),
   SourceGenericArg(?source, ?super, ?index, ?arg, ?bound).
 Spring_SourceRawGenericArg(?method, ?super, ?index, ?arg, ?bound) :-
-  InjectionOffer(_, ?method),
+  Injectable(_, ?method),
   Spring_BeanMethodProduct(?method, ?prod),
   TypeSuperArg(?prod, ?super, ?index, ?arg, ?bound).
 Spring_SourceRawGenericArg(?getObj, ?super, ?index, ?arg, ?bound) :-
@@ -979,49 +964,59 @@ Spring_AfterGenerics(?class, ?slot, ?source) :-
 
 // 6d. Qualifier narrowing (@Qualifier("q"), @Named("q"), custom qualifier annotations)
 // and @Bean(defaultCandidate = false) filtering.
-// Unnamed offers (no InjectionOfferName) stay conservatively when another candidate matches.
+// Unnamed offers (no NamedInjectable) stay conservatively when another candidate matches.
+
+// The annotations whose value is a string qualifier: @Qualifier("q") and @Named("q").
+.decl Spring_ValueQualifier(?ann:Annotation)
+Spring_ValueQualifier(?ann) :- Spring_Annotation("qualifier", ?ann).
+Spring_ValueQualifier(?ann) :- EnvironmentAnnotation("jakarta-inject", "named", ?ann).
+
+// The annotations that mark custom qualifiers: @Qualifier and jakarta/javax.inject.Qualifier.
+.decl Spring_QualifierMarker(?ann:Annotation)
+Spring_QualifierMarker(?ann) :- Spring_Annotation("qualifier", ?ann).
+Spring_QualifierMarker(?ann) :- EnvironmentAnnotation("jakarta-inject", "qualifier", ?ann).
 
 // String qualifiers (@Qualifier("q") / @Named("q")) on slots and sources.
 // Spring also checks qualifiers on void setter methods and constructors
 // (QualifierAnnotationAutowireCandidateResolver.isAutowireCandidate).
 .decl Spring_SlotQualifier(?slot:Slot, ?q:symbol)
 Spring_SlotQualifier(?field, ?q) :-
-  ( Spring_Annotation("qualifier", ?ann) ; Spring_Annotation("named", ?ann) ),
+  Spring_ValueQualifier(?ann),
   FieldAnnotationValue(?field, ?ann, "value", _, "string", ?q, _),
   ?q != "".
 Spring_SlotQualifier(?param, ?q) :-
-  ( Spring_Annotation("qualifier", ?ann) ; Spring_Annotation("named", ?ann) ),
+  Spring_ValueQualifier(?ann),
   ParamAnnotationValue(?param, ?ann, "value", _, "string", ?q, _),
   ?q != "".
 Spring_SlotQualifier(?param, ?q) :-
   FormalParam(_, ?method, ?param),
   Method_ReturnType(?method, "void"),
-  ( Spring_Annotation("qualifier", ?ann) ; Spring_Annotation("named", ?ann) ),
+  Spring_ValueQualifier(?ann),
   MethodAnnotationValue(?method, ?ann, "value", _, "string", ?q, _),
   ?q != "".
 
 .decl Spring_SourceQualifier(?source:Source, ?q:symbol)
 Spring_SourceQualifier(?type, ?q) :-
-  InjectionOffer(_, ?type),
+  Injectable(_, ?type),
   isClassOrInterfaceType(?type),
-  ( Spring_Annotation("qualifier", ?ann) ; Spring_Annotation("named", ?ann) ),
+  Spring_ValueQualifier(?ann),
   ( TypeAnnotationValue(?type, ?ann, "value", _, "string", ?q, _)
   ; ( basic.Subclass(?super, ?type), Type_Annotation(?ann, "java.lang.annotation.Inherited"),
       TypeAnnotationValue(?super, ?ann, "value", _, "string", ?q, _) ) ),
   ?q != "".
 Spring_SourceQualifier(?method, ?q) :-
   Spring_BeanMethod(?method),
-  ( Spring_Annotation("qualifier", ?ann) ; Spring_Annotation("named", ?ann) ),
+  Spring_ValueQualifier(?ann),
   MethodAnnotationValue(?method, ?ann, "value", _, "string", ?q, _),
   ?q != "".
 // Spring also matches @Qualifier("q") against bean names and aliases, even when the bean has another @Qualifier
 // (QualifierAnnotationAutowireCandidateResolver.checkQualifier falls back to the name).
-Spring_SourceQualifier(?source, ?q) :- InjectionOfferName(_, ?source, ?q).
+Spring_SourceQualifier(?source, ?q) :- NamedInjectable(_, ?source, ?q).
 // Spring also matches @Qualifier("name") against a FactoryBean's unprefixed bean name
-// (InjectionOfferName carries "&name" so @Resource / XML refs still resolve to the product).
+// (NamedInjectable carries "&name" so @Resource / XML refs still resolve to the product).
 Spring_SourceQualifier(?fbSource, ?name) :-
   Spring_AnyFactoryBeanSource(_, ?fbSource, _),
-  InjectionOfferName(_, ?fbSource, ?prefixed),
+  NamedInjectable(_, ?fbSource, ?prefixed),
   strlen(?prefixed) > 1,
   substr(?prefixed, 0, 1) = "&",
   ?name = substr(?prefixed, 1, strlen(?prefixed) - 1).
@@ -1030,18 +1025,17 @@ Spring_SourceQualifier(?getObj, ?q) :-
   Spring_AnyFactoryBeanSource(_, ?ownerSource, ?getObj),
   !Spring_SharedFactoryBeanGetObject(?getObj),
   Spring_SourceQualifier(?ownerSource, ?q),
-  !InjectionOfferName(_, ?ownerSource, ?q).
+  !NamedInjectable(_, ?ownerSource, ?q).
 
 // Custom qualifiers: annotation types annotated with Spring's @Qualifier or
 // jakarta/javax.inject.Qualifier (QualifierAnnotationAutowireCandidateResolver registers all three),
 // other than @Qualifier and @Named themselves, whose value is matched above.
 .decl Spring_CustomQualifier(?q:Annotation)
 Spring_CustomQualifier(?q) :-
-  ( Spring_Annotation("qualifier", ?root) ; Spring_Annotation("inject-qualifier", ?root) ),
+  Spring_QualifierMarker(?root),
   CarriesAnnotation(?q, ?root),
-  !Spring_Annotation("qualifier", ?q),
-  !Spring_Annotation("inject-qualifier", ?q),
-  !Spring_Annotation("named", ?q).
+  !Spring_QualifierMarker(?q),
+  !Spring_ValueQualifier(?q).
 
 .decl Spring_SlotCustomQualifier(?slot:Slot, ?q:Annotation)
 Spring_SlotCustomQualifier(?field, ?q) :-
@@ -1059,7 +1053,7 @@ Spring_SlotCustomQualifier(?param, ?q) :-
 
 .decl Spring_SourceCustomQualifier(?source:Source, ?q:Annotation)
 Spring_SourceCustomQualifier(?type, ?q) :-
-  InjectionOffer(_, ?type),
+  Injectable(_, ?type),
   isClassOrInterfaceType(?type),
   Spring_CustomQualifier(?q),
   ( Type_Annotation(?type, ?q)
@@ -1138,7 +1132,7 @@ Spring_QualifierMatch(?class, ?slot, ?source) :-
   !Spring_HasResourceMatch(?class, ?slot),
   Spring_SlotQualifierValue(?slot, ?q, "value", -1, "string", ?name),
   !Spring_SourceCustomQualifier(?source, ?q),
-  InjectionOfferName(_, ?source, ?name).
+  NamedInjectable(_, ?source, ?name).
 
 .decl Spring_HasQualifierMatch(?class:ClassType, ?slot:Slot)
 Spring_HasQualifierMatch(?class, ?slot) :- Spring_QualifierMatch(?class, ?slot, _).
@@ -1162,7 +1156,7 @@ Spring_AfterQualifier(?class, ?slot, ?source) :- Spring_QualifierMatch(?class, ?
 Spring_AfterQualifier(?class, ?slot, ?source) :-
   Spring_HasQualifierMatch(?class, ?slot),
   Spring_AfterGenerics(?class, ?slot, ?source),
-  !Spring_HasInjectionOfferName(?source).
+  !Spring_IsNamedInjectable(?source).
 Spring_AfterQualifier(?class, ?slot, ?source) :-
   Spring_AfterGenerics(?class, ?slot, ?source),
   !Spring_HasResourceMatch(?class, ?slot),
@@ -1299,7 +1293,7 @@ Spring_NameMatch(?class, ?slot, ?source) :-
   Spring_NeedsTieBreak(?class, ?slot),
   Spring_AfterQualifier(?class, ?slot, ?source),
   Spring_SlotMatchName(?slot, ?name),
-  InjectionOfferName(_, ?source, ?name).
+  NamedInjectable(_, ?source, ?name).
 
 .decl Spring_HasNameMatch(?class:ClassType, ?slot:Slot)
 Spring_HasNameMatch(?class, ?slot) :- Spring_NameMatch(?class, ?slot, _).
@@ -1316,7 +1310,7 @@ Spring_PriorityOrNamePick(?class, ?slot, ?source) :-
   !Spring_HasUniquePrimary(?class, ?slot),
   Spring_HasNameMatch(?class, ?slot),
   Spring_AfterQualifier(?class, ?slot, ?source),
-  !Spring_HasInjectionOfferName(?source).
+  !Spring_IsNamedInjectable(?source).
 
 .decl Spring_HasPriorityOrNamePick(?class:ClassType, ?slot:Slot)
 Spring_HasPriorityOrNamePick(?class, ?slot) :- Spring_PriorityOrNamePick(?class, ?slot, _).
@@ -1380,7 +1374,7 @@ InjectedWith("spring", ?class, ?slot, ?source) :- Spring_ResourceMatch(?class, ?
 InjectedWith("spring", ?class, ?slot, ?source) :-
   Spring_HasResourceMatch(?class, ?slot),
   Spring_DirectCandidate(?class, ?slot, ?source),
-  !Spring_HasInjectionOfferName(?source).
+  !Spring_IsNamedInjectable(?source).
 
 // Direct slots (normal slots and direct holder fallbacks).
 InjectedWith("spring", ?class, ?slot, ?source) :-
@@ -1413,8 +1407,8 @@ EntryPoint("spring", ?method) :-
   Method_DeclaringType(?method, ?decl),
   Method_Modifier("static", ?method),
   !FormalParam(_, ?method, _),
-  ( Spring_Annotation("post-construct", ?ann)
-  ; Spring_Annotation("pre-destroy", ?ann) ),
+  ( EnvironmentAnnotation("jakarta-annotation", "post-construct", ?ann)
+  ; EnvironmentAnnotation("jakarta-annotation", "pre-destroy", ?ann) ),
   MethodCarries(?method, ?ann).
 
 // Spring: @EventListener methods of registered beans only (EventListenerMethodProcessor

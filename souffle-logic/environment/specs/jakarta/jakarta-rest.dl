@@ -8,14 +8,14 @@
 //   - calls resource methods (@GET, @POST and custom @HttpMethod annotations),
 //     sub-resource locators, provider interface methods and Application methods;
 //   - fills @Context and request-parameter (@QueryParam ...) fields, bean
-//     properties and constructor parameters directly (not via SlotInjectionRequest,
+//     properties and constructor parameters directly (not via InjectionPoint,
 //     since only the REST runtime honours these annotations).
 //
 // Sections:
 //   1. Annotations and API types
 //   2. Resources, providers, applications and resource methods
 //   3. Constructors
-//   4. Requests
+//   4. Handoffs
 //   5. Contract interface
 // ==========================================================================
 
@@ -32,6 +32,8 @@ Owner("jakarta-rest").
 // plus the standard provider interfaces and Application base class.
 
 .decl JakartaRest_Annotation(?role:symbol, ?annotation:Annotation)
+EnvironmentAnnotation("jakarta-rest", ?role, ?annotation) :-
+  JakartaRest_Annotation(?role, ?annotation).
 
 JakartaRest_Annotation("path", ?annotation) :- JakartaOrJavaxName("ws.rs.Path", ?annotation).
 JakartaRest_Annotation("http-method", ?annotation) :- JakartaOrJavaxName("ws.rs.HttpMethod", ?annotation).
@@ -144,7 +146,7 @@ JakartaRest_ResourceMethod(?method) :-
 //   - Providers: public constructor whose parameters all carry @Context.
 //   - With several suitable constructors, the ones with the highest arity win (all ties kept).
 //   - Application subclasses: public no-arg constructor.
-// In CDI/Spring environments the DI container selects instead (via DICreationRequest).
+// In CDI/Spring environments the DI container selects instead (via ManagedClass).
 
 .decl JakartaRest_InjectedParamAnnotation(?param:Var)
 
@@ -197,13 +199,13 @@ JakartaRest_Constructor(?ctor, ?class) :-
 
 
 // --------------------------------------------------------------------------
-// 4. Requests
+// 4. Handoffs
 // --------------------------------------------------------------------------
 // In CDI-enabled (or Spring-integrated) environments, the DI container creates
 // and injects into JAX-RS resources and providers (spec "Constructors").
 
-DICreationRequest("jakarta-rest", ?class) :- JakartaRest_Resource(?class).
-DICreationRequest("jakarta-rest", ?class) :- JakartaRest_Provider(?class).
+ManagedClass("jakarta-rest", ?class) :- JakartaRest_Resource(?class).
+ManagedClass("jakarta-rest", ?class) :- JakartaRest_Provider(?class).
 
 
 

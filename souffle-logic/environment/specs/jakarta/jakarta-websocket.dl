@@ -13,7 +13,7 @@
 // Sections:
 //   1. Annotations and API types
 //   2. Endpoints and helper classes
-//   3. Requests and contract interface
+//   3. Handoffs and contract interface
 // ==========================================================================
 
 
@@ -28,6 +28,8 @@ Owner("jakarta-websocket").
 // Lookup tables for Jakarta/javax WebSocket annotations and base types.
 
 .decl JakartaWebSocket_Annotation(?role:symbol, ?annotation:Annotation)
+EnvironmentAnnotation("jakarta-websocket", ?role, ?annotation) :-
+  JakartaWebSocket_Annotation(?role, ?annotation).
 
 JakartaWebSocket_Annotation("endpoint", ?ann) :- JakartaOrJavaxName("websocket.server.ServerEndpoint", ?ann).
 JakartaWebSocket_Annotation("endpoint", ?ann) :- JakartaOrJavaxName("websocket.ClientEndpoint", ?ann).
@@ -121,16 +123,16 @@ JakartaWebSocket_AppConfig(?class) :-
 
 
 // --------------------------------------------------------------------------
-// 3. Requests and contract interface
+// 3. Handoffs and contract interface
 // --------------------------------------------------------------------------
-// Endpoints support DI (DICreationRequest) with a no-arg constructor fallback;
+// Endpoints support DI (ManagedClass) with a no-arg constructor fallback;
 // helpers (decoders, encoders and configurators) and ServerApplicationConfig
 // classes are instantiated directly; MessageHandler callbacks run on instances
 // created by application code inside Endpoint.onOpen.
 // Known limits: un-annotated overrides of @OnOpen/@OnMessage callbacks and
 // distinguishing anonymous Endpoint subclasses are not modelled here.
 
-DICreationRequest("jakarta-websocket", ?class) :- JakartaWebSocket_Endpoint(?class).
+ManagedClass("jakarta-websocket", ?class) :- JakartaWebSocket_Endpoint(?class).
 
 FrameworkCreatedType("jakarta-websocket", ?class) :- JakartaWebSocket_Endpoint(?class).
 FrameworkCreatedType("jakarta-websocket", ?class) :- JakartaWebSocket_HelperClass(?class).

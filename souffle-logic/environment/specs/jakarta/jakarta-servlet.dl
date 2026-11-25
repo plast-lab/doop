@@ -6,7 +6,7 @@
 //     HTTP upgrade handlers are created by the container via their no-arg
 //     constructor and have their servlet API methods called.
 //   - All of those except ServletContainerInitializer also support DI on
-//     Jakarta EE servers, so they are requested via DICreationRequest.
+//     Jakarta EE servers, so they are requested via ManagedClass.
 //   - Listeners created by application code and handed to the container
 //     (async, non-blocking IO and session-attribute listeners) only have
 //     their callback methods marked as entry points.
@@ -14,7 +14,7 @@
 // Sections:
 //   1. Servlet API types
 //   2. Components
-//   3. Requests
+//   3. Handoffs
 //   4. Contract interface
 // ==========================================================================
 
@@ -127,12 +127,12 @@ JakartaServlet_InjectedComponent(?class) :-
 
 
 // --------------------------------------------------------------------------
-// 3. Requests
+// 3. Handoffs
 // --------------------------------------------------------------------------
 // Asks the application's DI framework (e.g. CDI or Spring) to create and
 // inject into container-managed servlet components.
 
-DICreationRequest("jakarta-servlet", ?class) :-
+ManagedClass("jakarta-servlet", ?class) :-
   JakartaServlet_InjectedComponent(?class).
 
 

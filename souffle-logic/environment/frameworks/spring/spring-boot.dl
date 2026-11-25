@@ -9,7 +9,7 @@
 //   1. Annotations and framework types
 //   2. Runners
 //   3. @ConfigurationProperties classes
-//   4. Requests, offers and contract interface
+//   4. Handoffs and contract interface
 // ==========================================================================
 
 
@@ -23,17 +23,18 @@ Owner("spring-boot").
 // --------------------------------------------------------------------------
 // Static lookup tables for Spring Boot @ConfigurationProperties annotations
 // (including both Boot 2.x and Boot 3+ @ConstructorBinding packages) and runners.
+// The Spring annotations Boot checks (@Component, @Autowired, @Bean) are read from
+// EnvironmentAnnotation under the "spring" owner.
 
 .decl SpringBoot_Annotation(?role:symbol, ?annotation:Annotation)
+EnvironmentAnnotation("spring-boot", ?role, ?annotation) :-
+  SpringBoot_Annotation(?role, ?annotation).
 
 SpringBoot_Annotation("configuration-properties", "org.springframework.boot.context.properties.ConfigurationProperties").
 SpringBoot_Annotation("enable-configuration-properties", "org.springframework.boot.context.properties.EnableConfigurationProperties").
 SpringBoot_Annotation("configuration-properties-scan", "org.springframework.boot.context.properties.ConfigurationPropertiesScan").
 SpringBoot_Annotation("constructor-binding", "org.springframework.boot.context.properties.bind.ConstructorBinding").
 SpringBoot_Annotation("constructor-binding", "org.springframework.boot.context.properties.ConstructorBinding").
-SpringBoot_Annotation("autowired", "org.springframework.beans.factory.annotation.Autowired").
-SpringBoot_Annotation("component", "org.springframework.stereotype.Component").
-SpringBoot_Annotation("bean", "org.springframework.context.annotation.Bean").
 
 
 .decl SpringBoot_RunnerInterface(?iface:ReferenceType)
@@ -84,7 +85,7 @@ SpringBoot_PropertiesClass(?class) :-
 
 SpringBoot_IsComponent(?class) :-
   SpringBoot_PropertiesClass(?class),
-  SpringBoot_Annotation("component", ?component),
+  EnvironmentAnnotation("spring", "component", ?component),
   TypeCarries(?class, ?component).
 
 .decl SpringBoot_RegisteredProperties(?class:ClassType)
@@ -133,7 +134,7 @@ SpringBoot_HasAnnotatedBinding(?class) :-
 
 SpringBoot_IsAutowiredCtor(?ctor) :-
   ConstructorOf(?ctor, _),
-  SpringBoot_Annotation("autowired", ?autowired),
+  EnvironmentAnnotation("spring", "autowired", ?autowired),
   MethodCarries(?ctor, ?autowired).
 
 .decl SpringBoot_DeducedBindConstructor(?ctor:Method, ?class:ClassType)
@@ -195,7 +196,7 @@ SpringBoot_SetterBound(?class) :-
   !SpringBoot_HasAnnotatedBinding(?class).
 
 SpringBoot_SetterBound(?class) :-
-  SpringBoot_Annotation("bean", ?bean),
+  EnvironmentAnnotation("spring", "bean", ?bean),
   MethodCarries(?method, ?bean),
   SpringBoot_Annotation("configuration-properties", ?ann),
   MethodCarries(?method, ?ann),
@@ -207,29 +208,29 @@ SpringBoot_SetterBound(?class) :-
 
 
 // --------------------------------------------------------------------------
-// 4. Requests, offers and contract interface
+// 4. Handoffs and contract interface
 // --------------------------------------------------------------------------
-// Offers registered properties beans to Spring (with Boot's bean names), asks
+// Hands registered properties beans to Spring (with Boot's bean names), asks
 // Spring to create JavaBean-bound ones and emits Boot's own bind constructors
 // and setter entry points.
 
 // Registered @ConfigurationProperties classes are offered as beans by type and name.
-InjectionOffer("spring-boot", ?class) :- SpringBoot_RegisteredProperties(?class).
+Injectable("spring-boot", ?class) :- SpringBoot_RegisteredProperties(?class).
 
-InjectionOfferName("spring-boot", ?class, cat(?prefix, "-", ?class)) :-
+NamedInjectable("spring-boot", ?class, cat(?prefix, "-", ?class)) :-
   SpringBoot_PropertiesPrefix(?class, ?prefix).
 
-InjectionOfferName("spring-boot", ?class, ?class) :-
+NamedInjectable("spring-boot", ?class, ?class) :-
   SpringBoot_RegisteredProperties(?class),
   !SpringBoot_HasPropertiesPrefix(?class).
 
 // JavaBean-bound classes are created and injected by Spring.
 // Deduced-constructor classes are included too for Boot 2.x compatibility.
-DICreationRequest("spring-boot", ?class) :- SpringBoot_JavaBeanProperties(?class).
-DICreationRequest("spring-boot", ?class) :- SpringBoot_DeducedBindConstructor(_, ?class).
+ManagedClass("spring-boot", ?class) :- SpringBoot_JavaBeanProperties(?class).
+ManagedClass("spring-boot", ?class) :- SpringBoot_DeducedBindConstructor(_, ?class).
 
 // Constructor-bound classes are created by Boot's binder via their bind constructor.
-// No DICreationRequest is emitted (so @PostConstruct / @Autowired fields on them are
+// No ManagedClass is emitted (so @PostConstruct / @Autowired fields on them are
 // not modelled), otherwise Spring would also autowire their bind constructor parameters.
 FrameworkCreatedType("spring-boot", ?class) :- SpringBoot_BindConstructor(_, ?class).
 EntryPoint("spring-boot", ?ctor) :- SpringBoot_BindConstructor(?ctor, _).

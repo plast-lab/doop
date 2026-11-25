@@ -1,7 +1,7 @@
 // ==========================================================================
 // Jakarta Inject (JSR-330 / jakarta.inject and javax.inject):
 //
-// Requests only: @Inject asks whoever injects into an object to fill a field,
+// Handoffs only: @Inject asks whoever injects into an object to fill a field,
 // method parameter or constructor parameter.
 // Picking which object goes into each slot is the injecting framework's job
 // (e.g. spring.dl).
@@ -18,18 +18,26 @@ Owner("jakarta-inject").
 // --------------------------------------------------------------------------
 
 .decl JakartaInject_Annotation(?role:symbol, ?annotation:Annotation)
+EnvironmentAnnotation("jakarta-inject", ?role, ?annotation) :-
+  JakartaInject_Annotation(?role, ?annotation).
 
 JakartaInject_Annotation("inject", ?annotation) :- JakartaOrJavaxName("inject.Inject", ?annotation).
 
+// @Named and @Qualifier are published only: which object a name or qualifier selects
+// is the injecting framework's job (spring.dl reads them from EnvironmentAnnotation).
+JakartaInject_Annotation("named", ?annotation) :- JakartaOrJavaxName("inject.Named", ?annotation).
+
+JakartaInject_Annotation("qualifier", ?annotation) :- JakartaOrJavaxName("inject.Qualifier", ?annotation).
+
 
 
 
 // --------------------------------------------------------------------------
-// Requests
+// Handoffs
 // --------------------------------------------------------------------------
 
 // Jakarta: @Inject fields, except static and final ones (Inject Javadoc).
-SlotInjectionRequest("jakarta-inject", ?field) :-
+InjectionPoint("jakarta-inject", ?field) :-
   JakartaInject_Annotation("inject", ?ann),
   FieldCarries(?field, ?ann),
   !Field_Modifier("static", ?field),
@@ -38,7 +46,7 @@ SlotInjectionRequest("jakarta-inject", ?field) :-
 
 // Jakarta: parameters of non-static @Inject methods.
 // The contract's ParamOf drops methods overridden without @Inject.
-SlotInjectionRequest("jakarta-inject", ?param) :-
+InjectionPoint("jakarta-inject", ?param) :-
   JakartaInject_Annotation("inject", ?ann),
   MethodCarries(?method, ?ann),
   !Method_Modifier("static", ?method),
@@ -48,7 +56,7 @@ SlotInjectionRequest("jakarta-inject", ?param) :-
 
 // Jakarta: parameters of @Inject constructors.
 // The contract applies these only when the framework also creates the object.
-SlotInjectionRequest("jakarta-inject", ?param) :-
+InjectionPoint("jakarta-inject", ?param) :-
   JakartaInject_Annotation("inject", ?ann),
   ConstructorOf(?ctor, _),
   MethodCarries(?ctor, ?ann),

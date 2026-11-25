@@ -4,7 +4,7 @@
 // Models how validation providers (Hibernate Validator, Apache BVal) instantiate
 // and call ConstraintValidator classes referenced by @Constraint(validatedBy = ...).
 // In DI environments the ConstraintValidatorFactory delegates instantiation to
-// the DI container, so validators are also requested via DICreationRequest.
+// the DI container, so validators are also requested via ManagedClass.
 // Constraint annotations themselves (@NotNull, @Valid) carry data rules only;
 // validators declared solely in XML constraint mappings are not read.
 // ==========================================================================
@@ -21,6 +21,8 @@ Owner("jakarta-validation").
 // Static lookup tables for @Constraint and the ConstraintValidator interface.
 
 .decl JakartaValidation_Annotation(?role:symbol, ?annotation:Annotation)
+EnvironmentAnnotation("jakarta-validation", ?role, ?annotation) :-
+  JakartaValidation_Annotation(?role, ?annotation).
 
 JakartaValidation_Annotation("constraint", ?annotation) :-
   JakartaOrJavaxName("validation.Constraint", ?annotation).
@@ -50,12 +52,12 @@ JakartaValidation_Validator(?class) :-
 
 
 // --------------------------------------------------------------------------
-// 3. Requests
+// 3. Handoffs
 // --------------------------------------------------------------------------
 // Asks the application's DI framework to create and inject into validators
 // (e.g. SpringConstraintValidatorFactory, CDI ConstraintValidatorFactory).
 
-DICreationRequest("jakarta-validation", ?class) :- JakartaValidation_Validator(?class).
+ManagedClass("jakarta-validation", ?class) :- JakartaValidation_Validator(?class).
 
 
 

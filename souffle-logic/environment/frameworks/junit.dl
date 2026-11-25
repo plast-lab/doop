@@ -32,6 +32,8 @@ Owner("junit").
 // Lookup table for JUnit 4 and JUnit 5/6 Jupiter test and lifecycle annotations.
 
 .decl JUnit_Annotation(?role:symbol, ?annotation:Annotation)
+EnvironmentAnnotation("junit", ?role, ?annotation) :-
+  JUnit_Annotation(?role, ?annotation).
 
 // Test methods (Jupiter @RepeatedTest and @ParameterizedTest also carry @TestTemplate,
 // listed explicitly so they still match when junit-jupiter-api/params are not in -l).

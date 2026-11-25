@@ -5,15 +5,21 @@
 // Spring: the annotated one, else the only one, else the no-arg one
 // Jakarta (JPA): the no-arg one
 // The pick itself stays in the spec or framework, since each uses its own annotation.
+// "No-arg" means no parameter in the bytecode: the constructor of a non-static inner class
+// (synthetic outer-instance parameter) or of an enum (name and ordinal) is never no-arg,
+// so pair NoArgConstructor with OnlyConstructor where those classes matter (e.g. JUnit @Nested).
 // ==========================================================================
 
 
-// A constructor is a method named <init>
+// A constructor is a method named <init> (so not <clinit>) declared in the class itself.
+// Not basic.ClassConstructor: that one goes through MethodLookup, which walks superclasses,
+// so it attributes an inherited constructor to a subclass lacking one with that descriptor.
 .decl ConstructorOf(?ctor:Method, ?class:ClassType)
 
 ConstructorOf(?ctor, ?class) :-
   Method_SimpleName(?ctor, "<init>"),
-  Method_DeclaringType(?ctor, ?class).
+  Method_DeclaringType(?ctor, ?class),
+  isClassType(?class).
 
 
 .decl NoArgConstructor(?ctor:Method, ?class:ClassType)

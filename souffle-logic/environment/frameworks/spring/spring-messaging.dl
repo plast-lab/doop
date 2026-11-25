@@ -19,6 +19,8 @@ Owner("spring-messaging").
 // @KafkaHandler / @RabbitHandler methods.
 
 .decl SpringMessaging_Annotation(?role:symbol, ?annotation:Annotation)
+EnvironmentAnnotation("spring-messaging", ?role, ?annotation) :-
+  SpringMessaging_Annotation(?role, ?annotation).
 
 // Method-level listeners (Kafka, RabbitMQ, JMS, STOMP/RSocket, legacy Cloud Stream).
 SpringMessaging_Annotation("listener-method", "org.springframework.kafka.annotation.KafkaListener").

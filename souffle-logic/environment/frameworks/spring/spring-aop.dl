@@ -19,6 +19,8 @@ Owner("spring-aop").
 // AspectJ class and advice annotations interpreted by Spring AOP.
 
 .decl SpringAop_Annotation(?role:symbol, ?annotation:Annotation)
+EnvironmentAnnotation("spring-aop", ?role, ?annotation) :-
+  SpringAop_Annotation(?role, ?annotation).
 
 SpringAop_Annotation("aspect", "org.aspectj.lang.annotation.Aspect").
 SpringAop_Annotation("advice", "org.aspectj.lang.annotation.Before").

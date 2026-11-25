@@ -19,13 +19,13 @@
 // autowire-candidate / <qualifier>, <lookup-method>, <constructor-arg>
 // collections and positional ordering, <alias> or factory-bean references to
 // Java @Component/@Bean beans, static init-method and destroy-method(boolean)
-// are not modelled here. XML DICreationRequest also runs Spring's constructor
+// are not modelled here. XML ManagedClass also runs Spring's constructor
 // rules alongside explicit <constructor-arg>.
 //
 // Sections:
 //   1. Application XML contexts, bean definitions and names
 //   2. Factory methods, FactoryBean products and util:* collections
-//   3. Requests and offers
+//   3. Handoffs
 //   4. Property, constructor and lifecycle resolution
 //   5. Contract interface
 // ==========================================================================
@@ -468,44 +468,44 @@ SpringXml_UtilBean(?file, ?nodeId, ?defaultClass, ?name) :-
 
 
 // --------------------------------------------------------------------------
-// 3. Requests and offers
+// 3. Handoffs
 // --------------------------------------------------------------------------
-// Offers top-level XML beans (and util:* collections) with their names to Spring
+// Hands top-level XML beans (and util:* collections) with their names to Spring
 // and requests DI creation for XML class beans (for @Autowired / @PostConstruct).
 // Inner beans are wired directly to their enclosing slot and are not global offers.
 // For FactoryBeans, getObject() gets ?name and the factory itself gets "&?name".
 
-DICreationRequest("spring-xml", ?class) :- SpringXml_ClassBean(_, _, ?class).
+ManagedClass("spring-xml", ?class) :- SpringXml_ClassBean(_, _, ?class).
 
-InjectionOffer("spring-xml", ?source) :-
+Injectable("spring-xml", ?source) :-
   SpringXml_NodeSource(?file, ?nodeId, ?source),
   !SpringXml_InnerBeanNode(?file, ?nodeId).
 
-InjectionOfferName("spring-xml", ?source, ?name) :-
+NamedInjectable("spring-xml", ?source, ?name) :-
   SpringXml_NodeSource(?file, ?nodeId, ?source),
   !SpringXml_InnerBeanNode(?file, ?nodeId),
   !SpringXml_IsFactoryBeanClass(?source),
   SpringXml_AnyNodeName(?file, ?nodeId, ?name).
 
-InjectionOfferName("spring-xml", ?fb, cat("&", ?name)) :-
+NamedInjectable("spring-xml", ?fb, cat("&", ?name)) :-
   SpringXml_ClassBean(?file, ?nodeId, ?fb),
   !SpringXml_InnerBeanNode(?file, ?nodeId),
   SpringXml_IsFactoryBeanClass(?fb),
   SpringXml_AnyNodeName(?file, ?nodeId, ?name).
 
-InjectionOffer("spring-xml", ?getObj) :-
+Injectable("spring-xml", ?getObj) :-
   SpringXml_ClassBean(?file, ?nodeId, ?fb),
   !SpringXml_InnerBeanNode(?file, ?nodeId),
   SpringXml_FactoryBeanGetObject(?fb, ?getObj).
 
-InjectionOfferName("spring-xml", ?getObj, ?name) :-
+NamedInjectable("spring-xml", ?getObj, ?name) :-
   SpringXml_ClassBean(?file, ?nodeId, ?fb),
   !SpringXml_InnerBeanNode(?file, ?nodeId),
   SpringXml_FactoryBeanGetObject(?fb, ?getObj),
   SpringXml_AnyNodeName(?file, ?nodeId, ?name).
 
-InjectionOffer("spring-xml", ?class) :- SpringXml_UtilBean(_, _, ?class, _).
-InjectionOfferName("spring-xml", ?class, ?name) :- SpringXml_UtilBean(_, _, ?class, ?name).
+Injectable("spring-xml", ?class) :- SpringXml_UtilBean(_, _, ?class, _).
+NamedInjectable("spring-xml", ?class, ?name) :- SpringXml_UtilBean(_, _, ?class, ?name).
 
 
 
@@ -515,18 +515,18 @@ InjectionOfferName("spring-xml", ?class, ?name) :- SpringXml_UtilBean(_, _, ?cla
 // --------------------------------------------------------------------------
 // Resolves <property>, <constructor-arg> (for constructors and static/instance
 // factory methods) and init-method / destroy-method callbacks against accumulated
-// InjectionOfferNames.
+// NamedInjectables.
 
 // Effective erased type of an offered or inner-bean source (including FactoryBean<T>
 // products for both top-level and inner XML FactoryBeans).
 .decl SpringXml_SourceType(?source:Source, ?type:Type)
 
 SpringXml_SourceType(?source, ?type) :-
-  ( InjectionOffer(_, ?source) ; SpringXml_InnerBeanEffectiveSource(_, _, ?source) ),
+  ( Injectable(_, ?source) ; SpringXml_InnerBeanEffectiveSource(_, _, ?source) ),
   SourceType(?source, ?type).
 
 SpringXml_SourceType(?getObj, ?prodType) :-
-  ( ( InjectionOffer(_, ?fb), isClassType(?fb) )
+  ( ( Injectable(_, ?fb), isClassType(?fb) )
   ; SpringXml_ClassBean(_, _, ?fb) ),
   basic.SubtypeOf(?fb, "org.springframework.beans.factory.FactoryBean"),
   Method_DeclaringType(?ifaceMethod, "org.springframework.beans.factory.FactoryBean"),
@@ -620,7 +620,7 @@ SpringXml_PropertySlot(?ancFile, ?propNode, ?class, ?param) :-
 SpringXml_PropertyWired(?class, ?param, ?source) :-
   SpringXml_PropertySlot(?propFile, ?propNode, ?class, ?param),
   SpringXml_DirectRef(?propFile, ?propNode, ?refName),
-  InjectionOfferName(_, ?source, ?refName),
+  NamedInjectable(_, ?source, ?refName),
   SlotType(?param, ?pType),
   SpringXml_RefTypeFits(?source, ?pType).
 
@@ -647,7 +647,7 @@ SpringXml_CollectionSlotFits(?param, ?source) :-
 SpringXml_CollectionWired(?class, ?param, ?source) :-
   SpringXml_PropertySlot(?propFile, ?propNode, ?class, ?param),
   SpringXml_CollectionRef(?propFile, ?propNode, ?refName),
-  InjectionOfferName(_, ?source, ?refName),
+  NamedInjectable(_, ?source, ?refName),
   SpringXml_CollectionSlotFits(?param, ?source).
 
 SpringXml_CollectionWired(?class, ?param, ?source) :-
@@ -701,7 +701,7 @@ SpringXml_CtorArgHasIndexOrName(?argFile, ?argNode) :-
 SpringXml_CtorArgSource(?argFile, ?argNode, ?source) :-
   SpringXml_CtorArg(_, _, ?argFile, ?argNode),
   SpringXml_DirectRef(?argFile, ?argNode, ?refName),
-  InjectionOfferName(_, ?source, ?refName).
+  NamedInjectable(_, ?source, ?refName).
 
 SpringXml_CtorArgSource(?argFile, ?argNode, ?source) :-
   SpringXml_CtorArg(_, _, ?argFile, ?argNode),

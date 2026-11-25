@@ -15,7 +15,7 @@
 //   2. Entities and embeddables
 //   3. Entity listeners and attribute converters
 //   4. Property access
-//   5. Requests
+//   5. Handoffs
 //   6. Contract interface
 // ==========================================================================
 
@@ -31,6 +31,8 @@ Owner("jakarta-persistence").
 // Static lookup tables for JPA 2.x–4.0 annotations and AttributeConverter.
 
 .decl JakartaPersistence_Annotation(?role:symbol, ?annotation:Annotation)
+EnvironmentAnnotation("jakarta-persistence", ?role, ?annotation) :-
+  JakartaPersistence_Annotation(?role, ?annotation).
 
 JakartaPersistence_Annotation("entity", ?annotation) :- JakartaOrJavaxName("persistence.Entity", ?annotation).
 JakartaPersistence_Annotation("embeddable", ?annotation) :- JakartaOrJavaxName("persistence.Embeddable", ?annotation).
@@ -350,7 +352,7 @@ JakartaPersistence_PropertyAccessor(?setter, ?class) :-
 
 
 // --------------------------------------------------------------------------
-// 5. Requests
+// 5. Handoffs
 // --------------------------------------------------------------------------
 // Publishes @PersistenceContext / @PersistenceUnit injection slots and asks the
 // DI container to create and inject into entity listeners and attribute converters.
@@ -358,13 +360,13 @@ JakartaPersistence_PropertyAccessor(?setter, ?class) :-
 // Jakarta: non-static @PersistenceContext and @PersistenceUnit fields and single-param
 // setters (honoured by Jakarta EE containers and Spring's PersistenceAnnotationBeanPostProcessor).
 // No offers are emitted; slots get a mock EntityManager / EntityManagerFactory unless offered.
-SlotInjectionRequest("jakarta-persistence", ?field) :-
+InjectionPoint("jakarta-persistence", ?field) :-
   ( JakartaPersistence_Annotation("persistence-context", ?ann)
   ; JakartaPersistence_Annotation("persistence-unit", ?ann) ),
   FieldCarries(?field, ?ann),
   !Field_Modifier("static", ?field).
 
-SlotInjectionRequest("jakarta-persistence", ?param) :-
+InjectionPoint("jakarta-persistence", ?param) :-
   ( JakartaPersistence_Annotation("persistence-context", ?ann)
   ; JakartaPersistence_Annotation("persistence-unit", ?ann) ),
   MethodCarries(?method, ?ann),
@@ -374,7 +376,7 @@ SlotInjectionRequest("jakarta-persistence", ?param) :-
   !FormalParam(1, ?method, _).
 
 // Jakarta: entity listeners and attribute converters are created by the DI container.
-DICreationRequest("jakarta-persistence", ?class) :-
+ManagedClass("jakarta-persistence", ?class) :-
   JakartaPersistence_ListenerOrConverter(?class).
 
 
@@ -392,7 +394,7 @@ FrameworkCreatedType("jakarta-persistence", ?class) :- JakartaPersistence_Entity
 FrameworkCreatedType("jakarta-persistence", ?class) :- JakartaPersistence_ListenerOrConverter(?class).
 
 // Jakarta: no-arg constructor for entities, embeddables, listeners and converters
-// (provider fallback alongside DICreationRequest for listeners and converters).
+// (provider fallback alongside ManagedClass for listeners and converters).
 EntryPoint("jakarta-persistence", ?ctor) :-
   ( JakartaPersistence_EntityOrEmbeddable(?class)
   ; JakartaPersistence_ListenerOrConverter(?class) ),

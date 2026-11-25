@@ -19,6 +19,8 @@ Owner("spring-web").
 // --------------------------------------------------------------------------
 
 .decl SpringWeb_Annotation(?role:symbol, ?annotation:Annotation)
+EnvironmentAnnotation("spring-web", ?role, ?annotation) :-
+  SpringWeb_Annotation(?role, ?annotation).
 
 SpringWeb_Annotation("controller", "org.springframework.stereotype.Controller").
 SpringWeb_Annotation("controller-advice", "org.springframework.web.bind.annotation.ControllerAdvice").
@@ -139,7 +141,7 @@ SpringWeb_HttpClientInterface(?iface) :-
 // Proxied HTTP client interfaces are created at runtime and offered as beans.
 // Known limit: group#FQCN bean names and base-package filtering are not modelled here.
 FrameworkCreatedType("spring-web", ?iface) :- SpringWeb_HttpClientInterface(?iface).
-InjectionOffer("spring-web", ?iface) :- SpringWeb_HttpClientInterface(?iface).
+Injectable("spring-web", ?iface) :- SpringWeb_HttpClientInterface(?iface).
 
 
 // Spring: request handler methods on controllers (including Spring 6+/7+ server-side

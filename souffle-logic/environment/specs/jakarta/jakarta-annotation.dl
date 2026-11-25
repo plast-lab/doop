@@ -1,7 +1,7 @@
 // ==========================================================================
 // Jakarta Annotations (JSR-250 / jakarta.annotation and javax.annotation):
 //
-// Requests only:
+// Handoffs only:
 // - @PostConstruct and @PreDestroy ask whoever injects into an
 // object to call the method.
 // - @Resource asks whoever injects into an object to fill the field or
@@ -19,6 +19,8 @@ Owner("jakarta-annotation").
 // --------------------------------------------------------------------------
 
 .decl JakartaAnnotation_Annotation(?role:symbol, ?annotation:Annotation)
+EnvironmentAnnotation("jakarta-annotation", ?role, ?annotation) :-
+  JakartaAnnotation_Annotation(?role, ?annotation).
 
 JakartaAnnotation_Annotation("post-construct", ?annotation) :- JakartaOrJavaxName("annotation.PostConstruct", ?annotation).
 
@@ -26,16 +28,20 @@ JakartaAnnotation_Annotation("pre-destroy", ?annotation) :- JakartaOrJavaxName("
 
 JakartaAnnotation_Annotation("resource", ?annotation) :- JakartaOrJavaxName("annotation.Resource", ?annotation).
 
+// @ManagedBean is published only (removed in Jakarta Annotations 3.0): registering the
+// bean is the framework's job (spring.dl and spring-data.dl read it from EnvironmentAnnotation).
+JakartaAnnotation_Annotation("managed-bean", ?annotation) :- JakartaOrJavaxName("annotation.ManagedBean", ?annotation).
+
 
 
 
 // --------------------------------------------------------------------------
-// Requests
+// Handoffs
 // --------------------------------------------------------------------------
 
 // Jakarta: non-static no-arg @PostConstruct and @PreDestroy methods
 // (PostConstruct Javadoc; static ones are a Spring extra in spring.dl).
-DICallbackRequest("jakarta-annotation", ?method) :-
+LifecycleCallback("jakarta-annotation", ?method) :-
   ( JakartaAnnotation_Annotation("post-construct", ?ann)
   ; JakartaAnnotation_Annotation("pre-destroy", ?ann) ),
   MethodCarries(?method, ?ann),
@@ -44,14 +50,14 @@ DICallbackRequest("jakarta-annotation", ?method) :-
 
 
 // Jakarta: non-static @Resource fields.
-SlotInjectionRequest("jakarta-annotation", ?field) :-
+InjectionPoint("jakarta-annotation", ?field) :-
   JakartaAnnotation_Annotation("resource", ?ann),
   FieldCarries(?field, ?ann),
   !Field_Modifier("static", ?field).
 
 
 // Jakarta: the single parameter of a non-static @Resource method.
-SlotInjectionRequest("jakarta-annotation", ?param) :-
+InjectionPoint("jakarta-annotation", ?param) :-
   JakartaAnnotation_Annotation("resource", ?ann),
   MethodCarries(?method, ?ann),
   !Method_Modifier("static", ?method),

@@ -27,6 +27,12 @@ FieldOf(?field, ?class) :-
 // Private methods aren't overridden, so they run as they are
 // (e.g. Spring calls a private @PostConstruct of a superclass).
 // Constructors and static initializers aren't called on an object, so they aren't here.
+// For a generic API method (e.g. Formatter.print(Object, Locale)) ?run is the synthetic bridge
+// the JVM invokes, which calls the user-written method; a reader that needs that method
+// (e.g. its parameter annotations) follows the bridge (Method_Modifier "synthetic").
+// Built for every class, library included, so it is about the size of basic.MethodLookup;
+// every reader binds ?class to an application class, so an ApplicationClass guard here
+// is the first thing to try if the layer gets slow.
 .decl MethodRunOn(?method:Method, ?class:ClassType, ?run:Method)
 
 MethodRunOn(?method, ?class, ?run) :-
@@ -190,6 +196,9 @@ SlotTypeArgument(?slot, ?index, ?argument, ?bound) :-
 
 // The name of a field or parameter as reflection gives it: the field's name, or the
 // parameter's name when the class was compiled with -parameters (no tuple otherwise).
+// Debug names (-g, Param_DebugName) are not here on purpose: whether they count depends on the
+// framework version (Spring 5 reads them, Spring 6.1 dropped them), so a framework that
+// accepts them adds Param_DebugName itself (spring.dl, spring-xml.dl).
 // Spring: a slot named like a bean wins a tie
 // Jakarta: @Named and @Resource without a value use it
 .decl SlotName(?slot:Slot, ?name:symbol)

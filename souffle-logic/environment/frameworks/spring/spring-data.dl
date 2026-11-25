@@ -9,7 +9,7 @@
 //   1. Annotations and framework types
 //   2. Repository interfaces and bean names
 //   3. Custom repository fragments
-//   4. Requests, offers and contract interface
+//   4. Handoffs and contract interface
 // ==========================================================================
 
 
@@ -21,15 +21,15 @@ Owner("spring-data").
 // --------------------------------------------------------------------------
 // 1. Annotations and framework types
 // --------------------------------------------------------------------------
-// Static lookup tables for Spring Data repository markers and naming annotations.
+// Static lookup tables for Spring Data repository markers. The naming annotations
+// (@Component, @Named, @ManagedBean) are read from EnvironmentAnnotation under their owners.
 
 .decl SpringData_Annotation(?role:symbol, ?annotation:Annotation)
+EnvironmentAnnotation("spring-data", ?role, ?annotation) :-
+  SpringData_Annotation(?role, ?annotation).
 
 SpringData_Annotation("repository-definition", "org.springframework.data.repository.RepositoryDefinition").
 SpringData_Annotation("no-repository-bean", "org.springframework.data.repository.NoRepositoryBean").
-SpringData_Annotation("component", "org.springframework.stereotype.Component").
-SpringData_Annotation("named", ?annotation) :- JakartaOrJavaxName("inject.Named", ?annotation).
-SpringData_Annotation("managed-bean", ?annotation) :- JakartaOrJavaxName("annotation.ManagedBean", ?annotation).
 
 
 
@@ -80,9 +80,9 @@ SpringData_ExplicitRepoName(?iface, ?name) :-
   SpringData_Repository(?iface),
   TypeAnnotationValue(?iface, ?ann, "value", -1, "string", ?name, _),
   ?name != "",
-  ( ( SpringData_Annotation("component", ?root), CarriesAnnotation(?ann, ?root) )
-  ; SpringData_Annotation("named", ?ann)
-  ; SpringData_Annotation("managed-bean", ?ann) ).
+  ( ( EnvironmentAnnotation("spring", "component", ?root), CarriesAnnotation(?ann, ?root) )
+  ; EnvironmentAnnotation("jakarta-inject", "named", ?ann)
+  ; EnvironmentAnnotation("jakarta-annotation", "managed-bean", ?ann) ).
 
 .decl SpringData_HasExplicitRepoName(?iface:InterfaceType)
 SpringData_HasExplicitRepoName(?iface) :- SpringData_ExplicitRepoName(?iface, _).
@@ -186,7 +186,7 @@ SpringData_ImplName(?impl, cat(?repoName, ?postfix)) :-
 
 
 // --------------------------------------------------------------------------
-// 4. Requests, offers and contract interface
+// 4. Handoffs and contract interface
 // --------------------------------------------------------------------------
 // Publishes repository proxies (created and offered), requests Spring to create
 // and inject fragment implementations (also offered as beans) and marks fragment
@@ -194,14 +194,14 @@ SpringData_ImplName(?impl, cat(?repoName, ?postfix)) :-
 
 // Proxied repository interfaces are created by Spring Data and offered as beans.
 FrameworkCreatedType("spring-data", ?iface) :- SpringData_Repository(?iface).
-InjectionOffer("spring-data", ?iface) :- SpringData_Repository(?iface).
-InjectionOfferName("spring-data", ?iface, ?name) :- SpringData_RepoName(?iface, ?name).
+Injectable("spring-data", ?iface) :- SpringData_Repository(?iface).
+NamedInjectable("spring-data", ?iface, ?name) :- SpringData_RepoName(?iface, ?name).
 
 // Custom fragment implementations are registered as ordinary bean definitions
 // (RepositoryBeanDefinitionBuilder.potentiallyRegisterFragmentImplementation).
-DICreationRequest("spring-data", ?impl) :- SpringData_FragmentImpl(_, ?impl).
-InjectionOffer("spring-data", ?impl) :- SpringData_FragmentImpl(_, ?impl).
-InjectionOfferName("spring-data", ?impl, ?name) :- SpringData_ImplName(?impl, ?name).
+ManagedClass("spring-data", ?impl) :- SpringData_FragmentImpl(_, ?impl).
+Injectable("spring-data", ?impl) :- SpringData_FragmentImpl(_, ?impl).
+NamedInjectable("spring-data", ?impl, ?name) :- SpringData_ImplName(?impl, ?name).
 
 // Fragment interface methods (including inherited superinterface methods) are invoked
 // through the repository proxy.

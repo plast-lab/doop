@@ -12,7 +12,7 @@
 // Sections:
 //   1. Annotations
 //   2. Interceptor classes
-//   3. Requests and contract interface
+//   3. Handoffs and contract interface
 // ==========================================================================
 
 
@@ -24,9 +24,12 @@ Owner("jakarta-interceptors").
 // --------------------------------------------------------------------------
 // 1. Annotations
 // --------------------------------------------------------------------------
-// Lookup table for Jakarta/javax Interceptor and lifecycle annotations.
+// Lookup table for Jakarta/javax Interceptor annotations. The lifecycle annotations
+// (@PostConstruct, @PreDestroy) are read from EnvironmentAnnotation under "jakarta-annotation".
 
 .decl JakartaInterceptors_Annotation(?role:symbol, ?annotation:Annotation)
+EnvironmentAnnotation("jakarta-interceptors", ?role, ?annotation) :-
+  JakartaInterceptors_Annotation(?role, ?annotation).
 
 JakartaInterceptors_Annotation("interceptor", ?ann) :- JakartaOrJavaxName("interceptor.Interceptor", ?ann).
 JakartaInterceptors_Annotation("interceptors", ?ann) :- JakartaOrJavaxName("interceptor.Interceptors", ?ann).
@@ -38,10 +41,6 @@ JakartaInterceptors_Annotation("around", ?ann) :-
 JakartaInterceptors_Annotation("self-around", ?ann) :-
   ( ?name = "AroundInvoke" ; ?name = "AroundTimeout" ),
   JakartaOrJavaxName(cat("interceptor.", ?name), ?ann).
-
-JakartaInterceptors_Annotation("lifecycle", ?ann) :-
-  ( ?name = "PostConstruct" ; ?name = "PreDestroy" ),
-  JakartaOrJavaxName(cat("annotation.", ?name), ?ann).
 
 
 
@@ -70,14 +69,14 @@ JakartaInterceptors_Class(?class) :-
 
 
 // --------------------------------------------------------------------------
-// 3. Requests and contract interface
+// 3. Handoffs and contract interface
 // --------------------------------------------------------------------------
-// Interceptors support DI (DICreationRequest) with a no-arg constructor fallback.
+// Interceptors support DI (ManagedClass) with a no-arg constructor fallback.
 // Marks around-advice methods and 1-arg InvocationContext lifecycle callbacks.
 // Known limit: an un-annotated subclass override of an interceptor method is still
 // kept as an entry point (conservative over-approximation of Interceptors 2.2 §5.2).
 
-DICreationRequest("jakarta-interceptors", ?class) :- JakartaInterceptors_Class(?class).
+ManagedClass("jakarta-interceptors", ?class) :- JakartaInterceptors_Class(?class).
 
 FrameworkCreatedType("jakarta-interceptors", ?class) :- JakartaInterceptors_Class(?class).
 
@@ -106,7 +105,8 @@ EntryPoint("jakarta-interceptors", ?run) :-
 // (taking InvocationContext; 0-arg callbacks are handled by jakarta-annotation.dl).
 EntryPoint("jakarta-interceptors", ?run) :-
   JakartaInterceptors_Class(?class),
-  JakartaInterceptors_Annotation("lifecycle", ?ann),
+  ( EnvironmentAnnotation("jakarta-annotation", "post-construct", ?ann)
+  ; EnvironmentAnnotation("jakarta-annotation", "pre-destroy", ?ann) ),
   MethodCarries(?method, ?ann),
   !Method_Modifier("static", ?method),
   FormalParam(0, ?method, _),

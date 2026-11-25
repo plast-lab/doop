@@ -53,23 +53,19 @@ _Names_Decapitalize(?raw, ?raw) :-
 // Type names (application classes and interfaces)
 // --------------------------------------------------------------------------
 
-.decl _Names_ScanIdx(?type:ReferenceType, ?pos:number)
-_Names_ScanIdx(?type, 0) :-
+// Scans an application class name backwards from its last character and stops at the
+// first dot; the scan reaches position 0 only when the name has no package.
+.decl _Names_Scan(?type:ReferenceType, ?pos:number)
+
+_Names_Scan(?type, strlen(?type) - 1) :-
   ApplicationClass(?type),
   isClassOrInterfaceType(?type),
   strlen(?type) > 0.
-_Names_ScanIdx(?type, ?pos + 1) :- _Names_ScanIdx(?type, ?pos), ?pos + 1 < strlen(?type).
 
-.decl _Names_DotPos(?type:ReferenceType, ?pos:number)
-_Names_DotPos(?type, ?pos) :- _Names_ScanIdx(?type, ?pos), substr(?type, ?pos, 1) = ".".
-
-.decl _Names_HasDot(?type:ReferenceType)
-_Names_HasDot(?type) :- _Names_DotPos(?type, _).
-
-.decl _Names_LastDot(?type:ReferenceType, ?pos:number)
-_Names_LastDot(?type, ?maxPos) :-
-  _Names_HasDot(?type),
-  ?maxPos = max ?p : { _Names_DotPos(?type, ?p) }.
+_Names_Scan(?type, ?pos - 1) :-
+  _Names_Scan(?type, ?pos),
+  ?pos > 0,
+  substr(?type, ?pos, 1) != ".".
 
 
 // The name of an application class or interface without its package (everything after the last dot,
@@ -80,13 +76,13 @@ _Names_LastDot(?type, ?maxPos) :-
 .decl TypeNameWithoutPackage(?type:ReferenceType, ?name:symbol)
 
 TypeNameWithoutPackage(?type, ?name) :-
-  _Names_LastDot(?type, ?pos),
+  _Names_Scan(?type, ?pos),
+  substr(?type, ?pos, 1) = ".",
   ?name = substr(?type, ?pos + 1, strlen(?type) - ?pos - 1).
 
 TypeNameWithoutPackage(?type, ?type) :-
-  ApplicationClass(?type),
-  isClassOrInterfaceType(?type),
-  !_Names_HasDot(?type).
+  _Names_Scan(?type, 0),
+  substr(?type, 0, 1) != ".".
 
 // Rebuilds a name without its package that has a $, one character at a time, with a dot for each $
 // (Souffle has no string replace). ?prefix is the rebuilt name up to ?pos.
