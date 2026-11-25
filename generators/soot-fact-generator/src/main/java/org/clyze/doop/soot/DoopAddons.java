@@ -198,6 +198,19 @@ public class DoopAddons {
     private static boolean polymorphicHandling_msg = false;
     @SuppressWarnings("CatchMayIgnoreException")
     public static boolean polymorphicHandling(String declClass, String simpleName) {
+        // Signature-polymorphic methods (JVMS 2.9.3): declared in MethodHandle
+        // or VarHandle, native and varargs. Soot's handlesClass() only checks
+        // the class, which made ordinary methods (type(), asType(), isDirect(),
+        // ...) polymorphic and turned mh.type() into a call to mh's target.
+        if ("java.lang.invoke.MethodHandle".equals(declClass) || "java.lang.invoke.VarHandle".equals(declClass)) {
+            SootClass c = Scene.v().getSootClassUnsafe(declClass, false);
+            if (c != null && !c.isPhantom() && !c.getMethods().isEmpty()) {
+                for (SootMethod m : c.getMethods())
+                    if (m.getName().equals(simpleName) && m.isNative() && (m.getModifiers() & 0x0080) != 0)
+                        return true;
+                return false;
+            }
+        }
         try {
             if (hc != null)
                 return (boolean)hc.invoke(null, declClass);
