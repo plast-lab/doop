@@ -233,6 +233,20 @@ MockSiteMethod(?ctor) :-
   Method_DeclaringType(?ctor, ?class),
   !CtorNotRun(?ctor).
 
+// The JVM initializes a class before it creates an instance of it (JVMS 5.5,
+// `new`), so a mock -- an instance the environment created -- initializes its
+// class: its <clinit> runs (and its superclasses', class-initialization.dl).
+// For the mocks of application classes (this layer's and a precision layer's,
+// e.g. jackee's beans) and the library mocks constructed above; opaque library
+// mocks stay opaque.
+mainAnalysis.InitializedClass(?class) :-
+  MockObject(_, ?class),
+  ApplicationClass(?class).
+mainAnalysis.InitializedClass(?class) :-
+  MockSiteMethod(?ctor),
+  Method_SimpleName(?ctor, "<init>"),
+  Method_DeclaringType(?ctor, ?class).
+
 // Constructor selection hook: a mechanism that knows which constructor really
 // creates its objects (ServiceLoader: the no-arg one; a DI container: the one it
 // picks) marks the OTHER constructors of those classes here, and the core does
