@@ -5,6 +5,7 @@
 #include "reference.dl"
 #include "string-constants.dl"
 #include "threads.dl"
+#include "enum-constants.dl"
 
 #if defined(HEAPDLS) || defined(IMPORT_DYNAMIC_FACTS)
 #include "dynamicanalysis.dl"
