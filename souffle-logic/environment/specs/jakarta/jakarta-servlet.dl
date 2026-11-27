@@ -146,7 +146,7 @@ ManagedClass("jakarta-servlet", ?class) :-
 
 // Jakarta: ServletContext.createServlet/createFilter/createListener require
 // a zero-argument constructor when the container instantiates components itself.
-FrameworkCreatedType("jakarta-servlet", ?class) :-
+EnvironmentCreatedType("jakarta-servlet", ?class) :-
   JakartaServlet_CreatedComponent(?class).
 
 EntryPoint("jakarta-servlet", ?ctor) :-
@@ -154,7 +154,7 @@ EntryPoint("jakarta-servlet", ?ctor) :-
   NoArgConstructor(?ctor, ?class).
 
 // Jakarta: servlet API methods (init, service, doGet, doFilter, listener callbacks...)
-// running on the component. Handed-over listeners have no FrameworkCreatedType row,
+// running on the component. Handed-over listeners have no EnvironmentCreatedType row,
 // so their `this` is the objects created by the application.
 EntryPoint("jakarta-servlet", ?run) :-
   JakartaServlet_Component(?class),

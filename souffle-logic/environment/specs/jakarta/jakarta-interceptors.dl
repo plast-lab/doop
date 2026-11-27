@@ -78,7 +78,7 @@ JakartaInterceptors_Class(?class) :-
 
 ManagedClass("jakarta-interceptors", ?class) :- JakartaInterceptors_Class(?class).
 
-FrameworkCreatedType("jakarta-interceptors", ?class) :- JakartaInterceptors_Class(?class).
+EnvironmentCreatedType("jakarta-interceptors", ?class) :- JakartaInterceptors_Class(?class).
 
 EntryPoint("jakarta-interceptors", ?ctor) :-
   JakartaInterceptors_Class(?class),

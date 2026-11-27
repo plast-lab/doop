@@ -72,7 +72,7 @@ SpringSecurity_TemplateHook("org.springframework.security.config.annotation.meth
 // --------------------------------------------------------------------------
 // Marks security callback methods on concrete application implementations as
 // entry points. Components registered as beans are created by spring.dl;
-// servlet filters also get FrameworkCreatedType from jakarta-servlet.dl.
+// servlet filters also get EnvironmentCreatedType from jakarta-servlet.dl.
 
 EntryPoint("spring-security", ?run) :-
   ApplicationClass(?class),

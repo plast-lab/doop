@@ -34,7 +34,7 @@
 // It doesn't say either that the framework fills the object's fields (that's InjectionTarget).
 // Spring: @Component (and @Service, @Controller etc.. via meta-annotations), Spring Data repositories
 // Jakarta: @Entity
-.decl FrameworkCreatedType(?owner:symbol, ?type:ReferenceType)
+.decl EnvironmentCreatedType(?owner:symbol, ?type:ReferenceType)
 
 
 
@@ -52,18 +52,18 @@
 
 // A class or interface given to a slot (directly or inside a holder) means
 // the mock object the engine made for it, so it must have one.
-FrameworkCreatedType(?owner, ?type) :-
+EnvironmentCreatedType(?owner, ?type) :-
   InjectedWith(?owner, _, _, ?type),
   isClassOrInterfaceType(?type).
 
-FrameworkCreatedType(?owner, ?type) :-
+EnvironmentCreatedType(?owner, ?type) :-
   HolderInjectedWith(?owner, _, _, ?type),
   isClassOrInterfaceType(?type).
 
 
 // A constructor only runs when an object of exactly its class is created
 // (with new or reflection), so if the framework calls it, it creates the object.
-FrameworkCreatedType(?owner, ?class) :-
+EnvironmentCreatedType(?owner, ?class) :-
   EntryPoint(?owner, ?ctor),
   ConstructorOf(?ctor, ?class).
 
@@ -77,10 +77,10 @@ FrameworkCreatedType(?owner, ?class) :-
 // Checks
 // --------------------------------------------------------------------------
 
-CONTRACT_OWNER_CHECK(FrameworkCreatedType, ?type, (?owner, ?type))
+CONTRACT_OWNER_CHECK(EnvironmentCreatedType, ?type, (?owner, ?type))
 
-EnvironmentWarning(?owner, "FrameworkCreatedType", ?type, "Not a class or interface") :-
-  FrameworkCreatedType(?owner, ?type),
+EnvironmentWarning(?owner, "EnvironmentCreatedType", ?type, "Not a class or interface") :-
+  EnvironmentCreatedType(?owner, ?type),
   !isClassOrInterfaceType(?type).
 
 
@@ -98,7 +98,7 @@ EnvironmentWarning(?owner, "FrameworkCreatedType", ?type, "Not a class or interf
 
 // A method the framework calls, without a call to it in the application program.
 // Its `this` is every one of these that applies:
-//   - the mock object for its class, when the class is a FrameworkCreatedType;
+//   - the mock object for its class, when the class is a EnvironmentCreatedType;
 //   - the objects the program creates of its class, when the framework injects into them
 //     (e.g. objects returned from Spring @Bean methods get their @PostConstruct called)
 //     or when nobody outside the program creates the class
@@ -193,7 +193,7 @@ EnvironmentWarning(?owner, "EntryPoint", ?method, "Not a method") :-
 // --------------------------------------------------------------------------
 
 // A class whose objects get injected: the framework fills their injected fields and parameters.
-// It's separate from FrameworkCreatedType since a framework may inject into objects
+// It's separate from EnvironmentCreatedType since a framework may inject into objects
 // it didn't create (e.g. Spring into the test classes JUnit creates) and may create
 // objects it never injects into (e.g. JPA entities).
 // The engine fills the injected slots only in objects of these classes and
@@ -229,7 +229,7 @@ EnvironmentWarning(?owner, "EntryPoint", ?method, "Not a method") :-
 // so BaseService<R>.repo gets OwnerRepository in OwnerService and PetRepository in PetService).
 // Several tuples for one slot mean any of them.
 // Sources are:
-//   class or interface: the mock object the engine made for it (FrameworkCreatedType)
+//   class or interface: the mock object the engine made for it (EnvironmentCreatedType)
 //   method:             what the method returns when the framework calls it
 //   field:              the value of that field
 // A slot without tuples gets a mock of its type.
@@ -291,7 +291,7 @@ InjectedParam(?framework, ?param) :-
 // since it doesn't call the constructor of objects the program creates (e.g. Spring @Bean results).
 InjectedParam(?framework, ?param) :-
   InjectionTarget(?framework, ?class),
-  FrameworkCreatedType(?framework, ?class),
+  EnvironmentCreatedType(?framework, ?class),
   ConstructorOf(?ctor, ?class),
   FormalParam(_, ?ctor, ?param),
   InjectionPoint(_, ?param).
@@ -419,9 +419,9 @@ EnvironmentWarning(?owner, "HolderInjectedWith", ?slot, "Slot is not in the clas
 
 
 // A spec or library asks the application's DI framework to create objects of this class and inject
-// into them (the DI framework marks it FrameworkCreatedType and InjectionTarget and picks the constructor).
+// into them (the DI framework marks it EnvironmentCreatedType and InjectionTarget and picks the constructor).
 // It neither offers the class nor replaces the library's own creation: a spec whose library also creates
-// the objects without DI writes FrameworkCreatedType itself (e.g. Hibernate creates entity listeners
+// the objects without DI writes EnvironmentCreatedType itself (e.g. Hibernate creates entity listeners
 // when no bean container is plugged in) and a file that also offers the class writes Injectable
 // (e.g. Spring Data registers its *Impl fragments as beans).
 // Spring Data: custom repository implementations (OwnerRepositoryImpl)

@@ -116,7 +116,7 @@ JUnit_TestClass(?outer) :-
 // --------------------------------------------------------------------------
 // Projects test class creation, constructor invocation and test/lifecycle entry points.
 
-FrameworkCreatedType("junit", ?class) :- JUnit_TestClass(?class).
+EnvironmentCreatedType("junit", ?class) :- JUnit_TestClass(?class).
 
 // JUnit 4 invokes the no-arg constructor; Jupiter invokes the sole constructor
 // (constructor parameter injection is not modelled here; parameters get type mocks).

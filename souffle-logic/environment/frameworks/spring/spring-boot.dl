@@ -232,7 +232,7 @@ ManagedClass("spring-boot", ?class) :- SpringBoot_DeducedBindConstructor(_, ?cla
 // Constructor-bound classes are created by Boot's binder via their bind constructor.
 // No ManagedClass is emitted (so @PostConstruct / @Autowired fields on them are
 // not modelled), otherwise Spring would also autowire their bind constructor parameters.
-FrameworkCreatedType("spring-boot", ?class) :- SpringBoot_BindConstructor(_, ?class).
+EnvironmentCreatedType("spring-boot", ?class) :- SpringBoot_BindConstructor(_, ?class).
 EntryPoint("spring-boot", ?ctor) :- SpringBoot_BindConstructor(?ctor, _).
 
 // Public and package-private setters of setter-bound classes are invoked by JavaBeanBinder

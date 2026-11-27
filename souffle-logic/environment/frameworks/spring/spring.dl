@@ -1338,8 +1338,8 @@ Spring_SingleChosen(?class, ?slot, ?source) :-
 // Projects Spring's finished decisions (creation, targets, constructors, @Bean methods
 // and direct/holder injection results) onto the shared contract relations read by engines.
 
-FrameworkCreatedType("spring", ?class) :- Spring_Created(?class).
-FrameworkCreatedType("spring", ?class) :- Spring_ImportHelper(?class).
+EnvironmentCreatedType("spring", ?class) :- Spring_Created(?class).
+EnvironmentCreatedType("spring", ?class) :- Spring_ImportHelper(?class).
 
 InjectionTarget("spring", ?class) :- Spring_Target(?class).
 

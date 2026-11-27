@@ -390,8 +390,8 @@ ManagedClass("jakarta-persistence", ?class) :-
 // Note: entities instantiated by application code (`new Order()` then `persist`)
 // see only the provider's mock receiver until handed-over objects are modelled.
 
-FrameworkCreatedType("jakarta-persistence", ?class) :- JakartaPersistence_EntityOrEmbeddable(?class).
-FrameworkCreatedType("jakarta-persistence", ?class) :- JakartaPersistence_ListenerOrConverter(?class).
+EnvironmentCreatedType("jakarta-persistence", ?class) :- JakartaPersistence_EntityOrEmbeddable(?class).
+EnvironmentCreatedType("jakarta-persistence", ?class) :- JakartaPersistence_ListenerOrConverter(?class).
 
 // Jakarta: no-arg constructor for entities, embeddables, listeners and converters
 // (provider fallback alongside ManagedClass for listeners and converters).

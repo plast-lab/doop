@@ -768,8 +768,8 @@ SpringXml_Target(?class) :- SpringXml_CtorArgTarget(_, _, ?class, _).
 // Pure projections of XML bean creation, constructors, factory methods,
 // lifecycle callbacks and explicit property / constructor-arg wiring.
 
-FrameworkCreatedType("spring-xml", ?class) :- SpringXml_ClassBean(_, _, ?class).
-FrameworkCreatedType("spring-xml", ?class) :- SpringXml_UtilBean(_, _, ?class, _).
+EnvironmentCreatedType("spring-xml", ?class) :- SpringXml_ClassBean(_, _, ?class).
+EnvironmentCreatedType("spring-xml", ?class) :- SpringXml_UtilBean(_, _, ?class, _).
 InjectionTarget("spring-xml", ?class) :- SpringXml_Target(?class).
 
 EntryPoint("spring-xml", ?ctor) :- SpringXml_BeanConstructor(_, _, _, ?ctor).

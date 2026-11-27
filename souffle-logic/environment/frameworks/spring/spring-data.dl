@@ -193,7 +193,7 @@ SpringData_ImplName(?impl, cat(?repoName, ?postfix)) :-
 // interface methods as entry points.
 
 // Proxied repository interfaces are created by Spring Data and offered as beans.
-FrameworkCreatedType("spring-data", ?iface) :- SpringData_Repository(?iface).
+EnvironmentCreatedType("spring-data", ?iface) :- SpringData_Repository(?iface).
 Injectable("spring-data", ?iface) :- SpringData_Repository(?iface).
 NamedInjectable("spring-data", ?iface, ?name) :- SpringData_RepoName(?iface, ?name).
 

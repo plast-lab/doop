@@ -70,7 +70,7 @@ ManagedClass("jakarta-validation", ?class) :- JakartaValidation_Validator(?class
 
 // Jakarta: the default ConstraintValidatorFactory instantiates validators
 // through their public no-arg constructor (spec "The ConstraintValidatorFactory").
-FrameworkCreatedType("jakarta-validation", ?class) :- JakartaValidation_Validator(?class).
+EnvironmentCreatedType("jakarta-validation", ?class) :- JakartaValidation_Validator(?class).
 
 EntryPoint("jakarta-validation", ?ctor) :-
   JakartaValidation_Validator(?class),

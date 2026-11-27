@@ -134,9 +134,9 @@ JakartaWebSocket_AppConfig(?class) :-
 
 ManagedClass("jakarta-websocket", ?class) :- JakartaWebSocket_Endpoint(?class).
 
-FrameworkCreatedType("jakarta-websocket", ?class) :- JakartaWebSocket_Endpoint(?class).
-FrameworkCreatedType("jakarta-websocket", ?class) :- JakartaWebSocket_HelperClass(?class).
-FrameworkCreatedType("jakarta-websocket", ?class) :- JakartaWebSocket_AppConfig(?class).
+EnvironmentCreatedType("jakarta-websocket", ?class) :- JakartaWebSocket_Endpoint(?class).
+EnvironmentCreatedType("jakarta-websocket", ?class) :- JakartaWebSocket_HelperClass(?class).
+EnvironmentCreatedType("jakarta-websocket", ?class) :- JakartaWebSocket_AppConfig(?class).
 
 EntryPoint("jakarta-websocket", ?ctor) :-
   ( JakartaWebSocket_Endpoint(?class)

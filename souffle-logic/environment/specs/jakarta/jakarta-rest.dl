@@ -216,7 +216,7 @@ ManagedClass("jakarta-rest", ?class) :- JakartaRest_Provider(?class).
 // Projects REST runtime creation, direct parameter/context injection and entry
 // points (constructors, resource methods, provider callbacks and Application methods).
 
-FrameworkCreatedType("jakarta-rest", ?class) :- JakartaRest_Component(?class).
+EnvironmentCreatedType("jakarta-rest", ?class) :- JakartaRest_Component(?class).
 InjectionTarget("jakarta-rest", ?class) :- JakartaRest_Component(?class).
 
 EntryPoint("jakarta-rest", ?ctor) :- JakartaRest_Constructor(?ctor, _).
