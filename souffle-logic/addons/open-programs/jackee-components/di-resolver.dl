@@ -11,8 +11,7 @@
 // assignable to the injection point's declared type. If exactly one matches,
 // inject it (the name is irrelevant). Only when several match do we disambiguate
 // -- @Qualifier/@Named, then @Primary, then by-name (bean id == field/param
-// name). Zero-candidate or still-ambiguous sites are not marked, so the central
-// layer generically mocks the declared type: nothing is ever left unmocked.
+// name). Sites this leaves unresolved get the fallback at the end of this file.
 // (@Resource stays name-primary in its own rules; XML and collection injection
 // are unchanged.)
 
@@ -191,12 +190,11 @@ DIFieldResolved(?field, ?beanMock) :-
   FieldQual(?field, ?qual),
   DescResolved(?type, ?name, ?qual, ?beanMock).
 
-// Wire the resolved bean into every instance of the field's declaring type (or a
-// subtype -- inherited @Autowired fields), and mark the field so the central
-// layer yields it. The mark is purely static (over DIFieldResolved), so the
-// central negation stratifies.
+// Wire the resolved bean (or, for an unresolved field, the fallback's candidates)
+// into every instance of the field's declaring type (or a subtype -- inherited
+// @Autowired fields), and mark the field so the central layer yields it.
 mainAnalysis.InstanceFieldPointsTo(?hctx, ?beanMock, ?field, ?basehctx, ?basevalue) :-
-  DIFieldResolved(?field, ?beanMock),
+  ( DIFieldResolved(?field, ?beanMock) ; DIFieldFallback(?field, ?beanMock) ),
   Field_DeclaringType(?field, ?declType),
   mainAnalysis.Value_Type(?basevalue, ?baseType),
   basic.SubtypeOf(?baseType, ?declType),
@@ -204,3 +202,58 @@ mainAnalysis.InstanceFieldPointsTo(?hctx, ?beanMock, ?field, ?basehctx, ?baseval
   mainAnalysis.isImmutableHContext(?hctx).
 
 PreciselyMockedField(?field) :- DIFieldResolved(?field, _).
+
+// ==========================================================================
+// unresolved injection points
+// ==========================================================================
+// Spring fails at startup on a required injection point it cannot resolve
+// (NoSuchBeanDefinitionException, NoUniqueBeanDefinitionException), so in an
+// application that runs, every such point resolves. One the resolver above leaves
+// unresolved means the model lacks what Spring used: a bean defined outside the
+// analysed code (auto-configuration, a library @Bean method, programmatic
+// registration) or a tie-breaker it does not model (generic type arguments,
+// @Priority, custom @Qualifier annotations). The point is still filled soundly:
+//   - several candidates: all of them, since Spring's choice is one of them;
+//   - none: a mock of the declared type -- fields through the core's
+//     EnvironmentSuppliedField, parameters as the core's mock-site parameters.
+// UnresolvedInjection lists each such point and why, for inspection only.
+
+.decl DescUnresolved(?type:Type, ?name:symbol, ?qual:symbol)
+DescUnresolved(?type, ?name, ?qual) :-
+  Descriptor(?type, ?name, ?qual),
+  !DescResolved(?type, ?name, ?qual, _).
+
+.decl DescFallback(?type:Type, ?name:symbol, ?qual:symbol, ?beanMock:Value)
+DescFallback(?type, ?name, ?qual, ?beanMock) :-
+  DescUnresolved(?type, ?name, ?qual),
+  TypeCandidate(?type, _, ?beanMock).
+
+.decl DIFieldFallback(?field:Field, ?beanMock:Value)
+DIFieldFallback(?field, ?beanMock) :-
+  DIField(?field, ?type),
+  Field_SimpleName(?field, ?name),
+  FieldQual(?field, ?qual),
+  DescFallback(?type, ?name, ?qual, ?beanMock).
+
+PreciselyMockedField(?field) :- DIFieldFallback(?field, _).
+
+// Every injection-annotated field is filled by the environment; the core mocks
+// its declared type unless a rule here (or the @Resource / XML rules) marks it
+// PreciselyMockedField. This is static, so the core's mock-site closure does not
+// depend on the resolution above.
+EnvironmentSuppliedField(?field) :-
+  ( InjectionAnnotatedField(?field) ; ResourceAnnotatedField(?field) ).
+
+.decl UnresolvedInjection(?site:symbol, ?kind:symbol, ?reason:symbol)
+.output UnresolvedInjection
+UnresolvedInjection(?field, "field", "ambiguous") :- DIFieldFallback(?field, _).
+UnresolvedInjection(?field, "field", "no-candidate") :-
+  DIField(?field, ?type),
+  Field_SimpleName(?field, ?name),
+  FieldQual(?field, ?qual),
+  DescUnresolved(?type, ?name, ?qual),
+  !TypeCandidate(?type, _, _).
+// @Resource resolves by name; only BeanResource-backed fields are modelled.
+UnresolvedInjection(?field, "field", "resource") :-
+  ResourceAnnotatedField(?field),
+  !PreciselyMockedField(?field).

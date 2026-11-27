@@ -300,6 +300,13 @@ EnvironmentOnlyField(?field) :- FieldReadInProgram(?field), !FieldWrittenInProgr
 FieldWrittenInProgram(?field) :- _StoreInstanceField(_, _, _, _, ?field, _).
 FieldWrittenInProgram(?field) :- _StoreStaticField(_, _, _, ?field, _).
 
+// A field a framework model knows the environment fills (an @Autowired or
+// @Resource field, say), whether or not the program also writes it. It gets mocks
+// of its declared type like an environment-only field, unless the model gives it
+// a precise value (PreciselyMockedField), so the core is the model's fallback for
+// the fields it cannot resolve.
+.decl EnvironmentSuppliedField(?field:Field)
+
 // Classes whose mock objects are initialised by running their constructor (e.g.
 // service providers, see deepspatch/frontend-service-loader.dl): their fields hold what the constructor
 // stores, so they are not filled with field mocks.
@@ -311,7 +318,7 @@ FieldWrittenInProgram(?field) :- _StoreStaticField(_, _, _, ?field, _).
 // into the closure. Arrays are transparent and handled separately below.
 .decl InstanceFieldInClass(?field:Field, ?fieldType:Type, ?class:ReferenceType)
 InstanceFieldInClass(?field, ?fieldType, ?class) :-
-  ( MockFieldInjection() ; EnvironmentOnlyField(?field) ),
+  ( MockFieldInjection() ; EnvironmentOnlyField(?field) ; EnvironmentSuppliedField(?field) ),
   MockedObject(_, ?class),
   ApplicationClass(?class),
   !ConstructedMockClass(?class),
@@ -323,7 +330,7 @@ InstanceFieldInClass(?field, ?fieldType, ?class) :-
 // Static fields belong to their declaring class (not inherited).
 .decl StaticFieldInClass(?field:Field, ?fieldType:Type, ?class:ReferenceType)
 StaticFieldInClass(?field, ?fieldType, ?class) :-
-  ( MockFieldInjection() ; EnvironmentOnlyField(?field) ),
+  ( MockFieldInjection() ; EnvironmentOnlyField(?field) ; EnvironmentSuppliedField(?field) ),
   MockedObject(_, ?class),
   ApplicationClass(?class),
   !ConstructedMockClass(?class),
