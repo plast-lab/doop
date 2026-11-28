@@ -28,9 +28,10 @@
 // value play no part: a library or platform factory works the same as an
 // application one.
 //
-// Constructors: the back-end does NOT run products' constructors. Ctor mocking in
-// the central layer happens only under --sound-mocking. A front-end may run them
-// for its own products (the reflective-factory front-end runs the no-arg ctor).
+// Constructors: the back-end does NOT run products' constructors; the central
+// mocking layer runs only application classes' constructors. A front-end runs
+// them for its own products: the service-loader and reflective-factory
+// front-ends run the no-arg constructor, as the runtime does.
 //
 // Included from addons/deepspatch.dl (which provides commonMacros.dl).
 // ============================================================================

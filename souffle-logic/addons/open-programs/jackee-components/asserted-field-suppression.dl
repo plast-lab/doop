@@ -4,7 +4,7 @@
 // Depends on: di-resolver, per-instance-mocking, xml-beans
 // ==========================================================================
 // A field whose mock value jackee asserts directly (XML property injection, per-instance
-// XML wiring, or @Autowired resolution) -- as opposed to a field whose value flows from a
+// XML wiring, or @Autowired resolution, including its fallback) -- as opposed to a field whose value flows from a
 // ctor/setter store (see the "1b" field-precision rules). For an asserted field the
 // bytecode store into it is redundant pollution:
 //
@@ -19,6 +19,7 @@
 JackeeAssertedField(?field) :- BeanFieldInjection(_, ?field, _).
 JackeeAssertedField(?field) :- RefinedBeanFieldWire(_, ?field, _).
 JackeeAssertedField(?field) :- DIFieldResolved(?field, _).
+JackeeAssertedField(?field) :- DIFieldFallback(?field, _).
 mainAnalysis.SuppressedInstanceFieldStore(?field, ?method) :-
   JackeeAssertedField(?field),
   StoreInstanceField(_, _, ?field, ?method).

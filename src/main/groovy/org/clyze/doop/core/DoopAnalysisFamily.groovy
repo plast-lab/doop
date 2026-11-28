@@ -674,11 +674,6 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "Handle some shallow reflection patterns without full reflection support.",
 					forPreprocessor: true
 			),
-				new BooleanAnalysisOption(
-						id: "SOUND_MOCKING",
-						name: "sound-mocking",
-						description: "Open programs: mock EVERY concrete subtype of a mocked type (sound/complete) instead of a single representative subtype (default).",
-				),
 			new BooleanAnalysisOption(
 					id: "DEEPSPATCH",
 					name: "deepspatch",

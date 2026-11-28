@@ -1,23 +1,53 @@
 // ===========================================================================
-// mocking-representative-subtypes.dl -- REPRESENTATIVE mocking policy.
+// mocking-representative-subtypes.dl -- how library abstract types are mocked.
 //
-// To stand in for a (non-universal, non-array) type, create a mock of ONE
-// eligible concrete class of it -- the first by name (TypeRank), so the choice
-// does not depend on the engine (eligibility defined in mocking-core.dl).
-// Core wires the mock in.
+// Everything about APPLICATION types (every concrete class, constructors,
+// injection of environment-only fields), universals, arrays and concrete library
+// types is in mocking-core.dl. This file only decides how LIBRARY
+// abstract/interface types without an application implementation are mocked.
 // ===========================================================================
 
 #include "mocking-core.dl"
 
-.decl RepresentativeImplRank(?type:ReferenceType, ?classRank:number)
-RepresentativeImplRank(?type, ?classRank) :-
-  EligibleConcreteImpl(_, ?type),
-  ?classRank = min ?r : { EligibleConcreteImpl(?c, ?type), TypeRank(?c, ?r) }.
+// A dispatch cover (bounded, not every subtype). For every distinct
+// implementation a call on the type can dispatch to, the first library class
+// (by name, TypeRank) dispatching to it; plus the first class overall, so marker
+// types get one. Calls on the mock reach every library method body the type can
+// dispatch to, with one mock per distinct behaviour rather than per class.
+
+// Virtual methods callable on the type, excluding java.lang.Object's (toString/
+// equals/hashCode would make every class its own behaviour).
+.decl LibraryDispatchSig(?type:ReferenceType, ?simplename:symbol, ?descriptor:MethodDescriptor)
+LibraryDispatchSig(?type, ?n, ?d) :-
+  LibraryAbstractMockType(?type),
+  basic.SubtypeOf(?type, ?decl),
+  ?decl != "java.lang.Object",
+  Method_DeclaringType(?m, ?decl),
+  !Method_Modifier("static", ?m),
+  !Method_Modifier("private", ?m),
+  Method_SimpleName(?m, ?n),
+  ?n != "<init>",
+  ?n != "<clinit>",
+  Method_Descriptor(?m, ?d).
+
+.decl LibraryCoverTarget(?type:ReferenceType, ?impl:Method)
+LibraryCoverTarget(?type, ?impl) :-
+  LibraryDispatchSig(?type, ?n, ?d),
+  ConcreteClassType(?c), basic.SubtypeOf(?c, ?type),
+  basic.MethodLookup(?n, ?d, ?c, ?impl).
+
+.decl LibraryRepRank(?type:ReferenceType, ?classRank:number)
+LibraryRepRank(?type, ?classRank) :-
+  LibraryCoverTarget(?type, ?impl),
+  ?classRank = min ?r : {
+    ConcreteClassType(?c), basic.SubtypeOf(?c, ?type), basic.MethodLookup(_, _, ?c, ?impl), TypeRank(?c, ?r)
+  }.
+LibraryRepRank(?type, ?classRank) :-
+  LibraryAbstractMockType(?type),
+  ?classRank = min ?r : { ConcreteClassType(?c), basic.SubtypeOf(?c, ?type), TypeRank(?c, ?r) }.
 
 MOCK_OBJECT_FOR_TYPE(?value, ?class, ?type) :-
-  MockSiteType(?type),
-  RepresentativeImplRank(?type, ?classRank),
+  LibraryRepRank(?type, ?classRank),
   TypeRank(?class, ?classRank),
   isClassType(?class),
-  !RefinedClass(?class),            // refined classes are represented per-instance (jackee)
   ?value = MOCK_OBJECT_OF_TYPE(?class).

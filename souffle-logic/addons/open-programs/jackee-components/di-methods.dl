@@ -111,6 +111,29 @@ mainAnalysis.VarPointsTo(?hctx, ?beanMock, ?ctx, ?param) :-
 
 PreciselyMockedVar(?param) :- DIParamResolved(?param, _).
 
+// An unresolved parameter (see "unresolved injection points" in di-resolver.dl)
+// gets every candidate; with no candidate, the core mocks it as a mock-site
+// parameter.
+.decl DIParamFallback(?param:Var, ?beanMock:Value)
+DIParamFallback(?param, ?beanMock) :-
+  DIParam(?param, ?type),
+  Var_SimpleName(?param, ?name),
+  DescFallback(?type, ?name, "", ?beanMock).
+
+mainAnalysis.VarPointsTo(?hctx, ?beanMock, ?ctx, ?param) :-
+  DIParamFallback(?param, ?beanMock),
+  mainAnalysis.isImmutableHContext(?hctx),
+  mainAnalysis.isImmutableContext(?ctx).
+
+PreciselyMockedVar(?param) :- DIParamFallback(?param, _).
+
+UnresolvedInjection(?param, "param", "ambiguous") :- DIParamFallback(?param, _).
+UnresolvedInjection(?param, "param", "no-candidate") :-
+  DIParam(?param, ?type),
+  Var_SimpleName(?param, ?name),
+  DescUnresolved(?type, ?name, ""),
+  !TypeCandidate(?type, _, _).
+
 // precise @Resource on ctor/setter: match the parameter's simple name to a
 // BeanResource entry (also supports Collection-typed injection). Mark the site.
 // The subtype fallback was removed (central covers it).

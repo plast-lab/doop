@@ -79,6 +79,12 @@ DispatchProduct(?factory, ?retType, ?concrete) :-
   isClassType(?concrete),
   !ClassModifier("abstract", ?concrete).
 
+// Provenance (output-only, main/mocking/mock-provenance.dl).
+MockObjectReason(?mock, "factory-product") :-
+  DispatchProduct(?factory, _, ?concrete),
+  ReflectiveFactoryProduces(?factory, ?concrete),
+  ProviderMockValue(?concrete, ?mock).
+
 // Run each product's no-arg constructor. A reflective factory instantiates its
 // product with Class.newInstance() / getDeclaredConstructor().newInstance(),
 // i.e. the no-arg constructor, so running it models what the runtime does.
@@ -86,9 +92,9 @@ DispatchProduct(?factory, ?retType, ?concrete) :-
 // product mock (mocking-core section 5), so its field stores populate the
 // product's fields with real objects instead of leaving them to field-mocking's
 // one-representative guess. Only reflective-factory products (joining
-// ReflectiveFactoryProduces excludes ServiceLoader providers, which keep the
-// central policy: ctors only under --sound-mocking), and only the no-arg ctor;
-// a product without one gets none run.
+// ReflectiveFactoryProduces excludes ServiceLoader providers, which are
+// constructed in frontend-service-loader.dl), and only the no-arg ctor; a
+// product without one gets none run.
 MockSiteMethod(?ctor) :-
   DispatchProduct(?factory, _, ?concrete),
   ReflectiveFactoryProduces(?factory, ?concrete),
