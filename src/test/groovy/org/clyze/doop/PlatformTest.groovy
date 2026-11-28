@@ -15,7 +15,7 @@ class PlatformTest extends Specification {
     @Unroll
     def "Platform test [#platform]"(String platform) {
         when:
-        Main.main((String[])["-i", Artifacts.HELLO_JAR,
+        Main.main2((String[])["-i", Artifacts.HELLO_JAR,
                              "-a", "context-insensitive",
                              "--id", "dry-run-${platform}",
                              "--platform", platform,

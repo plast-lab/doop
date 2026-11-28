@@ -104,11 +104,11 @@ RepresentativesToPickFrom(?heapRepr, ?heap) :-
 
 MinRepresentativeHeapToPickFromOrdinal(?minHeapReprOrd, ?heap) :-
   RepresentativesToPickFrom(_, ?heap),
-  ?minHeapReprOrd = min ord(?heapRepr): RepresentativesToPickFrom(?heapRepr, ?heap).
+  ?minHeapReprOrd = min ?hr : { RepresentativesToPickFrom(?heapRepr, ?heap), HeapRank(?heapRepr, ?hr) }.
 
 HeapAllocation_Merge(?heap, ?mergeHeap) :-
   isHeapAllocation(?mergeHeap),
-  ord(?mergeHeap) = ?minHeapReprOrd,
+  HeapRank(?mergeHeap, ?minHeapReprOrd),
   MinRepresentativeHeapToPickFromOrdinal(?minHeapReprOrd, ?heap).
 #endif // NO_MERGES
 
@@ -249,12 +249,12 @@ FieldOfClassMatchesString(?heap, ?type) :-
 StringGreaterThanOtherInSameClass(?heap1, ?heap2, ?type) :-
   FieldOfClassMatchesString(?heap1, ?type),
   FieldOfClassMatchesString(?heap2, ?type),
-  ord(?heap1) > ord(?heap2).
+  HeapRank(?heap1, ?hr1), HeapRank(?heap2, ?hr2), ?hr1 > ?hr2.
 
 StringGreaterThanOtherInSameClass(?heap1, ?heap2, ?type) :-
   MethodOfClassMatchesString(?heap1, ?type),
   MethodOfClassMatchesString(?heap2, ?type),
-  ord(?heap1) > ord(?heap2).
+  HeapRank(?heap1, ?hr1), HeapRank(?heap2, ?hr2), ?hr1 > ?hr2.
 
 .decl MinStringOrdinalGreaterThanOtherInSameClass(?heap:HeapAllocation, ?heapGreaterOrd:number, ?type:Type)
 .decl StringImmediatelyLessThanOtherInClass(?heap:HeapAllocation, ?type:Type, ?heapGreater:HeapAllocation)
@@ -262,12 +262,12 @@ StringGreaterThanOtherInSameClass(?heap1, ?heap2, ?type) :-
 
 MinStringOrdinalGreaterThanOtherInSameClass(?heap, ?heapGreaterOrd, ?type) :-
   StringGreaterThanOtherInSameClass(_, ?heap, ?type),
-  ?heapGreaterOrd = min ord(?h): StringGreaterThanOtherInSameClass(?h, ?heap, ?type).
+  ?heapGreaterOrd = min ?hr : { StringGreaterThanOtherInSameClass(?h, ?heap, ?type), HeapRank(?h, ?hr) }.
 
 StringImmediatelyLessThanOtherInClass(?heap, ?type, ?heapGreater) :-
   MinStringOrdinalGreaterThanOtherInSameClass(?heap, ?heapGreaterOrd, ?type),
   isHeapAllocation(?heapGreater),
-  ord(?heapGreater) = ?heapGreaterOrd.
+  HeapRank(?heapGreater, ?heapGreaterOrd).
 
 StringImmediatelyGreaterThanOtherInSomeClass(?heapGreater, ?heap) :-
   StringImmediatelyLessThanOtherInClass(?heap, _, ?heapGreater).
@@ -293,12 +293,12 @@ StringColorForHeap(?heap, ?color) :-
 
 MinStringOrdinalForColor(?color, ?minHeapOrd) :-
   StringColorForHeap(_, ?color),
-  ?minHeapOrd = min ord(?heap): StringColorForHeap(?heap, ?color).
+  ?minHeapOrd = min ?hr : { StringColorForHeap(?heap, ?color), HeapRank(?heap, ?hr) }.
 
 StringRepresentativeForColor(?color, ?mergeHeap) :-
   MinStringOrdinalForColor(?color, ?minHeapOrd),
   isHeapAllocation(?mergeHeap),
-  ord(?mergeHeap) = ?minHeapOrd.
+  HeapRank(?mergeHeap, ?minHeapOrd).
 
 #ifndef NO_MERGES
 HeapRepresentative(?mergeHeap, ?heap) :-
@@ -685,12 +685,12 @@ MethodAndTypeToMergedHeap(?heap, ?heaptype, ?meth) :-
 
 MinHeapOrdinalPerMethodAndType(?minHeapOrd, ?type, ?meth) :-
   MethodAndTypeToMergedHeap(_, ?type, ?meth),
-  ?minHeapOrd = min ord(?heap): MethodAndTypeToMergedHeap(?heap, ?type, ?meth).
+  ?minHeapOrd = min ?hr : { MethodAndTypeToMergedHeap(?heap, ?type, ?meth), HeapRank(?heap, ?hr) }.
 
 MethodAndTypeToRepresentative(?type, ?meth, ?representativeHeap) :-
   isHeapAllocation(?representativeHeap),
   MinHeapOrdinalPerMethodAndType(?minHeapOrd, ?type, ?meth),
-  ord(?representativeHeap) = ?minHeapOrd.
+  HeapRank(?representativeHeap, ?minHeapOrd).
 
 #ifndef NO_MERGES
 HeapRepresentative(?representativeHeap, ?heap) :-
@@ -725,12 +725,12 @@ ClassAndTypeToMergedHeap(?heap, ?heaptype, ?class) :-
 
 MinHeapOrdinalPerClassAndType(?minHeapOrd, ?type, ?class) :-
   ClassAndTypeToMergedHeap(_, ?type, ?class),
-  ?minHeapOrd = min ord(?heap): ClassAndTypeToMergedHeap(?heap, ?type, ?class).
+  ?minHeapOrd = min ?hr : { ClassAndTypeToMergedHeap(?heap, ?type, ?class), HeapRank(?heap, ?hr) }.
 
 ClassAndTypeToRepresentative(?type, ?class, ?representativeHeap) :-
   isHeapAllocation(?representativeHeap),
   MinHeapOrdinalPerClassAndType(?minHeapOrd, ?type, ?class),
-  ord(?representativeHeap) = ?minHeapOrd.
+  HeapRank(?representativeHeap, ?minHeapOrd).
 
 #ifndef NO_MERGES
 HeapRepresentative(?representativeHeap, ?heap) :-
@@ -765,12 +765,12 @@ PackageAndTypeToMergedHeap(?heap, ?heaptype, ?packageName) :-
 
 MinHeapOrdinalPerPackageAndType(?minHeapOrd, ?type, ?packageName) :-
   PackageAndTypeToMergedHeap(_, ?type, ?packageName),
-  ?minHeapOrd = min ord(?heap): PackageAndTypeToMergedHeap(?heap, ?type, ?packageName).
+  ?minHeapOrd = min ?hr : { PackageAndTypeToMergedHeap(?heap, ?type, ?packageName), HeapRank(?heap, ?hr) }.
 
 PackageAndTypeToRepresentative(?type, ?packageName, ?representativeHeap) :-
   isHeapAllocation(?representativeHeap),
   MinHeapOrdinalPerPackageAndType(?minHeapOrd, ?type, ?packageName),
-  ord(?representativeHeap) = ?minHeapOrd.
+  HeapRank(?representativeHeap, ?minHeapOrd).
 
 #ifndef NO_MERGES
 HeapRepresentative(?representativeHeap, ?heap) :-
@@ -802,12 +802,12 @@ TypeToMergedHeap(?heap, ?heaptype) :-
 
 MinHeapOrdinalPerType(?minHeapOrd, ?type) :-
   TypeToMergedHeap(_, ?type),
-  ?minHeapOrd = min ord(?heap): TypeToMergedHeap(?heap, ?type).
+  ?minHeapOrd = min ?hr : { TypeToMergedHeap(?heap, ?type), HeapRank(?heap, ?hr) }.
 
 TypeToRepresentative(?type, ?representativeHeap) :-
   isHeapAllocation(?representativeHeap),
   MinHeapOrdinalPerType(?minHeapOrd, ?type),
-  ord(?representativeHeap) = ?minHeapOrd.
+  HeapRank(?representativeHeap, ?minHeapOrd).
 
 #ifndef NO_MERGES
 HeapRepresentative(?representativeHeap, ?heap) :-
@@ -897,12 +897,12 @@ PackageAndTypeToStringFactoryHeap(?heap, ?heaptype, ?packageName) :-
 
 MinStringFactoryHeapOrdinalPerPackageAndType(?minHeapOrd, ?type, ?packageName) :-
   PackageAndTypeToStringFactoryHeap(_, ?type, ?packageName),
-  ?minHeapOrd = min ord(?heap): PackageAndTypeToStringFactoryHeap(?heap, ?type, ?packageName).
+  ?minHeapOrd = min ?hr : { PackageAndTypeToStringFactoryHeap(?heap, ?type, ?packageName), HeapRank(?heap, ?hr) }.
 
 PackageAndTypeToStringFactoryRepresentative(?type, ?packageName, ?representativeHeap) :-
   MinStringFactoryHeapOrdinalPerPackageAndType(?minHeapOrd, ?type, ?packageName),
   StringFactoryHeap(?representativeHeap),
-  ord(?representativeHeap) = ?minHeapOrd.
+  HeapRank(?representativeHeap, ?minHeapOrd).
 
 // current policy: all string builders merged per-package
 #ifndef NO_MERGES
@@ -977,13 +977,13 @@ ExceptionTypeToHeap(?heap, ?heaptype) :-
 
 ExceptionHeapTypeRepresentativeOrdinal(?type, ?representativeHeapOrd) :-
   ExceptionTypeToHeap(_, ?type),
-  ?representativeHeapOrd = min ord(?heap) : ExceptionTypeToHeap(?heap, ?type).
+  ?representativeHeapOrd = min ?hr : { ExceptionTypeToHeap(?heap, ?type), HeapRank(?heap, ?hr) }.
 
 #ifndef NO_MERGES
 HeapRepresentative(?representativeHeap, ?heap) :-
   ExceptionHeapTypeRepresentativeOrdinal(?heaptype, ?representativeHeapOrd),
   ExceptionTypeToHeap(?heap, ?heaptype),
-  ord(?representativeHeap) = ?representativeHeapOrd,
+  HeapRank(?representativeHeap, ?representativeHeapOrd),
   isHeapAllocation(?representativeHeap).
 #endif // NO_MERGES
 #endif // SEPARATE_EXCEPTION_OBJECTS

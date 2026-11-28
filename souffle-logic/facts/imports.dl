@@ -290,6 +290,10 @@ AssignReturnValue(?invocation, ?to) :-
 .decl _ClassArtifact(?artifact:symbol, ?className:ReferenceType, ?subArtifact:symbol, ?size:number)
 .input _ClassArtifact(filename="Class-Artifact.facts")
 
+// PlatformArtifact: the artifacts that are the platform (the JDK, android.jar)
+.decl _PlatformArtifact(?artifact:symbol)
+.input _PlatformArtifact(filename="Platform-Artifact.facts")
+
 // PackageArtifact
 .decl _PackageArtifact(?artifact:symbol, ?packageName:symbol)
 
@@ -305,6 +309,17 @@ HeapAllocation_Type(?id, ?type) :-
   _NormalHeap(?id, ?type).
 
 isClassType("java.lang.String").
+
+
+// TypeRank, HeapRank: types and heap allocations numbered in the order of
+// their names (written by Doop after fact generation). Use these, never ord(),
+// to pick one element of a set: ord() is the engine's string-interning order.
+
+.decl TypeRank(?type:ReferenceType, ?rank:number)
+.input TypeRank(filename="TypeRank.facts")
+
+.decl HeapRank(?heap:HeapAllocation, ?rank:number)
+.input HeapRank(filename="HeapRank.facts")
 
 
 // StringConstant

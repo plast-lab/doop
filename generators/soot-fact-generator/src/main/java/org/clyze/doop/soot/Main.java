@@ -9,6 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import org.apache.log4j.Logger;
+import org.clyze.doop.common.SessionCounter;
 import org.clyze.doop.common.ArtifactEntry;
 import org.clyze.doop.common.ArtifactScanner;
 import org.clyze.doop.common.Database;
@@ -16,6 +17,7 @@ import org.clyze.doop.common.DoopErrorCodeException;
 import org.clyze.doop.common.Phantoms;
 import org.clyze.doop.soot.android.AndroidSupport_Soot;
 import org.clyze.utils.JHelper;
+import soot.PhaseOptions;
 import soot.Scene;
 import soot.SootClass;
 import soot.SootMethod;
@@ -130,11 +132,11 @@ public class Main {
             SootDriver.waitForExecutorShutdown(java.getExecutor());
             int numErrors = errors.intValue();
             if (numErrors != 0) {
-                // Fact-gen errors are always tolerated: a Throwable escaping
-                // invokeSoot (e.g. Soot failing to build a Jimple body for a
-                // JiBX-generated marshalling method) is reported but never
-                // aborts the run.
-                System.err.println("WARNING: fact generation ignored " + numErrors + " top-level error(s); continuing with the facts produced.");
+                // Errors in single methods are tolerated inside fact generation.
+                // A Throwable escaping invokeSoot means the Soot stage itself
+                // failed (e.g. a class that cannot be loaded), so the facts are
+                // incomplete: fail instead of handing them to the analysis.
+                throw DoopErrorCodeException.error36("Soot fact generation failed with " + numErrors + " top-level error(s), facts would be incomplete");
             }
 
             if (writeFacts && sootParameters._scanNativeCode)
@@ -143,7 +145,7 @@ public class Main {
             if (sootParameters._generateJimple)
                 generateIR(java, scene, sootData.classes, sootData.driver, outDir);
 
-            System.err.println("Methods without active bodies encountered (and reset): " + FactGenerator.methodsWithoutActiveBodies.get());
+            System.err.println("Method bodies built during fact generation: " + FactGenerator.methodsWithoutActiveBodies.get());
 
             if (sootParameters._lowMem) {
                 System.out.println("Releasing Soot structures...");
@@ -199,7 +201,13 @@ public class Main {
 
         Set<SootClass> classes = ConcurrentHashMap.<SootClass>newKeySet();
         ClassAdder classAdder = (android != null) ? android : java;
-        if (sootParameters._factsSubSet == SootParameters.FactsSubSet.APP) {
+        if (sootParameters._fullFacts) {
+            // All classes; a facts subset, if also given, still prunes them below.
+            System.out.println("Full facts: all classes of all archives (application, dependencies, platform).");
+            classAdder.addAppClasses(classes, scene);
+            classAdder.addDepClasses(classes, scene);
+            classAdder.addLibClasses(classes, scene);
+        } else if (sootParameters._factsSubSet == SootParameters.FactsSubSet.APP) {
             System.out.println("WARNING: only application classes will be used.");
             classAdder.addAppClasses(classes, scene);
             // Add library classes, to be pruned later.
@@ -255,33 +263,9 @@ public class Main {
             }
         }
 
-        // Skip "retrieve all bodies" step for Android apps.
-        if (android == null) {
-            long time1 = System.currentTimeMillis();
-            try {
-                DoopAddons.retrieveAllSceneClassesBodies(sootParameters._cores);
-                // The call below has a problem (only retrieves app method bodies).
-                // DoopAddons.retrieveAllBodies();
-                long time2 = System.currentTimeMillis();
-                System.out.println("Retrieved all bodies (time: " + ((time2 - time1)/1000) + ")");
-            } catch (Exception ex) {
-                System.err.println("Error: not all bodies retrieved.");
-                ex.printStackTrace();
-            } finally {
-                // Soot's parallel body retrieval propagates a worker failure
-                // (e.g. a method body it cannot build, such as a JiBX-generated
-                // marshalling adapter) by interrupting this thread. If that
-                // interrupt flag is left set, the very next executor await in
-                // generateInParallel() throws InterruptedException immediately
-                // and aborts the whole run (Doop error #10) -- losing facts for
-                // every other method. Clear it so a single un-buildable body
-                // only costs that one method, which Doop already tolerates as a
-                // "method without active body".
-                if (Thread.interrupted())
-                    System.err.println("Cleared stale interrupt after body retrieval.");
-            }
-        }
-
+        // Bodies are built lazily, one method at a time, during fact
+        // generation and released after their facts are written (see
+        // SootDriver.generateFacts).
         boolean reportPhantoms = sootParameters._reportPhantoms;
         boolean moreStrings = sootParameters._extractMoreStrings;
         Representation rep = new Representation();
@@ -298,14 +282,33 @@ public class Main {
             if (android != null && sootParameters._legacyAndroidProcessing)
                 android.writeComponents(writer);
 
+            // Shared Soot state that body construction would otherwise
+            // initialize lazily, from several threads at once: the class
+            // hierarchy and the phase option that 'use-original-names' sets.
             scene.getOrMakeFastHierarchy();
+            if (PhaseOptions.getBoolean(PhaseOptions.v().getPhaseOptions("jb"), "use-original-names"))
+                PhaseOptions.v().setPhaseOptionIfUnset("jb.lns", "only-stack-locals");
 
-            // avoids a concurrent modification exception, since we may
-            // later be asking soot to add phantom classes to the scene's hierarchy
-            driver.generateInParallel(classes);
+            // Close the Scene: create, on this thread and in a fixed order, every
+            // member that resolving the bodies' references would create (see
+            // MemberRefResolver), so that parallel body construction only looks
+            // members up.
+            long membersBefore = MemberRefResolver.memberCount(scene);
+            int[] refs = MemberRefResolver.resolveAll(scene, classes);
+            long membersClosed = MemberRefResolver.memberCount(scene);
+            java.util.Set<Object> closedMembers = MemberRefResolver.members(scene);
+            System.out.println("Member references resolved before body construction: " + refs[0] +
+                               " (" + refs[1] + " unresolvable), members created: " + (membersClosed - membersBefore));
+
+            driver.generateFacts(classes);
+
+            List<String> lateMembers = MemberRefResolver.newMembers(scene, closedMembers);
+            System.out.println("Members created during body construction: " + lateMembers.size());
+            for (String m : lateMembers)
+                System.out.println("  late member: " + m);
 
             logDebug(logger, "Checking class heaps for missing types...");
-            Collection<String> unrecorded = new ClassHeapFinder().getUnrecordedTypes(classes);
+            Collection<String> unrecorded = driver.classHeaps().getUnrecordedTypes(classes);
             if (!unrecorded.isEmpty()) {
                 // If option is set (--thorough-fact-gen), fail and notify the
                 // caller that fact generation must run again with these classes
@@ -433,6 +436,7 @@ public class Main {
         // Revert to standard output dir for the rest of the code.
         Options.v().set_output_dir(outDir);
     }
+
 }
 
 // Intermediate data structure, communicates values between stages.
@@ -440,4 +444,5 @@ class SootData {
     public Set<SootClass> classes;
     public SootDriver driver;
     public FactWriter writer;
+
 }

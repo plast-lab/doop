@@ -11,7 +11,7 @@ class TestSoundMayPointsTo extends DoopSpec {
                      '-a', 'sound-may-point-to',
                      '--id', 'sound-may-point-to-test',
                      '-Ldebug']
-        Main.main((String[])args)
+        Main.main2((String[])args)
         Analysis analysis = Main.analysis
 
         then:

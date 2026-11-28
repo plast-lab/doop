@@ -19,7 +19,7 @@ class OpenProgramsAndHeapDL extends Specification {
 					 "--heapdl-file", Artifacts.ANDROIDTERM_HPROF,
 					 "--id", "test-android-androidterm-open-programs-heapdl",
 					 "--dry-run"]
-		Main.main((String[])args)
+		Main.main2((String[])args)
 		Analysis analysis = Main.analysis
 
 		then:

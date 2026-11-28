@@ -13,14 +13,14 @@ class TestFactsReuse extends DoopSpec {
     def "Facts reuse + CHA"() {
         when:
         // Generate facts and stop.
-        Main.main((String[])
+        Main.main2((String[])
                   ['-i', Artifacts.HELLO_JAR,
                    '--id', helloFacts,
                    '--facts-only',
                    '--server-cha', '--generate-jimple'])
         Analysis analysis1 = Main.analysis
         // Reuse facts from previous step.
-        Main.main((String[])
+        Main.main2((String[])
                   ['--input-id', helloFacts,
                    '-a', 'types-only',
                    '--regex', 'Main',

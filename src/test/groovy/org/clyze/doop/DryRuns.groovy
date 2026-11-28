@@ -30,7 +30,7 @@ class DryRuns extends DoopSpec {
             default:
                 args.addAll(['--stats', 'full', '--server-logic' ])
         }
-        Main.main(args as String[])
+        Main.main2(args as String[])
         Analysis analysis = Main.analysis
 
         then:

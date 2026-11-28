@@ -40,6 +40,16 @@ public abstract class Driver<C> {
         errors++;
     }
 
+    // A worker that dies on a JVM Error (OutOfMemoryError, StackOverflowError,
+    // ...) takes the rest of its class group with it: the run must fail rather
+    // than continue with facts that silently miss those classes.
+    private volatile Throwable fatal = null;
+
+    public synchronized void markFatal(Throwable t) {
+        if (fatal == null)
+            fatal = t;
+    }
+
     public synchronized boolean errorsExist() {
         return (errors > 0);
     }
@@ -79,6 +89,11 @@ public abstract class Driver<C> {
 
     private void shutdownExecutor() throws DoopErrorCodeException {
         waitForExecutorShutdown(_executor);
+        if (fatal != null) {
+            Throwable t = fatal;
+            fatal = null;
+            throw DoopErrorCodeException.error36("fact generation failed, facts would be incomplete: " + t);
+        }
         if (errorsExist()) {
             // Fact-gen errors are always tolerated: warn with the total count of
             // ignored (un-buildable) methods and continue.

@@ -189,7 +189,6 @@ class FactWriter extends JavaFactWriter {
     private final Phantoms phantoms;
     private final Collection<Object> seenPhantoms = ConcurrentHashMap.newKeySet();
     private final Map<Unit, Collection<InstrInfo>> expandedPhiNodes = new ConcurrentHashMap<>();
-
     FactWriter(Database db, SootParameters params, Representation rep, Phantoms phantoms) {
         super(db, params);
         this._rep = rep;
@@ -1015,18 +1014,19 @@ class FactWriter extends JavaFactWriter {
     private void writeActualParams(Stmt stmt, InstrInfo ii, InvokeExpr expr,
                                    String invokeExprRepr, SessionCounter session) {
         String methodId = ii.methodId;
-        boolean isInvokedynamic = (expr instanceof DynamicInvokeExpr);
         int count = expr.getArgCount();
         for (int i = 0; i < count; i++) {
-            // Undo Soot's reverse order of invokedynamic arguments.
-            Value arg = isInvokedynamic ? expr.getArg(count-i-1) : expr.getArg(i);
+            // Soot >= 3.1.0 (b935b169dd7, 2018) gives invokedynamic arguments in
+            // bytecode order; un-reversing them here swapped e.g. the captured
+            // receiver and the next captured value of instance lambdas.
+            Value arg = expr.getArg(i);
             Value v = writeActualParam(stmt, ii, expr, session, arg, i);
             if (v instanceof Local)
                 writeActualParam(i, invokeExprRepr, _rep.local(methodId, (Local)v));
             else
                 throw new RuntimeException("Actual parameter is not a local: " + v + " " + v.getClass());
         }
-        if (isInvokedynamic) {
+        if (expr instanceof DynamicInvokeExpr) {
             DynamicInvokeExpr di = (DynamicInvokeExpr)expr;
             for (int j = 0; j < di.getBootstrapArgCount(); j++) {
                 Value v = di.getBootstrapArg(j);
@@ -1066,6 +1066,7 @@ class FactWriter extends JavaFactWriter {
             writeDynamicInvoke((DynamicInvokeExpr) expr, ii.index, insn, methodId);
         else {
             String methodSig = invokeMethodSig(insn, declClass, simpleName, exprMethodRef, expr);
+            ensureMethodFact(expr);
             if (expr instanceof StaticInvokeExpr)
                 _db.add(STATIC_METHOD_INV, insn, str(ii.index), methodSig, methodId);
             else if (expr instanceof VirtualInvokeExpr || expr instanceof InterfaceInvokeExpr)
@@ -1088,6 +1089,55 @@ class FactWriter extends JavaFactWriter {
             return _rep.signature(expr.getMethod());
     }
 
+    // The invoked method may have been resolved to a receiver type that only
+    // inherits it (e.g. a method reference whose declaring class does not
+    // declare the method itself). Such a SootMethod is never visited by
+    // FactGenerator.generate(), so no _Method fact is emitted for its signature
+    // and the logic cannot derive the invocation's simple name/descriptor for
+    // dispatch. Emit the fact here when needed.
+    private void ensureMethodFact(InvokeExpr expr) {
+        if (expr instanceof DynamicInvokeExpr)
+            return;
+        SootMethod m;
+        try {
+            m = expr.getMethod();
+        } catch (RuntimeException e) {
+            return;
+        }
+        SootClass dc = m.getDeclaringClass();
+        // The resolved SootMethod may itself be a phantom placeholder that Soot
+        // attached to a real class (e.g. an invokeinterface whose ref class only
+        // inherits the method): FactGenerator.generate() skips phantom methods,
+        // so no _Method fact would ever be emitted for this signature.
+        // Alternatively it can be an unresolved-call stub synthesized by Soot
+        // (createUnresolvedErrorMethod: a concrete method whose body only throws
+        // NoSuchMethodError) and attached to its declaring class during body
+        // conversion. (Methods Soot attaches during body conversion are
+        // declared by the declarations pass, which runs after all bodies.)
+        if (m.isPhantom() || dc.isPhantom() || !dc.declaresMethod(m.getSubSignature()) || isUnresolvedCallStub(m)) {
+            // No body will ever be generated for such a placeholder: mark it
+            // abstract so the logic cannot select it as a dispatch target
+            // (MethodImplemented excludes abstract).
+            writeMethodModifier(writeMethod(m), "abstract");
+        }
+    }
+
+    // True when this method is a stand-in synthesized by Soot for an
+    // unresolvable call: a concrete method whose body only throws
+    // NoSuchMethodError. Such stubs are attached to their declaring class
+    // during body conversion and may postdate that class's fact-generation
+    // pass, so they would otherwise never get a _Method fact.
+    private static boolean isUnresolvedCallStub(SootMethod m) {
+        try {
+            if (m.isAbstract() || m.isNative() || !m.hasActiveBody())
+                return false;
+            String body = m.getActiveBody().getUnits().toString();
+            return body.contains("NoSuchMethodError") && body.contains("does not exist!");
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
     private String getBootstrapSig(DynamicInvokeExpr di) {
         SootMethodRef bootstrapMeth = di.getBootstrapMethodRef();
         if (bootstrapMeth.getDeclaringClass().isPhantom()) {
@@ -1101,7 +1151,7 @@ class FactWriter extends JavaFactWriter {
 
     private void writeDynamicInvoke(DynamicInvokeExpr di, int index, String insn, String methodId) {
         SootMethodRef dynInfo = di.getMethodRef();
-        SigInfo dynSig = new SigInfo(dynInfo, true);
+        SigInfo dynSig = new SigInfo(dynInfo, false);  // bytecode order, like the arguments (see writeActualParams)
         for (int pIdx = 0; pIdx < dynSig.arity; pIdx++)
             writeInvokedynamicParameterType(insn, pIdx, dynInfo.getParameterType(pIdx).toString());
         writeInvokedynamic(insn, index, getBootstrapSig(di), dynInfo.getName(), dynSig.retType, dynSig.arity, dynSig.paramTypes, di.getHandleTag(), methodId);

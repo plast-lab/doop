@@ -34,7 +34,14 @@ class FactGenerator implements Runnable {
     private final SootParameters sootParameters;
     private final SootDriver _driver;
 
-    FactGenerator(FactWriter writer, Set<SootClass> sootClasses, SootDriver driver, SootParameters sootParameters, Phantoms phantoms)
+    /** The two passes of fact generation, see {@link SootDriver}. */
+    enum Pass { BODIES, DECLARATIONS }
+
+    private final Pass _pass;
+    private final ClassHeapFinder _classHeaps;
+
+    FactGenerator(FactWriter writer, Set<SootClass> sootClasses, SootDriver driver, SootParameters sootParameters,
+                  Phantoms phantoms, Pass pass, ClassHeapFinder classHeaps)
     {
         this._writer = writer;
         this._sootClasses = sootClasses;
@@ -42,11 +49,98 @@ class FactGenerator implements Runnable {
         this._ssa = sootParameters._ssa;
         this.phantoms = phantoms;
         this._driver = driver;
+        this._pass = pass;
+        this._classHeaps = classHeaps;
     }
 
     @Override
     public void run() {
         for (SootClass _sootClass : _sootClasses) {
+            try {
+                if (_pass == Pass.BODIES)
+                    generateBodies(_sootClass);
+                else
+                    generate(_sootClass);
+            } catch (RuntimeException ex) {
+                if (isWriteFailure(ex)) {
+                    _driver.markFatal(ex);
+                    throw ex;
+                }
+                // As for methods: report the class, count it, and go on with
+                // the other classes of this group (they used to be dropped).
+                System.err.println("Error while processing class: " + _sootClass + ": " + ex);
+                _driver.markError();
+            } catch (Throwable t) {
+                _driver.markFatal(t);
+                throw t;
+            }
+        }
+    }
+
+    /**
+     * A failure to write facts (e.g. a full disk; Database.add wraps the
+     * IOException) is not an un-buildable method: tolerating it would drop
+     * facts silently.
+     */
+    static boolean isWriteFailure(Throwable t) {
+        for (Throwable c = t; c != null; c = c.getCause() == c ? null : c.getCause())
+            if (c instanceof java.io.IOException)
+                return true;
+        return false;
+    }
+
+    /**
+     * Pass 1: builds the body of every method of the class, writes its
+     * instruction facts, records its class constants and releases it.
+     */
+    private void generateBodies(SootClass _sootClass) {
+        for (SootMethod m : new ArrayList<>(_sootClass.getMethods()))
+            generateBodyOf(m);
+    }
+
+    /**
+     * Builds and processes the body of a method, once: the driver records
+     * which methods were processed, so that methods added to a class after
+     * its pass-1 iteration can be caught up (see SootDriver.generateFacts).
+     */
+    void generateBodyOf(SootMethod m) {
+        if (m.isPhantom() || m.isAbstract() || m.isNative() || !_driver.claimBody(m))
+            return;
+        try {
+            generateBody(m);
+        } catch (Throwable t) {
+            // Fact-gen errors are always tolerated: report the
+            // un-buildable method, count it (for the end-of-run summary
+            // warning), and continue with the next one.
+            if (t instanceof Error && !(t instanceof LinkageError)) {
+                _driver.markFatal(t);
+                throw (Error) t;
+            }
+            if (isWriteFailure(t)) {
+                _driver.markFatal(t);
+                throw t instanceof RuntimeException ? (RuntimeException) t : new RuntimeException(t);
+            }
+            // A stand-in that Soot attached without any method source (e.g. a
+            // copy of an inherited interface default method on an implementing
+            // class) never gets a body: mark it abstract so dispatch reaches the
+            // real implementation instead of a bodyless method. A real method
+            // whose body failed to build stays concrete: marking it abstract
+            // would redirect its calls to the superclass's implementation.
+            if (m.getSource() == null)
+                _writer.writeMethodModifier(_writer._rep.signature(m), "abstract");
+            String msg = "Error while processing method: " + m + ": " + t.getMessage();
+            System.err.println(msg);
+            _driver.markError();
+        }
+    }
+
+    /**
+     * Pass 2: class, field and method declaration facts. It runs after all
+     * bodies are built, so it sees every member that body construction added
+     * to the Scene, whatever the thread timing.
+     */
+    private void generate(SootClass _sootClass) {
+        {
             _writer.writeClassOrInterfaceType(_sootClass);
 
             for (String mod : getModifiers(_sootClass.getModifiers(), false))
@@ -65,22 +159,17 @@ class FactGenerator implements Runnable {
             _sootClass.getFields().forEach(this::generate);
 
             for (SootMethod m : new ArrayList<>(_sootClass.getMethods())) {
-                SessionCounter session = new SessionCounter();
                 try {
-                    generate(m, session);
+                    generate(m);
                 } catch (Throwable t) {
-                    // Map<Thread,StackTraceElement[]> liveThreads = Thread.getAllStackTraces();
-                    // for (Iterator<Thread> i = liveThreads.keySet().iterator(); i.hasNext(); ) {
-                    //     Thread key = i.next();
-                    //     System.err.println("Thread " + key.getName());
-                    //     StackTraceElement[] trace = liveThreads.getLibrary(key);
-                    //     for (int j = 0; j < trace.length; j++) {
-                    //         System.err.println("\tat " + trace[j]);
-                    //     }
-                    // }
-                    // Fact-gen errors are always tolerated: report the
-                    // un-buildable method, count it (for the end-of-run summary
-                    // warning), and continue with the next one.
+                    if (t instanceof Error && !(t instanceof LinkageError)) {
+                        _driver.markFatal(t);
+                        throw (Error) t;
+                    }
+                    if (isWriteFailure(t)) {
+                        _driver.markFatal(t);
+                        throw t instanceof RuntimeException ? (RuntimeException) t : new RuntimeException(t);
+                    }
                     String msg = "Error while processing method: " + m + ": " + t.getMessage();
                     System.err.println(msg);
                     _driver.markError();
@@ -163,7 +252,8 @@ class FactGenerator implements Runnable {
         return false;
     }
 
-    void generate(SootMethod m, SessionCounter session) {
+    /** Declaration facts of a method (pass 2). */
+    void generate(SootMethod m) {
         String methodId = _writer.writeMethod(m);
 
         if (m.isPhantom()) {
@@ -190,40 +280,51 @@ class FactGenerator implements Runnable {
 
         for(SootClass clazz: m.getExceptions())
             _writer.writeMethodDeclaresException(m, clazz);
+    }
 
-        if(!(m.isAbstract() || m.isNative())) {
-            if(!m.hasActiveBody()) {
-                // This instruction is the bottleneck of
-                // soot-fact-generation.
-                // synchronized(Scene.v()) {
-                m.retrieveActiveBody();
-                // } // synchronizing so broadly = giving up on Soot's races
-
-                // System.err.println("Found method without active body: " + m.getSignature());
-                methodsWithoutActiveBodies.incrementAndGet();
-            }
-
-            Body b0 = m.getActiveBody();
-            try {
-                if (b0 != null) {
-                    Body b = b0;
-                    if (_ssa) {
-                        b = Shimple.v().newBody(b);
-                        m.setActiveBody(b);
-                    }
-                    DoopRenamer.transform(b);
-                    generate(m, b, session);
-                    // If the Shimple body is not needed anymore, put
-                    // back original body. This saves some memory.
-                    if (sootParameters._lowMem && !sootParameters._generateJimple)
-                        m.setActiveBody(b0);
-                }
-            } catch (RuntimeException ex) {
-                System.err.println("Fact generation failed for method " + m.getSignature() + ".");
-                ex.printStackTrace();
-                throw ex;
-            }
+    /**
+     * Body facts of a method (pass 1). The body is built here, on first use,
+     * and released once its facts are written, so only the bodies being
+     * processed are in memory. Bodies are kept only when Jimple/Shimple
+     * output is requested, since that runs after fact generation.
+     */
+    private void generateBody(SootMethod m) {
+        try {
+            Body b0 = buildBody(m);
+            if (b0 == null)
+                return;
+            Body b = _ssa ? shimplify(m, b0) : b0;
+            DoopRenamer.transform(b);
+            generate(m, b, new SessionCounter());
+            _classHeaps.scan(b);
+            // A kept body is the one the facts were written from (Shimple with
+            // --ssa, renamed by DoopRenamer), so the Jimple/Shimple output names
+            // what the facts name; other bodies are released below.
+        } catch (RuntimeException ex) {
+            System.err.println("Fact generation failed for method " + m.getSignature() + ".");
+            ex.printStackTrace();
+            throw ex;
+        } finally {
+            if (!keepBodies())
+                m.releaseActiveBody();
         }
+    }
+
+    private boolean keepBodies() { return sootParameters._generateJimple; }
+
+    private Body buildBody(SootMethod m) {
+        if (!m.hasActiveBody()) {
+            // This instruction is the bottleneck of soot-fact-generation.
+            m.retrieveActiveBody();
+            methodsWithoutActiveBodies.incrementAndGet();
+        }
+        return m.getActiveBody();
+    }
+
+    private static Body shimplify(SootMethod m, Body b0) {
+        Body b = Shimple.v().newBody(b0);
+        m.setActiveBody(b);
+        return b;
     }
 
     /**

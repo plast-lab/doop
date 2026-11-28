@@ -1,10 +1,12 @@
 package org.clyze.doop.soot;
 
 import java.util.Collection;
-import java.util.LinkedList;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import org.clyze.utils.TypeUtils;
 import soot.ArrayType;
+import soot.Body;
 import soot.BooleanType;
 import soot.ByteType;
 import soot.CharType;
@@ -15,7 +17,6 @@ import soot.LongType;
 import soot.RefType;
 import soot.ShortType;
 import soot.SootClass;
-import soot.SootMethod;
 import soot.Type;
 import soot.Unit;
 import soot.Value;
@@ -25,38 +26,29 @@ import soot.jimple.ClassConstant;
 import soot.jimple.InvokeExpr;
 import soot.jimple.InvokeStmt;
 
+/**
+ * Collects the types that appear in class constants of method bodies. Bodies
+ * are scanned as they are built during fact generation (they are released
+ * afterwards), from several threads.
+ */
 class ClassHeapFinder {
-    private final Collection<String> recordedTypes = new LinkedList<>();
-    private final Collection<String> classHeapTypes = new LinkedList<>();
+    private final Set<String> classHeapTypes = ConcurrentHashMap.newKeySet();
 
     /**
-     * Returns the heap types that appear in class constants.
+     * Returns the heap types that appear in class constants of the scanned
+     * bodies but are not among the given classes.
      *
      * @return the heap types
      */
     public Collection<String> getUnrecordedTypes(Iterable<SootClass> classes) {
-        scan(classes);
-        Collection<String> ret = ConcurrentHashMap.<String>newKeySet();
-        ret.addAll(classHeapTypes);
-        ret.removeAll(recordedTypes);
+        Collection<String> ret = new TreeSet<>(classHeapTypes);
+        for (SootClass c : classes)
+            ret.remove(c.getName());
         return ret;
     }
 
-    private void scan(Iterable<SootClass> classes) {
-        for (SootClass c : classes) {
-            recordedTypes.add(c.getName());
-            for (SootMethod m : c.getMethods())
-                if (!(m.isPhantom() || m.isAbstract() || m.isNative()))
-                    scan(m);
-        }
-    }
-
-    private void scan(SootMethod m) {
-        if (!m.hasActiveBody()) {
-            m.retrieveActiveBody();
-            System.err.println("Preprocessing: found method without active body: " + m.getSignature());
-        }
-        for (Unit u : m.getActiveBody().getUnits())
+    void scan(Body b) {
+        for (Unit u : b.getUnits())
             if (u instanceof AssignStmt) {
                 Value right = ((AssignStmt)u).getRightOp();
                 if (right instanceof ClassConstant)

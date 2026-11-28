@@ -106,6 +106,7 @@ public enum PredicateFile
     PHANTOM_BASED_METHOD("PhantomBasedMethod"),
     PHANTOM_METHOD("PhantomMethod"),
     PHANTOM_TYPE("PhantomType"),
+    PLATFORM_ARTIFACT("Platform-Artifact"),
     POLYMORPHIC_INVOCATION("PolymorphicInvocation"),
     PROPERTIES("Properties"),
     REFLECTIVE_FACTORY_METHOD("ReflectiveFactoryMethod"),

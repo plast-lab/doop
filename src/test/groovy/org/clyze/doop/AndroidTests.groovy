@@ -28,7 +28,7 @@ class AndroidTests extends DoopSpec {
 					 "--platform", "android_25_fulljars",
 					 "--id", "test-android-androidterm",
 					 "--keep-spec", keepSpec, "-Ldebug"] + defaultArgs + sanityOpts
-		Main.main((String[])args)
+		Main.main2((String[])args)
 		Analysis analysis = Main.analysis
 
 		then:
@@ -55,7 +55,7 @@ class AndroidTests extends DoopSpec {
 					 "--no-standard-exports",
 					 "--Xlow-mem", "-Ldebug"] + defaultArgs
 
-		Main.main((String[])args)
+		Main.main2((String[])args)
 		Analysis analysis = Main.analysis
 
 		then:
@@ -88,7 +88,7 @@ class AndroidTests extends DoopSpec {
 					 "--platform", "android_25_fulljars",
 					 "--id", "test-android-phonograph-types-only",
 					 "--scan-native-code", "--simulate-native-returns"] + defaultArgs + sanityOpts
-		Main.main((String[])args)
+		Main.main2((String[])args)
 		Analysis analysis = Main.analysis
 
 		then:
@@ -119,7 +119,7 @@ class AndroidTests extends DoopSpec {
 					 "--id", "test-android-signal-types-only",
 					 "--scan-native-code", "--simulate-native-returns",
 					 "-Ldebug"] + defaultArgs + sanityOpts
-		Main.main((String[])args)
+		Main.main2((String[])args)
 		Analysis analysis = Main.analysis
 
 		then:
@@ -165,7 +165,7 @@ class AndroidTests extends DoopSpec {
 					 "--heapdl-file", Artifacts.ANDROIDTERM_HPROF,
 					 "--id", "test-android-androidterm-fw-heapdl",
 					 "--thorough-fact-gen", "-Ldebug"] + defaultArgs
-		Main.main((String[])args)
+		Main.main2((String[])args)
 		Analysis analysis = Main.analysis
 
 		then:
@@ -186,7 +186,7 @@ class AndroidTests extends DoopSpec {
                      "--platform", "android_25_fulljars",
                      "--id", id, "--facts-only",
                      "--Xdex", "-Ldebug"] + testExports + mode
-        Main.main((String[])args)
+        Main.main2((String[])args)
         Analysis analysis = Main.analysis
 
         then:

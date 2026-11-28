@@ -14,7 +14,7 @@ class PythonTest extends Specification {
 	@Unroll
 	def "Python test -- fact generation and analysis"(def mode) {
 		when:
-		Main.main((String[])(["-i", Artifacts.GLOVAR_PY, "-a", "context-insensitive", "--id", "glovar", "--platform", "python_2", "-Ldebug"] + mode))
+		Main.main2((String[])(["-i", Artifacts.GLOVAR_PY, "-a", "context-insensitive", "--id", "glovar", "--platform", "python_2", "-Ldebug"] + mode))
 		Analysis analysis = Main.analysis
 
 		then:

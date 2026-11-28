@@ -10,6 +10,10 @@
  */
 .decl ReachableValue(?hctx:configuration.HContext, ?value: Value)
 #ifdef CHOICE_BOUND
+// Not deterministic: which values a choice-domain keeps depends on the engine's
+// evaluation order (Souffle keeps the first tuple that arrives, which with
+// several threads depends on timing; FlowLog and other engines order work
+// differently), so --choice-bound results can differ between runs and engines.
 
 VarPointsTo(?hctx, ?value, ?ctx, ?var) :-    
   VarPointsTo_Bounded(?hctx, ?value, ?ctx, ?var, _).

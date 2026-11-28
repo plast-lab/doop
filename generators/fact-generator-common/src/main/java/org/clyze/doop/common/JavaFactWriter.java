@@ -73,6 +73,12 @@ public abstract class JavaFactWriter {
         _db.add(CLASS_ARTIFACT, artifact, className, subArtifact, str(size));
     }
 
+    /** The artifacts that are the platform (the JDK, android.jar): not inputs, not libraries. */
+    private void writePlatformArtifacts(BasicJavaSupport java, ArtifactScanner artScanner) {
+        for (String lib : new TreeSet<>(java.getPlatformLibs()))
+            _db.add(PLATFORM_ARTIFACT, artScanner.artifactName(lib));
+    }
+
     private void writePackageArtifact(String artifact, Set<String> packageNames) {
         for (String packageName : packageNames) {
             _db.add(PACKAGE_ARTIFACT, artifact, packageName);
@@ -217,6 +223,7 @@ public abstract class JavaFactWriter {
             }
         }
 
+        writePlatformArtifacts(java, artScanner);
         writeGenericFields(genericFields);
         artifactToClassMap.clear();
     }

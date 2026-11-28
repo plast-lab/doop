@@ -8,8 +8,13 @@ import org.apache.commons.io.FilenameUtils
 import org.clyze.analysis.*
 import org.clyze.doop.common.DoopErrorCodeException
 import org.clyze.doop.util.PackageUtil
+import org.clyze.doop.input.URLInputResolver
+import org.clyze.input.ChainResolver
 import org.clyze.input.DefaultInputResolutionContext
+import org.clyze.input.DirectoryResolver
+import org.clyze.input.FileResolver
 import org.clyze.input.InputResolutionContext
+import org.clyze.input.IvyResolver
 import org.clyze.input.PlatformManager
 import org.clyze.utils.CheckSum
 import org.clyze.utils.FileOps
@@ -144,7 +149,20 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
 		// Initialize the environment used for executing commands
 		def commandsEnv = initExternalCommandsEnvironment(options)
-		createOutputDirectory(options)
+		File outDir = createOutputDirectory(options)
+
+		// Deployables (.war, Spring Boot jars) become the class path their class
+		// loader sees, before anything reads the inputs (app regex, jphantom,
+		// fact generation). The cache ID above is computed on the archives.
+		boolean cachedFacts = options.CACHE.value && (options.CACHE_DIR.value as File)?.exists()
+		if (!options.INPUT_ID.value && !cachedFacts && !options.PYTHON.value && !options.ANDROID.value) {
+			DeployableArchives.Result unpacked = DeployableArchives.unpack(
+				options.INPUTS.value as List<File>, options.LIBRARIES.value as List<File>, outDir)
+			if (unpacked.unpacked > 0) {
+				options.INPUTS.value = unpacked.inputs
+				options.LIBRARIES.value = unpacked.libraries
+			}
+		}
 
 		if (!options.INPUT_ID.value && !options.CACHE.value && !options.PYTHON.value) {
 			checkAppGlob(options)
@@ -349,6 +367,9 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		}
 
 		def analysisName = options.ANALYSIS.value
+		if (options.RUN_JPHANTOM.value)
+			log.warn "WARNING: --${options.RUN_JPHANTOM.name} is deprecated and has no effect: JPhantom always complements the program."
+
 		if (analysisName == 'dependency-analysis' || options.SYMBOLIC_REASONING.value) {
 			log.debug "Enabling CFG analysis."
 			options.CFG_ANALYSIS.value = true
@@ -580,14 +601,15 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 							JarFile jarFile = new JarFile(jarPath)
 							try { 
 								//Try to read the main class from the manifest contained in the jar
-								main = jarFile.manifest?.mainAttributes?.getValue(Attributes.Name.MAIN_CLASS) as String
+								// (for a deployable, the entry point its launcher runs)
+								main = DeployableArchives.entryPoint(jarPath, jarFile.manifest)
 							}
 							catch (ZipException ex) {
 								throw DoopErrorCodeException.error30("Could not read jar file ${jarPath}: ${ex.message}")
 							}
 							if (main)
 								recordAutoMainClass(options, main)
-							else {
+							else if (DeployableArchives.kind(jarPath) == null) {
 								//Check whether the jar contains a class with the same name
 								def jarName = FilenameUtils.getBaseName(jarFile.name)
 								if (jarFile.getJarEntry("${jarName}.class"))
@@ -717,7 +739,10 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 	}
 
 	static DefaultInputResolutionContext newJavaDefaultInputResolutionContext() {
-		return new DefaultInputResolutionContext(DefaultInputResolutionContext.defaultResolver(new File(Doop.doopTmp)))
+		// The library's default chain, with URL inputs downloaded under their own
+		// file name (see URLInputResolver).
+		return new DefaultInputResolutionContext(new ChainResolver(new FileResolver(), new DirectoryResolver(),
+				new URLInputResolver(new File(Doop.doopTmp)), new IvyResolver()))
 	}
 
 	static File resolveAsInput(String filePath) {

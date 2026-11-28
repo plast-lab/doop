@@ -1,6 +1,5 @@
 package org.clyze.doop.soot;
 
-import heros.solver.CountingThreadPoolExecutor;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
@@ -8,12 +7,9 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
 import org.clyze.doop.common.DoopErrorCodeException;
 import org.clyze.doop.common.JavaFactWriter;
 import soot.PackManager;
@@ -62,37 +58,6 @@ public class DoopAddons {
         } catch (NoSuchMethodException ex) {
             ex.printStackTrace();
         }
-    }
-
-    public static void retrieveAllSceneClassesBodies(Integer _cores) {
-        // The old coffi front-end is not thread-safe
-        boolean runSeq = (_cores == null);
-        int threadNum = runSeq ? 1 : _cores;
-        CountingThreadPoolExecutor executor = new CountingThreadPoolExecutor(threadNum,
-                                                                             threadNum, 30, TimeUnit.SECONDS,
-                                                                             new LinkedBlockingQueue<>());
-        Iterator<SootClass> clIt = Scene.v().getClasses().snapshotIterator();
-        while( clIt.hasNext() ) {
-            SootClass cl = clIt.next();
-            //note: the following is a snapshot iterator;
-            //this is necessary because it can happen that phantom methods
-            //are added during resolution
-            for (SootMethod m : cl.getMethods())
-                if (m.isConcrete())
-                    executor.execute(m::retrieveActiveBody);
-        }
-        // Wait till all method bodies have been loaded
-        try {
-            executor.awaitCompletion();
-            executor.shutdown();
-        } catch (InterruptedException e) {
-            // Something went horribly wrong
-            throw new RuntimeException("Could not wait for loader threads to "
-                                       + "finish: " + e.getMessage(), e);
-        }
-        // If something went wrong, we tell the world
-        if (executor.getException() != null)
-            throw (RuntimeException) executor.getException();
     }
 
     // Call non-public method: PackManager.v().retrieveAllBodies()
@@ -198,6 +163,19 @@ public class DoopAddons {
     private static boolean polymorphicHandling_msg = false;
     @SuppressWarnings("CatchMayIgnoreException")
     public static boolean polymorphicHandling(String declClass, String simpleName) {
+        // Signature-polymorphic methods (JVMS 2.9.3): declared in MethodHandle
+        // or VarHandle, native and varargs. Soot's handlesClass() only checks
+        // the class, which made ordinary methods (type(), asType(), isDirect(),
+        // ...) polymorphic and turned mh.type() into a call to mh's target.
+        if ("java.lang.invoke.MethodHandle".equals(declClass) || "java.lang.invoke.VarHandle".equals(declClass)) {
+            SootClass c = Scene.v().getSootClassUnsafe(declClass, false);
+            if (c != null && !c.isPhantom() && !c.getMethods().isEmpty()) {
+                for (SootMethod m : c.getMethods())
+                    if (m.getName().equals(simpleName) && m.isNative() && (m.getModifiers() & 0x0080) != 0)
+                        return true;
+                return false;
+            }
+        }
         try {
             if (hc != null)
                 return (boolean)hc.invoke(null, declClass);

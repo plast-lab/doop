@@ -301,8 +301,8 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "RUN_JPHANTOM",
 					name: "run-jphantom",
-					description: "Run jphantom for non-existent referenced code.",
-					forCacheID: true
+					group: GROUP_FACTS,
+					description: "Deprecated, has no effect: JPhantom always complements the program."
 			),
 			new BooleanAnalysisOption(
 					id: "REPORT_PHANTOMS",
@@ -375,7 +375,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "CHOICE_BOUND",
 					name: "choice-bound",
-					description: "Enable choice-bound analysis pruning (Experimental, currently supported for 2objH).",
+					description: "Enable choice-bound analysis pruning (Experimental, currently supported for 2objH). Not deterministic: which values are kept depends on the engine's evaluation order (thread timing in Souffle; FlowLog and other engines differ).",
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
@@ -1116,6 +1116,13 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					value: [],
 					multipleValues: true,
 					argName: "CLASS",
+					forCacheID: true
+			),
+			new BooleanAnalysisOption(
+					id: "FULL_FACTS",
+					name: "full-facts",
+					group: GROUP_FACTS,
+					description: "Generate facts for every class of every input, library and platform archive, not only the classes the inputs reference (needed for frameworks, which reach their own classes reflectively). Unrelated to the --full mode Doop passes to Soot.",
 					forCacheID: true
 			),
 			new BooleanAnalysisOption(
