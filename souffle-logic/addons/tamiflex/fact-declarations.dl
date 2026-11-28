@@ -2,3 +2,6 @@
                               ?inMethodStr:symbol, ?lineNumber:number)
 
 .decl Tamiflex_ReflectionMap(?mapped:symbol, ?invocation:MethodInvocation)
+
+.output Tamiflex_ReflectionMap
+.output _Tamiflex_EntryHasLineMatch

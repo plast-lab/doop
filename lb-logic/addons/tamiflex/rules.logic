@@ -234,3 +234,25 @@ VarPointsTo(?hctx, ?value, ?ctx, ?return) <-
    Instruction:Method[?invocation] = ?inmethod,
    ReachableContext(?ctx, ?inmethod),
    AssignReturnValue[?invocation] = ?return.
+
+/**
+ * A tamiflex log entry records the receiver type observed at runtime, but the
+ * same reflective invocation site can receive objects of any subtype of the
+ * logged declaring type. Dispatch the logged signature over the whole
+ * points-to set of the receiver argument, like the default reflection logic
+ * does (cf. OptMethodLookup in main/reflection/rules.logic). Private methods
+ * are excluded: they cannot be dispatched virtually, and the exact logged
+ * target already covers them.
+ */
+Tamiflex:Invoke(?callerCtx, ?invocation, ?callee) <-
+   Tamiflex:Invoke(?callerCtx, ?invocation, ?signature),
+   ! Method:Modifier("static", ?signature),
+   ! Method:Modifier("private", ?signature),
+   Method:SimpleName[?signature] = ?simplename,
+   Method:Descriptor[?signature] = ?descriptor,
+   Method:DeclaringType[?signature] = ?type,
+   ActualParam[0, ?invocation] = ?base,
+   VarPointsTo(_, ?value, ?callerCtx, ?base),
+   Value:Type[?value] = ?valuetype,
+   SupertypeOf(?type, ?valuetype),
+   MethodLookup[?simplename, ?descriptor, ?valuetype] = ?callee.

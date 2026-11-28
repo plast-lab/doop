@@ -549,6 +549,14 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         if (options.ALSO_RESOLVE.value) {
             alsoResolve(params, options.ALSO_RESOLVE.value as Collection<String>)
         }
+        // Classes that are only reached through reflection are never loaded by
+        // Soot unless asked to: resolve every class named in the TamiFlex log.
+        def tamiflex = options.TAMIFLEX.value
+        if (tamiflex && tamiflex != "dummy") {
+            Collection<String> logged = tamiflexClasses(tamiflex as File)
+            log.debug "Resolving ${logged.size()} classes named in the TamiFlex log"
+            alsoResolve(params, logged)
+        }
 
         File missingClasses = null
         if (options.THOROUGH_FACT_GEN.value) {
@@ -693,6 +701,29 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
     boolean isFatal(ClassLoader loader, Throwable t) {
         Boolean b = getThrowableField(loader, t, 'org.clyze.doop.common.DoopErrorCodeException', 'fatal')
         return b ? b as boolean : false
+    }
+
+    /**
+     * The classes named in a TamiFlex log: the targets of Class.forName and
+     * Class.newInstance entries, and the declaring classes of logged members
+     * (entries whose target is a signature "<C: ...>"). Array types are skipped.
+     * Log lines are "kind;target;caller;line;...".
+     */
+    static Collection<String> tamiflexClasses(File log) {
+        Set<String> classes = new TreeSet<>()
+        log.eachLine { String line ->
+            String[] parts = line.split(";", -1)
+            if (parts.length < 2) return
+            String kind = parts[0], target = parts[1]
+            String c = null
+            if (kind == "Class.forName" || kind == "Class.newInstance")
+                c = target
+            else if (target.startsWith("<") && target.contains(":"))
+                c = target.substring(1, target.indexOf(":"))
+            if (c && !c.contains("[]"))
+                classes.add(c)
+        }
+        return classes
     }
 
     private static void alsoResolve(Collection<String> params, Collection<String> extraClasses) {

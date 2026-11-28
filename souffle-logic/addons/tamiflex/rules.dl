@@ -157,6 +157,22 @@ Tamiflex_ReifiedMethodArray(?type, cat(cat("<(Tamiflex) ", ?type), "/Method[]>")
 ReachableContext(?calleeCtx, ?callee) :-
   TamiflexCallGraphEdge(_, _, ?calleeCtx, ?callee).
 
+// Synthesize <class X> heap objects for reflective targets that appear only in
+// the reflection log (no X.class literal exists in the code, so no ClassHeap
+// fact is generated and the rules below would silently no-op).
+.decl _Tamiflex_LogClassObj(?classObj:HeapAllocation)
+
+_Tamiflex_LogClassObj(?classObj) :-
+  Tamiflex_ReflectionData(_, _, ?class, _, _, _),
+  isClassType(?class),
+  ?classObj = cat(cat("<class ", ?class), ">").
+
+isHeapAllocation(?classObj) :-
+  _Tamiflex_LogClassObj(?classObj).
+
+HeapAllocation_Type(?classObj, "java.lang.Class") :-
+  _Tamiflex_LogClassObj(?classObj).
+
 .decl OptForNameInvocation(?invocation:MethodInvocation, ?inmethod:Method)
 
 OptForNameInvocation(?invocation, ?inmethod) :-
@@ -175,29 +191,69 @@ VarPointsTo(?hctx, ?classObj, ?ctx, ?return) :-
   HeapAllocation_Type(?classObj, "java.lang.Class"),
   AssignReturnValue(?invocation, ?return).
 
-VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
+// Objects created reflectively (Class/Constructor/Array.newInstance) are allocated like a
+// `new T(...)` at the call site, which is how Qilin rewrites logged reflection: the heap
+// context comes from the configuration (RecordContextRequest), and the generic rules in
+// main/context-sensitivity.dl bind the return variable. Without a return variable the
+// object is still created (its constructor may run) under the immutable heap context.
+.decl TamiflexNewObject(?callerCtx:configuration.Context, ?invocation:MethodInvocation, ?value:Value, ?hctx:configuration.HContext)
+
+configuration.RecordContextRequest(?ctx, ?value, ?return) :-
   (Tamiflex_Class_NewInstance(?invocation, ?value) ;
+   Tamiflex_Constructor_NewInstance(?invocation, _, ?value) ;
    Tamiflex_Array_NewInstance(?invocation, ?value) ),
   Instruction_Method(?invocation, ?inmethod),
   AssignReturnValue(?invocation, ?return),
+  ReachableContext(?ctx, ?inmethod).
+
+TamiflexNewObject(?ctx, ?invocation, ?value, ?hctx) :-
+  (Tamiflex_Class_NewInstance(?invocation, ?value) ;
+   Tamiflex_Constructor_NewInstance(?invocation, _, ?value) ;
+   Tamiflex_Array_NewInstance(?invocation, ?value) ),
+  AssignReturnValue(?invocation, ?return),
+  configuration.RecordContextRequest(?ctx, ?value, ?return),
+  configuration.RecordContextResponse(?ctx, ?value, ?return, ?hctx).
+
+TamiflexNewObject(?ctx, ?invocation, ?value, ?hctx) :-
+  (Tamiflex_Class_NewInstance(?invocation, ?value) ;
+   Tamiflex_Constructor_NewInstance(?invocation, _, ?value) ;
+   Tamiflex_Array_NewInstance(?invocation, ?value) ),
+  Instruction_Method(?invocation, ?inmethod),
   ReachableContext(?ctx, ?inmethod),
+  !AssignReturnValue(?invocation, _),
   isImmutableHContext(?hctx).
 
 .decl TamiflexConstructorCallGraphEdge(?callerCtx:configuration.Context, ?invocation:MethodInvocation,
                                        ?calleeCtx:configuration.Context, ?callee:Method)
 
-// MergeMacro(?callerCtx, ?invocation, ?hctx, ?obj, ?calleeCtx),
-VarPointsTo(?hctx, ?value, ?callerCtx, ?return),
-TamiflexCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?constructor),
-TamiflexConstructorCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?constructor),
-VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) :-
+// Constructor calls of reflectively created objects. The constructor runs with the new
+// object as receiver under the configuration's callee context (object-sensitive), not the
+// immutable context; the generic ContextRequest/ContextResponse rule binds `this`.
+.decl TamiflexConstructorRequest(?callerCtx:configuration.Context, ?hctx:configuration.HContext, ?invocation:MethodInvocation, ?value:Value, ?constructor:Method)
+
+TamiflexConstructorRequest(?callerCtx, ?hctx, ?invocation, ?value, ?constructor),
+configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value, ?constructor, 0) :-
   Tamiflex_Constructor_NewInstance(?invocation, ?constructor, ?value),
-  Instruction_Method(?invocation, ?inmethod),
-  ReachableContext(?callerCtx, ?inmethod),
-  AssignReturnValue(?invocation, ?return),
-  ThisVar(?constructor, ?this),
-  isImmutableHContext(?hctx),
-  isImmutableContext(?calleeCtx).
+  TamiflexNewObject(?callerCtx, ?invocation, ?value, ?hctx),
+  ThisVar(?constructor, _).
+
+// Class.newInstance(): call the no-arg constructor of the object's own type. (Each logged
+// type has its own mock object; binding the type independently of the object used to pass
+// every object to every logged type's constructor.)
+TamiflexConstructorRequest(?callerCtx, ?hctx, ?invocation, ?value, ?constructor),
+configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value, ?constructor, 0) :-
+  Tamiflex_Class_NewInstance(?invocation, ?value),
+  Tamiflex_ReflectionMap(?type, ?invocation),
+  ?value = cat(cat(cat(cat("<(Tamiflex) ", ?invocation), "/"), ?type), ">"),
+  ?constructor = cat(cat(cat("<", ?type), ": void "), "<init>()>"),
+  isMethod(?constructor),
+  ThisVar(?constructor, _),
+  TamiflexNewObject(?callerCtx, ?invocation, ?value, ?hctx).
+
+TamiflexCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?constructor),
+TamiflexConstructorCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?constructor) :-
+  TamiflexConstructorRequest(?callerCtx, ?hctx, ?invocation, ?value, ?constructor),
+  configuration.ContextResponse(?callerCtx, ?hctx, ?invocation, ?value, ?constructor, ?calleeCtx).
 
 Tamiflex_Invoke(?callerCtx, ?invocation, ?method) :-
   ?sig = "<java.lang.reflect.Method: java.lang.Object invoke(java.lang.Object,java.lang.Object[])>",
@@ -213,31 +269,74 @@ Tamiflex_Invoke(?callerCtx, ?invocation, ?method) :-
  * But they are handled the same as virtual methods in the context of tamiflex
  * since tamiflex has already resolved the final target method.
  */
-TamiflexCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee),
-VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) :-
+/**
+ * A non-static reflective target is reached by virtual dispatch on the receiver's
+ * runtime type (Qilin rewrites Method.invoke(o, args) into o.m(args)): the callee is
+ * the override MethodLookup selects for each receiver heap type, and it runs under
+ * the configuration's callee context for that receiver. The generic ContextRequest/
+ * ContextResponse rule binds `this`.
+ */
+.decl TamiflexInvokeRequest(?callerCtx:configuration.Context, ?hctx:configuration.HContext, ?invocation:MethodInvocation, ?value:Value, ?override:Method)
+
+// Method.invoke only accepts receivers that are instances of the target's
+// declaring class (otherwise it throws IllegalArgumentException), so receiver
+// values of unrelated types are filtered out before dispatch.
+TamiflexInvokeRequest(?callerCtx, ?hctx, ?invocation, ?value, ?override),
+configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value, ?override, 0) :-
   Tamiflex_Invoke(?callerCtx, ?invocation, ?callee),
   ! Method_Modifier("static", ?callee),
+  ! Method_Modifier("private", ?callee),
+  Method_DeclaringType(?callee, ?declType),
   ActualParam(0, ?invocation, ?base),
   VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
-  ThisVar(?callee, ?this),
-  isImmutableContext(?calleeCtx).
+  Value_Type(?value, ?heaptype),
+  basic.SubtypeOf(?heaptype, ?declType),
+  Method_SimpleName(?callee, ?simplename),
+  Method_Descriptor(?callee, ?descriptor),
+  basic.MethodLookup(?simplename, ?descriptor, ?heaptype, ?override),
+  ThisVar(?override, _).
+
+// A private target is not dispatched: Method.invoke calls exactly that method.
+TamiflexInvokeRequest(?callerCtx, ?hctx, ?invocation, ?value, ?callee),
+configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value, ?callee, 0) :-
+  Tamiflex_Invoke(?callerCtx, ?invocation, ?callee),
+  Method_Modifier("private", ?callee),
+  ! Method_Modifier("static", ?callee),
+  Method_DeclaringType(?callee, ?declType),
+  ActualParam(0, ?invocation, ?base),
+  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
+  Value_Type(?value, ?heaptype),
+  basic.SubtypeOf(?heaptype, ?declType),
+  ThisVar(?callee, _).
+
+.decl TamiflexInvokeCallGraphEdge(?callerCtx:configuration.Context, ?invocation:MethodInvocation,
+                                  ?calleeCtx:configuration.Context, ?callee:Method)
+
+TamiflexCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?override),
+TamiflexInvokeCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?override) :-
+  TamiflexInvokeRequest(?callerCtx, ?hctx, ?invocation, ?value, ?override),
+  configuration.ContextResponse(?callerCtx, ?hctx, ?invocation, ?value, ?override, ?calleeCtx).
 
 /**
- * Static method invocations
+ * Static method invocations: the callee context is the configuration's static context.
  */
-TamiflexCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee) :-
+configuration.StaticContextRequest(?callerCtx, ?invocation) :-
+   Tamiflex_Invoke(?callerCtx, ?invocation, ?callee),
+   Method_Modifier("static", ?callee).
+
+TamiflexCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee),
+TamiflexInvokeCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee) :-
    Tamiflex_Invoke(?callerCtx, ?invocation, ?callee),
    Method_Modifier("static", ?callee),
-   isImmutableContext(?calleeCtx).
+   configuration.StaticContextResponse(?callerCtx, ?invocation, ?calleeCtx).
 
 /**
- * Return values of reflective method invocations
+ * Return values of reflective method invocations (from every dispatched callee).
  */
 OptInterproceduralAssign(?callerCtx, ?local, ?calleeCtx, ?return) :-
-  Tamiflex_Invoke(?callerCtx, ?invocation, ?callee),
+  TamiflexInvokeCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee),
   AssignReturnValue(?invocation, ?local),
-  ReturnVar(?return, ?callee),
-  isImmutableContext(?calleeCtx).
+  ReturnVar(?return, ?callee).
 
 /**
  * Handle the array of actual parameters of a reflective method call
@@ -249,10 +348,9 @@ OptInterproceduralAssign(?callerCtx, ?local, ?calleeCtx, ?return) :-
                                    ?callerCtx:configuration.Context, ?argsParam:Var)
 
 TamiflexInvocationFirstParam(?calleeCtx, ?formal, ?callerCtx, ?argsParam) :-
-  Tamiflex_Invoke(?callerCtx, ?invocation, ?callee),
+  TamiflexInvokeCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee),
   ActualParam(1, ?invocation, ?argsParam),
-  FormalParam(_, ?callee, ?formal),
-  isImmutableContext(?calleeCtx).
+  FormalParam(_, ?callee, ?formal).
 /// ... vs. constructor calls
 TamiflexInvocationFirstParam(?calleeCtx, ?formal, ?callerCtx, ?argsParam) :-
   TamiflexConstructorCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee),

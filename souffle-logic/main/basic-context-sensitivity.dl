@@ -36,12 +36,22 @@ isContext(?calleeCtx),
 CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod) :-
   configuration.StaticContextResponse(?callerCtx, ?invocation, ?calleeCtx),
   MethodInvocation_Method(?invocation, ?tomethod),
+  // Static context requests are also made for reflective and method-handle
+  // calls to static targets; the invocation itself (Method.invoke,
+  // MethodHandle.invokeExact, ...) is then not an invokestatic and its
+  // edges come from the virtual-call rules, not from here.
+  StaticMethodInvocation(?invocation, ?tomethod, _),
   ZipperPrecisionCriticalMethod(?tomethod).
 
 CallGraphEdge(?callerCtx, ?invocation, ?immCtx, ?tomethod) :-
   configuration.StaticContextResponse(?callerCtx, ?invocation, _),
   isImmutableContext(?immCtx),
   MethodInvocation_Method(?invocation, ?tomethod),
+  // Static context requests are also made for reflective and method-handle
+  // calls to static targets; the invocation itself (Method.invoke,
+  // MethodHandle.invokeExact, ...) is then not an invokestatic and its
+  // edges come from the virtual-call rules, not from here.
+  StaticMethodInvocation(?invocation, ?tomethod, _),
   !ZipperPrecisionCriticalMethod(?tomethod).
 
 #else // X_ZIPPER
@@ -58,7 +68,12 @@ CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod) :-
 isContext(?calleeCtx),
 CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod) :-
   configuration.StaticContextResponse(?callerCtx, ?invocation, ?calleeCtx),
-  MethodInvocation_Method(?invocation, ?tomethod).
+  MethodInvocation_Method(?invocation, ?tomethod),
+  // Static context requests are also made for reflective and method-handle
+  // calls to static targets; the invocation itself (Method.invoke,
+  // MethodHandle.invokeExact, ...) is then not an invokestatic and its
+  // edges come from the virtual-call rules, not from here.
+  StaticMethodInvocation(?invocation, ?tomethod, _).
 
 #endif // X_ZIPPER
 }

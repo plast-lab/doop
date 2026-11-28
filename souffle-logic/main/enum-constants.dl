@@ -1,0 +1,40 @@
+/**
+ * Class.getEnumConstantsShared() obtains an enum's constants by calling its
+ * static values() reflectively:
+ *
+ *     final Method values = getMethod("values");
+ *     ... values.setAccessible(true) ...
+ *     T[] temporaryConstants = (T[]) values.invoke(null);
+ *
+ * It is how Enum.valueOf(Class, String), EnumSet, EnumMap and Class.
+ * getEnumConstants() find the constants, so every framework that turns a name
+ * into an enum constant (Hibernate's @Enumerated, Jackson, Spring's converters)
+ * calls values() this way. No reflection support resolves the invoke(): the
+ * method name is a constant, but the receiver class is whatever class object
+ * reaches `this`. We model the call directly: for each class object of an enum E
+ * (isEnum(): a direct subclass of java.lang.Enum) that reaches `this`, E.values()
+ * is called from the invoke() call site, in the caller's context (like
+ * Thread.start0 -> run in threads.dl), and its result is invoke()'s result.
+ */
+
+.decl EnumValuesCall(?ctx:configuration.Context, ?invocation:MethodInvocation, ?values:Method)
+
+EnumValuesCall(?ctx, ?invocation, ?values) :-
+  ?shared = "<java.lang.Class: java.lang.Object[] getEnumConstantsShared()>",
+  ThisVar(?shared, ?this),
+  ReachableContext(?ctx, ?shared),
+  VarPointsTo(_, ?classValue, ?ctx, ?this),
+  ClassHeap_InstanceType(?classValue, ?enum),
+  DirectSuperclass(?enum, "java.lang.Enum"),
+  ?values = cat("<", cat(?enum, cat(": ", cat(?enum, "[] values()>")))),
+  isMethod(?values),
+  _VirtualMethodInvocation(?invocation, _, "<java.lang.reflect.Method: java.lang.Object invoke(java.lang.Object,java.lang.Object[])>", _, ?shared).
+
+ReachableContext(?ctx, ?values) :-
+  EnumValuesCall(?ctx, _, ?values).
+
+VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
+  EnumValuesCall(?ctx, ?invocation, ?values),
+  ReturnVar(?ret, ?values),
+  VarPointsTo(?hctx, ?value, ?ctx, ?ret),
+  AssignReturnValue(?invocation, ?to).

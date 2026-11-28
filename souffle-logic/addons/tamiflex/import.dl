@@ -47,3 +47,35 @@ Tamiflex_ReflectionMap(?mapped, ?invocation) :-
 
    MethodInvocation_Method(?invocation, ?method),
    Instruction_Method(?invocation, ?inMethod).
+
+// Line-number fallback: synthetic methods (e.g. the pre-Java-5 class$ idiom)
+// carry line 1 in bytecode facts while the reflection log records the original
+// source line, so exact-line matching fails systematically for their entries.
+// If no invocation of the reflection method inside the containing method
+// carries the recorded line, apply the entry to every such invocation there.
+.decl _Tamiflex_EntryHasLineMatch(?class:symbol, ?methodStr:symbol, ?mapped:symbol, ?inClass:symbol, ?inMethodStr:symbol, ?line:number)
+
+_Tamiflex_EntryHasLineMatch(?class, ?methodStr, ?mapped, ?inClass, ?inMethodStr, ?line) :-
+   Tamiflex_ReflectionData(?class, ?methodStr, ?mapped, ?inClass, ?inMethodStr, ?line),
+   isClassType(?class),
+   Method_SimpleName(?method, ?methodStr),
+   Method_DeclaringType(?method, ?class),
+   isClassType(?inClass),
+   Method_SimpleName(?inMethod, ?inMethodStr),
+   Method_DeclaringType(?inMethod, ?inClass),
+   MethodInvocation_Method(?invocation, ?method),
+   Instruction_Method(?invocation, ?inMethod),
+   MethodInvocation_Line(?invocation, ?line).
+
+Tamiflex_ReflectionMap(?mapped, ?invocation) :-
+   Tamiflex_ReflectionData(?class, ?methodStr, ?mapped, ?inClass, ?inMethodStr, ?line),
+   isClassType(?class),
+   Method_SimpleName(?method, ?methodStr),
+   Method_DeclaringType(?method, ?class),
+   isClassType(?inClass),
+   Method_SimpleName(?inMethod, ?inMethodStr),
+   Method_DeclaringType(?inMethod, ?inClass),
+   ?line > 0,
+   !_Tamiflex_EntryHasLineMatch(?class, ?methodStr, ?mapped, ?inClass, ?inMethodStr, ?line),
+   MethodInvocation_Method(?invocation, ?method),
+   Instruction_Method(?invocation, ?inMethod).
