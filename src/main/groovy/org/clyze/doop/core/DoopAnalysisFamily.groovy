@@ -299,6 +299,12 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					cli: false
 			),
 			new BooleanAnalysisOption(
+					id: "RUN_JPHANTOM",
+					name: "run-jphantom",
+					group: GROUP_FACTS,
+					description: "Deprecated, has no effect: JPhantom always complements the program."
+			),
+			new BooleanAnalysisOption(
 					id: "REPORT_PHANTOMS",
 					name: "report-phantoms",
 					group: GROUP_FACTS,
