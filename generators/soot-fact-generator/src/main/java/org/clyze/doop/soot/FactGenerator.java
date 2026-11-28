@@ -155,7 +155,6 @@ class FactGenerator implements Runnable {
             for (SootClass i : _sootClass.getInterfaces()) {
                 _writer.writeDirectSuperinterface(_sootClass, i);
             }
-            _writer.writeGenericSuperTypeArgs(_sootClass);
 
             _sootClass.getFields().forEach(this::generate);
 

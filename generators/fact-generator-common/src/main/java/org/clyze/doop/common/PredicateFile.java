@@ -71,7 +71,6 @@ public enum PredicateFile
     GENERIC_TYPE_PARAMETERS("GenericTypeParameters"),
     GENERIC_TYPE_ERASED_TYPE("GenericType-ErasedType"),
     GENERIC_FIELD("GenericField"),
-    GENERIC_SUPERTYPE_ARG("GenericSuperTypeArgument"),
     GOTO("Goto"),
     IF("If"),
     IF_CONSTANT("IfConstant"),

@@ -137,7 +137,6 @@ import static org.clyze.doop.common.PredicateFile.BREAKPOINT_STMT;
 import static org.clyze.doop.common.PredicateFile.CLASS_TYPE;
 import static org.clyze.doop.common.PredicateFile.DIRECT_SUPER_CLASS;
 import static org.clyze.doop.common.PredicateFile.DIRECT_SUPER_IFACE;
-import static org.clyze.doop.common.PredicateFile.GENERIC_SUPERTYPE_ARG;
 import static org.clyze.doop.common.PredicateFile.EMPTY_ARRAY;
 import static org.clyze.doop.common.PredicateFile.ENTER_MONITOR;
 import static org.clyze.doop.common.PredicateFile.EXIT_MONITOR;
@@ -317,57 +316,6 @@ class FactWriter extends JavaFactWriter {
 
     void writeDirectSuperclass(SootClass sub, SootClass sup) {
         _db.add(DIRECT_SUPER_CLASS, writeType(sub), writeType(sup));
-    }
-
-    /**
-     * Type arguments of a class's generic supertypes, from its Signature attribute:
-     * for {@code interface OwnerRepository extends JpaRepository<Owner, Integer>} this writes
-     * (OwnerRepository, JpaRepository, 0, Owner) and (..., 1, java.lang.Integer). A type
-     * variable argument is written as "T:Name", a wildcard as "?", "+Bound" or "-Bound".
-     */
-    void writeGenericSuperTypeArgs(SootClass clazz) {
-        soot.tagkit.Tag tag = clazz.getTag("SignatureTag");
-        if (!(tag instanceof soot.tagkit.SignatureTag))
-            return;
-        String sig = ((soot.tagkit.SignatureTag) tag).getSignature();
-        String cls = writeType(clazz);
-        try {
-            new org.objectweb.asm.signature.SignatureReader(sig).accept(new org.objectweb.asm.signature.SignatureVisitor(org.objectweb.asm.Opcodes.ASM9) {
-                @Override public org.objectweb.asm.signature.SignatureVisitor visitSuperclass() { return new SuperTypeArgs(cls); }
-                @Override public org.objectweb.asm.signature.SignatureVisitor visitInterface() { return new SuperTypeArgs(cls); }
-            });
-        } catch (RuntimeException ex) {
-            System.err.println("WARNING: cannot parse generic signature of " + cls + ": " + sig);
-        }
-    }
-
-    /** Collects the top-level type arguments of one supertype in a class signature. */
-    private class SuperTypeArgs extends org.objectweb.asm.signature.SignatureVisitor {
-        private final String cls;
-        private String superType = null;
-        private int index = 0;
-        SuperTypeArgs(String cls) { super(org.objectweb.asm.Opcodes.ASM9); this.cls = cls; }
-        @Override public void visitClassType(String name) { superType = name.replace('/', '.'); }
-        @Override public void visitInnerClassType(String name) { superType = superType + "$" + name; index = 0; }
-        @Override public void visitTypeArgument() { emit("?"); }
-        @Override public org.objectweb.asm.signature.SignatureVisitor visitTypeArgument(char wildcard) {
-            final String prefix = (wildcard == '=') ? "" : String.valueOf(wildcard);
-            final int argIndex = index++;
-            return new org.objectweb.asm.signature.SignatureVisitor(org.objectweb.asm.Opcodes.ASM9) {
-                private int depth = 0;
-                private String arrays = "";
-                @Override public org.objectweb.asm.signature.SignatureVisitor visitArrayType() { arrays += "[]"; return this; }
-                @Override public void visitBaseType(char d) { if (depth == 0) write(argIndex, prefix + org.objectweb.asm.Type.getType(String.valueOf(d)).getClassName() + arrays); }
-                @Override public void visitTypeVariable(String n) { if (depth == 0) write(argIndex, prefix + "T:" + n + arrays); }
-                @Override public void visitClassType(String n) { if (depth++ == 0) write(argIndex, prefix + n.replace('/', '.') + arrays); }
-                @Override public void visitEnd() { depth--; }
-            };
-        }
-        private void emit(String arg) { write(index++, arg); }
-        private void write(int i, String arg) {
-            if (superType != null)
-                _db.add(GENERIC_SUPERTYPE_ARG, cls, superType, String.valueOf(i), arg);
-        }
     }
 
     void writeDirectSuperinterface(SootClass clazz, SootClass iface) {

@@ -367,6 +367,9 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 		}
 
 		def analysisName = options.ANALYSIS.value
+		if (options.RUN_JPHANTOM.value)
+			log.warn "WARNING: --${options.RUN_JPHANTOM.name} is deprecated and has no effect: JPhantom always complements the program."
+
 		if (analysisName == 'dependency-analysis' || options.SYMBOLIC_REASONING.value) {
 			log.debug "Enabling CFG analysis."
 			options.CFG_ANALYSIS.value = true
